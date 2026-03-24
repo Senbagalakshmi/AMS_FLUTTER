@@ -909,7 +909,7 @@ class AmsIdentityHeader extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
+            color: Colors.black.withOpacity(0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -921,7 +921,7 @@ class AmsIdentityHeader extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: accentColor.withValues(alpha: 0.12),
+              color: accentColor.withOpacity(0.12),
               borderRadius: BorderRadius.circular(10),
             ),
             child: icon,
@@ -959,7 +959,7 @@ class AmsIdentityHeader extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: AppColors.redLt,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppColors.red.withValues(alpha: 0.3)),
+                  border: Border.all(color: AppColors.red.withOpacity(0.3)),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -995,7 +995,7 @@ class AmsSubmitBar extends StatelessWidget {
       decoration: BoxDecoration(
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
+            color: Colors.black.withOpacity(0.08),
             blurRadius: 30,
             offset: const Offset(0, -10),
           ),
@@ -1007,10 +1007,10 @@ class AmsSubmitBar extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.85),
+              color: Colors.white.withOpacity(0.85),
               border: Border(
                 top: BorderSide(
-                    color: borderColor.withValues(alpha: 0.2), width: 1.5),
+                    color: borderColor.withOpacity(0.2), width: 1.5),
               ),
             ),
             child: Row(
@@ -1124,7 +1124,7 @@ class AmsSidebarItem extends StatelessWidget {
 }
 
 // ─── SIDEBAR ──────────────────────────────────────────────────
-class AmsSidebar extends StatelessWidget {
+class AmsSidebar extends StatefulWidget {
   final String currentScreen;
   final String? selectedProg;
   final void Function(String screen, String? prog) onNavigate;
@@ -1141,43 +1141,83 @@ class AmsSidebar extends StatelessWidget {
   });
 
   @override
+  State<AmsSidebar> createState() => _AmsSidebarState();
+}
+class _AmsSidebarState extends State<AmsSidebar> {
+  String openMenu = ''; // 'masters', 'config', 'auth'
+
+  @override
+  void initState() {
+    super.initState();
+
+    // 🔥 Auto open menu based on selected page
+    if ([
+      'USR-CRT',
+      'USR-ROLE',
+      'ROLE-CRT'
+    ].contains(widget.selectedProg)) {
+      openMenu = 'masters';
+    } else if ([
+      'MOD-CRT',
+      'MENU-CRT'
+    ].contains(widget.selectedProg)) {
+      openMenu = 'config';
+    } else if (widget.selectedProg == 'AUTHCTL' ||
+        widget.currentScreen == 'nontranauth') {
+      openMenu = 'auth';
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 250),
-      width: isCollapsed ? 70 : 260,
+      width: widget.isCollapsed ? 70 : 260,
       decoration: const BoxDecoration(
         color: Colors.white,
-        border: Border(right: BorderSide(color: AppColors.border, width: 1)),
+        border: Border(
+          right: BorderSide(color: AppColors.border, width: 1),
+        ),
       ),
       child: Column(
         children: [
-          // Logo Area + Toggle
+          // 🔹 TOP BAR
           Container(
             height: 70,
-            padding: EdgeInsets.symmetric(horizontal: isCollapsed ? 0 : 20),
+            padding:
+                EdgeInsets.symmetric(horizontal: widget.isCollapsed ? 0 : 20),
             alignment: Alignment.center,
             child: Row(
-              mainAxisAlignment: isCollapsed ? MainAxisAlignment.center : MainAxisAlignment.start,
+              mainAxisAlignment: widget.isCollapsed
+                  ? MainAxisAlignment.center
+                  : MainAxisAlignment.start,
               children: [
-                if (!isCollapsed) ...[
+                if (!widget.isCollapsed) ...[
                   Container(
                     padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
                       color: AppColors.tBlue,
                       borderRadius: BorderRadius.circular(6),
                     ),
-                    child: const Icon(Icons.shield_rounded, color: Colors.white, size: 20),
+                    child: const Icon(Icons.shield_rounded,
+                        color: Colors.white, size: 20),
                   ),
                   const SizedBox(width: 10),
-                  Text('AMS',
-                      style: bodyStyle(
-                          size: 18, weight: FontWeight.w900, color: AppColors.ink)),
+                  Text(
+                    'AMS',
+                    style: bodyStyle(
+                        size: 18,
+                        weight: FontWeight.w900,
+                        color: AppColors.ink),
+                  ),
                   const Spacer(),
                 ],
                 IconButton(
-                  onPressed: onToggle,
+                  onPressed: widget.onToggle,
                   icon: Icon(
-                    isCollapsed ? Icons.menu_rounded : Icons.menu_open_rounded,
+                    widget.isCollapsed
+                        ? Icons.menu_rounded
+                        : Icons.menu_open_rounded,
                     color: AppColors.ink2,
                     size: 20,
                   ),
@@ -1185,116 +1225,211 @@ class AmsSidebar extends StatelessWidget {
               ],
             ),
           ),
+
           const Divider(height: 1, color: AppColors.border2),
+
           const SizedBox(height: 16),
-          
+
+          // 🔹 MENU LIST
           Expanded(
             child: ListView(
               children: [
-                if (!isCollapsed) _sectionHeader('GENERAL'),
+                if (!widget.isCollapsed) _sectionHeader('GENERAL'),
+
+                // 🔹 Dashboard
                 AmsSidebarItem(
-                  label: isCollapsed ? '' : 'Dashboard',
+                  label: widget.isCollapsed ? '' : 'Dashboard',
                   icon: Icons.dashboard_rounded,
-                  isSelected: currentScreen == 'list' && selectedProg == null,
-                  onTap: () => onNavigate('list', null),
-                ),
-                const SizedBox(height: 16),
-                if (!isCollapsed) _sectionHeader('MASTERS'),
-                AmsSidebarItem(
-                  label: isCollapsed ? '' : 'User',
-                  icon: Icons.person_add_rounded,
-                  isSelected: selectedProg == 'USR-CRT',
-                  onTap: () => onNavigate('nontran', 'USR-CRT'),
-                ),
-                AmsSidebarItem(
-                  label: isCollapsed ? '' : 'User Role Assign',
-                  icon: Icons.assignment_ind_rounded,
-                  isSelected: selectedProg == 'ROLE-CRT',
-                  onTap: () => onNavigate('nontran', 'ROLE-CRT'),
-                ),
-                AmsSidebarItem(
-                  label: isCollapsed ? '' : 'Role',
-                  icon: Icons.supervised_user_circle_rounded,
-                  isSelected: selectedProg == 'USR-ROLE',
-                  onTap: () => onNavigate('nontran', 'USR-ROLE'),
-                ),
-                AmsSidebarItem(
-                  label: isCollapsed ? '' : 'Modules',
-                  icon: Icons.view_module_rounded,
-                  isSelected: selectedProg == 'MOD-CRT',
-                  onTap: () => onNavigate('nontran', 'MOD-CRT'),
-                ),
-                AmsSidebarItem(
-                  label: isCollapsed ? '' : 'Menus',
-                  icon: Icons.menu_open_rounded,
-                  isSelected: selectedProg == 'MENU-CRT',
-                  onTap: () => onNavigate('nontran', 'MENU-CRT'),
-                ),
-                const SizedBox(height: 16),
-                if (!isCollapsed) _sectionHeader('GL MODULE'),
-                AmsSidebarItem(
-                  label: isCollapsed ? '' : 'GL Category',
-                  icon: Icons.category_rounded,
-                  isSelected: selectedProg == 'GL-CAT',
-                  onTap: () => onNavigate('nontran', 'GL-CAT'),
-                ),
-                AmsSidebarItem(
-                  label: isCollapsed ? '' : 'GL Master',
-                  icon: Icons.account_balance_wallet_rounded,
-                  isSelected: selectedProg == 'GL-MST',
-                  onTap: () => onNavigate('nontran', 'GL-MST'),
-                ),
-                AmsSidebarItem(
-                  label: isCollapsed ? '' : 'Allowed Currency',
-                  icon: Icons.currency_exchange_rounded,
-                  isSelected: selectedProg == 'GL-CUR',
-                  onTap: () => onNavigate('nontran', 'GL-CUR'),
-                ),
-                AmsSidebarItem(
-                  label: isCollapsed ? '' : 'Allowed Branch',
-                  icon: Icons.store_rounded,
-                  isSelected: selectedProg == 'GL-BRN',
-                  onTap: () => onNavigate('nontran', 'GL-BRN'),
-                ),
-                AmsSidebarItem(
-                  label: isCollapsed ? '' : 'GL Segments',
-                  icon: Icons.pie_chart_rounded,
-                  isSelected: selectedProg == 'GL-SEG',
-                  onTap: () => onNavigate('nontran', 'GL-SEG'),
-                ),
-                AmsSidebarItem(
-                  label: isCollapsed ? '' : 'GL Attributes',
-                  icon: Icons.tune_rounded,
-                  isSelected: selectedProg == 'GL-ATT',
-                  onTap: () => onNavigate('nontran', 'GL-ATT'),
-                ),
-                const SizedBox(height: 16),
-                if (!isCollapsed) _sectionHeader('AUTH'),
-                AmsSidebarItem(
-                  label: isCollapsed ? '' : 'Auth_Controller',
-                  icon: Icons.admin_panel_settings_rounded,
-                  isSelected: selectedProg == 'AUTHCTL',
-                  onTap: () => onNavigate('nontran', 'AUTHCTL'),
+                  isSelected: widget.currentScreen == 'list' &&
+                      widget.selectedProg == null,
+                  onTap: () => widget.onNavigate('list', null),
                 ),
 
+                const SizedBox(height: 16),
+
+                // 🔹 MASTERS
                 AmsSidebarItem(
-                  label: isCollapsed ? '' : 'Authorization',
-                  icon: Icons.rule_folder_rounded,
-                  isSelected: currentScreen == 'nontranauth',
-                  onTap: () => onNavigate('nontranauth', null),
+                  label: widget.isCollapsed ? '' : 'Masters',
+                  icon: openMenu == 'masters'
+                      ? Icons.keyboard_arrow_down
+                      : Icons.keyboard_arrow_right,
+                  isSelected: false,
+                  onTap: () {
+                    setState(() {
+                      openMenu =
+                          openMenu == 'masters' ? '' : 'masters';
+                    });
+                  },
                 ),
+
+                if (openMenu == 'masters') ...[
+                  AmsSidebarItem(
+                    label: widget.isCollapsed ? '' : 'User',
+                    icon: Icons.person_add_rounded,
+                    isSelected: widget.selectedProg == 'USR-CRT',
+                    onTap: () =>
+                        widget.onNavigate('nontran', 'USR-CRT'),
+                  ),
+                  AmsSidebarItem(
+                    label: widget.isCollapsed ? '' : 'User Role Assign',
+                    icon: Icons.assignment_ind_rounded,
+                    isSelected: widget.selectedProg == 'USR-ROLE',
+                    onTap: () =>
+                        widget.onNavigate('nontran', 'USR-ROLE'),
+                  ),
+                  AmsSidebarItem(
+                    label: widget.isCollapsed ? '' : 'Role',
+                    icon: Icons.supervised_user_circle_rounded,
+                    isSelected: widget.selectedProg == 'ROLE-CRT',
+                    onTap: () =>
+                        widget.onNavigate('nontran', 'ROLE-CRT'),
+                  ),
+                  AmsSidebarItem(
+                    label: widget.isCollapsed ? '' : 'Modules',
+                    icon: Icons.view_module_rounded,
+                    isSelected: widget.selectedProg == 'MOD-CRT',
+                    onTap: () =>
+                        widget.onNavigate('nontran', 'MOD-CRT'),
+                  ),
+                  AmsSidebarItem(
+                    label: widget.isCollapsed ? '' : 'Menus',
+                    icon: Icons.menu_open_rounded,
+                    isSelected: widget.selectedProg == 'MENU-CRT',
+                    onTap: () =>
+                        widget.onNavigate('nontran', 'MENU-CRT'),
+                  ),
+                ],
+
+                const SizedBox(height: 16),
+
+                // 🔹 GL MODULE
+                AmsSidebarItem(
+                  label: widget.isCollapsed ? '' : 'GL Module',
+                  icon: openMenu == 'gl'
+                      ? Icons.keyboard_arrow_down
+                      : Icons.keyboard_arrow_right,
+                  isSelected: false,
+                  onTap: () {
+                    setState(() {
+                      openMenu = openMenu == 'gl' ? '' : 'gl';
+                    });
+                  },
+                ),
+
+                if (openMenu == 'gl') ...[
+                  AmsSidebarItem(
+                    label: widget.isCollapsed ? '' : 'GL Category',
+                    icon: Icons.category_rounded,
+                    isSelected: widget.selectedProg == 'GL-CAT',
+                    onTap: () => widget.onNavigate('nontran', 'GL-CAT'),
+                  ),
+                  AmsSidebarItem(
+                    label: widget.isCollapsed ? '' : 'GL Master',
+                    icon: Icons.account_balance_wallet_rounded,
+                    isSelected: widget.selectedProg == 'GL-MST',
+                    onTap: () => widget.onNavigate('nontran', 'GL-MST'),
+                  ),
+                  AmsSidebarItem(
+                    label: widget.isCollapsed ? '' : 'Allowed Currency',
+                    icon: Icons.currency_exchange_rounded,
+                    isSelected: widget.selectedProg == 'GL-CUR',
+                    onTap: () => widget.onNavigate('nontran', 'GL-CUR'),
+                  ),
+                  AmsSidebarItem(
+                    label: widget.isCollapsed ? '' : 'Allowed Branch',
+                    icon: Icons.store_rounded,
+                    isSelected: widget.selectedProg == 'GL-BRN',
+                    onTap: () => widget.onNavigate('nontran', 'GL-BRN'),
+                  ),
+                  AmsSidebarItem(
+                    label: widget.isCollapsed ? '' : 'GL Segments',
+                    icon: Icons.pie_chart_rounded,
+                    isSelected: widget.selectedProg == 'GL-SEG',
+                    onTap: () => widget.onNavigate('nontran', 'GL-SEG'),
+                  ),
+                  AmsSidebarItem(
+                    label: widget.isCollapsed ? '' : 'GL Attributes',
+                    icon: Icons.tune_rounded,
+                    isSelected: widget.selectedProg == 'GL-ATT',
+                    onTap: () => widget.onNavigate('nontran', 'GL-ATT'),
+                  ),
+                ],
+
+                const SizedBox(height: 16),
+
+                // 🔹 CONFIGURATION
+                AmsSidebarItem(
+                  label: widget.isCollapsed ? '' : 'Configuration',
+                  icon: openMenu == 'config'
+                      ? Icons.keyboard_arrow_down
+                      : Icons.keyboard_arrow_right,
+                  isSelected: false,
+                  onTap: () {
+                    setState(() {
+                      openMenu =
+                          openMenu == 'config' ? '' : 'config';
+                    });
+                  },
+                ),
+
+                if (openMenu == 'config') ...[
+                  AmsSidebarItem(
+                    label: widget.isCollapsed ? '' : 'Auth Controller',
+                    icon: Icons.admin_panel_settings_rounded,
+                    isSelected: widget.selectedProg == 'AUTHCTL',
+                    onTap: () =>
+                        widget.onNavigate('nontran', 'AUTHCTL'),
+                  ),
+                ],
+
+                const SizedBox(height: 16),
+
+                // 🔹 AUTH
+                AmsSidebarItem(
+                  label: widget.isCollapsed ? '' : 'Auth',
+                  icon: openMenu == 'auth'
+                      ? Icons.keyboard_arrow_down
+                      : Icons.keyboard_arrow_right,
+                  isSelected: false,
+                  onTap: () {
+                    setState(() {
+                      openMenu =
+                          openMenu == 'auth' ? '' : 'auth';
+                    });
+                  },
+                ),
+
+                if (openMenu == 'auth') ...[
+                  // AmsSidebarItem(
+                  //   label: widget.isCollapsed ? '' : 'Auth Controller',
+                  //   icon: Icons.admin_panel_settings_rounded,
+                  //   isSelected: widget.selectedProg == 'AUTHCTL',
+                  //   onTap: () =>
+                  //       widget.onNavigate('nontran', 'AUTHCTL'),
+                  // ),
+                  AmsSidebarItem(
+                    label: widget.isCollapsed ? '' : 'Authorization',
+                    icon: Icons.rule_folder_rounded,
+                    isSelected:
+                        widget.currentScreen == 'nontranauth',
+                    onTap: () =>
+                        widget.onNavigate('nontranauth', null),
+                  ),
+                ],
               ],
             ),
           ),
-          
+
           const Divider(height: 1, color: AppColors.border2),
+
+          // 🔹 LOGOUT
           Padding(
             padding: const EdgeInsets.all(12),
             child: AmsSidebarItem(
-              label: isCollapsed ? '' : 'Logout',
+              label: widget.isCollapsed ? '' : 'Logout',
               icon: Icons.logout_rounded,
               isSelected: false,
-              onTap: () => onNavigate('login', null),
+              onTap: () => widget.onNavigate('login', null),
             ),
           ),
         ],
@@ -1307,7 +1442,10 @@ class AmsSidebar extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(24, 8, 24, 8),
       child: Text(
         title,
-        style: monoStyle(size: 10, weight: FontWeight.w800, color: AppColors.ink4),
+        style: monoStyle(
+            size: 10,
+            weight: FontWeight.w800,
+            color: AppColors.ink4),
       ),
     );
   }

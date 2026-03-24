@@ -26,7 +26,7 @@ class AppColors {
   static const Color nTealDk = Color(0xFF01579B);
 
   // Semantic
-  static const Color green = Color(0xFF22C55E); // Real green
+  static const Color green = Color(0xFF22C55E); // Real green (from feature/ui)
   static const Color greenLt = Color(0xFFDCFCE7);
   static const Color red = Color(0xFFC9253A);
   static const Color redLt = Color(0xFFFDE8EB);

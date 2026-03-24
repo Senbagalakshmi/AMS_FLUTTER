@@ -196,7 +196,14 @@ class _AmsRootState extends State<AmsRoot> {
 
   Future<void> _handleAuthProcess(AuthRecord record, bool isApprove) async {
     final action = isApprove ? 'approve' : 'reject';
-    final success = await apiService.processAuth(record.authSl, action);
+    
+    int level = 1;
+    if (record.flUser != null && record.flUser != '0' && record.flUser!.trim().isNotEmpty) level = 2;
+    if (record.slUser != null && record.slUser != '0' && record.slUser!.trim().isNotEmpty) level = 3;
+    final userId = _state.userName ?? 'SYSTEM';
+
+    final success = await apiService.processAuth(record.authSl, action, level, userId);
+
     if (success) {
       _toast(isApprove ? '✅' : '❌',
           'Request ${record.authSl} ${isApprove ? 'authorized' : 'rejected'} successfully!');
