@@ -1,0 +1,345 @@
+import 'models/models.dart';
+
+final Map<String, Auth101Config> auth101 = {
+  'LOAN-DIS': const Auth101Config(
+      id: 'LOAN-DIS',
+      name: 'Loan Disbursement',
+      approvalReq: true,
+      isTran: true,
+      levels: 3),
+  'NEFT-TXN': const Auth101Config(
+      id: 'NEFT-TXN',
+      name: 'NEFT / Fund Transfer',
+      approvalReq: true,
+      isTran: true,
+      levels: 2),
+  'FD-OPEN': const Auth101Config(
+      id: 'FD-OPEN',
+      name: 'Fixed Deposit Opening',
+      approvalReq: true,
+      isTran: true,
+      levels: 2),
+  'RD-OPEN': const Auth101Config(
+      id: 'RD-OPEN',
+      name: 'Recurring Deposit',
+      approvalReq: true,
+      isTran: true,
+      levels: 1),
+  'USR-CRT': const Auth101Config(
+      id: 'USR-CRT',
+      name: 'User',
+      approvalReq: true,
+      isTran: false,
+      levels: 1),
+  'ROLE-CRT': const Auth101Config(
+      id: 'ROLE-CRT',
+      name: 'User-Role Assignment',
+      approvalReq: true,
+      isTran: false,
+      levels: 1),
+  'USR-ROLE': const Auth101Config(
+      id: 'USR-ROLE',
+      name: 'Role',
+      approvalReq: true,
+      isTran: false,
+      levels: 1),
+  'MOD-CRT': const Auth101Config(
+      id: 'MOD-CRT',
+      name: 'Module',
+      approvalReq: true,
+      isTran: false,
+      levels: 1),
+  'MENU-CRT': const Auth101Config(
+      id: 'MENU-CRT',
+      name: 'Menu',
+      approvalReq: true,
+      isTran: false,
+      levels: 1),
+  'AUTHCTL': const Auth101Config(
+      id: 'AUTHCTL',
+      name: 'Auth Controller',
+      approvalReq: true,
+      isTran: false,
+      levels: 1),
+  'nontranauth': const Auth101Config(
+      id: 'nontranauth',
+      name: 'Authorization',
+      approvalReq: false,
+      isTran: false,
+      levels: 0),
+  'GL-CAT': const Auth101Config(
+      id: 'GL-CAT',
+      name: 'GL Category',
+      approvalReq: true,
+      isTran: false,
+      levels: 1),
+  'GL-MST': const Auth101Config(
+      id: 'GL-MST',
+      name: 'GL Master',
+      approvalReq: true,
+      isTran: false,
+      levels: 1),
+  'GL-CUR': const Auth101Config(
+      id: 'GL-CUR',
+      name: 'Allowed Currency',
+      approvalReq: true,
+      isTran: false,
+      levels: 1),
+  'GL-BRN': const Auth101Config(
+      id: 'GL-BRN',
+      name: 'Allowed Branch',
+      approvalReq: true,
+      isTran: false,
+      levels: 1),
+  'GL-SEG': const Auth101Config(
+      id: 'GL-SEG',
+      name: 'GL Segments',
+      approvalReq: true,
+      isTran: false,
+      levels: 1),
+  'GL-ATT': const Auth101Config(
+      id: 'GL-ATT',
+      name: 'GL Attributes',
+      approvalReq: true,
+      isTran: false,
+      levels: 1),
+};
+
+final Map<String, List<Auth103Limit>> auth103 = {
+  'LOAN-DIS': [
+    const Auth103Limit(
+        from: 0, to: 100000, role: 'CLERK', approver: 'Clerk Level'),
+    const Auth103Limit(
+        from: 100001,
+        to: 1000000,
+        role: 'BRANCH_MGR',
+        approver: 'Branch Manager'),
+    const Auth103Limit(
+        from: 1000001,
+        to: 50000000,
+        role: 'REGIONAL_MGR',
+        approver: 'Regional Manager'),
+  ],
+  'NEFT-TXN': [
+    const Auth103Limit(
+        from: 0, to: 200000, role: 'CLERK', approver: 'Clerk Level'),
+    const Auth103Limit(
+        from: 200001,
+        to: 2000000,
+        role: 'BRANCH_MGR',
+        approver: 'Branch Manager'),
+  ],
+  'FD-OPEN': [
+    const Auth103Limit(
+        from: 5000,
+        to: 1000000,
+        role: 'BRANCH_MGR',
+        approver: 'Branch Manager'),
+  ],
+  'RD-OPEN': [
+    const Auth103Limit(
+        from: 1000, to: 100000, role: 'CLERK', approver: 'Clerk Level'),
+  ],
+};
+
+const List<String> tranPrograms = [];
+const List<String> nonTranPrograms = [];
+
+final Map<String, String> tranProgPkPrefix = {
+  'LOAN-DIS': 'LN',
+  'NEFT-TXN': 'NT',
+  'FD-OPEN': 'FD',
+  'RD-OPEN': 'RD',
+};
+
+final Map<String, String> nonTranProgPkPrefix = {
+  'USR-CRT': 'USR',
+  'ROLE-CRT': 'ROL',
+  'USR-ROLE': 'URA',
+  'MOD-CRT': 'MOD',
+  'MENU-CRT': 'MNU',
+  'AUTHCTL': 'ACTL',
+  'nontranauth': 'NTA',
+  'GL-CAT': 'GLC',
+  'GL-MST': 'GLM',
+  'GL-CUR': 'GLCU',
+  'GL-BRN': 'GLB',
+  'GL-SEG': 'GLS',
+  'GL-ATT': 'GLA',
+};
+
+List<QueueEntry> seedQueue() => [
+      QueueEntry(
+          authsl: '2026-0041',
+          type: 'T',
+          prog: 'LOAN-DIS',
+          name: 'Loan Disbursement',
+          user: 'Priya R.',
+          date: '10/03/26',
+          amount: '₹4,50,000',
+          level: 'L1',
+          risk: false,
+          locked: false,
+          isNew: false),
+      QueueEntry(
+          authsl: '2026-0040',
+          type: 'T',
+          prog: 'FD-OPEN',
+          name: 'Fixed Deposit',
+          user: 'Ravi K.',
+          date: '10/03/26',
+          amount: '₹2,00,000',
+          level: 'L1',
+          risk: true,
+          locked: false,
+          isNew: false),
+      QueueEntry(
+          authsl: '2026-0039',
+          type: 'T',
+          prog: 'NEFT-TXN',
+          name: 'NEFT Transfer',
+          user: 'Sunita M.',
+          date: '09/03/26',
+          amount: '₹1,20,000',
+          level: 'L2',
+          risk: false,
+          locked: false,
+          isNew: false),
+      QueueEntry(
+          authsl: '2026-0038',
+          type: 'N',
+          prog: 'CASA-OPN',
+          name: 'CASA Opening',
+          user: 'Amit B.',
+          date: '09/03/26',
+          amount: '—',
+          level: 'L1',
+          risk: false,
+          locked: true,
+          isNew: false),
+      QueueEntry(
+          authsl: '2026-0037',
+          type: 'N',
+          prog: 'ADDR-UPD',
+          name: 'Address Update',
+          user: 'Neha P.',
+          date: '08/03/26',
+          amount: '—',
+          level: 'L1',
+          risk: false,
+          locked: false,
+          isNew: false),
+      QueueEntry(
+          authsl: '2026-0036',
+          type: 'T',
+          prog: 'NEFT-TXN',
+          name: 'NEFT Transfer',
+          user: 'Karan T.',
+          date: '08/03/26',
+          amount: '₹35,000',
+          level: 'L1',
+          risk: false,
+          locked: false,
+          isNew: false),
+      QueueEntry(
+          authsl: '2026-0035',
+          type: 'N',
+          prog: 'NOM-UPD',
+          name: 'Nominee Update',
+          user: 'Maya S.',
+          date: '07/03/26',
+          amount: '—',
+          level: 'L2',
+          risk: false,
+          locked: false,
+          isNew: false),
+    ];
+List<AuthRecord> seedAuthQueue() => [
+      AuthRecord(
+        orgCode: 'AMS001',
+        effDate: '2026-03-11',
+        programId: 'USR-CRT',
+        primaryKey: 'USR_ARJUN_M',
+        authSl: '2026-0001',
+        displayRemarks: 'Creation of new clerk user Arjun Mehta',
+        eUser: 'SYSTEM_ADMIN',
+        eDate: '2026-03-11 10:30:00',
+        flUser: '0',
+        slUser: '0',
+        tlUser: '0',
+        dataBlocks: [
+          AuthDataBlock(
+            recSl: 1,
+            tableName: 'USERS',
+            data: {
+              'ORGCODE': '50',
+              'USERSCD': 'arjun_m',
+              'MENUTYPE': '1 - Rolewise',
+              'GENDER': 'Male',
+              'TITLE': 'Mr.',
+              'FNAME': 'Arjun',
+              'MNAME': '',
+              'LNAME': 'Mehta',
+              'EMAIL': 'arjun.m@example.com',
+              'MOBILE': '9876543210',
+              'COUNTRY': 'IN',
+            },
+          ),
+        ],
+      ),
+      AuthRecord(
+        orgCode: 'AMS001',
+        effDate: '2026-03-11',
+        programId: 'ROLE-CRT',
+        primaryKey: 'ASGN_ARJUN_10',
+        authSl: '2026-0002',
+        displayRemarks: 'Assigning Role 10 to user Arjun Mehta',
+        eUser: 'HR_MNGR',
+        eDate: '2026-03-11 11:15:00',
+        flUser: '0',
+        slUser: '0',
+        tlUser: '0',
+        dataBlocks: [
+          AuthDataBlock(
+            recSl: 1,
+            tableName: 'USERS002',
+            data: {
+              'ORGCODE': '50',
+              'USERSCD': 'arjun_m',
+              'ROLECD': '10',
+            },
+          ),
+        ],
+      ),
+      AuthRecord(
+        orgCode: 'AMS001',
+        effDate: '2026-03-11',
+        programId: 'USR-ROLE',
+        primaryKey: 'ROL_SR_AUDIT',
+        authSl: '2026-0003',
+        displayRemarks: 'New Senior Auditor role with restricted view access',
+        eUser: 'SYSTEM_ADMIN',
+        eDate: '2026-03-11 14:40:00',
+        flUser: '0',
+        slUser: '0',
+        tlUser: '0',
+        dataBlocks: [
+          AuthDataBlock(
+            recSl: 1,
+            tableName: 'ROLE001',
+            data: {
+              'ORGCODE': '50',
+              'ROLECD': '101',
+              'ROLENAME': 'Senior Auditor',
+              'ROLETYPE': 'M',
+              'ROLESUBTYPE': 'AUDIT',
+              'VIEWACCESS': '1 - Enable',
+              'AUTHACCESS': '0 - Disable',
+              'MAKERACCESS': '1 - Enable',
+              'ADMINACCESS': '0 - Disable',
+              'SYSADMINACCESS': '0 - Disable',
+            },
+          ),
+        ],
+      ),
+    ];
