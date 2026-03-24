@@ -173,7 +173,7 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     if (_selProg != null) ...[
-                      _DynamicNTFields(
+                      DynamicNTFields(
                         prog: _selProg!,
                         initialData: _viewRecord,
                         isViewMode: _viewRecord != null,
@@ -607,13 +607,13 @@ class _AuthCtrlListViewState extends State<_AuthCtrlListView> {
   }
 }
 
-class _DynamicNTFields extends StatelessWidget {
+class DynamicNTFields extends StatelessWidget {
   final String prog;
   final void Function(String key, dynamic val) onChanged;
   final Map<String, dynamic>? initialData;
   final bool isViewMode;
 
-  const _DynamicNTFields({
+  const DynamicNTFields({
     required this.prog,
     required this.onChanged,
     this.initialData,
@@ -647,7 +647,7 @@ class _DynamicNTFields extends StatelessWidget {
                 required: true,
                 tooltip: 'Unique identification code for the user.',
                 child: AmsTextInput(
-                  initialValue: initialData?['usersCd']?.toString(),
+                  initialValue: (initialData?['usersCd'] ?? initialData?['userscd'])?.toString(),
                   readOnly: isViewMode,
                   placeholder: 'User Code (e.g. USR001)',
                   onChanged: isViewMode ? null : (v) => onChanged('usersCd', v),
@@ -658,7 +658,7 @@ class _DynamicNTFields extends StatelessWidget {
                 required: true,
                 tooltip: 'Method of menu assignment (Role-based vs User-based).',
                 child: AmsDropdown(
-                  initialValue: initialData?['menuType']?.toString() == '2' ? '2 - Userwise' : (initialData?['menuType'] != null ? '1 - Rolewise' : null),
+                  initialValue: (initialData?['menuType'] ?? initialData?['menutype'])?.toString() == '2' ? '2 - Userwise' : ((initialData?['menuType'] ?? initialData?['menutype']) != null ? '1 - Rolewise' : null),
                   items: const ['1 - Rolewise', '2 - Userwise'],
                   onChanged: isViewMode ? null : (v) => onChanged('menuType', (v ?? '1').startsWith('1') ? 1 : 2),
                 ),
@@ -692,7 +692,7 @@ class _DynamicNTFields extends StatelessWidget {
                     Expanded(
                       flex: 3,
                       child: AmsTextInput(
-                        initialValue: initialData?['fName']?.toString(),
+                        initialValue: (initialData?['fName'] ?? initialData?['fname'])?.toString(),
                         readOnly: isViewMode,
                         placeholder: 'FNAME',
                         onChanged: isViewMode ? null : (v) => onChanged('fName', v),
@@ -702,7 +702,7 @@ class _DynamicNTFields extends StatelessWidget {
                     Expanded(
                       flex: 3,
                       child: AmsTextInput(
-                        initialValue: initialData?['mName']?.toString(),
+                        initialValue: (initialData?['mName'] ?? initialData?['mname'])?.toString(),
                         readOnly: isViewMode,
                         placeholder: 'MNAME',
                         onChanged: isViewMode ? null : (v) => onChanged('mName', v),
@@ -712,7 +712,7 @@ class _DynamicNTFields extends StatelessWidget {
                     Expanded(
                       flex: 3,
                       child: AmsTextInput(
-                        initialValue: initialData?['lName']?.toString(),
+                        initialValue: (initialData?['lName'] ?? initialData?['lname'])?.toString(),
                         readOnly: isViewMode,
                         placeholder: 'LNAME',
                         onChanged: isViewMode ? null : (v) => onChanged('lName', v),
@@ -782,8 +782,10 @@ class _DynamicNTFields extends StatelessWidget {
                 required: true,
                 tooltip: 'Target User ID for role assignment.',
                 child: AmsTextInput(
+                  initialValue: initialData?['usersCd']?.toString(),
+                  readOnly: isViewMode,
                   placeholder: 'e.g. arjun_m',
-                  onChanged: (v) => onChanged('usersCd', v),
+                  onChanged: isViewMode ? null : (v) => onChanged('usersCd', v),
                 ),
               ),
               AmsField(
@@ -791,10 +793,10 @@ class _DynamicNTFields extends StatelessWidget {
                 required: true,
                 tooltip: 'Role ID to be assigned.',
                 child: AmsTextInput(
-                  initialValue: '10',
+                  initialValue: initialData?['roleCd']?.toString() ?? '10',
+                  readOnly: isViewMode,
                   placeholder: 'e.g. 10',
-                  onChanged: (v) =>
-                      onChanged('roleCd', int.tryParse(v) ?? 10),
+                  onChanged: isViewMode ? null : (v) => onChanged('roleCd', int.tryParse(v) ?? 10),
                 ),
               ),
             ],
@@ -824,8 +826,10 @@ class _DynamicNTFields extends StatelessWidget {
                 required: true,
                 tooltip: 'Unique numerical identifier for the role.',
                 child: AmsTextInput(
+                  initialValue: initialData?['roleCd']?.toString(),
+                  readOnly: isViewMode,
                   placeholder: 'e.g. 101',
-                  onChanged: (v) =>
+                  onChanged: isViewMode ? null : (v) =>
                       onChanged('roleCd', int.tryParse(v) ?? 0),
                 ),
               ),
@@ -834,8 +838,10 @@ class _DynamicNTFields extends StatelessWidget {
                 required: true,
                 tooltip: 'Descriptive name for the role.',
                 child: AmsTextInput(
+                  initialValue: initialData?['roleName']?.toString(),
+                  readOnly: isViewMode,
                   placeholder: 'e.g. Senior Auditor',
-                  onChanged: (v) => onChanged('roleName', v),
+                  onChanged: isViewMode ? null : (v) => onChanged('roleName', v),
                 ),
               ),
               AmsField(
@@ -843,28 +849,32 @@ class _DynamicNTFields extends StatelessWidget {
                 required: true,
                 tooltip: 'Primary categorization of the role.',
                 child: AmsDropdown(
+                  initialValue: initialData?['roleType'] != null ? '${initialData!['roleType']} - ${initialData!['roleType'] == 'M' ? 'Master' : (initialData!['roleType'] == 'S' ? 'System' : 'Transaction')}' : null,
                   items: const [
                     'M - Master',
                     'S - System',
                     'T - Transaction'
                   ],
-                  onChanged: (v) => onChanged('roleType', v?[0]),
+                  onChanged: isViewMode ? null : (v) => onChanged('roleType', v?[0]),
                 ),
               ),
               AmsField(
                 label: 'ROLESUBTYPE',
                 tooltip: 'Secondary categorization for future usage.',
                 child: AmsTextInput(
+                  initialValue: initialData?['roleSubType']?.toString(),
+                  readOnly: isViewMode,
                   placeholder: 'e.g. AUDIT',
-                  onChanged: (v) => onChanged('roleSubType', v),
+                  onChanged: isViewMode ? null : (v) => onChanged('roleSubType', v),
                 ),
               ),
               AmsField(
                 label: 'VIEWACCESS',
                 tooltip: 'Whether this role is to view the data.',
                 child: AmsDropdown(
+                  initialValue: initialData?['viewAccess']?.toString() == '1' ? '1 - Enable' : (initialData?['viewAccess'] != null ? '0 - Disable' : null),
                   items: const ['1 - Enable', '0 - Disable'],
-                  onChanged: (v) => onChanged(
+                  onChanged: isViewMode ? null : (v) => onChanged(
                       'viewAccess', (v ?? '0').startsWith('1') ? 1 : 0),
                 ),
               ),
@@ -872,8 +882,9 @@ class _DynamicNTFields extends StatelessWidget {
                 label: 'AUTHACCESS',
                 tooltip: 'Whether this role is allowed to authorize.',
                 child: AmsDropdown(
+                  initialValue: initialData?['authAccess']?.toString() == '1' ? '1 - Enable' : (initialData?['authAccess'] != null ? '0 - Disable' : null),
                   items: const ['1 - Enable', '0 - Disable'],
-                  onChanged: (v) => onChanged(
+                  onChanged: isViewMode ? null : (v) => onChanged(
                       'authAccess', (v ?? '0').startsWith('1') ? 1 : 0),
                 ),
               ),
@@ -881,8 +892,9 @@ class _DynamicNTFields extends StatelessWidget {
                 label: 'MAKERACCESS',
                 tooltip: 'Whether this role is allowed to make entries.',
                 child: AmsDropdown(
+                  initialValue: initialData?['makerAccess']?.toString() == '1' ? '1 - Enable' : (initialData?['makerAccess'] != null ? '0 - Disable' : null),
                   items: const ['1 - Enable', '0 - Disable'],
-                  onChanged: (v) => onChanged(
+                  onChanged: isViewMode ? null : (v) => onChanged(
                       'makerAccess', (v ?? '0').startsWith('1') ? 1 : 0),
                 ),
               ),
@@ -890,8 +902,9 @@ class _DynamicNTFields extends StatelessWidget {
                 label: 'ADMINACCESS',
                 tooltip: 'Administration access for configuration.',
                 child: AmsDropdown(
+                  initialValue: initialData?['adminAccess']?.toString() == '1' ? '1 - Enable' : (initialData?['adminAccess'] != null ? '0 - Disable' : null),
                   items: const ['1 - Enable', '0 - Disable'],
-                  onChanged: (v) => onChanged(
+                  onChanged: isViewMode ? null : (v) => onChanged(
                       'adminAccess', (v ?? '0').startsWith('1') ? 1 : 0),
                 ),
               ),
@@ -899,8 +912,9 @@ class _DynamicNTFields extends StatelessWidget {
                 label: 'SYSADMINACCESS',
                 tooltip: 'System administration access.',
                 child: AmsDropdown(
+                  initialValue: initialData?['sysAdminAccess']?.toString() == '1' ? '1 - Enable' : (initialData?['sysAdminAccess'] != null ? '0 - Disable' : null),
                   items: const ['1 - Enable', '0 - Disable'],
-                  onChanged: (v) => onChanged(
+                  onChanged: isViewMode ? null : (v) => onChanged(
                       'sysAdminAccess', (v ?? '0').startsWith('1') ? 1 : 0),
                 ),
               ),
@@ -909,7 +923,11 @@ class _DynamicNTFields extends StatelessWidget {
         );
 
       case 'MOD-CRT':
-        return _ModCrtFields(onChanged: onChanged);
+        return _ModCrtFields(
+            onChanged: onChanged,
+            initialData: initialData,
+            isViewMode: isViewMode,
+        );
       case 'MENU-CRT':
         return Container(
           padding: const EdgeInsets.all(24),
@@ -929,15 +947,19 @@ class _DynamicNTFields extends StatelessWidget {
                       Expanded(
                         flex: 1,
                         child: AmsTextInput(
+                            initialValue: initialData?['pgmId']?.toString(),
+                            readOnly: isViewMode,
                             placeholder: 'ID (Code)',
-                            onChanged: (v) => onChanged('pgmId', v)),
+                            onChanged: isViewMode ? null : (v) => onChanged('pgmId', v)),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         flex: 2,
                         child: AmsTextInput(
+                            initialValue: initialData?['descn']?.toString(),
+                            readOnly: isViewMode,
                             placeholder: 'Program Name (e.g. Reports)',
-                            onChanged: (v) => onChanged('descn', v)),
+                            onChanged: isViewMode ? null : (v) => onChanged('descn', v)),
                       ),
                     ],
                   )),
@@ -948,15 +970,19 @@ class _DynamicNTFields extends StatelessWidget {
                     children: [
                       Expanded(
                         child: AmsTextInput(
+                            initialValue: initialData?['module']?.toString(),
+                            readOnly: isViewMode,
                             placeholder: 'Module ID',
-                            onChanged: (v) =>
+                            onChanged: isViewMode ? null : (v) =>
                                 onChanged('module', int.tryParse(v) ?? 1)),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: AmsTextInput(
+                            initialValue: initialData?['subModule']?.toString(),
+                            readOnly: isViewMode,
                             placeholder: 'Sub-Module ID',
-                            onChanged: (v) =>
+                            onChanged: isViewMode ? null : (v) =>
                                 onChanged('subModule', int.tryParse(v) ?? 0)),
                       ),
                     ],
@@ -965,9 +991,10 @@ class _DynamicNTFields extends StatelessWidget {
                   label: 'Menu Status',
                   required: true,
                   child: AmsDropdown(
+                      initialValue: initialData?['status']?.toString() == '1' ? 'Active' : (initialData?['status'] != null ? 'Inactive' : null),
                       placeholder: 'Status',
                       items: const ['Active', 'Inactive'],
-                      onChanged: (v) =>
+                      onChanged: isViewMode ? null : (v) =>
                           onChanged('status', v == 'Active' ? 1 : 0))),
             ],
           ),
@@ -989,8 +1016,10 @@ class _DynamicNTFields extends StatelessWidget {
                 tooltip:
                     'Unique identifier for the program. e.g. LOAN, NEFT',
                 child: AmsTextInput(
+                  initialValue: initialData?['programId']?.toString(),
+                  readOnly: isViewMode,
                   placeholder: 'e.g. LOAN',
-                  onChanged: (v) => onChanged('programId', v),
+                  onChanged: isViewMode ? null : (v) => onChanged('programId', v),
                 ),
               ),
               AmsField(
@@ -999,9 +1028,10 @@ class _DynamicNTFields extends StatelessWidget {
                 tooltip:
                     'Whether this program requires authorization approval.',
                 child: AmsDropdown(
+                  initialValue: initialData?['approvalReq']?.toString() == '1' ? 'Yes' : (initialData?['approvalReq'] != null ? 'No' : null),
                   placeholder: 'Select...',
                   items: const ['Yes', 'No'],
-                  onChanged: (v) =>
+                  onChanged: isViewMode ? null : (v) =>
                       onChanged('approvalReq', v == 'Yes' ? 1 : 0),
                 ),
               ),
@@ -1010,9 +1040,10 @@ class _DynamicNTFields extends StatelessWidget {
                 tooltip:
                     'Run a procedure before the authorization is approved.',
                 child: AmsDropdown(
+                  initialValue: initialData?['preApproveProc']?.toString() == '1' ? 'Yes' : (initialData?['preApproveProc'] != null ? 'No' : null),
                   placeholder: 'Select...',
                   items: const ['Yes', 'No'],
-                  onChanged: (v) =>
+                  onChanged: isViewMode ? null : (v) =>
                       onChanged('preApproveProc', v == 'Yes' ? 1 : 0),
                 ),
               ),
@@ -1021,9 +1052,10 @@ class _DynamicNTFields extends StatelessWidget {
                 tooltip:
                     'Run a procedure after the authorization is approved.',
                 child: AmsDropdown(
+                  initialValue: initialData?['postApproveProc']?.toString() == '1' ? 'Yes' : (initialData?['postApproveProc'] != null ? 'No' : null),
                   placeholder: 'Select...',
                   items: const ['Yes', 'No'],
-                  onChanged: (v) =>
+                  onChanged: isViewMode ? null : (v) =>
                       onChanged('postApproveProc', v == 'Yes' ? 1 : 0),
                 ),
               ),
@@ -1032,15 +1064,18 @@ class _DynamicNTFields extends StatelessWidget {
                 required: true,
                 tooltip: 'Whether this is a Transaction Program (ISTRANPGM).',
                 child: AmsDropdown(
+                  initialValue: initialData?['isTranPgm']?.toString() == '1' ? 'Yes' : (initialData?['isTranPgm'] != null ? 'No' : null),
                   placeholder: 'Is Transaction Program?',
                   items: const ['Yes', 'No'],
-                  onChanged: (v) =>
+                  onChanged: isViewMode ? null : (v) =>
                       onChanged('isTranPgm', v == 'Yes' ? 1 : 0),
                 ),
               ),
               AmsField(
                 label: 'Authorization Levels',
                 child: _Auth102LevelGrid(
+                    initialData: initialData?['authLevels'],
+                    isViewMode: isViewMode,
                     onChanged: (levels) => onChanged('authLevels', levels)),
               ),
             ],
@@ -1079,7 +1114,9 @@ class _FormGrid extends StatelessWidget {
 
 class _Auth102LevelGrid extends StatefulWidget {
   final void Function(List<Map<String, dynamic>> levels) onChanged;
-  const _Auth102LevelGrid({required this.onChanged});
+  final dynamic initialData;
+  final bool isViewMode;
+  const _Auth102LevelGrid({required this.onChanged, this.initialData, this.isViewMode = false});
 
   @override
   State<_Auth102LevelGrid> createState() => _Auth102LevelGridState();
@@ -1087,6 +1124,18 @@ class _Auth102LevelGrid extends StatefulWidget {
 
 class _Auth102LevelGridState extends State<_Auth102LevelGrid> {
   final List<Map<String, dynamic>> _levels = [];
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialData != null && widget.initialData is List) {
+      for (var item in widget.initialData) {
+        if (item is Map) {
+          _levels.add(Map<String, dynamic>.from(item));
+        }
+      }
+    }
+  }
 
   void _addLevel() {
     setState(() {
@@ -1168,14 +1217,15 @@ class _Auth102LevelGridState extends State<_Auth102LevelGrid> {
                               size: 12,
                               weight: FontWeight.w700,
                               color: AppColors.nTeal)),
-                      IconButton(
-                        icon: const Icon(Icons.close,
-                            size: 18, color: AppColors.red),
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
-                        onPressed: () => _removeLevel(i),
-                        tooltip: 'Remove Level',
-                      ),
+                      if (!widget.isViewMode)
+                        IconButton(
+                          icon: const Icon(Icons.close,
+                              size: 18, color: AppColors.red),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                          onPressed: () => _removeLevel(i),
+                          tooltip: 'Remove Level',
+                        ),
                     ],
                   ),
                   const SizedBox(height: 12),
@@ -1185,9 +1235,9 @@ class _Auth102LevelGridState extends State<_Auth102LevelGrid> {
                       AmsField(
                         label: 'Permission Type',
                         child: AmsDropdown(
-                          initialValue: _levels[i]['permissionType'] as String,
+                          initialValue: _levels[i]['permissionType'] as String?,
                           items: const ['R - Role', 'U - User'],
-                          onChanged: (v) =>
+                          onChanged: widget.isViewMode ? null : (v) =>
                               _updateLevel(i, 'permissionType', v),
                         ),
                       ),
@@ -1200,10 +1250,10 @@ class _Auth102LevelGridState extends State<_Auth102LevelGrid> {
                                 color: AppColors.ink3)
                             : null,
                         child: AmsTextInput(
-                          initialValue: _levels[i]['roleCd'] as String,
+                          initialValue: _levels[i]['roleCd']?.toString(),
                           placeholder: 'e.g. 101',
-                          readOnly: _levels[i]['permissionType'] == 'U - User',
-                          onChanged: (v) => _updateLevel(i, 'roleCd', v),
+                          readOnly: widget.isViewMode || _levels[i]['permissionType'] == 'U - User',
+                          onChanged: widget.isViewMode ? null : (v) => _updateLevel(i, 'roleCd', v),
                         ),
                       ),
                       AmsField(
@@ -1215,10 +1265,10 @@ class _Auth102LevelGridState extends State<_Auth102LevelGrid> {
                                 color: AppColors.ink3)
                             : null,
                         child: AmsTextInput(
-                          initialValue: _levels[i]['userId'] as String,
+                          initialValue: _levels[i]['userId']?.toString(),
                           placeholder: 'e.g. EMP123',
-                          readOnly: _levels[i]['permissionType'] == 'R - Role',
-                          onChanged: (v) => _updateLevel(i, 'userId', v),
+                          readOnly: widget.isViewMode || _levels[i]['permissionType'] == 'R - Role',
+                          onChanged: widget.isViewMode ? null : (v) => _updateLevel(i, 'userId', v),
                         ),
                       ),
                     ],
@@ -1226,15 +1276,17 @@ class _Auth102LevelGridState extends State<_Auth102LevelGrid> {
                 ],
               ),
             ),
-          const SizedBox(height: 16),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: AmsButton(
-              label: '+ Add Level',
-              variant: AmsButtonVariant.outline,
-              onPressed: _addLevel,
+          if (!widget.isViewMode) ...[
+            const SizedBox(height: 16),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: AmsButton(
+                label: '+ Add Level',
+                variant: AmsButtonVariant.outline,
+                onPressed: _addLevel,
+              ),
             ),
-          ),
+          ],
         ],
       ),
     );
@@ -1245,7 +1297,9 @@ class _Auth102LevelGridState extends State<_Auth102LevelGrid> {
 
 class _ModCrtFields extends StatefulWidget {
   final void Function(String key, dynamic val) onChanged;
-  const _ModCrtFields({required this.onChanged});
+  final Map<String, dynamic>? initialData;
+  final bool isViewMode;
+  const _ModCrtFields({required this.onChanged, this.initialData, this.isViewMode = false});
 
   @override
   State<_ModCrtFields> createState() => _ModCrtFieldsState();
@@ -1253,6 +1307,12 @@ class _ModCrtFields extends StatefulWidget {
 
 class _ModCrtFieldsState extends State<_ModCrtFields> {
   bool _subModuleEnabled = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _subModuleEnabled = widget.initialData?['subModuleRequired']?.toString() == '1';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1271,9 +1331,11 @@ class _ModCrtFieldsState extends State<_ModCrtFields> {
             required: true,
             tooltip: 'Unique ID for the module. e.g. 1, 2, 3, 4',
             child: AmsTextInput(
+              initialValue: widget.initialData?['moduleId']?.toString(),
+              readOnly: widget.isViewMode,
               placeholder: 'e.g. 1',
               keyboardType: TextInputType.number,
-              onChanged: (v) =>
+              onChanged: widget.isViewMode ? null : (v) =>
                   widget.onChanged('moduleId', int.tryParse(v) ?? 0),
             ),
           ),
@@ -1283,8 +1345,10 @@ class _ModCrtFieldsState extends State<_ModCrtFields> {
             tooltip:
                 'Display name of the module. e.g. Chat, Voice Call, Video Call',
             child: AmsTextInput(
+              initialValue: widget.initialData?['moduleName']?.toString(),
+              readOnly: widget.isViewMode,
               placeholder: 'e.g. Chat',
-              onChanged: (v) => widget.onChanged('moduleName', v),
+              onChanged: widget.isViewMode ? null : (v) => widget.onChanged('moduleName', v),
             ),
           ),
           AmsField(
@@ -1292,9 +1356,10 @@ class _ModCrtFieldsState extends State<_ModCrtFields> {
             required: true,
             tooltip: 'Whether a sub-module is required or not.',
             child: AmsDropdown(
+              initialValue: widget.initialData?['subModuleRequired']?.toString() == '1' ? '1 - Enable' : (widget.initialData?['subModuleRequired'] != null ? '0 - Disable' : null),
               items: const ['1 - Enable', '0 - Disable'],
               placeholder: 'Select...',
-              onChanged: (v) {
+              onChanged: widget.isViewMode ? null : (v) {
                 final enabled = (v ?? '').startsWith('1');
                 setState(() => _subModuleEnabled = enabled);
                 widget.onChanged('subModuleRequired', enabled ? 1 : 0);
@@ -1306,9 +1371,10 @@ class _ModCrtFieldsState extends State<_ModCrtFields> {
             required: true,
             tooltip: '1 - Enable, 0 - Disable the module.',
             child: AmsDropdown(
+              initialValue: widget.initialData?['status']?.toString() == '1' ? '1 - Enable' : (widget.initialData?['status'] != null ? '0 - Disable' : null),
               items: const ['1 - Enable', '0 - Disable'],
               placeholder: 'Select...',
-              onChanged: (v) => widget.onChanged(
+              onChanged: widget.isViewMode ? null : (v) => widget.onChanged(
                   'status', (v ?? '').startsWith('1') ? 1 : 0),
             ),
           ),
@@ -1329,9 +1395,11 @@ class _ModCrtFieldsState extends State<_ModCrtFields> {
                         required: true,
                         tooltip: 'Unique ID for the sub-module.',
                         child: AmsTextInput(
+                          initialValue: widget.initialData?['subModuleId']?.toString(),
+                          readOnly: widget.isViewMode,
                           placeholder: 'e.g. 101',
                           keyboardType: TextInputType.number,
-                          onChanged: (v) => widget.onChanged(
+                          onChanged: widget.isViewMode ? null : (v) => widget.onChanged(
                               'subModuleId', int.tryParse(v) ?? 0),
                         ),
                       ),
@@ -1340,8 +1408,10 @@ class _ModCrtFieldsState extends State<_ModCrtFields> {
                         required: true,
                         tooltip: 'Name of the sub-module.',
                         child: AmsTextInput(
+                          initialValue: widget.initialData?['subModuleName']?.toString(),
+                          readOnly: widget.isViewMode,
                           placeholder: 'e.g. Group Chat',
-                          onChanged: (v) =>
+                          onChanged: widget.isViewMode ? null : (v) =>
                               widget.onChanged('subModuleName', v),
                         ),
                       ),

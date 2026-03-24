@@ -155,10 +155,10 @@ class ApiService {
     } catch (e) { return null; }
   }
 
-  Future<bool> processAuth(String authSl, String action) async {
+  Future<bool> processAuth(String authSl, String action, int level, String userId) async {
     try {
       final res = await http.post(
-        Uri.parse('$baseUrl/auth/$action/$authSl'),
+        Uri.parse('$baseUrl/auth/$action/$authSl?level=$level&userId=$userId'),
         headers: _headers,
       );
       return res.statusCode == 200;

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../theme.dart';
 import '../widgets/widgets.dart';
 import '../models/models.dart';
+import 'nontran_entry_screen.dart';
 
 class NonTranAuthScreen extends StatefulWidget {
   final List<AuthRecord> authQueue;
@@ -203,41 +204,16 @@ class _NonTranAuthScreenState extends State<NonTranAuthScreen> {
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 6),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFE8F4F8),
-                                borderRadius: BorderRadius.circular(6),
-                                border: Border.all(
-                                    color: const Color(0xFF1E6381)
-                                        .withAlpha(60)),
-                              ),
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.table_chart_outlined,
-                                      size: 13,
-                                      color: Color(0xFF1E6381)),
-                                  const SizedBox(width: 6),
-                                  Text('TABLE: ${block.tableName}',
-                                      style: monoStyle(
-                                          size: 11,
-                                          weight: FontWeight.w700,
-                                          color:
-                                              const Color(0xFF1E6381))),
-                                ],
-                              ),
+                            DynamicNTFields(
+                              prog: record.programId,
+                              onChanged: (k, v) {}, // Locked inside isViewMode
+                              initialData: block.data,
+                              isViewMode: true,
                             ),
-                            const SizedBox(height: 14),
-                            ...block.data.entries
-                                .map((e) => _detailRow(e.key, '${e.value}')),
                             const Divider(height: 28),
                           ],
                         );
                       }),
-                      _detailRow('EUSER', record.eUser),
-                      const SizedBox(height: 8),
-                      _detailRow('EDATE', record.eDate),
                     ],
                   ),
                 ),
