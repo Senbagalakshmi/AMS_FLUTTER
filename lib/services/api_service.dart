@@ -16,6 +16,8 @@ class ApiService {
     if (_token != null) 'Authorization': 'Bearer $_token',
   };
 
+  Map<String, String> get headers => _headers;
+
   Future<String?> login(String username, String password) async {
     try {
       final response = await http.post(
