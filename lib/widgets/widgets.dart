@@ -1036,7 +1036,7 @@ class AmsSubmitBar extends StatelessWidget {
 void showAmsToast(BuildContext context, String icon, String msg,
     {String type = 's'}) {
   final Color bg = type == 's'
-      ? AppColors.green
+      ? AppColors.tBlue
       : type == 'w'
           ? AppColors.amber
           : AppColors.tBlue;
@@ -1605,6 +1605,7 @@ class _AmsShellState extends State<AmsShell> {
       backgroundColor: AppColors.bg,
       body: Row(
         children: [
+          /// 🔹 SIDEBAR
           AmsSidebar(
             currentScreen: widget.currentScreen,
             selectedProg: widget.selectedProg,
@@ -1612,148 +1613,12 @@ class _AmsShellState extends State<AmsShell> {
             isCollapsed: _isCollapsed,
             onToggle: () => setState(() => _isCollapsed = !_isCollapsed),
           ),
+
+          /// 🔹 MAIN CONTENT
           Expanded(
             child: Column(
               children: [
-                // Minimal Top Bar for Shell
-                Container(
-                  height: 70,
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    border: Border(bottom: BorderSide(color: AppColors.border, width: 1)),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.search_rounded, color: AppColors.ink3, size: 20),
-                      const SizedBox(width: 12),
-                      Text('Search programs or records...',
-                          style: bodyStyle(size: 14, color: AppColors.ink3)),
-                      const Spacer(),
-                      Row(
-                        children: [
-                          _topIcon(Icons.help_outline_rounded),
-                          const SizedBox(width: 12),
-                          _topIcon(Icons.notifications_none_rounded),
-                          const SizedBox(width: 12),
-                          _topIcon(Icons.settings_outlined),
-                          const SizedBox(width: 20),
-                          Container(
-                            height: 36,
-                            width: 1,
-                            color: AppColors.border,
-                          ),
-                          const SizedBox(width: 20),
-                          Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Text(widget.userName ?? 'Guest User',
-                                  style: bodyStyle(size: 13, weight: FontWeight.w700)),
-                              Text('Administrator',
-                                  style: bodyStyle(size: 11, color: AppColors.ink3)),
-                            ],
-                          ),
-                          const SizedBox(width: 12),
-                          // CircleAvatar(
-                          //   radius: 18,
-                          //   backgroundColor: AppColors.tBlueLt,
-                          //   child: Text(
-                          //     (widget.userName ?? 'A')[0].toUpperCase(),
-                          //     style: bodyStyle(
-                          //         size: 14, weight: FontWeight.w800, color: AppColors.tBlue),
-                          //   ),
-                          // ),
-                        GestureDetector(
-                         onTap: () async {
-                         final user = await UserService.getUserProfile();
-
-                         print("USER DATA : $user");
-
-                         if (user == null) return;
-
-                           showMenu(
-                          context: context,
-                          position: RelativeRect.fromLTRB(
-                          MediaQuery.of(context).size.width - 300, 60, 20, 0,
-                         ),
-                         items: [
-                       PopupMenuItem(
-                       enabled: false,
-                      child: Container(
-                      width: 300,
-                      child: Column(
-                       mainAxisSize: MainAxisSize.min,
-                      children: [
-
-                   CircleAvatar(
-                  radius: 25,
-                  child: Text(
-                    (user['username'] ?? "A")[0],
-                    ),
-                   ),
-
-                   SizedBox(height: 10),
-
-                    Text(
-                    user['username'] ?? "",
-                     style: TextStyle(color: Colors.black),
-                       ),
-
-                      Text(
-                      user['email'] ?? "",
-                      style: TextStyle(color: Colors.black),
-                       ),
-
-                      Text(
-                        "Role: ${user['role'] ?? ""}",
-                        style: TextStyle(color: Colors.black),
-                         ),
-
-                            Divider(),
-
-                           Center(
-                                child: InkWell(
-                                 onTap: () async {
-                                 Navigator.pop(context);
-                                 apiService.updateToken(null);
-                                    widget.onNavigate('login', null);
-                                },
-                                child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: const [
-                                        Icon(Icons.logout, color: Colors.black),
-                                        SizedBox(width: 8),
-                                        Text("Logout",style: TextStyle(color: Colors.black,fontWeight: FontWeight.w600,),
-                                       ),
-                                   ],
-                                  ),
-                                ),
-                             )
-
-                                    ],
-                                  ),
-                                 ),
-                               ),
-                              ],
-                           );
-                          },
-
-                       child: CircleAvatar(
-                        radius: 18,
-                        backgroundColor: AppColors.tBlueLt,
-                         child: Text(
-                          (widget.userName ?? 'A')[0].toUpperCase(),
-                            style: bodyStyle(
-                                  size: 14, weight: FontWeight.w800, color: AppColors.tBlue),
-                            ),
-                          ),
-                         ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
+                _buildTopBar(context),
                 Expanded(child: widget.child),
               ],
             ),
@@ -1763,10 +1628,297 @@ class _AmsShellState extends State<AmsShell> {
     );
   }
 
-  Widget _topIcon(IconData icon) {
+  /// 🔥 TOP BAR (PREMIUM STYLE)
+  Widget _buildTopBar(BuildContext context) {
+    return Container(
+      height: 70,
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: const Border(bottom: BorderSide(color: AppColors.border, width: 1)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          )
+        ],
+      ),
+      child: Row(
+        children: [
+          /// 🔍 SEARCH BOX (PREMIUM)
+          _PremiumSearchBar(),
+
+          const Spacer(),
+
+          /// 🔹 ICONS
+          _topIconBox(Icons.help_outline_rounded, tooltip: 'Help & Support'),
+          const SizedBox(width: 8),
+          _topIconBox(Icons.notifications_none_rounded, tooltip: 'Notifications'),
+          const SizedBox(width: 8),
+          _topIconBox(Icons.settings_outlined, tooltip: 'Settings'),
+
+          const SizedBox(width: 16),
+
+          Container(
+            height: 32,
+            width: 1,
+            color: AppColors.border,
+          ),
+
+          const SizedBox(width: 16),
+
+          /// 🔹 USER INFO + AVATAR
+          _profileAvatar(context),
+        ],
+      ),
+    );
+  }
+
+  /// 🔹 ICON BOX (MODERN STYLE)
+  Widget _topIconBox(IconData icon, {String tooltip = ''}) {
+    return Tooltip(
+      message: tooltip,
+      waitDuration: const Duration(milliseconds: 500),
+      child: _HoverIconButton(icon: icon),
+    );
+  }
+
+  /// 🔥 PROFILE DROPDOWN (CLEAN)
+  Widget _profileAvatar(BuildContext context) {
+    return _PremiumProfileMenu(
+      userName: widget.userName,
+      onNavigate: widget.onNavigate,
+    );
+  }
+}
+
+class _PremiumSearchBar extends StatefulWidget {
+  @override
+  State<_PremiumSearchBar> createState() => _PremiumSearchBarState();
+}
+
+class _PremiumSearchBarState extends State<_PremiumSearchBar> {
+  bool _isFocused = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOutCubic,
+      height: 42,
+      width: _isFocused ? 380 : 300,
+      decoration: BoxDecoration(
+        color: _isFocused ? Colors.white : AppColors.bg,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: _isFocused ? AppColors.tBlue : AppColors.border,
+          width: _isFocused ? 1.5 : 1.0,
+        ),
+        boxShadow: _isFocused
+            ? [
+                BoxShadow(
+                  color: AppColors.tBlue.withValues(alpha: 0.1),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                )
+              ]
+            : null,
+      ),
+      child: Focus(
+        onFocusChange: (hasFocus) => setState(() => _isFocused = hasFocus),
+        child: TextField(
+          style: bodyStyle(size: 14, color: AppColors.ink),
+          decoration: InputDecoration(
+            hintText: "Search programs, module, or ID...",
+            hintStyle: bodyStyle(size: 13, color: AppColors.ink3),
+            prefixIcon: Icon(
+              Icons.search_rounded,
+              size: 20,
+              color: _isFocused ? AppColors.tBlue : AppColors.ink3,
+            ),
+            border: InputBorder.none,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HoverIconButton extends StatefulWidget {
+  final IconData icon;
+  const _HoverIconButton({required this.icon});
+
+  @override
+  State<_HoverIconButton> createState() => _HoverIconButtonState();
+}
+
+class _HoverIconButtonState extends State<_HoverIconButton> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
     return MouseRegion(
       cursor: SystemMouseCursors.click,
-      child: Icon(icon, color: AppColors.ink2, size: 22),
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: _isHovered ? AppColors.tBlueLt : Colors.transparent,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Icon(
+          widget.icon,
+          size: 20,
+          color: _isHovered ? AppColors.tBlue : AppColors.ink2,
+        ),
+      ),
+    );
+  }
+}
+
+class _PremiumProfileMenu extends StatefulWidget {
+  final String? userName;
+  final void Function(String, String?) onNavigate;
+  const _PremiumProfileMenu({this.userName, required this.onNavigate});
+
+  @override
+  State<_PremiumProfileMenu> createState() => _PremiumProfileMenuState();
+}
+
+class _PremiumProfileMenuState extends State<_PremiumProfileMenu> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return PopupMenuButton(
+      offset: const Offset(0, 50),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: 8,
+      tooltip: 'Profile options',
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        onEnter: (_) => setState(() => _isHovered = true),
+        onExit: (_) => setState(() => _isHovered = false),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: _isHovered ? AppColors.bg : Colors.transparent,
+            borderRadius: BorderRadius.circular(30),
+            border: Border.all(
+              color: _isHovered ? AppColors.border : Colors.transparent,
+            )
+          ),
+          child: Row(
+            children: [
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    widget.userName ?? 'Guest User',
+                    style: bodyStyle(size: 13, weight: FontWeight.w700),
+                  ),
+                  Text(
+                    'Administrator',
+                    style: bodyStyle(size: 11, color: AppColors.ink3),
+                  ),
+                ],
+              ),
+              const SizedBox(width: 12),
+              CircleAvatar(
+                radius: 18,
+                backgroundColor: AppColors.tBlueLt,
+                child: Text(
+                  (widget.userName ?? 'A').isNotEmpty ? (widget.userName ?? 'A')[0].toUpperCase() : 'A',
+                  style: bodyStyle(size: 14, weight: FontWeight.w800, color: AppColors.tBlue),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      itemBuilder: (context) => [
+        PopupMenuItem(
+          padding: EdgeInsets.zero,
+          enabled: false,
+          child: FutureBuilder(
+            future: UserService.getUserProfile(),
+            builder: (context, snapshot) {
+              final user = snapshot.data as Map<String, dynamic>?;
+              return Container(
+                width: 280,
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    CircleAvatar(
+                      radius: 32,
+                      backgroundColor: AppColors.tBlueLt,
+                      child: Text(
+                        (user != null && user['username'] != null) ? user['username'][0].toUpperCase() : (widget.userName ?? "A")[0].toUpperCase(),
+                        style: bodyStyle(size: 24, weight: FontWeight.w800, color: AppColors.tBlue),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      user != null ? (user['username'] ?? widget.userName ?? "Guest User") : (widget.userName ?? "Guest User"),
+                      style: bodyStyle(size: 16, weight: FontWeight.w700),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      user != null ? (user['email'] ?? "admin@example.com") : "admin@example.com",
+                      style: bodyStyle(size: 13, color: AppColors.ink3),
+                    ),
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: AppColors.tBlueLt,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        user != null ? (user['role'] ?? "Administrator") : "Administrator",
+                        style: bodyStyle(size: 11, weight: FontWeight.w600, color: AppColors.tBlue),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    const Divider(height: 1),
+                    const SizedBox(height: 16),
+                    InkWell(
+                      borderRadius: BorderRadius.circular(8),
+                      onTap: () async {
+                        Navigator.pop(context);
+                        apiService.updateToken(null);
+                        widget.onNavigate('login', null);
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        decoration: BoxDecoration(
+                          color: AppColors.redLt,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.logout_rounded, size: 18, color: AppColors.red),
+                            const SizedBox(width: 8),
+                            Text("Logout", style: bodyStyle(size: 14, weight: FontWeight.w600, color: AppColors.red)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 }
