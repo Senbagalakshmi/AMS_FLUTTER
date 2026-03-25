@@ -69,13 +69,14 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
       ..._dynamicData,
     };
 
-    final safeCfg = _cfg ?? Auth101Config(
-      id: _selProg!,
-      name: _selProg!,
-      approvalReq: false,
-      isTran: false,
-      levels: 1,
-    );
+    final safeCfg = _cfg ??
+        Auth101Config(
+          id: _selProg!,
+          name: _selProg!,
+          approvalReq: false,
+          isTran: false,
+          levels: 1,
+        );
 
     widget.onSubmit(_selProg!, safeCfg, authsl, fullData);
   }
@@ -95,9 +96,12 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
     final isMenuScreenList = _selProg == 'MENU-CRT' && !_showForm;
     final isAuthCtrlScreenList = _selProg == 'AUTHCTL' && !_showForm;
 
-    final isAnyList = isUserScreenList || isRoleScreenList || 
-        isUserRoleScreenList || isModuleScreenList || 
-        isMenuScreenList || isAuthCtrlScreenList;
+    final isAnyList = isUserScreenList ||
+        isRoleScreenList ||
+        isUserRoleScreenList ||
+        isModuleScreenList ||
+        isMenuScreenList ||
+        isAuthCtrlScreenList;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -113,8 +117,8 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      _cfg != null 
-                          ? (isAnyList ? _cfg!.name : 'New ${_cfg!.name}') 
+                      _cfg != null
+                          ? (isAnyList ? _cfg!.name : 'New ${_cfg!.name}')
                           : 'New Record',
                       style: bodyStyle(
                         size: 22,
@@ -138,10 +142,15 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
                         small: true,
                         icon: Icons.arrow_back_ios_new_rounded,
                         onPressed: [
-                          'USR-CRT', 'USR-ROLE', 'ROLE-CRT', 
-                          'MOD-CRT', 'MENU-CRT', 'AUTHCTL'
-                        ].contains(_selProg) && _showForm 
-                            ? () => setState(() => _showForm = false) 
+                                  'USR-CRT',
+                                  'USR-ROLE',
+                                  'ROLE-CRT',
+                                  'MOD-CRT',
+                                  'MENU-CRT',
+                                  'AUTHCTL'
+                                ].contains(_selProg) &&
+                                _showForm
+                            ? () => setState(() => _showForm = false)
                             : widget.onBack,
                       ),
                   ],
@@ -162,13 +171,17 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
 
               if (isUserScreenList) return _UserListView(onView: handleView);
               if (isRoleScreenList) return _RoleListView(onView: handleView);
-              if (isUserRoleScreenList) return _UserRoleListView(onView: handleView);
-              if (isModuleScreenList) return _ModuleListView(onView: handleView);
+              if (isUserRoleScreenList)
+                return _UserRoleListView(onView: handleView);
+              if (isModuleScreenList)
+                return _ModuleListView(onView: handleView);
               if (isMenuScreenList) return _MenuListView(onView: handleView);
-              if (isAuthCtrlScreenList) return _AuthCtrlListView(onView: handleView);
-              
+              if (isAuthCtrlScreenList)
+                return _AuthCtrlListView(onView: handleView);
+
               return SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -191,31 +204,37 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
             AmsSubmitBar(
               borderColor: AppColors.nTealMd,
               actions: [
-              AmsButton(
-                  label: _viewRecord != null ? 'Back to List' : 'Cancel',
-                  variant: AmsButtonVariant.ghost,
-                  onPressed: () {
-                    if ([
-                          'USR-CRT', 'USR-ROLE', 'ROLE-CRT', 
-                          'MOD-CRT', 'MENU-CRT', 'AUTHCTL'
-                        ].contains(_selProg) && _showForm) {
-                      setState(() {
-                        _showForm = false;
-                        _viewRecord = null;
-                      });
-                    } else {
-                      widget.onBack();
-                    }
-                  }),
-              if (_viewRecord == null) const SizedBox(width: 12),
-              if (_viewRecord == null) AmsButton(
-                  label: isDirectSave ? 'Save' : 'Submit',
-                  variant: isDirectSave
-                      ? AmsButtonVariant.green
-                      : AmsButtonVariant.primary,
-                  onPressed: _doSubmit),
-            ],
-          ),
+                AmsButton(
+                    label: _viewRecord != null ? 'Back to List' : 'Cancel',
+                    variant: AmsButtonVariant.ghost,
+                    onPressed: () {
+                      if ([
+                            'USR-CRT',
+                            'USR-ROLE',
+                            'ROLE-CRT',
+                            'MOD-CRT',
+                            'MENU-CRT',
+                            'AUTHCTL'
+                          ].contains(_selProg) &&
+                          _showForm) {
+                        setState(() {
+                          _showForm = false;
+                          _viewRecord = null;
+                        });
+                      } else {
+                        widget.onBack();
+                      }
+                    }),
+                if (_viewRecord == null) const SizedBox(width: 12),
+                if (_viewRecord == null)
+                  AmsButton(
+                      label: isDirectSave ? 'Save' : 'Submit',
+                      variant: isDirectSave
+                          ? AmsButtonVariant.green
+                          : AmsButtonVariant.primary,
+                      onPressed: _doSubmit),
+              ],
+            ),
         ],
       ),
     );
@@ -243,11 +262,30 @@ class _UserListViewState extends State<_UserListView> {
   Future<void> _loadUsers() async {
     final users = await apiService.getUsers();
     setState(() {
-      _users = users ?? [
-        {'usersCd': 'USR001', 'fName': 'Arjun', 'lName': 'Mehta', 'email': 'arjun.m@example.com', 'mobile': '9876543210'},
-        {'usersCd': 'USR002', 'fName': 'Priya', 'lName': 'R', 'email': 'priya.r@example.com', 'mobile': '9876543211'},
-        {'usersCd': 'USR003', 'fName': 'Ravi', 'lName': 'K', 'email': 'ravi.k@example.com', 'mobile': '9876543212'},
-      ];
+      _users = users ??
+          [
+            {
+              'usersCd': 'USR001',
+              'fName': 'Arjun',
+              'lName': 'Mehta',
+              'email': 'arjun.m@example.com',
+              'mobile': '9876543210'
+            },
+            {
+              'usersCd': 'USR002',
+              'fName': 'Priya',
+              'lName': 'R',
+              'email': 'priya.r@example.com',
+              'mobile': '9876543211'
+            },
+            {
+              'usersCd': 'USR003',
+              'fName': 'Ravi',
+              'lName': 'K',
+              'email': 'ravi.k@example.com',
+              'mobile': '9876543212'
+            },
+          ];
       _loading = false;
     });
   }
@@ -257,7 +295,7 @@ class _UserListViewState extends State<_UserListView> {
     if (_loading) {
       return const Center(child: CircularProgressIndicator());
     }
-    
+
     return AmsPaginatedView<Map<String, dynamic>>(
       items: _users!,
       builder: (ctx, currentItems) => ListView.builder(
@@ -265,44 +303,49 @@ class _UserListViewState extends State<_UserListView> {
         itemCount: currentItems.length,
         itemBuilder: (ctx, idx) {
           final u = currentItems[idx];
-        final String fName = u['fName'] ?? u['fname'] ?? '';
-        final String lName = u['lName'] ?? u['lname'] ?? '';
-        final String email = u['email'] ?? 'No Email';
-        final String mobile = u['mobile'] ?? 'No Mobile';
-        final String userCd = u['userScd'] ?? u['usersCd'] ?? 'Unknown';
-        final String initial = fName.isNotEmpty ? fName[0].toUpperCase() : (userCd.isNotEmpty ? userCd[0].toUpperCase() : 'U');
+          final String fName = u['fName'] ?? u['fname'] ?? '';
+          final String lName = u['lName'] ?? u['lname'] ?? '';
+          final String email = u['email'] ?? 'No Email';
+          final String mobile = u['mobile'] ?? 'No Mobile';
+          final String userCd = u['userScd'] ?? u['usersCd'] ?? 'Unknown';
+          final String initial = fName.isNotEmpty
+              ? fName[0].toUpperCase()
+              : (userCd.isNotEmpty ? userCd[0].toUpperCase() : 'U');
 
-        return AmsCard(
-          onTap: widget.onView != null ? () => widget.onView!(u) : null,
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Container(
-                width: 40, height: 40,
-                decoration: const BoxDecoration(color: AppColors.tBlueLt, shape: BoxShape.circle),
-                child: Center(
-                  child: Text(
-                    initial, 
-                    style: bodyStyle(weight: FontWeight.bold, color: AppColors.tBlue)
-                  )
+          return AmsCard(
+            onTap: widget.onView != null ? () => widget.onView!(u) : null,
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: const BoxDecoration(
+                      color: AppColors.tBlueLt, shape: BoxShape.circle),
+                  child: Center(
+                      child: Text(initial,
+                          style: bodyStyle(
+                              weight: FontWeight.bold,
+                              color: AppColors.tBlue))),
                 ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('$fName $lName'.trim(), style: bodyStyle(size: 15, weight: FontWeight.w600)),
-                    const SizedBox(height: 4),
-                    Text('$email  |  $mobile', style: bodyStyle(color: AppColors.ink3)),
-                  ],
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('$fName $lName'.trim(),
+                          style: bodyStyle(size: 15, weight: FontWeight.w600)),
+                      const SizedBox(height: 4),
+                      Text('$email  |  $mobile',
+                          style: bodyStyle(color: AppColors.ink3)),
+                    ],
+                  ),
                 ),
-              ),
-              AmsBadge(label: userCd),
-            ],
-          ),
-        );
-      },
+                AmsBadge(label: userCd),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
@@ -329,11 +372,27 @@ class _RoleListViewState extends State<_RoleListView> {
   Future<void> _loadRoles() async {
     final roles = await apiService.getRoles();
     setState(() {
-      _roles = roles ?? [
-        {'roleCd': '101', 'roleName': 'System Admin', 'roleType': 'M - Master', 'roleSubtype': 'ALL'},
-        {'roleCd': '102', 'roleName': 'Branch Manager', 'roleType': 'O - Operator', 'roleSubtype': 'BRN'},
-        {'roleCd': '103', 'roleName': 'Teller', 'roleType': 'B - Batch', 'roleSubtype': 'TRX'},
-      ];
+      _roles = roles ??
+          [
+            {
+              'roleCd': '101',
+              'roleName': 'System Admin',
+              'roleType': 'M - Master',
+              'roleSubtype': 'ALL'
+            },
+            {
+              'roleCd': '102',
+              'roleName': 'Branch Manager',
+              'roleType': 'O - Operator',
+              'roleSubtype': 'BRN'
+            },
+            {
+              'roleCd': '103',
+              'roleName': 'Teller',
+              'roleType': 'B - Batch',
+              'roleSubtype': 'TRX'
+            },
+          ];
       _loading = false;
     });
   }
@@ -343,7 +402,7 @@ class _RoleListViewState extends State<_RoleListView> {
     if (_loading) {
       return const Center(child: CircularProgressIndicator());
     }
-    
+
     return AmsPaginatedView<Map<String, dynamic>>(
       items: _roles!,
       builder: (ctx, currentItems) => ListView.builder(
@@ -351,37 +410,41 @@ class _RoleListViewState extends State<_RoleListView> {
         itemCount: currentItems.length,
         itemBuilder: (ctx, idx) {
           final r = currentItems[idx];
-        return AmsCard(
-          onTap: widget.onView != null ? () => widget.onView!(r) : null,
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Container(
-                width: 40, height: 40,
-                decoration: const BoxDecoration(color: AppColors.tBlueLt, shape: BoxShape.circle),
-                child: Center(
-                  child: Text(
-                    r['roleName'][0].toString().toUpperCase(), 
-                    style: bodyStyle(weight: FontWeight.bold, color: AppColors.tBlue)
-                  )
+          return AmsCard(
+            onTap: widget.onView != null ? () => widget.onView!(r) : null,
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: const BoxDecoration(
+                      color: AppColors.tBlueLt, shape: BoxShape.circle),
+                  child: Center(
+                      child: Text(r['roleName'][0].toString().toUpperCase(),
+                          style: bodyStyle(
+                              weight: FontWeight.bold,
+                              color: AppColors.tBlue))),
                 ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('${r['roleName']}', style: bodyStyle(size: 15, weight: FontWeight.w600)),
-                    const SizedBox(height: 4),
-                    Text('Type: ${r['roleType']}  |  Subtype: ${r['roleSubtype']}', style: bodyStyle(color: AppColors.ink3)),
-                  ],
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('${r['roleName']}',
+                          style: bodyStyle(size: 15, weight: FontWeight.w600)),
+                      const SizedBox(height: 4),
+                      Text(
+                          'Type: ${r['roleType']}  |  Subtype: ${r['roleSubtype']}',
+                          style: bodyStyle(color: AppColors.ink3)),
+                    ],
+                  ),
                 ),
-              ),
-              AmsBadge(label: 'Role ${r['roleCd']}'),
-            ],
-          ),
-        );
-      },
+                AmsBadge(label: 'Role ${r['roleCd']}'),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
@@ -390,25 +453,42 @@ class _RoleListViewState extends State<_RoleListView> {
 class _UserRoleListView extends StatefulWidget {
   final void Function(Map<String, dynamic>)? onView;
   const _UserRoleListView({this.onView});
-  @override State<_UserRoleListView> createState() => _UserRoleListViewState();
+  @override
+  State<_UserRoleListView> createState() => _UserRoleListViewState();
 }
+
 class _UserRoleListViewState extends State<_UserRoleListView> {
   List<Map<String, dynamic>>? _data;
   bool _loading = true;
 
-  @override void initState() { super.initState(); _load(); }
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
   Future<void> _load() async {
     final data = await apiService.getUserRoleAssigns();
     setState(() {
-      _data = data ?? [
-        {'usersCd': 'USR001', 'roleName': 'System Admin', 'status': 'Active'},
-        {'usersCd': 'USR002', 'roleName': 'Branch Manager', 'status': 'Active'},
-      ];
+      _data = data ??
+          [
+            {
+              'usersCd': 'USR001',
+              'roleName': 'System Admin',
+              'status': 'Active'
+            },
+            {
+              'usersCd': 'USR002',
+              'roleName': 'Branch Manager',
+              'status': 'Active'
+            },
+          ];
       _loading = false;
     });
   }
 
-  @override Widget build(BuildContext context) {
+  @override
+  Widget build(BuildContext context) {
     if (_loading) return const Center(child: CircularProgressIndicator());
     return AmsPaginatedView<Map<String, dynamic>>(
       items: _data!,
@@ -417,27 +497,29 @@ class _UserRoleListViewState extends State<_UserRoleListView> {
         itemCount: currentItems.length,
         itemBuilder: (ctx, idx) {
           final d = currentItems[idx];
-        return AmsCard(
-          onTap: widget.onView != null ? () => widget.onView!(d) : null,
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              AmsBadge(label: d['usersCd']),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Role: ${d['roleName']}', style: bodyStyle(size: 15, weight: FontWeight.w600)),
-                    const SizedBox(height: 4),
-                    Text('Status: ${d['status']}', style: bodyStyle(color: AppColors.ink3)),
-                  ],
+          return AmsCard(
+            onTap: widget.onView != null ? () => widget.onView!(d) : null,
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                AmsBadge(label: d['usersCd']),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Role: ${d['roleName']}',
+                          style: bodyStyle(size: 15, weight: FontWeight.w600)),
+                      const SizedBox(height: 4),
+                      Text('Status: ${d['status']}',
+                          style: bodyStyle(color: AppColors.ink3)),
+                    ],
+                  ),
                 ),
-              ),
-            ],
-          ),
-        );
-      },
+              ],
+            ),
+          );
+        },
       ),
     );
   }
@@ -446,25 +528,34 @@ class _UserRoleListViewState extends State<_UserRoleListView> {
 class _ModuleListView extends StatefulWidget {
   final void Function(Map<String, dynamic>)? onView;
   const _ModuleListView({this.onView});
-  @override State<_ModuleListView> createState() => _ModuleListViewState();
+  @override
+  State<_ModuleListView> createState() => _ModuleListViewState();
 }
+
 class _ModuleListViewState extends State<_ModuleListView> {
   List<Map<String, dynamic>>? _data;
   bool _loading = true;
 
-  @override void initState() { super.initState(); _load(); }
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
   Future<void> _load() async {
     final data = await apiService.getModules();
     setState(() {
-      _data = data ?? [
-        {'moduleCd': 'CORE', 'moduleName': 'Core Banking'},
-        {'moduleCd': 'AUTH', 'moduleName': 'Authorization App'},
-      ];
+      _data = data ??
+          [
+            {'moduleCd': 'CORE', 'moduleName': 'Core Banking'},
+            {'moduleCd': 'AUTH', 'moduleName': 'Authorization App'},
+          ];
       _loading = false;
     });
   }
 
-  @override Widget build(BuildContext context) {
+  @override
+  Widget build(BuildContext context) {
     if (_loading) return const Center(child: CircularProgressIndicator());
     return AmsPaginatedView<Map<String, dynamic>>(
       items: _data!,
@@ -473,25 +564,27 @@ class _ModuleListViewState extends State<_ModuleListView> {
         itemCount: currentItems.length,
         itemBuilder: (ctx, idx) {
           final d = currentItems[idx];
-        return AmsCard(
-          onTap: widget.onView != null ? () => widget.onView!(d) : null,
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('${d['moduleName']}', style: bodyStyle(size: 15, weight: FontWeight.w600)),
-                    const SizedBox(height: 4),
-                    Text('Module Code: ${d['moduleCd']}', style: bodyStyle(color: AppColors.ink3)),
-                  ],
+          return AmsCard(
+            onTap: widget.onView != null ? () => widget.onView!(d) : null,
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('${d['moduleName']}',
+                          style: bodyStyle(size: 15, weight: FontWeight.w600)),
+                      const SizedBox(height: 4),
+                      Text('Module Code: ${d['moduleCd']}',
+                          style: bodyStyle(color: AppColors.ink3)),
+                    ],
+                  ),
                 ),
-              ),
-            ],
-          ),
-        );
-      },
+              ],
+            ),
+          );
+        },
       ),
     );
   }
@@ -500,25 +593,34 @@ class _ModuleListViewState extends State<_ModuleListView> {
 class _MenuListView extends StatefulWidget {
   final void Function(Map<String, dynamic>)? onView;
   const _MenuListView({this.onView});
-  @override State<_MenuListView> createState() => _MenuListViewState();
+  @override
+  State<_MenuListView> createState() => _MenuListViewState();
 }
+
 class _MenuListViewState extends State<_MenuListView> {
   List<Map<String, dynamic>>? _data;
   bool _loading = true;
 
-  @override void initState() { super.initState(); _load(); }
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
   Future<void> _load() async {
     final data = await apiService.getMenus();
     setState(() {
-      _data = data ?? [
-        {'menuId': 'M01', 'menuName': 'Dashboard', 'type': 'Link'},
-        {'menuId': 'M02', 'menuName': 'User Management', 'type': 'Parent'},
-      ];
+      _data = data ??
+          [
+            {'menuId': 'M01', 'menuName': 'Dashboard', 'type': 'Link'},
+            {'menuId': 'M02', 'menuName': 'User Management', 'type': 'Parent'},
+          ];
       _loading = false;
     });
   }
 
-  @override Widget build(BuildContext context) {
+  @override
+  Widget build(BuildContext context) {
     if (_loading) return const Center(child: CircularProgressIndicator());
     return AmsPaginatedView<Map<String, dynamic>>(
       items: _data!,
@@ -527,26 +629,28 @@ class _MenuListViewState extends State<_MenuListView> {
         itemCount: currentItems.length,
         itemBuilder: (ctx, idx) {
           final d = currentItems[idx];
-        return AmsCard(
-          onTap: widget.onView != null ? () => widget.onView!(d) : null,
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('${d['menuName']}', style: bodyStyle(size: 15, weight: FontWeight.w600)),
-                    const SizedBox(height: 4),
-                    Text('Type: ${d['type']}', style: bodyStyle(color: AppColors.ink3)),
-                  ],
+          return AmsCard(
+            onTap: widget.onView != null ? () => widget.onView!(d) : null,
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('${d['menuName']}',
+                          style: bodyStyle(size: 15, weight: FontWeight.w600)),
+                      const SizedBox(height: 4),
+                      Text('Type: ${d['type']}',
+                          style: bodyStyle(color: AppColors.ink3)),
+                    ],
+                  ),
                 ),
-              ),
-              AmsBadge(label: d['menuId']),
-            ],
-          ),
-        );
-      },
+                AmsBadge(label: d['menuId']),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
@@ -555,13 +659,20 @@ class _MenuListViewState extends State<_MenuListView> {
 class _AuthCtrlListView extends StatefulWidget {
   final void Function(Map<String, dynamic>)? onView;
   const _AuthCtrlListView({this.onView});
-  @override State<_AuthCtrlListView> createState() => _AuthCtrlListViewState();
+  @override
+  State<_AuthCtrlListView> createState() => _AuthCtrlListViewState();
 }
+
 class _AuthCtrlListViewState extends State<_AuthCtrlListView> {
   Map<String, Auth101Config>? _configs;
   bool _loading = true;
 
-  @override void initState() { super.initState(); _load(); }
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
   Future<void> _load() async {
     final data = await apiService.getAuthConfigs();
     setState(() {
@@ -570,7 +681,8 @@ class _AuthCtrlListViewState extends State<_AuthCtrlListView> {
     });
   }
 
-  @override Widget build(BuildContext context) {
+  @override
+  Widget build(BuildContext context) {
     if (_loading) return const Center(child: CircularProgressIndicator());
     final cfgList = _configs!.values.toList();
     return AmsPaginatedView<Auth101Config>(
@@ -580,28 +692,37 @@ class _AuthCtrlListViewState extends State<_AuthCtrlListView> {
         itemCount: currentItems.length,
         itemBuilder: (ctx, idx) {
           final c = currentItems[idx];
-        return AmsCard(
-          onTap: widget.onView != null ? () => widget.onView!({
-            'id': c.id, 'name': c.name, 'approvalReq': c.approvalReq, 'isTran': c.isTran, 'levels': c.levels
-          }) : null,
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(c.name, style: bodyStyle(size: 15, weight: FontWeight.w600)),
-                    const SizedBox(height: 4),
-                    Text('Approval Req: ${c.approvalReq ? 'Yes' : 'No'}  |  Levels: ${c.levels}', style: bodyStyle(color: AppColors.ink3)),
-                  ],
+          return AmsCard(
+            onTap: widget.onView != null
+                ? () => widget.onView!({
+                      'id': c.id,
+                      'name': c.name,
+                      'approvalReq': c.approvalReq,
+                      'isTran': c.isTran,
+                      'levels': c.levels
+                    })
+                : null,
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(c.name,
+                          style: bodyStyle(size: 15, weight: FontWeight.w600)),
+                      const SizedBox(height: 4),
+                      Text(
+                          'Approval Req: ${c.approvalReq ? 'Yes' : 'No'}  |  Levels: ${c.levels}',
+                          style: bodyStyle(color: AppColors.ink3)),
+                    ],
+                  ),
                 ),
-              ),
-              AmsBadge(label: c.id),
-            ],
-          ),
-        );
-      },
+                AmsBadge(label: c.id),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
@@ -614,6 +735,7 @@ class DynamicNTFields extends StatelessWidget {
   final bool isViewMode;
 
   const DynamicNTFields({
+    super.key,
     required this.prog,
     required this.onChanged,
     this.initialData,
@@ -647,7 +769,9 @@ class DynamicNTFields extends StatelessWidget {
                 required: true,
                 tooltip: 'Unique identification code for the user.',
                 child: AmsTextInput(
-                  initialValue: (initialData?['usersCd'] ?? initialData?['userscd'])?.toString(),
+                  initialValue:
+                      (initialData?['usersCd'] ?? initialData?['userscd'])
+                          ?.toString(),
                   readOnly: isViewMode,
                   placeholder: 'User Code (e.g. USR001)',
                   onChanged: isViewMode ? null : (v) => onChanged('usersCd', v),
@@ -656,11 +780,24 @@ class DynamicNTFields extends StatelessWidget {
               AmsField(
                 label: 'MENUTYPE',
                 required: true,
-                tooltip: 'Method of menu assignment (Role-based vs User-based).',
+                tooltip:
+                    'Method of menu assignment (Role-based vs User-based).',
                 child: AmsDropdown(
-                  initialValue: (initialData?['menuType'] ?? initialData?['menutype'])?.toString() == '2' ? '2 - Userwise' : ((initialData?['menuType'] ?? initialData?['menutype']) != null ? '1 - Rolewise' : null),
+                  initialValue:
+                      (initialData?['menuType'] ?? initialData?['menutype'])
+                                  ?.toString() ==
+                              '2'
+                          ? '2 - Userwise'
+                          : ((initialData?['menuType'] ??
+                                      initialData?['menutype']) !=
+                                  null
+                              ? '1 - Rolewise'
+                              : null),
                   items: const ['1 - Rolewise', '2 - Userwise'],
-                  onChanged: isViewMode ? null : (v) => onChanged('menuType', (v ?? '1').startsWith('1') ? 1 : 2),
+                  onChanged: isViewMode
+                      ? null
+                      : (v) => onChanged(
+                          'menuType', (v ?? '1').startsWith('1') ? 1 : 2),
                 ),
               ),
               AmsField(
@@ -668,7 +805,15 @@ class DynamicNTFields extends StatelessWidget {
                 required: true,
                 tooltip: 'The user\'s gender for profile identification.',
                 child: AmsDropdown(
-                  initialValue: initialData?['gender']?.toString().startsWith('F') == true ? 'Female' : (initialData?['gender']?.toString().startsWith('O') == true ? 'Other' : (initialData?['gender'] != null ? 'Male' : null)),
+                  initialValue: initialData?['gender']
+                              ?.toString()
+                              .startsWith('F') ==
+                          true
+                      ? 'Female'
+                      : (initialData?['gender']?.toString().startsWith('O') ==
+                              true
+                          ? 'Other'
+                          : (initialData?['gender'] != null ? 'Male' : null)),
                   items: const ['Male', 'Female', 'Other'],
                   onChanged: isViewMode ? null : (v) => onChanged('gender', v),
                 ),
@@ -676,46 +821,65 @@ class DynamicNTFields extends StatelessWidget {
               AmsField(
                 label: 'Primary Contact',
                 required: true,
-                tooltip: 'Salutation and full name of the primary contact person.',
+                tooltip:
+                    'Salutation and full name of the primary contact person.',
                 child: Row(
                   children: [
                     Expanded(
                       flex: 2,
                       child: AmsDropdown(
-                        initialValue: const ['Mr.', 'Ms.', 'Mrs.', 'Dr.', 'Prof.'].contains(initialData?['title']?.toString()) ? (initialData?['title']?.toString()) : null,
+                        initialValue: const [
+                          'Mr.',
+                          'Ms.',
+                          'Mrs.',
+                          'Dr.',
+                          'Prof.'
+                        ].contains(initialData?['title']?.toString())
+                            ? (initialData?['title']?.toString())
+                            : null,
                         items: const ['Mr.', 'Ms.', 'Mrs.', 'Dr.', 'Prof.'],
                         placeholder: 'TITLE',
-                        onChanged: isViewMode ? null : (v) => onChanged('title', v),
+                        onChanged:
+                            isViewMode ? null : (v) => onChanged('title', v),
                       ),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
                       flex: 3,
                       child: AmsTextInput(
-                        initialValue: (initialData?['fName'] ?? initialData?['fname'])?.toString(),
+                        initialValue:
+                            (initialData?['fName'] ?? initialData?['fname'])
+                                ?.toString(),
                         readOnly: isViewMode,
                         placeholder: 'FNAME',
-                        onChanged: isViewMode ? null : (v) => onChanged('fName', v),
+                        onChanged:
+                            isViewMode ? null : (v) => onChanged('fName', v),
                       ),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
                       flex: 3,
                       child: AmsTextInput(
-                        initialValue: (initialData?['mName'] ?? initialData?['mname'])?.toString(),
+                        initialValue:
+                            (initialData?['mName'] ?? initialData?['mname'])
+                                ?.toString(),
                         readOnly: isViewMode,
                         placeholder: 'MNAME',
-                        onChanged: isViewMode ? null : (v) => onChanged('mName', v),
+                        onChanged:
+                            isViewMode ? null : (v) => onChanged('mName', v),
                       ),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
                       flex: 3,
                       child: AmsTextInput(
-                        initialValue: (initialData?['lName'] ?? initialData?['lname'])?.toString(),
+                        initialValue:
+                            (initialData?['lName'] ?? initialData?['lname'])
+                                ?.toString(),
                         readOnly: isViewMode,
                         placeholder: 'LNAME',
-                        onChanged: isViewMode ? null : (v) => onChanged('lName', v),
+                        onChanged:
+                            isViewMode ? null : (v) => onChanged('lName', v),
                       ),
                     ),
                   ],
@@ -796,7 +960,9 @@ class DynamicNTFields extends StatelessWidget {
                   initialValue: initialData?['roleCd']?.toString() ?? '10',
                   readOnly: isViewMode,
                   placeholder: 'e.g. 10',
-                  onChanged: isViewMode ? null : (v) => onChanged('roleCd', int.tryParse(v) ?? 10),
+                  onChanged: isViewMode
+                      ? null
+                      : (v) => onChanged('roleCd', int.tryParse(v) ?? 10),
                 ),
               ),
             ],
@@ -829,8 +995,9 @@ class DynamicNTFields extends StatelessWidget {
                   initialValue: initialData?['roleCd']?.toString(),
                   readOnly: isViewMode,
                   placeholder: 'e.g. 101',
-                  onChanged: isViewMode ? null : (v) =>
-                      onChanged('roleCd', int.tryParse(v) ?? 0),
+                  onChanged: isViewMode
+                      ? null
+                      : (v) => onChanged('roleCd', int.tryParse(v) ?? 0),
                 ),
               ),
               AmsField(
@@ -841,7 +1008,8 @@ class DynamicNTFields extends StatelessWidget {
                   initialValue: initialData?['roleName']?.toString(),
                   readOnly: isViewMode,
                   placeholder: 'e.g. Senior Auditor',
-                  onChanged: isViewMode ? null : (v) => onChanged('roleName', v),
+                  onChanged:
+                      isViewMode ? null : (v) => onChanged('roleName', v),
                 ),
               ),
               AmsField(
@@ -849,13 +1017,12 @@ class DynamicNTFields extends StatelessWidget {
                 required: true,
                 tooltip: 'Primary categorization of the role.',
                 child: AmsDropdown(
-                  initialValue: initialData?['roleType'] != null ? '${initialData!['roleType']} - ${initialData!['roleType'] == 'M' ? 'Master' : (initialData!['roleType'] == 'S' ? 'System' : 'Transaction')}' : null,
-                  items: const [
-                    'M - Master',
-                    'S - System',
-                    'T - Transaction'
-                  ],
-                  onChanged: isViewMode ? null : (v) => onChanged('roleType', v?[0]),
+                  initialValue: initialData?['roleType'] != null
+                      ? '${initialData!['roleType']} - ${initialData!['roleType'] == 'M' ? 'Master' : (initialData!['roleType'] == 'S' ? 'System' : 'Transaction')}'
+                      : null,
+                  items: const ['M - Master', 'S - System', 'T - Transaction'],
+                  onChanged:
+                      isViewMode ? null : (v) => onChanged('roleType', v?[0]),
                 ),
               ),
               AmsField(
@@ -865,57 +1032,89 @@ class DynamicNTFields extends StatelessWidget {
                   initialValue: initialData?['roleSubType']?.toString(),
                   readOnly: isViewMode,
                   placeholder: 'e.g. AUDIT',
-                  onChanged: isViewMode ? null : (v) => onChanged('roleSubType', v),
+                  onChanged:
+                      isViewMode ? null : (v) => onChanged('roleSubType', v),
                 ),
               ),
               AmsField(
                 label: 'VIEWACCESS',
                 tooltip: 'Whether this role is to view the data.',
                 child: AmsDropdown(
-                  initialValue: initialData?['viewAccess']?.toString() == '1' ? '1 - Enable' : (initialData?['viewAccess'] != null ? '0 - Disable' : null),
+                  initialValue: initialData?['viewAccess']?.toString() == '1'
+                      ? '1 - Enable'
+                      : (initialData?['viewAccess'] != null
+                          ? '0 - Disable'
+                          : null),
                   items: const ['1 - Enable', '0 - Disable'],
-                  onChanged: isViewMode ? null : (v) => onChanged(
-                      'viewAccess', (v ?? '0').startsWith('1') ? 1 : 0),
+                  onChanged: isViewMode
+                      ? null
+                      : (v) => onChanged(
+                          'viewAccess', (v ?? '0').startsWith('1') ? 1 : 0),
                 ),
               ),
               AmsField(
                 label: 'AUTHACCESS',
                 tooltip: 'Whether this role is allowed to authorize.',
                 child: AmsDropdown(
-                  initialValue: initialData?['authAccess']?.toString() == '1' ? '1 - Enable' : (initialData?['authAccess'] != null ? '0 - Disable' : null),
+                  initialValue: initialData?['authAccess']?.toString() == '1'
+                      ? '1 - Enable'
+                      : (initialData?['authAccess'] != null
+                          ? '0 - Disable'
+                          : null),
                   items: const ['1 - Enable', '0 - Disable'],
-                  onChanged: isViewMode ? null : (v) => onChanged(
-                      'authAccess', (v ?? '0').startsWith('1') ? 1 : 0),
+                  onChanged: isViewMode
+                      ? null
+                      : (v) => onChanged(
+                          'authAccess', (v ?? '0').startsWith('1') ? 1 : 0),
                 ),
               ),
               AmsField(
                 label: 'MAKERACCESS',
                 tooltip: 'Whether this role is allowed to make entries.',
                 child: AmsDropdown(
-                  initialValue: initialData?['makerAccess']?.toString() == '1' ? '1 - Enable' : (initialData?['makerAccess'] != null ? '0 - Disable' : null),
+                  initialValue: initialData?['makerAccess']?.toString() == '1'
+                      ? '1 - Enable'
+                      : (initialData?['makerAccess'] != null
+                          ? '0 - Disable'
+                          : null),
                   items: const ['1 - Enable', '0 - Disable'],
-                  onChanged: isViewMode ? null : (v) => onChanged(
-                      'makerAccess', (v ?? '0').startsWith('1') ? 1 : 0),
+                  onChanged: isViewMode
+                      ? null
+                      : (v) => onChanged(
+                          'makerAccess', (v ?? '0').startsWith('1') ? 1 : 0),
                 ),
               ),
               AmsField(
                 label: 'ADMINACCESS',
                 tooltip: 'Administration access for configuration.',
                 child: AmsDropdown(
-                  initialValue: initialData?['adminAccess']?.toString() == '1' ? '1 - Enable' : (initialData?['adminAccess'] != null ? '0 - Disable' : null),
+                  initialValue: initialData?['adminAccess']?.toString() == '1'
+                      ? '1 - Enable'
+                      : (initialData?['adminAccess'] != null
+                          ? '0 - Disable'
+                          : null),
                   items: const ['1 - Enable', '0 - Disable'],
-                  onChanged: isViewMode ? null : (v) => onChanged(
-                      'adminAccess', (v ?? '0').startsWith('1') ? 1 : 0),
+                  onChanged: isViewMode
+                      ? null
+                      : (v) => onChanged(
+                          'adminAccess', (v ?? '0').startsWith('1') ? 1 : 0),
                 ),
               ),
               AmsField(
                 label: 'SYSADMINACCESS',
                 tooltip: 'System administration access.',
                 child: AmsDropdown(
-                  initialValue: initialData?['sysAdminAccess']?.toString() == '1' ? '1 - Enable' : (initialData?['sysAdminAccess'] != null ? '0 - Disable' : null),
+                  initialValue:
+                      initialData?['sysAdminAccess']?.toString() == '1'
+                          ? '1 - Enable'
+                          : (initialData?['sysAdminAccess'] != null
+                              ? '0 - Disable'
+                              : null),
                   items: const ['1 - Enable', '0 - Disable'],
-                  onChanged: isViewMode ? null : (v) => onChanged(
-                      'sysAdminAccess', (v ?? '0').startsWith('1') ? 1 : 0),
+                  onChanged: isViewMode
+                      ? null
+                      : (v) => onChanged(
+                          'sysAdminAccess', (v ?? '0').startsWith('1') ? 1 : 0),
                 ),
               ),
             ],
@@ -924,9 +1123,9 @@ class DynamicNTFields extends StatelessWidget {
 
       case 'MOD-CRT':
         return _ModCrtFields(
-            onChanged: onChanged,
-            initialData: initialData,
-            isViewMode: isViewMode,
+          onChanged: onChanged,
+          initialData: initialData,
+          isViewMode: isViewMode,
         );
       case 'MENU-CRT':
         return Container(
@@ -950,7 +1149,9 @@ class DynamicNTFields extends StatelessWidget {
                             initialValue: initialData?['pgmId']?.toString(),
                             readOnly: isViewMode,
                             placeholder: 'ID (Code)',
-                            onChanged: isViewMode ? null : (v) => onChanged('pgmId', v)),
+                            onChanged: isViewMode
+                                ? null
+                                : (v) => onChanged('pgmId', v)),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -959,7 +1160,9 @@ class DynamicNTFields extends StatelessWidget {
                             initialValue: initialData?['descn']?.toString(),
                             readOnly: isViewMode,
                             placeholder: 'Program Name (e.g. Reports)',
-                            onChanged: isViewMode ? null : (v) => onChanged('descn', v)),
+                            onChanged: isViewMode
+                                ? null
+                                : (v) => onChanged('descn', v)),
                       ),
                     ],
                   )),
@@ -973,8 +1176,10 @@ class DynamicNTFields extends StatelessWidget {
                             initialValue: initialData?['module']?.toString(),
                             readOnly: isViewMode,
                             placeholder: 'Module ID',
-                            onChanged: isViewMode ? null : (v) =>
-                                onChanged('module', int.tryParse(v) ?? 1)),
+                            onChanged: isViewMode
+                                ? null
+                                : (v) =>
+                                    onChanged('module', int.tryParse(v) ?? 1)),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -982,8 +1187,10 @@ class DynamicNTFields extends StatelessWidget {
                             initialValue: initialData?['subModule']?.toString(),
                             readOnly: isViewMode,
                             placeholder: 'Sub-Module ID',
-                            onChanged: isViewMode ? null : (v) =>
-                                onChanged('subModule', int.tryParse(v) ?? 0)),
+                            onChanged: isViewMode
+                                ? null
+                                : (v) => onChanged(
+                                    'subModule', int.tryParse(v) ?? 0)),
                       ),
                     ],
                   )),
@@ -991,11 +1198,16 @@ class DynamicNTFields extends StatelessWidget {
                   label: 'Menu Status',
                   required: true,
                   child: AmsDropdown(
-                      initialValue: initialData?['status']?.toString() == '1' ? 'Active' : (initialData?['status'] != null ? 'Inactive' : null),
+                      initialValue: initialData?['status']?.toString() == '1'
+                          ? 'Active'
+                          : (initialData?['status'] != null
+                              ? 'Inactive'
+                              : null),
                       placeholder: 'Status',
                       items: const ['Active', 'Inactive'],
-                      onChanged: isViewMode ? null : (v) =>
-                          onChanged('status', v == 'Active' ? 1 : 0))),
+                      onChanged: isViewMode
+                          ? null
+                          : (v) => onChanged('status', v == 'Active' ? 1 : 0))),
             ],
           ),
         );
@@ -1013,13 +1225,13 @@ class DynamicNTFields extends StatelessWidget {
               AmsField(
                 label: 'Program ID',
                 required: true,
-                tooltip:
-                    'Unique identifier for the program. e.g. LOAN, NEFT',
+                tooltip: 'Unique identifier for the program. e.g. LOAN, NEFT',
                 child: AmsTextInput(
                   initialValue: initialData?['programId']?.toString(),
                   readOnly: isViewMode,
                   placeholder: 'e.g. LOAN',
-                  onChanged: isViewMode ? null : (v) => onChanged('programId', v),
+                  onChanged:
+                      isViewMode ? null : (v) => onChanged('programId', v),
                 ),
               ),
               AmsField(
@@ -1028,11 +1240,14 @@ class DynamicNTFields extends StatelessWidget {
                 tooltip:
                     'Whether this program requires authorization approval.',
                 child: AmsDropdown(
-                  initialValue: initialData?['approvalReq']?.toString() == '1' ? 'Yes' : (initialData?['approvalReq'] != null ? 'No' : null),
+                  initialValue: initialData?['approvalReq']?.toString() == '1'
+                      ? 'Yes'
+                      : (initialData?['approvalReq'] != null ? 'No' : null),
                   placeholder: 'Select...',
                   items: const ['Yes', 'No'],
-                  onChanged: isViewMode ? null : (v) =>
-                      onChanged('approvalReq', v == 'Yes' ? 1 : 0),
+                  onChanged: isViewMode
+                      ? null
+                      : (v) => onChanged('approvalReq', v == 'Yes' ? 1 : 0),
                 ),
               ),
               AmsField(
@@ -1040,23 +1255,30 @@ class DynamicNTFields extends StatelessWidget {
                 tooltip:
                     'Run a procedure before the authorization is approved.',
                 child: AmsDropdown(
-                  initialValue: initialData?['preApproveProc']?.toString() == '1' ? 'Yes' : (initialData?['preApproveProc'] != null ? 'No' : null),
+                  initialValue: initialData?['preApproveProc']?.toString() ==
+                          '1'
+                      ? 'Yes'
+                      : (initialData?['preApproveProc'] != null ? 'No' : null),
                   placeholder: 'Select...',
                   items: const ['Yes', 'No'],
-                  onChanged: isViewMode ? null : (v) =>
-                      onChanged('preApproveProc', v == 'Yes' ? 1 : 0),
+                  onChanged: isViewMode
+                      ? null
+                      : (v) => onChanged('preApproveProc', v == 'Yes' ? 1 : 0),
                 ),
               ),
               AmsField(
                 label: 'Post-Approve',
-                tooltip:
-                    'Run a procedure after the authorization is approved.',
+                tooltip: 'Run a procedure after the authorization is approved.',
                 child: AmsDropdown(
-                  initialValue: initialData?['postApproveProc']?.toString() == '1' ? 'Yes' : (initialData?['postApproveProc'] != null ? 'No' : null),
+                  initialValue: initialData?['postApproveProc']?.toString() ==
+                          '1'
+                      ? 'Yes'
+                      : (initialData?['postApproveProc'] != null ? 'No' : null),
                   placeholder: 'Select...',
                   items: const ['Yes', 'No'],
-                  onChanged: isViewMode ? null : (v) =>
-                      onChanged('postApproveProc', v == 'Yes' ? 1 : 0),
+                  onChanged: isViewMode
+                      ? null
+                      : (v) => onChanged('postApproveProc', v == 'Yes' ? 1 : 0),
                 ),
               ),
               AmsField(
@@ -1064,11 +1286,14 @@ class DynamicNTFields extends StatelessWidget {
                 required: true,
                 tooltip: 'Whether this is a Transaction Program (ISTRANPGM).',
                 child: AmsDropdown(
-                  initialValue: initialData?['isTranPgm']?.toString() == '1' ? 'Yes' : (initialData?['isTranPgm'] != null ? 'No' : null),
+                  initialValue: initialData?['isTranPgm']?.toString() == '1'
+                      ? 'Yes'
+                      : (initialData?['isTranPgm'] != null ? 'No' : null),
                   placeholder: 'Is Transaction Program?',
                   items: const ['Yes', 'No'],
-                  onChanged: isViewMode ? null : (v) =>
-                      onChanged('isTranPgm', v == 'Yes' ? 1 : 0),
+                  onChanged: isViewMode
+                      ? null
+                      : (v) => onChanged('isTranPgm', v == 'Yes' ? 1 : 0),
                 ),
               ),
               AmsField(
@@ -1116,7 +1341,8 @@ class _Auth102LevelGrid extends StatefulWidget {
   final void Function(List<Map<String, dynamic>> levels) onChanged;
   final dynamic initialData;
   final bool isViewMode;
-  const _Auth102LevelGrid({required this.onChanged, this.initialData, this.isViewMode = false});
+  const _Auth102LevelGrid(
+      {required this.onChanged, this.initialData, this.isViewMode = false});
 
   @override
   State<_Auth102LevelGrid> createState() => _Auth102LevelGridState();
@@ -1237,8 +1463,9 @@ class _Auth102LevelGridState extends State<_Auth102LevelGrid> {
                         child: AmsDropdown(
                           initialValue: _levels[i]['permissionType'] as String?,
                           items: const ['R - Role', 'U - User'],
-                          onChanged: widget.isViewMode ? null : (v) =>
-                              _updateLevel(i, 'permissionType', v),
+                          onChanged: widget.isViewMode
+                              ? null
+                              : (v) => _updateLevel(i, 'permissionType', v),
                         ),
                       ),
                       AmsField(
@@ -1252,8 +1479,11 @@ class _Auth102LevelGridState extends State<_Auth102LevelGrid> {
                         child: AmsTextInput(
                           initialValue: _levels[i]['roleCd']?.toString(),
                           placeholder: 'e.g. 101',
-                          readOnly: widget.isViewMode || _levels[i]['permissionType'] == 'U - User',
-                          onChanged: widget.isViewMode ? null : (v) => _updateLevel(i, 'roleCd', v),
+                          readOnly: widget.isViewMode ||
+                              _levels[i]['permissionType'] == 'U - User',
+                          onChanged: widget.isViewMode
+                              ? null
+                              : (v) => _updateLevel(i, 'roleCd', v),
                         ),
                       ),
                       AmsField(
@@ -1267,8 +1497,11 @@ class _Auth102LevelGridState extends State<_Auth102LevelGrid> {
                         child: AmsTextInput(
                           initialValue: _levels[i]['userId']?.toString(),
                           placeholder: 'e.g. EMP123',
-                          readOnly: widget.isViewMode || _levels[i]['permissionType'] == 'R - Role',
-                          onChanged: widget.isViewMode ? null : (v) => _updateLevel(i, 'userId', v),
+                          readOnly: widget.isViewMode ||
+                              _levels[i]['permissionType'] == 'R - Role',
+                          onChanged: widget.isViewMode
+                              ? null
+                              : (v) => _updateLevel(i, 'userId', v),
                         ),
                       ),
                     ],
@@ -1299,7 +1532,8 @@ class _ModCrtFields extends StatefulWidget {
   final void Function(String key, dynamic val) onChanged;
   final Map<String, dynamic>? initialData;
   final bool isViewMode;
-  const _ModCrtFields({required this.onChanged, this.initialData, this.isViewMode = false});
+  const _ModCrtFields(
+      {required this.onChanged, this.initialData, this.isViewMode = false});
 
   @override
   State<_ModCrtFields> createState() => _ModCrtFieldsState();
@@ -1311,7 +1545,8 @@ class _ModCrtFieldsState extends State<_ModCrtFields> {
   @override
   void initState() {
     super.initState();
-    _subModuleEnabled = widget.initialData?['subModuleRequired']?.toString() == '1';
+    _subModuleEnabled =
+        widget.initialData?['subModuleRequired']?.toString() == '1';
   }
 
   @override
@@ -1335,8 +1570,9 @@ class _ModCrtFieldsState extends State<_ModCrtFields> {
               readOnly: widget.isViewMode,
               placeholder: 'e.g. 1',
               keyboardType: TextInputType.number,
-              onChanged: widget.isViewMode ? null : (v) =>
-                  widget.onChanged('moduleId', int.tryParse(v) ?? 0),
+              onChanged: widget.isViewMode
+                  ? null
+                  : (v) => widget.onChanged('moduleId', int.tryParse(v) ?? 0),
             ),
           ),
           AmsField(
@@ -1348,7 +1584,9 @@ class _ModCrtFieldsState extends State<_ModCrtFields> {
               initialValue: widget.initialData?['moduleName']?.toString(),
               readOnly: widget.isViewMode,
               placeholder: 'e.g. Chat',
-              onChanged: widget.isViewMode ? null : (v) => widget.onChanged('moduleName', v),
+              onChanged: widget.isViewMode
+                  ? null
+                  : (v) => widget.onChanged('moduleName', v),
             ),
           ),
           AmsField(
@@ -1356,14 +1594,21 @@ class _ModCrtFieldsState extends State<_ModCrtFields> {
             required: true,
             tooltip: 'Whether a sub-module is required or not.',
             child: AmsDropdown(
-              initialValue: widget.initialData?['subModuleRequired']?.toString() == '1' ? '1 - Enable' : (widget.initialData?['subModuleRequired'] != null ? '0 - Disable' : null),
+              initialValue:
+                  widget.initialData?['subModuleRequired']?.toString() == '1'
+                      ? '1 - Enable'
+                      : (widget.initialData?['subModuleRequired'] != null
+                          ? '0 - Disable'
+                          : null),
               items: const ['1 - Enable', '0 - Disable'],
               placeholder: 'Select...',
-              onChanged: widget.isViewMode ? null : (v) {
-                final enabled = (v ?? '').startsWith('1');
-                setState(() => _subModuleEnabled = enabled);
-                widget.onChanged('subModuleRequired', enabled ? 1 : 0);
-              },
+              onChanged: widget.isViewMode
+                  ? null
+                  : (v) {
+                      final enabled = (v ?? '').startsWith('1');
+                      setState(() => _subModuleEnabled = enabled);
+                      widget.onChanged('subModuleRequired', enabled ? 1 : 0);
+                    },
             ),
           ),
           AmsField(
@@ -1371,11 +1616,17 @@ class _ModCrtFieldsState extends State<_ModCrtFields> {
             required: true,
             tooltip: '1 - Enable, 0 - Disable the module.',
             child: AmsDropdown(
-              initialValue: widget.initialData?['status']?.toString() == '1' ? '1 - Enable' : (widget.initialData?['status'] != null ? '0 - Disable' : null),
+              initialValue: widget.initialData?['status']?.toString() == '1'
+                  ? '1 - Enable'
+                  : (widget.initialData?['status'] != null
+                      ? '0 - Disable'
+                      : null),
               items: const ['1 - Enable', '0 - Disable'],
               placeholder: 'Select...',
-              onChanged: widget.isViewMode ? null : (v) => widget.onChanged(
-                  'status', (v ?? '').startsWith('1') ? 1 : 0),
+              onChanged: widget.isViewMode
+                  ? null
+                  : (v) => widget.onChanged(
+                      'status', (v ?? '').startsWith('1') ? 1 : 0),
             ),
           ),
           AnimatedSwitcher(
@@ -1395,12 +1646,15 @@ class _ModCrtFieldsState extends State<_ModCrtFields> {
                         required: true,
                         tooltip: 'Unique ID for the sub-module.',
                         child: AmsTextInput(
-                          initialValue: widget.initialData?['subModuleId']?.toString(),
+                          initialValue:
+                              widget.initialData?['subModuleId']?.toString(),
                           readOnly: widget.isViewMode,
                           placeholder: 'e.g. 101',
                           keyboardType: TextInputType.number,
-                          onChanged: widget.isViewMode ? null : (v) => widget.onChanged(
-                              'subModuleId', int.tryParse(v) ?? 0),
+                          onChanged: widget.isViewMode
+                              ? null
+                              : (v) => widget.onChanged(
+                                  'subModuleId', int.tryParse(v) ?? 0),
                         ),
                       ),
                       AmsField(
@@ -1408,11 +1662,13 @@ class _ModCrtFieldsState extends State<_ModCrtFields> {
                         required: true,
                         tooltip: 'Name of the sub-module.',
                         child: AmsTextInput(
-                          initialValue: widget.initialData?['subModuleName']?.toString(),
+                          initialValue:
+                              widget.initialData?['subModuleName']?.toString(),
                           readOnly: widget.isViewMode,
                           placeholder: 'e.g. Group Chat',
-                          onChanged: widget.isViewMode ? null : (v) =>
-                              widget.onChanged('subModuleName', v),
+                          onChanged: widget.isViewMode
+                              ? null
+                              : (v) => widget.onChanged('subModuleName', v),
                         ),
                       ),
                     ],

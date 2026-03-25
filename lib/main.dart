@@ -11,6 +11,7 @@ import 'screens/tran_entry_screen.dart';
 import 'screens/nontran_entry_screen.dart';
 import 'screens/program_list_screen.dart';
 import 'screens/gl_category_screen.dart';
+import 'screens/gl_master_screen.dart';
 
 import 'screens/nontran_auth_screen.dart';
 import 'screens/auth_config_screen.dart';
@@ -307,6 +308,11 @@ class _AmsRootState extends State<AmsRoot> {
       case 'nontran':
         if (_state.selectedProg == 'GL-CAT') {
           body = GLCategoryScreen(
+            onBack: () => _navigate('list'),
+            userName: _state.userName,
+          );
+        } else if (_state.selectedProg == 'GL-MST') {
+          body = GLMasterScreen(
             onBack: () => _navigate('list'),
             userName: _state.userName,
           );
