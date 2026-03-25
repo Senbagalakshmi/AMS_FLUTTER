@@ -15,7 +15,6 @@ class ApiService {
     'Content-Type': 'application/json',
     if (_token != null) 'Authorization': 'Bearer $_token',
   };
-  Map<String, String> get headers => _headers;
 
   Future<String?> login(String username, String password) async {
     try {
@@ -49,18 +48,24 @@ class ApiService {
         final List<dynamic> data = jsonDecode(response.body);
         final Map<String, Auth101Config> configs = {};
         for (var item in data) {
+          int parsedLevels = 1;
+          if (item['authLevels'] is num) {
+             parsedLevels = (item['authLevels'] as num).toInt();
+          } else if (item['authLevels'] is List) {
+             parsedLevels = (item['authLevels'] as List).length;
+          }
           final cfg = Auth101Config(
-            id: item['programId'] ?? '',
-            name: item['programId'] ?? '',
-            approvalReq: item['approvalReq'] == 1,
-            isTran: item['isTranPgm'] == 1,
-            levels: (item['authLevels'] as List?)?.length ?? 1,
-            preApproveProc: item['preApproveProc'] == 1,
+            id: item['programId']?.toString() ?? '',
+            name: item['programId']?.toString() ?? '',
+            approvalReq: item['approvalReq'] == 1 || item['approvalReq'] == true,
+            isTran: item['isTranPgm'] == 1 || item['isTranPgm'] == true,
+            levels: parsedLevels,
+            preApproveProc: item['preApproveProc'] == 1 || item['preApproveProc'] == true,
             preExecMethod: item['preExecMethod']?.toString(),
-            preProcessName: item['preProcessName'],
-            postApproveProc: item['postApproveProc'] == 1,
+            preProcessName: item['preProcessName']?.toString(),
+            postApproveProc: item['postApproveProc'] == 1 || item['postApproveProc'] == true,
             postExecMethod: item['postExecMethod']?.toString(),
-            postProcessName: item['postProcessName'],
+            postProcessName: item['postProcessName']?.toString(),
           );
           configs[cfg.id] = cfg;
         }
@@ -80,11 +85,15 @@ class ApiService {
       );
 
       if (response.statusCode == 200) {
+        print('getAuthQueue response: ${response.body}');
         final List<dynamic> data = jsonDecode(response.body);
         return data.map((json) => AuthRecord.fromJson(json)).toList();
+      } else {
+        print('getAuthQueue failed with status: ${response.statusCode}');
       }
       return null;
     } catch (e) {
+      print('getAuthQueue exception: $e');
       return null;
     }
   }

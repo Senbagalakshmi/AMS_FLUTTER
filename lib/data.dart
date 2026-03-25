@@ -33,13 +33,13 @@ final Map<String, Auth101Config> auth101 = {
       levels: 1),
   'ROLE-CRT': const Auth101Config(
       id: 'ROLE-CRT',
-      name: 'User-Role Assignment',
+      name: 'Role Creation',
       approvalReq: true,
       isTran: false,
       levels: 1),
   'USR-ROLE': const Auth101Config(
       id: 'USR-ROLE',
-      name: 'Role',
+      name: 'User-Role Assignment',
       approvalReq: true,
       isTran: false,
       levels: 1),

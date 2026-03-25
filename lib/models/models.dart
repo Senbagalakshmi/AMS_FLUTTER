@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 class Auth101Config {
   final String id;
   final String name;
@@ -135,34 +137,75 @@ class AuthRecord {
   });
 
   factory AuthRecord.fromJson(Map<String, dynamic> json) {
-    var list = json['dataBlocks'] as List? ?? [];
-    List<AuthDataBlock> dataBlocksList =
-        list.map((i) => AuthDataBlock.fromJson(i)).toList();
+    List<AuthDataBlock> dataBlocksList = [];
+    try {
+      var dbData = json['dataBlocks'] ?? json['datablock'] ?? json['dataBlock'];
+      if (dbData != null) {
+        if (dbData is String && dbData.trim().isNotEmpty) {
+          var parsed = jsonDecode(dbData);
+          if (parsed is List) {
+            for (var item in parsed) {
+              if (item is Map<String, dynamic>) {
+                if (item.containsKey('data') && item.containsKey('tableName')) {
+                  dataBlocksList.add(AuthDataBlock.fromJson(item));
+                } else {
+                  dataBlocksList.add(AuthDataBlock(recSl: 1, tableName: 'DATA', data: item));
+                }
+              }
+            }
+          } else if (parsed is Map<String, dynamic>) {
+            if (parsed.containsKey('data') && parsed.containsKey('tableName')) {
+              dataBlocksList.add(AuthDataBlock.fromJson(parsed));
+            } else {
+              dataBlocksList.add(AuthDataBlock(recSl: 1, tableName: json['programId'] ?? 'DATA', data: parsed));
+            }
+          }
+        } else if (dbData is List) {
+          for (var item in dbData) {
+            if (item is Map<String, dynamic>) {
+              if (item.containsKey('data') && item.containsKey('tableName')) {
+                dataBlocksList.add(AuthDataBlock.fromJson(item));
+              } else {
+                dataBlocksList.add(AuthDataBlock(recSl: 1, tableName: 'DATA', data: item));
+              }
+            }
+          }
+        } else if (dbData is Map<String, dynamic>) {
+          if (dbData.containsKey('data') && dbData.containsKey('tableName')) {
+            dataBlocksList.add(AuthDataBlock.fromJson(dbData));
+          } else {
+            dataBlocksList.add(AuthDataBlock(recSl: 1, tableName: json['programId'] ?? 'DATA', data: dbData));
+          }
+        }
+      }
+    } catch (e) {
+      print('Error parsing dataBlocks for ${json['authSl']}: $e');
+    }
 
     return AuthRecord(
-      orgCode: json['orgCode'] ?? '',
-      effDate: json['effDate'] ?? '',
-      programId: json['programId'] ?? '',
-      primaryKey: json['primaryKey'] ?? '',
-      authSl: json['authSl'] ?? '',
-      displayRemarks: json['displayRemarks'] ?? '',
-      eUser: json['eUser'] ?? '',
-      eDate: json['eDate'] ?? '',
-      cUser: json['cUser'],
-      cDate: json['cDate'],
-      rUser: json['rUser'],
-      rDate: json['rDate'],
-      flUser: json['flUser'],
-      flDate: json['flDate'],
-      slUser: json['slUser'],
-      slDate: json['slDate'],
-      tlUser: json['tlUser'],
-      tlDate: json['tlDate'],
-      exceptionalRemarks: json['exceptionalRemarks'],
-      correctionReq: json['correctionReq'] ?? false,
-      correctionDetails: json['correctionDetails'],
-      riskPresented: json['riskPresented'] ?? false,
-      authLock: json['authLock'] ?? false,
+      orgCode: json['orgCode']?.toString() ?? '',
+      effDate: json['effDate']?.toString() ?? '',
+      programId: json['programId']?.toString() ?? '',
+      primaryKey: json['primaryKey']?.toString() ?? '',
+      authSl: json['authSl']?.toString() ?? '',
+      displayRemarks: json['displayRemarks']?.toString() ?? '',
+      eUser: json['eUser']?.toString() ?? '',
+      eDate: json['eDate']?.toString() ?? '',
+      cUser: json['cUser']?.toString(),
+      cDate: json['cDate']?.toString(),
+      rUser: json['rUser']?.toString(),
+      rDate: json['rDate']?.toString(),
+      flUser: json['flUser']?.toString(),
+      flDate: json['flDate']?.toString(),
+      slUser: json['slUser']?.toString(),
+      slDate: json['slDate']?.toString(),
+      tlUser: json['tlUser']?.toString(),
+      tlDate: json['tlDate']?.toString(),
+      exceptionalRemarks: json['exceptionalRemarks']?.toString(),
+      correctionReq: json['correctionReq'] == true || json['correctionReq'] == 1,
+      correctionDetails: json['correctionDetails']?.toString(),
+      riskPresented: json['riskPresented'] == true || json['riskPresented'] == 1,
+      authLock: json['authLock'] == true || json['authLock'] == 1,
       dataBlocks: dataBlocksList,
     );
   }

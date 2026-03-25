@@ -65,7 +65,7 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
         '2026-${(100 + (DateTime.now().millisecondsSinceEpoch % 900)).toString().padLeft(4, '0')}';
 
     final fullData = {
-      'orgCode': (_selProg == 'USR-CRT' || _selProg == 'ROLE-CRT') ? 50 : 1,
+      'orgCode': (_selProg == 'USR-CRT' || _selProg == 'ROLE-CRT' || _selProg == 'USR-ROLE') ? 50 : 1,
       ..._dynamicData,
     };
 
@@ -90,8 +90,8 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
   Widget build(BuildContext context) {
     final isDirectSave = _cfg != null && !_cfg!.approvalReq;
     final isUserScreenList = _selProg == 'USR-CRT' && !_showForm;
-    final isRoleScreenList = _selProg == 'USR-ROLE' && !_showForm;
-    final isUserRoleScreenList = _selProg == 'ROLE-CRT' && !_showForm;
+    final isRoleScreenList = _selProg == 'ROLE-CRT' && !_showForm;
+    final isUserRoleScreenList = _selProg == 'USR-ROLE' && !_showForm;
     final isModuleScreenList = _selProg == 'MOD-CRT' && !_showForm;
     final isMenuScreenList = _selProg == 'MENU-CRT' && !_showForm;
     final isAuthCtrlScreenList = _selProg == 'AUTHCTL' && !_showForm;
@@ -744,6 +744,9 @@ class DynamicNTFields extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final Map<String, dynamic> data =
+        initialData?.map((k, v) => MapEntry(k.toLowerCase(), v)) ?? {};
+
     switch (prog) {
       case 'USR-CRT':
         return Container(
@@ -759,8 +762,8 @@ class DynamicNTFields extends StatelessWidget {
               AmsField(
                 label: 'ORGCODE',
                 tooltip: 'Unique organization code assigned to this user.',
-                child: const AmsTextInput(
-                  initialValue: '50',
+                child: AmsTextInput(
+                  initialValue: data['orgcode']?.toString() ?? '50',
                   readOnly: true,
                 ),
               ),
@@ -769,9 +772,7 @@ class DynamicNTFields extends StatelessWidget {
                 required: true,
                 tooltip: 'Unique identification code for the user.',
                 child: AmsTextInput(
-                  initialValue:
-                      (initialData?['usersCd'] ?? initialData?['userscd'])
-                          ?.toString(),
+                  initialValue: data['userscd']?.toString(),
                   readOnly: isViewMode,
                   placeholder: 'User Code (e.g. USR001)',
                   onChanged: isViewMode ? null : (v) => onChanged('usersCd', v),
@@ -783,16 +784,9 @@ class DynamicNTFields extends StatelessWidget {
                 tooltip:
                     'Method of menu assignment (Role-based vs User-based).',
                 child: AmsDropdown(
-                  initialValue:
-                      (initialData?['menuType'] ?? initialData?['menutype'])
-                                  ?.toString() ==
-                              '2'
-                          ? '2 - Userwise'
-                          : ((initialData?['menuType'] ??
-                                      initialData?['menutype']) !=
-                                  null
-                              ? '1 - Rolewise'
-                              : null),
+                  initialValue: data['menutype']?.toString() == '2' || data['menutype']?.toString() == '2 - Userwise'
+                      ? '2 - Userwise'
+                      : (data['menutype'] != null ? '1 - Rolewise' : null),
                   items: const ['1 - Rolewise', '2 - Userwise'],
                   onChanged: isViewMode
                       ? null
@@ -805,15 +799,11 @@ class DynamicNTFields extends StatelessWidget {
                 required: true,
                 tooltip: 'The user\'s gender for profile identification.',
                 child: AmsDropdown(
-                  initialValue: initialData?['gender']
-                              ?.toString()
-                              .startsWith('F') ==
-                          true
+                  initialValue: data['gender']?.toString().toLowerCase().startsWith('f') == true
                       ? 'Female'
-                      : (initialData?['gender']?.toString().startsWith('O') ==
-                              true
+                      : (data['gender']?.toString().toLowerCase().startsWith('o') == true
                           ? 'Other'
-                          : (initialData?['gender'] != null ? 'Male' : null)),
+                          : (data['gender'] != null ? 'Male' : null)),
                   items: const ['Male', 'Female', 'Other'],
                   onChanged: isViewMode ? null : (v) => onChanged('gender', v),
                 ),
@@ -834,8 +824,8 @@ class DynamicNTFields extends StatelessWidget {
                           'Mrs.',
                           'Dr.',
                           'Prof.'
-                        ].contains(initialData?['title']?.toString())
-                            ? (initialData?['title']?.toString())
+                        ].contains(data['title']?.toString())
+                            ? (data['title']?.toString())
                             : null,
                         items: const ['Mr.', 'Ms.', 'Mrs.', 'Dr.', 'Prof.'],
                         placeholder: 'TITLE',
@@ -847,9 +837,7 @@ class DynamicNTFields extends StatelessWidget {
                     Expanded(
                       flex: 3,
                       child: AmsTextInput(
-                        initialValue:
-                            (initialData?['fName'] ?? initialData?['fname'])
-                                ?.toString(),
+                        initialValue: data['fname']?.toString(),
                         readOnly: isViewMode,
                         placeholder: 'FNAME',
                         onChanged:
@@ -860,9 +848,7 @@ class DynamicNTFields extends StatelessWidget {
                     Expanded(
                       flex: 3,
                       child: AmsTextInput(
-                        initialValue:
-                            (initialData?['mName'] ?? initialData?['mname'])
-                                ?.toString(),
+                        initialValue: data['mname']?.toString(),
                         readOnly: isViewMode,
                         placeholder: 'MNAME',
                         onChanged:
@@ -873,9 +859,7 @@ class DynamicNTFields extends StatelessWidget {
                     Expanded(
                       flex: 3,
                       child: AmsTextInput(
-                        initialValue:
-                            (initialData?['lName'] ?? initialData?['lname'])
-                                ?.toString(),
+                        initialValue: data['lname']?.toString(),
                         readOnly: isViewMode,
                         placeholder: 'LNAME',
                         onChanged:
@@ -890,7 +874,7 @@ class DynamicNTFields extends StatelessWidget {
                 required: true,
                 tooltip: 'User\'s primary work email address.',
                 child: AmsTextInput(
-                  initialValue: initialData?['email']?.toString(),
+                  initialValue: data['email']?.toString(),
                   readOnly: isViewMode,
                   placeholder: 'Work Email ID',
                   onChanged: isViewMode ? null : (v) => onChanged('email', v),
@@ -901,7 +885,7 @@ class DynamicNTFields extends StatelessWidget {
                 label: 'MOBILE',
                 tooltip: 'Primary mobile number for the user.',
                 child: AmsTextInput(
-                  initialValue: initialData?['mobile']?.toString(),
+                  initialValue: data['mobile']?.toString(),
                   readOnly: isViewMode,
                   placeholder: 'Contact Number',
                   onChanged: isViewMode ? null : (v) => onChanged('mobile', v),
@@ -913,7 +897,7 @@ class DynamicNTFields extends StatelessWidget {
                 required: true,
                 tooltip: 'Country of residence (2-digit code).',
                 child: AmsTextInput(
-                  initialValue: initialData?['country']?.toString(),
+                  initialValue: data['country']?.toString(),
                   readOnly: isViewMode,
                   placeholder: '2 Digit country code',
                   onChanged: isViewMode ? null : (v) => onChanged('country', v),
@@ -922,7 +906,7 @@ class DynamicNTFields extends StatelessWidget {
             ],
           ),
         );
-      case 'ROLE-CRT': // User-Role Assignment
+      case 'USR-ROLE': // User-Role Assignment
         return Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
@@ -936,8 +920,8 @@ class DynamicNTFields extends StatelessWidget {
               AmsField(
                 label: 'ORGCODE',
                 tooltip: 'Unique organization code.',
-                child: const AmsTextInput(
-                  initialValue: '50',
+                child: AmsTextInput(
+                  initialValue: data['orgcode']?.toString() ?? '50',
                   readOnly: true,
                 ),
               ),
@@ -946,7 +930,7 @@ class DynamicNTFields extends StatelessWidget {
                 required: true,
                 tooltip: 'Target User ID for role assignment.',
                 child: AmsTextInput(
-                  initialValue: initialData?['usersCd']?.toString(),
+                  initialValue: data['userscd']?.toString(),
                   readOnly: isViewMode,
                   placeholder: 'e.g. arjun_m',
                   onChanged: isViewMode ? null : (v) => onChanged('usersCd', v),
@@ -957,7 +941,7 @@ class DynamicNTFields extends StatelessWidget {
                 required: true,
                 tooltip: 'Role ID to be assigned.',
                 child: AmsTextInput(
-                  initialValue: initialData?['roleCd']?.toString() ?? '10',
+                  initialValue: data['rolecd']?.toString() ?? '10',
                   readOnly: isViewMode,
                   placeholder: 'e.g. 10',
                   onChanged: isViewMode
@@ -968,7 +952,7 @@ class DynamicNTFields extends StatelessWidget {
             ],
           ),
         );
-      case 'USR-ROLE': // Role Creation
+      case 'ROLE-CRT': // Role Creation
         return Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
@@ -982,8 +966,8 @@ class DynamicNTFields extends StatelessWidget {
               AmsField(
                 label: 'ORGCODE',
                 tooltip: 'Unique organization code for this role.',
-                child: const AmsTextInput(
-                  initialValue: '50',
+                child: AmsTextInput(
+                  initialValue: data['orgcode']?.toString() ?? '50',
                   readOnly: true,
                 ),
               ),
@@ -992,7 +976,7 @@ class DynamicNTFields extends StatelessWidget {
                 required: true,
                 tooltip: 'Unique numerical identifier for the role.',
                 child: AmsTextInput(
-                  initialValue: initialData?['roleCd']?.toString(),
+                  initialValue: data['rolecd']?.toString(),
                   readOnly: isViewMode,
                   placeholder: 'e.g. 101',
                   onChanged: isViewMode

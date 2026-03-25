@@ -46,7 +46,7 @@ class _AmsRootState extends State<AmsRoot> {
   AppState _state = AppState(
     screen: 'login',
     queue: seedQueue(),
-    authQueue: seedAuthQueue(),
+    authQueue: const [],
     authConfigs: auth101,
   );
 
@@ -352,10 +352,7 @@ class _AmsRootState extends State<AmsRoot> {
         );
       case 'nontranauth':
         body = NonTranAuthScreen(
-          authQueue: _state.authQueue.where((r) {
-            final cfg = _state.authConfigs[r.programId];
-            return cfg != null && cfg.isTran == false;
-          }).toList(),
+          authQueue: _state.authQueue,
           onProcess: _handleAuthProcess,
           onBack: () => _navigate('list'),
           userName: _state.userName,
