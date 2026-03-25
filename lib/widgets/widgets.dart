@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
 import 'package:google_fonts/google_fonts.dart';
 import '../theme.dart';
+import '../services/user_service.dart';
+import '../services/api_service.dart';
 
 // ─── TEXT STYLES ─────────────────────────────────────────────
 TextStyle monoStyle({
@@ -1201,12 +1203,12 @@ class _AmsSidebarState extends State<AmsSidebar> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'AMS',
-                        style: bodyStyle(
+                  Text(
+                    'AMS',
+                    style: bodyStyle(
                             size: 20,
-                            weight: FontWeight.w900,
-                            color: AppColors.ink),
+                        weight: FontWeight.w900,
+                        color: AppColors.ink),
                       ),
                       Text(
                         'Management System',
@@ -1653,15 +1655,100 @@ class _AmsShellState extends State<AmsShell> {
                             ],
                           ),
                           const SizedBox(width: 12),
-                          CircleAvatar(
-                            radius: 18,
-                            backgroundColor: AppColors.tBlueLt,
-                            child: Text(
-                              (widget.userName ?? 'A')[0].toUpperCase(),
-                              style: bodyStyle(
+                          // CircleAvatar(
+                          //   radius: 18,
+                          //   backgroundColor: AppColors.tBlueLt,
+                          //   child: Text(
+                          //     (widget.userName ?? 'A')[0].toUpperCase(),
+                          //     style: bodyStyle(
+                          //         size: 14, weight: FontWeight.w800, color: AppColors.tBlue),
+                          //   ),
+                          // ),
+                        GestureDetector(
+                         onTap: () async {
+                         final user = await UserService.getUserProfile();
+
+                         print("USER DATA : $user");
+
+                         if (user == null) return;
+
+                           showMenu(
+                          context: context,
+                          position: RelativeRect.fromLTRB(
+                          MediaQuery.of(context).size.width - 300, 60, 20, 0,
+                         ),
+                         items: [
+                       PopupMenuItem(
+                       enabled: false,
+                      child: Container(
+                      width: 300,
+                      child: Column(
+                       mainAxisSize: MainAxisSize.min,
+                      children: [
+
+                   CircleAvatar(
+                  radius: 25,
+                  child: Text(
+                    (user['username'] ?? "A")[0],
+                    ),
+                   ),
+
+                   SizedBox(height: 10),
+
+                    Text(
+                    user['username'] ?? "",
+                     style: TextStyle(color: Colors.black),
+                       ),
+
+                      Text(
+                      user['email'] ?? "",
+                      style: TextStyle(color: Colors.black),
+                       ),
+
+                      Text(
+                        "Role: ${user['role'] ?? ""}",
+                        style: TextStyle(color: Colors.black),
+                         ),
+
+                            Divider(),
+
+                           Center(
+                                child: InkWell(
+                                 onTap: () async {
+                                 Navigator.pop(context);
+                                 apiService.updateToken(null);
+                                    widget.onNavigate('login', null);
+                                },
+                                child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: const [
+                                        Icon(Icons.logout, color: Colors.black),
+                                        SizedBox(width: 8),
+                                        Text("Logout",style: TextStyle(color: Colors.black,fontWeight: FontWeight.w600,),
+                                       ),
+                                   ],
+                                  ),
+                                ),
+                             )
+
+                                    ],
+                                  ),
+                                 ),
+                               ),
+                              ],
+                           );
+                          },
+
+                       child: CircleAvatar(
+                        radius: 18,
+                        backgroundColor: AppColors.tBlueLt,
+                         child: Text(
+                          (widget.userName ?? 'A')[0].toUpperCase(),
+                            style: bodyStyle(
                                   size: 14, weight: FontWeight.w800, color: AppColors.tBlue),
                             ),
                           ),
+                         ),
                         ],
                       ),
                     ],

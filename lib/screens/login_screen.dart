@@ -62,6 +62,7 @@ class _LoginScreenState extends State<LoginScreen>
       if (mounted) {
         setState(() => _isLoading = false);
         if (token != null) {
+           apiService.updateToken(token);
           widget.onLogin(token, uid);
         } else {
           setState(() {

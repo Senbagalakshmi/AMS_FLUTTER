@@ -1,0 +1,19 @@
+class UserProfile {
+  final String username;
+  final String email;
+  final String role;
+
+  UserProfile({
+    required this.username,
+    required this.email,
+    required this.role,
+  });
+
+  factory UserProfile.fromJson(Map<String, dynamic> json) {
+    return UserProfile(
+      username: json['username'],
+      email: json['email'],
+      role: json['role'],
+    );
+  }
+}
