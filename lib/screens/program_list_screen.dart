@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme.dart';
 import '../models/models.dart';
-
 import '../widgets/widgets.dart';
 
 class ProgramListScreen extends StatefulWidget {
@@ -29,244 +28,187 @@ class ProgramListScreen extends StatefulWidget {
 }
 
 class _ProgramListScreenState extends State<ProgramListScreen> {
-  String? _selectedProg;
-  String _searchQuery = '';
-  final TextEditingController _searchController = TextEditingController();
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
-
   @override
   Widget build(BuildContext context) {
-    final rawPrograms = [...widget.tranPrograms, ...widget.nonTranPrograms];
-    const title = 'Select a Program';
-    const headerIcon = Icon(Icons.dashboard_customize_rounded, color: AppColors.tBlue, size: 28);
-
-    final programs = rawPrograms.where((pid) {
-      final cfg = widget.authConfigs[pid];
-      if (cfg == null) return false;
-      final q = _searchQuery.toLowerCase();
-      return pid.toLowerCase().contains(q) ||
-          cfg.name.toLowerCase().contains(q);
-    }).toList();
-
-    return Scaffold(
-      body: Column(
+  return Scaffold(
+    backgroundColor: const Color(0xFFF8FAFC),
+    body: SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 30),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
 
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(28, 28, 28, 80),
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 1000),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+          // 🔹 HEADER (Full width)
+          Text(
+            'GENERAL',
+            style: bodyStyle(
+              size: 22,
+              weight: FontWeight.w800,
+              color: AppColors.ink,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Quick snapshot of system metrics and active operations.',
+            style: bodyStyle(size: 13, color: AppColors.ink3),
+          ),
+
+          const SizedBox(height: 70),
+
+          // 🔹 ONLY GRID IS CENTERED
+          Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 1100),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final crossAxisCount =
+                      constraints.maxWidth > 900 ? 4 :
+                      constraints.maxWidth > 600 ? 2 : 1;
+
+                  return GridView.count(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    crossAxisCount: crossAxisCount,
+                    crossAxisSpacing: 16,
+                    mainAxisSpacing: 16,
+                    childAspectRatio: 1.25,
                     children: [
-                      // Header
-                      Row(
-                        children: [
-                          headerIcon,
-                          const SizedBox(width: 12),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(title,
-                                  style: bodyStyle(
-                                      size: 20, weight: FontWeight.w800)),
-                              Text(
-                                  'Select a specific program to proceed to the entry form.',
-                                  style: bodyStyle(
-                                      size: 13, color: AppColors.ink2)),
-                            ],
-                          ),
-                          const Spacer(),
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              SizedBox(
-                                width: 300,
-                                child: AmsTextInput(
-                                  controller: _searchController,
-                                  placeholder: 'Search Program Name or ID...',
-                                  onChanged: (v) =>
-                                      setState(() => _searchQuery = v),
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Container(
-                                decoration: BoxDecoration(
-                                  color: AppColors.redLt,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: IconButton(
-                                  onPressed: () {
-                                    showDialog(
-                                      context: context,
-                                      builder: (ctx) => AlertDialog(
-                                        titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 12),
-                                        contentPadding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-                                        actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-                                        title: Text('Confirm Logout', style: bodyStyle(size: 20, weight: FontWeight.w700)),
-                                        content: SizedBox(
-                                          width: 400,
-                                          child: Text('Are you sure you want to logout off your account?', style: bodyStyle(size: 16)),
-                                        ),
-                                        actions: [
-                                          TextButton(
-                                            style: TextButton.styleFrom(
-                                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                                            ),
-                                            onPressed: () => Navigator.of(ctx).pop(),
-                                            child: Text('Cancel', style: bodyStyle(size: 15, weight: FontWeight.w600, color: AppColors.ink3)),
-                                          ),
-                                          const SizedBox(width: 8),
-                                          AmsButton(
-                                            label: 'Yes, Logout',
-                                            large: true,
-                                            onPressed: () {
-                                              Navigator.of(ctx).pop();
-                                              widget.onBack();
-                                            },
-                                          ),
-                                        ],
-                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                                      ),
-                                    );
-                                  },
-                                  icon: const Icon(Icons.logout),
-                                  color: AppColors.red,
-                                  tooltip: 'Logout',
-                                  iconSize: 22,
-                                ),
-                              ),
-                            ],
-                          ),
+                      _buildDetailContainer(
+                        title: 'Master Details',
+                        icon: Icons.storage_rounded,
+                        color: AppColors.tBlue,
+                        metrics: [
+                          _MetricInfo('Total Records', '24,592'),
+                          _MetricInfo('Sync Status', 'Up to date'),
+                          _MetricInfo('Last Updated', '12 mins ago'),
                         ],
                       ),
-                      const SizedBox(height: 24),
-
-                      // Grid of programs
-                      if (programs.isEmpty)
-                        const SizedBox.shrink()
-                      else
-                        AmsPaginatedView<String>(
-                          items: programs,
-                          itemsPerPage: 9,
-                          shrinkWrap: true,
-                          builder: (ctx, currentItems) => LayoutBuilder(builder: (ctx, constraints) {
-                            final crossAxisCount = constraints.maxWidth > 800
-                                ? 3
-                                : (constraints.maxWidth > 500 ? 2 : 1);
-
-                            return GridView.builder(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              gridDelegate:
-                                  SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: crossAxisCount,
-                                crossAxisSpacing: 16,
-                                mainAxisSpacing: 16,
-                                mainAxisExtent: 110,
-                              ),
-                              itemCount: currentItems.length,
-                              itemBuilder: (ctx, idx) {
-                                final pid = currentItems[idx];
-                              final cfg = widget.authConfigs[pid]!;
-                              final isSel = _selectedProg == pid;
-                              final isTLocal = widget.tranPrograms.contains(pid);
-                              final itemAccent = isTLocal ? AppColors.tBlue : AppColors.nTeal;
-                              final itemAccentLt = isTLocal ? AppColors.tBlueLt : AppColors.nTealLt;
-
-                              return MouseRegion(
-                                cursor: SystemMouseCursors.click,
-                                child: GestureDetector(
-                                  onTap: () =>
-                                      setState(() => _selectedProg = pid),
-                                  child: AnimatedContainer(
-                                    duration: const Duration(milliseconds: 200),
-                                    padding: const EdgeInsets.all(16),
-                                    decoration: BoxDecoration(
-                                      color: isSel ? itemAccentLt : Colors.white,
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(
-                                        color: isSel ? itemAccent : AppColors.border,
-                                        width: isSel ? 2 : 1.5,
-                                      ),
-                                      boxShadow: isSel
-                                          ? [
-                                              BoxShadow(
-                                                color: itemAccent.withValues(alpha: 0.1),
-                                                blurRadius: 10,
-                                                offset: const Offset(0, 4),
-                                              )
-                                            ]
-                                          : null,
-                                    ),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Text(pid,
-                                                style: monoStyle(
-                                                    size: 12,
-                                                    weight: FontWeight.w700,
-                                                    color: itemAccent)),
-                                            if (isSel)
-                                              Icon(Icons.check_circle,
-                                                  color: itemAccent, size: 18),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 8),
-                                        Text(cfg.name,
-                                            maxLines: 2,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: bodyStyle(
-                                                size: 14,
-                                                weight: FontWeight.w600,
-                                                color: AppColors.ink)),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              );
-                            },
-                          );
-                        }),
-                        ),
-
-                      const SizedBox(height: 32),
-                      if (programs.isNotEmpty)
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            AmsButton(
-                              label: 'Proceed →',
-                              large: true,
-                              variant: _selectedProg != null && widget.tranPrograms.contains(_selectedProg)
-                                  ? AmsButtonVariant.primary
-                                  : AmsButtonVariant.teal,
-                              onPressed: _selectedProg != null
-                                  ? () => widget.onSelect(_selectedProg!)
-                                  : null,
-                            ),
-                          ],
-                        ),
+                      _buildDetailContainer(
+                        title: 'GL Details',
+                        icon: Icons.account_balance_rounded,
+                        color: AppColors.nTeal,
+                        metrics: [
+                          _MetricInfo('Active Ledgers', '142'),
+                          _MetricInfo('Unmapped AC', '3'),
+                          _MetricInfo('Reconciliation', 'Pending'),
+                        ],
+                      ),
+                      _buildDetailContainer(
+                        title: 'Configuration',
+                        icon: Icons.settings_suggest_rounded,
+                        color: AppColors.amber,
+                        metrics: [
+                          _MetricInfo('System Version', 'v2.4.1'),
+                          _MetricInfo('Environment', 'Production'),
+                          _MetricInfo('Active Modules', '12 / 15'),
+                        ],
+                      ),
+                      _buildDetailContainer(
+                        title: 'Auth Queue',
+                        icon: Icons.fact_check_rounded,
+                        color: AppColors.red,
+                        metrics: [
+                          _MetricInfo('Pending Auth', '3 Requests'),
+                          _MetricInfo('High Priority', '1 Request'),
+                          _MetricInfo('Next Action', 'GL Review'),
+                        ],
+                      ),
                     ],
-                  ),
-                ),
+                  );
+                },
               ),
             ),
           ),
         ],
       ),
+    ),
+  );
+}
+
+  Widget _buildDetailContainer({
+    required String title,
+    required IconData icon,
+    required Color color,
+    required List<_MetricInfo> metrics,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          )
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(icon, color: color, size: 18),
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  title,
+                  style: bodyStyle(
+                    size: 15,
+                    weight: FontWeight.w700,
+                    color: AppColors.ink,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1, color: AppColors.border),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: metrics
+                    .map(
+                      (m) => Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            m.label,
+                            style:
+                                bodyStyle(size: 12.5, color: AppColors.ink3),
+                          ),
+                          Text(
+                            m.value,
+                            style: bodyStyle(
+                                size: 12.5,
+                                weight: FontWeight.w600,
+                                color: AppColors.ink),
+                          ),
+                        ],
+                      ),
+                    )
+                    .toList(),
+              ),
+            ),
+          )
+        ],
+      ),
     );
   }
+}
+
+class _MetricInfo {
+  final String label;
+  final String value;
+  _MetricInfo(this.label, this.value);
 }
