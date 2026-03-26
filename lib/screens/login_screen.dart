@@ -62,7 +62,7 @@ class _LoginScreenState extends State<LoginScreen>
       if (mounted) {
         setState(() => _isLoading = false);
         if (token != null) {
-           apiService.updateToken(token);
+          apiService.updateToken(token);
           widget.onLogin(token, uid);
         } else {
           setState(() {
@@ -75,6 +75,21 @@ class _LoginScreenState extends State<LoginScreen>
 
   @override
   Widget build(BuildContext context) {
+    // ── Responsive breakpoints ──────────────────────────────────────────────
+    final screenW = MediaQuery.of(context).size.width;
+    final isCompact = screenW < 480; // phone portrait
+    final cardWidth = isCompact
+        ? double.infinity // full-width on phone
+        : screenW < 768
+            ? screenW * 0.82 // tablet-ish
+            : 440.0; // desktop cap
+
+    final hPad = isCompact ? 16.0 : 24.0; // horizontal outer padding
+    final cardPad = isCompact ? 20.0 : 28.0; // inner card padding
+    final logoSize = isCompact ? 80.0 : 100.0;
+    final titleFontSize = isCompact ? 20.0 : 24.0;
+    // ───────────────────────────────────────────────────────────────────────
+
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -83,9 +98,9 @@ class _LoginScreenState extends State<LoginScreen>
             end: Alignment.bottomRight,
             stops: [0.0, 0.5, 1.0],
             colors: [
-              Color.fromARGB(255, 232, 233, 234), // Deep space navy
-              Color.fromARGB(255, 22, 48, 98), // Mid navy
-              Color.fromARGB(255, 244, 245, 247), // Back to deep
+              Color.fromARGB(255, 232, 233, 234),
+              Color.fromARGB(255, 22, 48, 98),
+              Color.fromARGB(255, 244, 245, 247),
             ],
           ),
         ),
@@ -95,7 +110,7 @@ class _LoginScreenState extends State<LoginScreen>
             Positioned.fill(
               child: CustomPaint(painter: _GridPainter()),
             ),
-            // Radial glows
+            // Radial glow
             Positioned.fill(
               child: DecoratedBox(
                 decoration: const BoxDecoration(
@@ -103,160 +118,195 @@ class _LoginScreenState extends State<LoginScreen>
                     center: Alignment(-0.8, -0.6),
                     radius: 1.5,
                     colors: [
-                      Color(0x221447E6), // Brand Blue glow
-                      Color(0x110B7A6E), // Brand Teal glow
+                      Color(0x221447E6),
+                      Color(0x110B7A6E),
                       Colors.transparent,
                     ],
                   ),
                 ),
               ),
             ),
-            Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
-                child: FadeTransition(
-                  opacity: _fadeAnim,
-                  child: SlideTransition(
-                    position: _slideAnim,
-                    child: SizedBox(
-                      width: 440,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          // Logo
-                          Container(
-                            width: 100,
-                            height: 100,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(20),
-                              boxShadow: const [
-                                BoxShadow(
+            // ── Content ───────────────────────────────────────────────────
+            SafeArea(
+              child: Center(
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: hPad,
+                    vertical: 24,
+                  ),
+                  child: FadeTransition(
+                    opacity: _fadeAnim,
+                    child: SlideTransition(
+                      position: _slideAnim,
+                      child: SizedBox(
+                        width: cardWidth,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // Logo
+                            Container(
+                              width: logoSize,
+                              height: logoSize,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(20),
+                                boxShadow: const [
+                                  BoxShadow(
                                     color: Color(0x731447E6),
                                     blurRadius: 32,
-                                    offset: Offset(0, 8))
-                              ],
-                            ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(20),
-                              child: Image.asset(
-                                'assets/images/logo.jpg',
-                                fit: BoxFit.cover,
+                                    offset: Offset(0, 8),
+                                  )
+                                ],
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(20),
+                                child: Image.asset(
+                                  'assets/images/logo.jpg',
+                                  fit: BoxFit.cover,
+                                ),
                               ),
                             ),
-                          ),
-                          const SizedBox(height: 16),
-                          Text('BBOTS Management',
+                            const SizedBox(height: 16),
+                            Text(
+                              'BBOTS Management',
                               style: GoogleFonts.spaceGrotesk(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.w800,
-                                  color: Colors.white,
-                                  letterSpacing: -0.5)),
-                          const SizedBox(height: 5),
-                          Text('LOGIN TO YOUR ACCOUNT',
-                              style: GoogleFonts.jetBrainsMono(
-                                  fontSize: 11,
-                                  color: const Color(0xFF5D7FA0))),
-                          const SizedBox(height: 24),
-                          // Login card
-                          Container(
-                            padding: const EdgeInsets.all(28),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.05),
-                              border: Border.all(
-                                  color: Colors.white.withValues(alpha: 0.1)),
-                              borderRadius: BorderRadius.circular(20),
+                                fontSize: titleFontSize,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.white,
+                                letterSpacing: -0.5,
+                              ),
                             ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                _DarkLabel('Organization (ORGCODE)'),
-                                const SizedBox(height: 5),
-                                _DarkDropdown(
-                                  value: _org,
-                                  items: const {
-                                    'ORG001': 'ORG001 — Head Office, Chennai',
-                                    'ORG002': 'ORG002 — Head Office, Bangalore',
-                                    'ORG003': 'ORG003 — Head Office, Hyderabad',
-                                  },
-                                  hasError: _errors['org'] != null,
-                                  onChanged: (v) =>
-                                      setState(() => _org = v ?? _org),
+                            const SizedBox(height: 5),
+                            Text(
+                              'LOGIN TO YOUR ACCOUNT',
+                              style: GoogleFonts.jetBrainsMono(
+                                fontSize: 11,
+                                color: const Color(0xFF5D7FA0),
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+                            // ── Login card ─────────────────────────────
+                            Container(
+                              width: double.infinity,
+                              padding: EdgeInsets.all(cardPad),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.05),
+                                border: Border.all(
+                                  color: Colors.white.withValues(alpha: 0.1),
                                 ),
-                                if (_errors['org'] != null)
-                                  _errorText(_errors['org']!),
-                                const SizedBox(height: 14),
-                                _DarkLabel('Email ID'),
-                                const SizedBox(height: 5),
-                                _DarkInput(
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _DarkLabel('Organization (ORGCODE)'),
+                                  const SizedBox(height: 5),
+                                  _DarkDropdown(
+                                    value: _org,
+                                    items: const {
+                                      'ORG001': 'ORG001 — Head Office, Chennai',
+                                      'ORG002':
+                                          'ORG002 — Head Office, Bangalore',
+                                      'ORG003':
+                                          'ORG003 — Head Office, Hyderabad',
+                                    },
+                                    hasError: _errors['org'] != null,
+                                    onChanged: (v) =>
+                                        setState(() => _org = v ?? _org),
+                                  ),
+                                  if (_errors['org'] != null)
+                                    _errorText(_errors['org']!),
+                                  const SizedBox(height: 14),
+                                  _DarkLabel('Email ID'),
+                                  const SizedBox(height: 5),
+                                  _DarkInput(
                                     controller: _uidCtrl,
                                     placeholder: 'e.g. arjun@bbots.com',
-                                    hasError: _errors['uid'] != null),
-                                if (_errors['uid'] != null)
-                                  _errorText(_errors['uid']!),
-                                const SizedBox(height: 14),
-                                _DarkLabel('Password'),
-                                const SizedBox(height: 5),
-                                _DarkInput(
+                                    hasError: _errors['uid'] != null,
+                                    keyboardType: TextInputType.emailAddress,
+                                    textInputAction: TextInputAction.next,
+                                  ),
+                                  if (_errors['uid'] != null)
+                                    _errorText(_errors['uid']!),
+                                  const SizedBox(height: 14),
+                                  _DarkLabel('Password'),
+                                  const SizedBox(height: 5),
+                                  _DarkInput(
                                     controller: _pwdCtrl,
                                     placeholder: '••••••••',
                                     obscure: true,
                                     hasError: _errors['pwd'] != null,
-                                    onSubmit: _submit),
-                                if (_errors['pwd'] != null)
-                                  _errorText(_errors['pwd']!),
-                                const SizedBox(height: 18),
-                                Container(
+                                    textInputAction: TextInputAction.done,
+                                    onSubmit: _submit,
+                                  ),
+                                  if (_errors['pwd'] != null)
+                                    _errorText(_errors['pwd']!),
+                                  const SizedBox(height: 18),
+                                  Container(
                                     height: 1,
-                                    color: Colors.white.withValues(alpha: 0.1)),
-                                const SizedBox(height: 18),
-                                // Sign in button
-                                GestureDetector(
-                                  onTap: _submit,
-                                  child: Container(
-                                    width: double.infinity,
-                                    padding: const EdgeInsets.symmetric(
-                                        vertical: 13),
-                                    decoration: BoxDecoration(
-                                      color: _isLoading
-                                          ? AppColors.tBlue
-                                              .withValues(alpha: 0.7)
-                                          : AppColors.tBlue,
-                                      borderRadius: BorderRadius.circular(11),
-                                      boxShadow: [
-                                        if (!_isLoading)
-                                          const BoxShadow(
+                                    color: Colors.white.withValues(alpha: 0.1),
+                                  ),
+                                  const SizedBox(height: 18),
+                                  // Sign-in button
+                                  GestureDetector(
+                                    onTap: _submit,
+                                    child: AnimatedContainer(
+                                      duration:
+                                          const Duration(milliseconds: 150),
+                                      width: double.infinity,
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 13),
+                                      decoration: BoxDecoration(
+                                        color: _isLoading
+                                            ? AppColors.tBlue
+                                                .withValues(alpha: 0.7)
+                                            : AppColors.tBlue,
+                                        borderRadius: BorderRadius.circular(11),
+                                        boxShadow: [
+                                          if (!_isLoading)
+                                            const BoxShadow(
                                               color: Color(0x601447E6),
                                               blurRadius: 18,
-                                              offset: Offset(0, 4))
-                                      ],
-                                    ),
-                                    child: Center(
-                                      child: _isLoading
-                                          ? const SizedBox(
-                                              width: 18,
-                                              height: 18,
-                                              child: CircularProgressIndicator(
+                                              offset: Offset(0, 4),
+                                            )
+                                        ],
+                                      ),
+                                      child: Center(
+                                        child: _isLoading
+                                            ? const SizedBox(
+                                                width: 18,
+                                                height: 18,
+                                                child:
+                                                    CircularProgressIndicator(
                                                   strokeWidth: 2,
-                                                  color: Colors.white))
-                                          : Text('Sign In →',
-                                              style: GoogleFonts.spaceGrotesk(
+                                                  color: Colors.white,
+                                                ),
+                                              )
+                                            : Text(
+                                                'Sign In →',
+                                                style: GoogleFonts.spaceGrotesk(
                                                   fontSize: 14,
                                                   fontWeight: FontWeight.w700,
-                                                  color: Colors.white)),
+                                                  color: Colors.white,
+                                                ),
+                                              ),
+                                      ),
                                     ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 18),
-                          Text('ADMIN SYSTEM',
+                            const SizedBox(height: 18),
+                            Text(
+                              'ADMIN SYSTEM',
                               textAlign: TextAlign.center,
                               style: GoogleFonts.jetBrainsMono(
-                                  fontSize: 10,
-                                  color: const Color(0xFF253D54),
-                                  height: 1.8)),
-                        ],
+                                fontSize: 10,
+                                color: const Color(0xFF253D54),
+                                height: 1.8,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -271,24 +321,32 @@ class _LoginScreenState extends State<LoginScreen>
 
   Widget _errorText(String msg) => Padding(
         padding: const EdgeInsets.only(top: 3),
-        child: Text('⚠ $msg',
-            style: GoogleFonts.spaceGrotesk(
-                fontSize: 10,
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFFF87171))),
+        child: Text(
+          '⚠ $msg',
+          style: GoogleFonts.spaceGrotesk(
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+            color: const Color(0xFFF87171),
+          ),
+        ),
       );
 }
+
+// ── Sub-widgets ──────────────────────────────────────────────────────────────
 
 class _DarkLabel extends StatelessWidget {
   final String text;
   const _DarkLabel(this.text);
 
   @override
-  Widget build(BuildContext context) => Text(text,
-      style: GoogleFonts.spaceGrotesk(
+  Widget build(BuildContext context) => Text(
+        text,
+        style: GoogleFonts.spaceGrotesk(
           fontSize: 11,
           fontWeight: FontWeight.w600,
-          color: const Color(0xFF7FA0C0)));
+          color: const Color(0xFF7FA0C0),
+        ),
+      );
 }
 
 class _DarkInput extends StatelessWidget {
@@ -297,6 +355,8 @@ class _DarkInput extends StatelessWidget {
   final bool obscure;
   final bool hasError;
   final VoidCallback? onSubmit;
+  final TextInputType keyboardType;
+  final TextInputAction textInputAction;
 
   const _DarkInput({
     required this.controller,
@@ -304,6 +364,8 @@ class _DarkInput extends StatelessWidget {
     this.obscure = false,
     this.hasError = false,
     this.onSubmit,
+    this.keyboardType = TextInputType.text,
+    this.textInputAction = TextInputAction.next,
   });
 
   @override
@@ -311,12 +373,16 @@ class _DarkInput extends StatelessWidget {
     return TextFormField(
       controller: controller,
       obscureText: obscure,
+      keyboardType: keyboardType,
+      textInputAction: textInputAction,
       style: GoogleFonts.spaceGrotesk(fontSize: 13, color: Colors.white),
       onFieldSubmitted: (_) => onSubmit?.call(),
       decoration: InputDecoration(
         hintText: placeholder,
         hintStyle: GoogleFonts.spaceGrotesk(
-            fontSize: 13, color: const Color.fromARGB(255, 199, 219, 236)),
+          fontSize: 13,
+          color: const Color.fromARGB(255, 199, 219, 236),
+        ),
         filled: true,
         fillColor: Colors.white.withValues(alpha: 0.07),
         contentPadding:
@@ -324,10 +390,11 @@ class _DarkInput extends StatelessWidget {
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(9),
           borderSide: BorderSide(
-              color: hasError
-                  ? const Color(0xFFF87171)
-                  : Colors.white.withValues(alpha: 0.12),
-              width: 1.5),
+            color: hasError
+                ? const Color(0xFFF87171)
+                : Colors.white.withValues(alpha: 0.12),
+            width: 1.5,
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(9),
@@ -355,6 +422,7 @@ class _DarkDropdown extends StatelessWidget {
   Widget build(BuildContext context) {
     return DropdownButtonFormField<String>(
       initialValue: value.isEmpty ? null : value,
+      isExpanded: true, // prevents overflow on narrow screens
       style: GoogleFonts.spaceGrotesk(fontSize: 13, color: Colors.white),
       dropdownColor: const Color(0xFF0D2040),
       decoration: InputDecoration(
@@ -365,10 +433,11 @@ class _DarkDropdown extends StatelessWidget {
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(9),
           borderSide: BorderSide(
-              color: hasError
-                  ? const Color(0xFFF87171)
-                  : Colors.white.withValues(alpha: 0.12),
-              width: 1.5),
+            color: hasError
+                ? const Color(0xFFF87171)
+                : Colors.white.withValues(alpha: 0.12),
+            width: 1.5,
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(9),
@@ -377,10 +446,16 @@ class _DarkDropdown extends StatelessWidget {
       ),
       items: items.entries
           .map((e) => DropdownMenuItem(
-              value: e.key,
-              child: Text(e.value,
+                value: e.key,
+                child: Text(
+                  e.value,
+                  overflow: TextOverflow.ellipsis, // safe on small screens
                   style: GoogleFonts.spaceGrotesk(
-                      fontSize: 13, color: Colors.white))))
+                    fontSize: 13,
+                    color: Colors.white,
+                  ),
+                ),
+              ))
           .toList(),
       onChanged: onChanged,
     );
