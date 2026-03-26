@@ -627,6 +627,125 @@ class AmsDropdown extends StatelessWidget {
   }
 }
 
+class AmsSearchableDropdown extends StatefulWidget {
+  final List<String> items;
+  final String? initialValue;
+  final String? placeholder;
+  final void Function(String?)? onChanged;
+  final bool readOnly;
+
+  const AmsSearchableDropdown({
+    super.key,
+    required this.items,
+    this.initialValue,
+    this.placeholder,
+    this.onChanged,
+    this.readOnly = false,
+  });
+
+  @override
+  State<AmsSearchableDropdown> createState() => _AmsSearchableDropdownState();
+}
+
+class _AmsSearchableDropdownState extends State<AmsSearchableDropdown> {
+  late TextEditingController _controller;
+  late FocusNode _focusNode;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.initialValue);
+    _focusNode = FocusNode();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(AmsSearchableDropdown oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialValue != oldWidget.initialValue && widget.initialValue != _controller.text) {
+      _controller.text = widget.initialValue ?? '';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) => RawAutocomplete<String>(
+        textEditingController: _controller,
+        focusNode: _focusNode,
+        optionsBuilder: (TextEditingValue textEditingValue) {
+          if (textEditingValue.text.isEmpty) {
+            return widget.items;
+          }
+          return widget.items.where((String option) {
+            return option.toLowerCase().contains(textEditingValue.text.toLowerCase());
+          });
+        },
+        onSelected: (String selection) {
+          if (widget.onChanged != null) widget.onChanged!(selection);
+        },
+        fieldViewBuilder: (context, textEditingController, focusNode, onFieldSubmitted) {
+          return AmsTextInput(
+            controller: textEditingController,
+            focusNode: focusNode,
+            placeholder: widget.placeholder,
+            readOnly: widget.readOnly,
+            icon: Icons.search_rounded,
+            onChanged: (v) {
+              if (widget.onChanged != null) widget.onChanged!(v);
+            },
+            onFieldSubmitted: (v) => onFieldSubmitted(),
+          );
+        },
+        optionsViewBuilder: (context, onSelected, options) {
+          return Align(
+            alignment: Alignment.topLeft,
+            child: Material(
+              elevation: 8,
+              borderRadius: BorderRadius.circular(8),
+              child: Container(
+                width: constraints.maxWidth,
+                constraints: const BoxConstraints(maxHeight: 300),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: ListView.builder(
+                  padding: EdgeInsets.zero,
+                  shrinkWrap: true,
+                  itemCount: options.length,
+                  itemBuilder: (BuildContext context, int index) {
+                    final String option = options.elementAt(index);
+                    return InkWell(
+                      onTap: () => onSelected(option),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        decoration: BoxDecoration(
+                          border: index == options.length - 1 
+                            ? null 
+                            : const Border(bottom: BorderSide(color: AppColors.bg, width: 1)),
+                        ),
+                        child: Text(option, style: bodyStyle(size: 13)),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
 class AmsStepInfo {
   final String label;
   final String sub;
@@ -1036,7 +1155,7 @@ class AmsSubmitBar extends StatelessWidget {
 void showAmsToast(BuildContext context, String icon, String msg,
     {String type = 's'}) {
   final Color bg = type == 's'
-      ? AppColors.green
+      ? AppColors.tBlue
       : type == 'w'
           ? AppColors.amber
           : AppColors.tBlue;
@@ -1204,7 +1323,7 @@ class _AmsSidebarState extends State<AmsSidebar> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                   Text(
-                    'AMS',
+                    'FINANCE',
                     style: bodyStyle(
                             size: 20,
                         weight: FontWeight.w900,

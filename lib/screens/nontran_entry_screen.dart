@@ -65,7 +65,18 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
         '2026-${(100 + (DateTime.now().millisecondsSinceEpoch % 900)).toString().padLeft(4, '0')}';
 
     final fullData = {
-      'orgCode': (_selProg == 'USR-CRT' || _selProg == 'ROLE-CRT' || _selProg == 'USR-ROLE') ? 50 : 1,
+      'orgCode': _dynamicData['orgCode'] ??
+          (([
+            'USR-CRT',
+            'ROLE-CRT',
+            'USR-ROLE',
+            'MOD-CRT',
+            'MENU-CRT',
+            'AUTHCTL',
+            'PGM-CRT'
+          ].contains(_selProg))
+              ? 50
+              : 1),
       ..._dynamicData,
     };
 
@@ -79,6 +90,11 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
         );
 
     widget.onSubmit(_selProg!, safeCfg, authsl, fullData);
+    setState(() {
+      _showForm = false;
+      _viewRecord = null;
+      _dynamicData.clear();
+    });
   }
 
   @override
@@ -119,9 +135,11 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      _cfg != null
-                          ? (isAnyList ? _cfg!.name : 'New ${_cfg!.name}')
-                          : 'New Record',
+                      _selProg == 'USR-ROLE'
+                          ? (isAnyList ? 'Role Assign' : 'New Role Assign')
+                          : (_cfg != null
+                              ? (isAnyList ? _cfg!.name : 'New ${_cfg!.name}')
+                              : 'New Record'),
                       style: bodyStyle(
                         size: 22,
                         weight: FontWeight.w600,
@@ -515,9 +533,6 @@ class _UserRoleListViewState extends State<_UserRoleListView> {
                     children: [
                       Text('Role: ${d['roleName']}',
                           style: bodyStyle(size: 15, weight: FontWeight.w600)),
-                      const SizedBox(height: 4),
-                      Text('Status: ${d['status']}',
-                          style: bodyStyle(color: AppColors.ink3)),
                     ],
                   ),
                 ),
@@ -569,6 +584,9 @@ class _ModuleListViewState extends State<_ModuleListView> {
         itemCount: currentItems.length,
         itemBuilder: (ctx, idx) {
           final d = currentItems[idx];
+          final String moduleName = d['moduleName'] ?? d['modulename'] ?? d['module_name'] ?? 'Unknown';
+          final String moduleCd = (d['moduleCd'] ?? d['module_id'] ?? d['moduleid'] ?? '—').toString();
+          
           return AmsCard(
             onTap: widget.onView != null ? () => widget.onView!(d) : null,
             padding: const EdgeInsets.all(16),
@@ -578,10 +596,10 @@ class _ModuleListViewState extends State<_ModuleListView> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('${d['moduleName']}',
+                      Text(moduleName,
                           style: bodyStyle(size: 15, weight: FontWeight.w600)),
                       const SizedBox(height: 4),
-                      Text('Module Code: ${d['moduleCd']}',
+                      Text('Module Code: $moduleCd',
                           style: bodyStyle(color: AppColors.ink3)),
                     ],
                   ),
@@ -841,7 +859,10 @@ class DynamicNTFields extends StatelessWidget {
                 tooltip: 'Unique organization code assigned to this user.',
                 child: AmsTextInput(
                   initialValue: data['orgcode']?.toString() ?? '50',
-                  readOnly: true,
+                  readOnly: isViewMode,
+                  onChanged: isViewMode
+                      ? null
+                      : (v) => onChanged('orgCode', int.tryParse(v) ?? 50),
                 ),
               ),
               AmsField(
@@ -984,50 +1005,10 @@ class DynamicNTFields extends StatelessWidget {
           ),
         );
       case 'USR-ROLE': // User-Role Assignment
-        return Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              AmsField(
-                label: 'ORGCODE',
-                tooltip: 'Unique organization code.',
-                child: AmsTextInput(
-                  initialValue: data['orgcode']?.toString() ?? '50',
-                  readOnly: true,
-                ),
-              ),
-              AmsField(
-                label: 'USERSCD',
-                required: true,
-                tooltip: 'Target User ID for role assignment.',
-                child: AmsTextInput(
-                  initialValue: data['userscd']?.toString(),
-                  readOnly: isViewMode,
-                  placeholder: 'e.g. arjun_m',
-                  onChanged: isViewMode ? null : (v) => onChanged('usersCd', v),
-                ),
-              ),
-              AmsField(
-                label: 'ROLECD',
-                required: true,
-                tooltip: 'Role ID to be assigned.',
-                child: AmsTextInput(
-                  initialValue: data['rolecd']?.toString() ?? '10',
-                  readOnly: isViewMode,
-                  placeholder: 'e.g. 10',
-                  onChanged: isViewMode
-                      ? null
-                      : (v) => onChanged('roleCd', int.tryParse(v) ?? 10),
-                ),
-              ),
-            ],
-          ),
+        return _UserRoleFields(
+          onChanged: onChanged,
+          initialData: data,
+          isViewMode: isViewMode,
         );
       case 'ROLE-CRT': // Role Creation
         return Container(
@@ -1045,7 +1026,10 @@ class DynamicNTFields extends StatelessWidget {
                 tooltip: 'Unique organization code for this role.',
                 child: AmsTextInput(
                   initialValue: data['orgcode']?.toString() ?? '50',
-                  readOnly: true,
+                  readOnly: isViewMode,
+                  onChanged: isViewMode
+                      ? null
+                      : (v) => onChanged('orgCode', int.tryParse(v) ?? 50),
                 ),
               ),
               AmsField(
@@ -1185,7 +1169,7 @@ class DynamicNTFields extends StatelessWidget {
       case 'MOD-CRT':
         return _ModCrtFields(
           onChanged: onChanged,
-          initialData: initialData,
+          initialData: data, // Use lowercased map
           isViewMode: isViewMode,
         );
       case 'MENU-CRT':
@@ -1199,6 +1183,17 @@ class DynamicNTFields extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              AmsField(
+                label: 'ORGCODE',
+                tooltip: 'Unique organization code.',
+                child: AmsTextInput(
+                  initialValue: data['orgcode']?.toString() ?? '50',
+                  readOnly: isViewMode,
+                  onChanged: isViewMode
+                      ? null
+                      : (v) => onChanged('orgCode', int.tryParse(v) ?? 50),
+                ),
+              ),
               AmsField(
                   label: 'Menu Identification',
                   required: true,
@@ -1283,6 +1278,17 @@ class DynamicNTFields extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              AmsField(
+                label: 'ORGCODE',
+                tooltip: 'Unique organization code.',
+                child: AmsTextInput(
+                  initialValue: data['orgcode']?.toString() ?? '50',
+                  readOnly: isViewMode,
+                  onChanged: isViewMode
+                      ? null
+                      : (v) => onChanged('orgCode', int.tryParse(v) ?? 50),
+                ),
+              ),
               AmsField(
                 label: 'Program ID',
                 required: true,
@@ -1592,6 +1598,130 @@ class _Auth102LevelGridState extends State<_Auth102LevelGrid> {
   }
 }
 
+// ___ User Role Assignment Fields _____________________________________________
+
+class _UserRoleFields extends StatefulWidget {
+  final void Function(String key, dynamic val) onChanged;
+  final Map<String, dynamic>? initialData;
+  final bool isViewMode;
+  const _UserRoleFields(
+      {required this.onChanged, this.initialData, this.isViewMode = false});
+
+  @override
+  State<_UserRoleFields> createState() => _UserRoleFieldsState();
+}
+
+class _UserRoleFieldsState extends State<_UserRoleFields> {
+  List<String> _userOptions = [];
+  List<String> _roleOptions = [];
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    final results = await Future.wait([
+      apiService.getUsers(),
+      apiService.getRoles(),
+    ]);
+
+    final users = results[0] as List<Map<String, dynamic>>?;
+    final roles = results[1] as List<Map<String, dynamic>>?;
+
+    setState(() {
+      _userOptions = users?.map((u) {
+        final code = (u['usersCd'] ?? u['userscd'] ?? '').toString();
+        final name = (u['fName'] ?? u['fname'] ?? '').toString();
+        return name.isNotEmpty ? "$code - $name" : code;
+      }).where((s) => s.isNotEmpty).toList() ?? [];
+
+      _roleOptions = roles?.map((r) {
+        final code = (r['roleCd'] ?? r['rolecd'] ?? '').toString();
+        final name = (r['roleName'] ?? r['rolename'] ?? '').toString();
+        return name.isNotEmpty ? "$code - $name" : code;
+      }).where((s) => s.isNotEmpty).toList() ?? [];
+      
+      _loading = false;
+    });
+  }
+
+  String? _getInitialOption(String? code, List<String> options) {
+    if (code == null || code.isEmpty) return null;
+    return options.firstWhere(
+      (opt) => opt.startsWith(code) && (opt.length == code.length || opt[code.length] == ' '),
+      orElse: () => code,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading) return const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator()));
+
+    final initialUserCode = (widget.initialData?['userscd'] ?? widget.initialData?['usersCd'])?.toString();
+    final initialRoleCode = (widget.initialData?['rolecd'] ?? widget.initialData?['roleCd'])?.toString();
+
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AmsField(
+            label: 'ORGCODE',
+            tooltip: 'Unique organization code.',
+            child: AmsTextInput(
+              initialValue: (widget.initialData?['orgcode'] ?? widget.initialData?['orgCode'])?.toString() ?? '50',
+              readOnly: widget.isViewMode,
+              onChanged: widget.isViewMode
+                  ? null
+                  : (v) => widget.onChanged('orgCode', int.tryParse(v) ?? 50),
+            ),
+          ),
+          AmsField(
+            label: 'USERSCD',
+            required: true,
+            tooltip: 'Target User ID for role assignment.',
+            child: AmsSearchableDropdown(
+              items: _userOptions,
+              initialValue: _getInitialOption(initialUserCode, _userOptions),
+              readOnly: widget.isViewMode,
+              placeholder: 'Search User...',
+              onChanged: widget.isViewMode ? null : (v) {
+                final code = v?.split(' - ').first;
+                widget.onChanged('usersCd', code);
+              },
+            ),
+          ),
+          AmsField(
+            label: 'ROLECD',
+            required: true,
+            tooltip: 'Role ID to be assigned.',
+            child: AmsSearchableDropdown(
+              items: _roleOptions,
+              initialValue: _getInitialOption(initialRoleCode, _roleOptions),
+              readOnly: widget.isViewMode,
+              placeholder: 'Search Role...',
+              onChanged: widget.isViewMode
+                  ? null
+                  : (v) {
+                final code = v?.split(' - ').first;
+                widget.onChanged('roleCd', int.tryParse(code ?? ''));
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 // ___ Module Creation Fields __________________________________________________
 
 class _ModCrtFields extends StatefulWidget {
@@ -1612,7 +1742,7 @@ class _ModCrtFieldsState extends State<_ModCrtFields> {
   void initState() {
     super.initState();
     _subModuleEnabled =
-        widget.initialData?['subModuleRequired']?.toString() == '1';
+        (widget.initialData?['submodule_required'] ?? widget.initialData?['sub_module'] ?? widget.initialData?['submodulerequired'])?.toString() == '1';
   }
 
   @override
@@ -1628,11 +1758,22 @@ class _ModCrtFieldsState extends State<_ModCrtFields> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           AmsField(
+            label: 'ORGCODE',
+            tooltip: 'Unique organization code.',
+            child: AmsTextInput(
+              initialValue: (widget.initialData?['orgcode'] ?? widget.initialData?['orgCode'])?.toString() ?? '50',
+              readOnly: widget.isViewMode,
+              onChanged: widget.isViewMode
+                  ? null
+                  : (v) => widget.onChanged('orgCode', int.tryParse(v) ?? 50),
+            ),
+          ),
+          AmsField(
             label: 'MODULE_ID',
             required: true,
             tooltip: 'Unique ID for the module. e.g. 1, 2, 3, 4',
             child: AmsTextInput(
-              initialValue: widget.initialData?['moduleId']?.toString(),
+              initialValue: (widget.initialData?['module_id'] ?? widget.initialData?['moduleid'] ?? widget.initialData?['moduleId'])?.toString(),
               readOnly: widget.isViewMode,
               placeholder: 'e.g. 1',
               keyboardType: TextInputType.number,
@@ -1647,7 +1788,7 @@ class _ModCrtFieldsState extends State<_ModCrtFields> {
             tooltip:
                 'Display name of the module. e.g. Chat, Voice Call, Video Call',
             child: AmsTextInput(
-              initialValue: widget.initialData?['moduleName']?.toString(),
+              initialValue: (widget.initialData?['modulename'] ?? widget.initialData?['module_name'] ?? widget.initialData?['moduleName'])?.toString(),
               readOnly: widget.isViewMode,
               placeholder: 'e.g. Chat',
               onChanged: widget.isViewMode
@@ -1661,9 +1802,9 @@ class _ModCrtFieldsState extends State<_ModCrtFields> {
             tooltip: 'Whether a sub-module is required or not.',
             child: AmsDropdown(
               initialValue:
-                  widget.initialData?['subModuleRequired']?.toString() == '1'
+                  (widget.initialData?['sub_module'] ?? widget.initialData?['submodulerequired'] ?? widget.initialData?['subModuleRequired'])?.toString() == '1'
                       ? '1 - Enable'
-                      : (widget.initialData?['subModuleRequired'] != null
+                      : (widget.initialData?['sub_module'] != null || widget.initialData?['submodulerequired'] != null || widget.initialData?['subModuleRequired'] != null
                           ? '0 - Disable'
                           : null),
               items: const ['1 - Enable', '0 - Disable'],
@@ -1713,7 +1854,7 @@ class _ModCrtFieldsState extends State<_ModCrtFields> {
                         tooltip: 'Unique ID for the sub-module.',
                         child: AmsTextInput(
                           initialValue:
-                              widget.initialData?['subModuleId']?.toString(),
+                              (widget.initialData?['sub_module_id'] ?? widget.initialData?['submoduleid'] ?? widget.initialData?['subModuleId'])?.toString(),
                           readOnly: widget.isViewMode,
                           placeholder: 'e.g. 101',
                           keyboardType: TextInputType.number,
@@ -1729,7 +1870,7 @@ class _ModCrtFieldsState extends State<_ModCrtFields> {
                         tooltip: 'Name of the sub-module.',
                         child: AmsTextInput(
                           initialValue:
-                              widget.initialData?['subModuleName']?.toString(),
+                              (widget.initialData?['sub_module_name'] ?? widget.initialData?['submodulename'] ?? widget.initialData?['subModuleName'])?.toString(),
                           readOnly: widget.isViewMode,
                           placeholder: 'e.g. Group Chat',
                           onChanged: widget.isViewMode
@@ -1770,10 +1911,13 @@ class _ProgramFields extends StatelessWidget {
         children: [
           AmsField(
             label: 'ORGCODE',
-            tooltip: 'Fixed organization code for this program.',
+            tooltip: 'Organization code for this program.',
             child: AmsTextInput(
               initialValue: initialData?['orgCode']?.toString() ?? '50',
-              readOnly: true,
+              readOnly: isViewMode,
+              onChanged: isViewMode
+                  ? null
+                  : (v) => onChanged('orgCode', int.tryParse(v) ?? 50),
             ),
           ),
           AmsField(

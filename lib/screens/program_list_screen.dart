@@ -37,85 +37,69 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-
-          // 🔹 HEADER (Full width)
-          Text(
-            'GENERAL',
-            style: bodyStyle(
-              size: 22,
-              weight: FontWeight.w800,
-              color: AppColors.ink,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Quick snapshot of system metrics and active operations.',
-            style: bodyStyle(size: 13, color: AppColors.ink3),
-          ),
-
-          const SizedBox(height: 70),
-
-          // 🔹 ONLY GRID IS CENTERED
+          const SizedBox(height: 20),
           Center(
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 1100),
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final crossAxisCount =
-                      constraints.maxWidth > 900 ? 4 :
-                      constraints.maxWidth > 600 ? 2 : 1;
-
-                  return GridView.count(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    crossAxisCount: crossAxisCount,
-                    crossAxisSpacing: 16,
-                    mainAxisSpacing: 16,
-                    childAspectRatio: 1.25,
-                    children: [
-                      _buildDetailContainer(
-                        title: 'Master Details',
-                        icon: Icons.storage_rounded,
-                        color: AppColors.tBlue,
-                        metrics: [
-                          _MetricInfo('Total Records', '24,592'),
-                          _MetricInfo('Sync Status', 'Up to date'),
-                          _MetricInfo('Last Updated', '12 mins ago'),
-                        ],
-                      ),
-                      _buildDetailContainer(
-                        title: 'GL Details',
-                        icon: Icons.account_balance_rounded,
-                        color: AppColors.nTeal,
-                        metrics: [
-                          _MetricInfo('Active Ledgers', '142'),
-                          _MetricInfo('Unmapped AC', '3'),
-                          _MetricInfo('Reconciliation', 'Pending'),
-                        ],
-                      ),
-                      _buildDetailContainer(
-                        title: 'Configuration',
-                        icon: Icons.settings_suggest_rounded,
-                        color: AppColors.amber,
-                        metrics: [
-                          _MetricInfo('System Version', 'v2.4.1'),
-                          _MetricInfo('Environment', 'Production'),
-                          _MetricInfo('Active Modules', '12 / 15'),
-                        ],
-                      ),
-                      _buildDetailContainer(
-                        title: 'Auth Queue',
-                        icon: Icons.fact_check_rounded,
-                        color: AppColors.red,
-                        metrics: [
-                          _MetricInfo('Pending Auth', '3 Requests'),
-                          _MetricInfo('High Priority', '1 Request'),
-                          _MetricInfo('Next Action', 'GL Review'),
-                        ],
-                      ),
-                    ],
-                  );
-                },
+              constraints: const BoxConstraints(maxWidth: 1200),
+              child: GridView.count(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                crossAxisCount: MediaQuery.of(context).size.width > 1200 ? 4 : (MediaQuery.of(context).size.width > 800 ? 3 : 2),
+                crossAxisSpacing: 24,
+                mainAxisSpacing: 24,
+                childAspectRatio: 1.1,
+                children: [
+                  _DashboardTile(
+                    label: 'User',
+                    icon: Icons.person_add_rounded,
+                    onTap: () => widget.onSelect('USR-CRT'),
+                  ),
+                  _DashboardTile(
+                    label: 'Role Associate',
+                    icon: Icons.assignment_ind_rounded,
+                    onTap: () => widget.onSelect('USR-ROLE'),
+                  ),
+                  _DashboardTile(
+                    label: 'Role',
+                    icon: Icons.admin_panel_settings_rounded,
+                    onTap: () => widget.onSelect('ROLE-CRT'),
+                  ),
+                  _DashboardTile(
+                    label: 'Modules',
+                    icon: Icons.view_module_rounded,
+                    onTap: () => widget.onSelect('MOD-CRT'),
+                  ),
+                  _DashboardTile(
+                    label: 'Menus',
+                    icon: Icons.menu_open_rounded,
+                    onTap: () => widget.onSelect('MENU-CRT'),
+                  ),
+                  _DashboardTile(
+                    label: 'Program',
+                    icon: Icons.app_settings_alt_rounded,
+                    onTap: () => widget.onSelect('PGM-CRT'),
+                  ),
+                  // _DashboardTile(
+                  //   label: 'Auth Controller',
+                  //   icon: Icons.security_rounded,
+                  //   onTap: () => widget.onSelect('AUTHCTL'),
+                  // ),
+                  _DashboardTile(
+                    label: 'Authorization',
+                    icon: Icons.verified_user_rounded,
+                    onTap: () => widget.onProceed('AUTH'),
+                  ),
+                  _DashboardTile(
+                    label: 'GL Category',
+                    icon: Icons.category_rounded,
+                    onTap: () => widget.onSelect('GL-CAT'),
+                  ),
+                  _DashboardTile(
+                    label: 'GL Master',
+                    icon: Icons.account_balance_rounded,
+                    onTap: () => widget.onSelect('GL-MST'),
+                  ),
+                ],
               ),
             ),
           ),
@@ -124,91 +108,68 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
     ),
   );
 }
+}
 
-  Widget _buildDetailContainer({
-    required String title,
-    required IconData icon,
-    required Color color,
-    required List<_MetricInfo> metrics,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          )
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(icon, color: color, size: 18),
-                ),
-                const SizedBox(width: 10),
-                Text(
-                  title,
-                  style: bodyStyle(
-                    size: 15,
-                    weight: FontWeight.w700,
-                    color: AppColors.ink,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const Divider(height: 1, color: AppColors.border),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: metrics
-                    .map(
-                      (m) => Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            m.label,
-                            style:
-                                bodyStyle(size: 12.5, color: AppColors.ink3),
-                          ),
-                          Text(
-                            m.value,
-                            style: bodyStyle(
-                                size: 12.5,
-                                weight: FontWeight.w600,
-                                color: AppColors.ink),
-                          ),
-                        ],
-                      ),
-                    )
-                    .toList(),
+class _DashboardTile extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _DashboardTile({
+    required this.label,
+    required this.icon,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.03),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
               ),
-            ),
-          )
-        ],
+            ],
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 70,
+                height: 70,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF2D3E8B), // Dark Blue Icon Box
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  icon,
+                  color: Colors.white,
+                  size: 32,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                label,
+                textAlign: TextAlign.center,
+                style: bodyStyle(
+                  size: 14,
+                  weight: FontWeight.w600,
+                  color: const Color(0xFF4B5563),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
-}
-
-class _MetricInfo {
-  final String label;
-  final String value;
-  _MetricInfo(this.label, this.value);
 }

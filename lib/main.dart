@@ -27,7 +27,7 @@ class AmsApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'AMS — Authorization Management System',
+      title: 'FMS — Finance Management System',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.theme,
       home: const AmsRoot(),
@@ -151,7 +151,6 @@ class _AmsRootState extends State<AmsRoot> {
       } else {
         showAmsToast(context, '✅', 'Record saved directly: $authsl', type: 's');
       }
-      _navigate('list');
       _refreshData();
     } else {
       showAmsToast(context, '❌', 'Failed to save record.', type: 'e');
