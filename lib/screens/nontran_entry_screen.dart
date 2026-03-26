@@ -95,13 +95,15 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
     final isModuleScreenList = _selProg == 'MOD-CRT' && !_showForm;
     final isMenuScreenList = _selProg == 'MENU-CRT' && !_showForm;
     final isAuthCtrlScreenList = _selProg == 'AUTHCTL' && !_showForm;
+    final isProgramScreenList = _selProg == 'PGM-CRT' && !_showForm;
 
     final isAnyList = isUserScreenList ||
         isRoleScreenList ||
         isUserRoleScreenList ||
         isModuleScreenList ||
         isMenuScreenList ||
-        isAuthCtrlScreenList;
+        isAuthCtrlScreenList ||
+        isProgramScreenList;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -147,7 +149,8 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
                                   'ROLE-CRT',
                                   'MOD-CRT',
                                   'MENU-CRT',
-                                  'AUTHCTL'
+                                  'AUTHCTL',
+                                  'PGM-CRT'
                                 ].contains(_selProg) &&
                                 _showForm
                             ? () => setState(() => _showForm = false)
@@ -178,6 +181,8 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
               if (isMenuScreenList) return _MenuListView(onView: handleView);
               if (isAuthCtrlScreenList)
                 return _AuthCtrlListView(onView: handleView);
+              if (isProgramScreenList)
+                return _ProgramListView(onView: handleView);
 
               return SingleChildScrollView(
                 padding:
@@ -719,6 +724,78 @@ class _AuthCtrlListViewState extends State<_AuthCtrlListView> {
                   ),
                 ),
                 AmsBadge(label: c.id),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _ProgramListView extends StatefulWidget {
+  final void Function(Map<String, dynamic>)? onView;
+  const _ProgramListView({this.onView});
+  @override
+  State<_ProgramListView> createState() => _ProgramListViewState();
+}
+
+class _ProgramListViewState extends State<_ProgramListView> {
+  Map<String, Auth101Config>? _configs;
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final data = await apiService.getAuthConfigs();
+    setState(() {
+      _configs = data ?? auth101;
+      _loading = false;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading) return const Center(child: CircularProgressIndicator());
+    final cfgList = _configs!.values.toList();
+    return AmsPaginatedView<Auth101Config>(
+      items: cfgList,
+      builder: (ctx, currentItems) => ListView.builder(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+        itemCount: currentItems.length,
+        itemBuilder: (ctx, idx) {
+          final c = currentItems[idx];
+          return AmsCard(
+            onTap: widget.onView != null
+                ? () => widget.onView!({
+                      'programId': c.id,
+                      'isTranPgm': c.isTran ? 1 : 0,
+                      'orgCode': 50,
+                    })
+                : null,
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(c.id,
+                          style: bodyStyle(size: 15, weight: FontWeight.w600)),
+                      const SizedBox(height: 4),
+                      Text(
+                          'Type: ${c.isTran ? 'Financial' : 'Non-Financial'}',
+                          style: bodyStyle(color: AppColors.ink3)),
+                    ],
+                  ),
+                ),
+                AmsBadge(
+                    label: c.isTran ? 'TRAN' : 'N-TRAN',
+                    color: c.isTran ? AppColors.tBlue : AppColors.ink4),
               ],
             ),
           );
@@ -1290,6 +1367,11 @@ class DynamicNTFields extends StatelessWidget {
             ],
           ),
         );
+      case 'PGM-CRT':
+        return _ProgramFields(
+            onChanged: onChanged,
+            initialData: initialData,
+            isViewMode: isViewMode);
       default:
         return const SizedBox();
     }
@@ -1658,6 +1740,79 @@ class _ModCrtFieldsState extends State<_ModCrtFields> {
                     ],
                   )
                 : const SizedBox.shrink(key: ValueKey('empty')),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProgramFields extends StatelessWidget {
+  final void Function(String key, dynamic val) onChanged;
+  final Map<String, dynamic>? initialData;
+  final bool isViewMode;
+  const _ProgramFields(
+      {required this.onChanged, this.initialData, this.isViewMode = false});
+
+  @override
+  Widget build(BuildContext context) {
+    // Ensure all keys are lowercase for consistency with isAnyList logic if needed
+    // or just use them as they come from initialData map.
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AmsField(
+            label: 'ORGCODE',
+            tooltip: 'Fixed organization code for this program.',
+            child: AmsTextInput(
+              initialValue: initialData?['orgCode']?.toString() ?? '50',
+              readOnly: true,
+            ),
+          ),
+          AmsField(
+            label: 'PROGRAMID',
+            required: true,
+            tooltip: 'Unique identifier for the program (e.g. LOAN, NEFT).',
+            child: AmsTextInput(
+              initialValue: initialData?['programId']?.toString(),
+              readOnly: isViewMode,
+              placeholder: 'e.g. LOAN',
+              onChanged: isViewMode ? null : (v) => onChanged('programId', v),
+            ),
+          ),
+          AmsField(
+            label: 'FINANCIAL REQUIRED',
+            required: true,
+            tooltip: 'Whether this program involves financial transactions.',
+            child: AmsDropdown(
+              initialValue: initialData?['isTranPgm']?.toString() == '1'
+                  ? 'Yes'
+                  : (initialData?['isTranPgm'] != null ? 'No' : null),
+              placeholder: 'Required?',
+              items: const ['Yes', 'No'],
+              onChanged: isViewMode
+                  ? null
+                  : (v) {
+                      final isTran = v == 'Yes' ? 1 : 0;
+                      onChanged('isTranPgm', isTran);
+                      onChanged('approvalReq', 1);
+                      onChanged('authLevels', [
+                        {
+                          'level': 1,
+                          'permissionType': 'R - Role',
+                          'roleCd': '10',
+                          'userId': '0'
+                        }
+                      ]);
+                    },
+            ),
           ),
         ],
       ),

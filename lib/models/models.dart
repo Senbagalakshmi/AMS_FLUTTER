@@ -146,36 +146,20 @@ class AuthRecord {
           if (parsed is List) {
             for (var item in parsed) {
               if (item is Map<String, dynamic>) {
-                if (item.containsKey('data') && item.containsKey('tableName')) {
-                  dataBlocksList.add(AuthDataBlock.fromJson(item));
-                } else {
-                  dataBlocksList.add(AuthDataBlock(recSl: 1, tableName: 'DATA', data: item));
-                }
+                dataBlocksList.add(AuthDataBlock.fromJson(item));
               }
             }
           } else if (parsed is Map<String, dynamic>) {
-            if (parsed.containsKey('data') && parsed.containsKey('tableName')) {
-              dataBlocksList.add(AuthDataBlock.fromJson(parsed));
-            } else {
-              dataBlocksList.add(AuthDataBlock(recSl: 1, tableName: json['programId'] ?? 'DATA', data: parsed));
-            }
+            dataBlocksList.add(AuthDataBlock.fromJson(parsed));
           }
         } else if (dbData is List) {
           for (var item in dbData) {
             if (item is Map<String, dynamic>) {
-              if (item.containsKey('data') && item.containsKey('tableName')) {
-                dataBlocksList.add(AuthDataBlock.fromJson(item));
-              } else {
-                dataBlocksList.add(AuthDataBlock(recSl: 1, tableName: 'DATA', data: item));
-              }
+              dataBlocksList.add(AuthDataBlock.fromJson(item));
             }
           }
         } else if (dbData is Map<String, dynamic>) {
-          if (dbData.containsKey('data') && dbData.containsKey('tableName')) {
-            dataBlocksList.add(AuthDataBlock.fromJson(dbData));
-          } else {
-            dataBlocksList.add(AuthDataBlock(recSl: 1, tableName: json['programId'] ?? 'DATA', data: dbData));
-          }
+          dataBlocksList.add(AuthDataBlock.fromJson(dbData));
         }
       }
     } catch (e) {
@@ -223,10 +207,28 @@ class AuthDataBlock {
   });
 
   factory AuthDataBlock.fromJson(Map<String, dynamic> json) {
+    Map<String, dynamic> dataMap = {};
+    if (json['data'] != null && json['data'] is Map<String, dynamic>) {
+      dataMap = json['data'];
+    } else {
+      var dbString = json['dataBlock'] ?? json['datablock'] ?? json['DATABLOCK'];
+      if (dbString != null && dbString is String && dbString.trim().isNotEmpty) {
+        try {
+          dataMap = jsonDecode(dbString);
+        } catch (e) {
+          // Fallback to the whole map if it's not a string or decode fails
+          dataMap = json;
+        }
+      } else {
+        // Fallback: use the item itself as data if no specific datablock field
+        dataMap = json;
+      }
+    }
+
     return AuthDataBlock(
       recSl: json['recSl'] ?? 0,
       tableName: json['tableName'] ?? '',
-      data: json['data'] ?? {},
+      data: dataMap,
     );
   }
 }

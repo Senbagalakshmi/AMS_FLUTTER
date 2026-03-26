@@ -1303,6 +1303,12 @@ class _AmsSidebarState extends State<AmsSidebar> {
                     isSelected: widget.selectedProg == 'MENU-CRT',
                     onTap: () => widget.onNavigate('nontran', 'MENU-CRT'),
                   ),
+                  _subItem(
+                    label: 'Program',
+                    icon: Icons.app_registration_rounded,
+                    isSelected: widget.selectedProg == 'PGM-CRT',
+                    onTap: () => widget.onNavigate('nontran', 'PGM-CRT'),
+                  ),
                 ],
 
                 const SizedBox(height: 24),

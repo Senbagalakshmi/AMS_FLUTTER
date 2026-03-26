@@ -9,6 +9,7 @@ class NonTranAuthScreen extends StatefulWidget {
   final Future<void> Function(AuthRecord record, bool isApprove) onProcess;
   final VoidCallback onBack;
   final String? userName;
+  final Future<void> Function()? onRefresh;
 
   const NonTranAuthScreen({
     super.key,
@@ -16,6 +17,7 @@ class NonTranAuthScreen extends StatefulWidget {
     required this.onProcess,
     required this.onBack,
     this.userName,
+    this.onRefresh,
   });
 
   @override
@@ -68,12 +70,27 @@ class _NonTranAuthScreenState extends State<NonTranAuthScreen> {
                           ),
                         ],
                       ),
-                      AmsButton(
-                        label: 'Back',
-                        variant: AmsButtonVariant.outline,
-                        small: true,
-                        icon: Icons.arrow_back_ios_new_rounded,
-                        onPressed: widget.onBack,
+                      Row(
+                        children: [
+                          if (widget.onRefresh != null)
+                            Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: AmsButton(
+                                label: 'Refresh',
+                                variant: AmsButtonVariant.outline,
+                                small: true,
+                                icon: Icons.refresh_rounded,
+                                onPressed: widget.onRefresh!,
+                              ),
+                            ),
+                          AmsButton(
+                            label: 'Back',
+                            variant: AmsButtonVariant.outline,
+                            small: true,
+                            icon: Icons.arrow_back_ios_new_rounded,
+                            onPressed: widget.onBack,
+                          ),
+                        ],
                       ),
                     ],
                   ),

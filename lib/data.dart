@@ -33,13 +33,13 @@ final Map<String, Auth101Config> auth101 = {
       levels: 1),
   'ROLE-CRT': const Auth101Config(
       id: 'ROLE-CRT',
-      name: 'Role Creation',
+      name: 'User-Role Assignment',
       approvalReq: true,
       isTran: false,
       levels: 1),
   'USR-ROLE': const Auth101Config(
       id: 'USR-ROLE',
-      name: 'User-Role Assignment',
+      name: 'Role',
       approvalReq: true,
       isTran: false,
       levels: 1),
@@ -103,6 +103,12 @@ final Map<String, Auth101Config> auth101 = {
       approvalReq: true,
       isTran: false,
       levels: 1),
+  'PGM-CRT': const Auth101Config(
+      id: 'PGM-CRT',
+      name: 'Program',
+      approvalReq: true,
+      isTran: false,
+      levels: 1),
 };
 
 final Map<String, List<Auth103Limit>> auth103 = {
@@ -143,7 +149,7 @@ final Map<String, List<Auth103Limit>> auth103 = {
 };
 
 const List<String> tranPrograms = [];
-const List<String> nonTranPrograms = [];
+const List<String> nonTranPrograms = ['PGM-CRT'];
 
 final Map<String, String> tranProgPkPrefix = {
   'LOAN-DIS': 'LN',
@@ -166,6 +172,7 @@ final Map<String, String> nonTranProgPkPrefix = {
   'GL-BRN': 'GLB',
   'GL-SEG': 'GLS',
   'GL-ATT': 'GLA',
+  'PGM-CRT': 'PGM',
 };
 
 List<QueueEntry> seedQueue() => [

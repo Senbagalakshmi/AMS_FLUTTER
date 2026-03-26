@@ -135,7 +135,7 @@ class _AmsRootState extends State<AmsRoot> {
       success = await apiService.createMenu('program', data);
     } else if (prog == 'USR-ROLE') {
       success = await apiService.assignUserRole(data);
-    } else if (prog == 'AUTHCTL') {
+    } else if (prog == 'AUTHCTL' || prog == 'PGM-CRT') {
       success = await apiService.createAuthConfig(data);
     } else {
       // Mock success for other non-tran programs for now
@@ -353,6 +353,7 @@ class _AmsRootState extends State<AmsRoot> {
       case 'nontranauth':
         body = NonTranAuthScreen(
           authQueue: _state.authQueue,
+          onRefresh: _refreshData,
           onProcess: _handleAuthProcess,
           onBack: () => _navigate('list'),
           userName: _state.userName,
