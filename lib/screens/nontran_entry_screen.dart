@@ -1058,7 +1058,7 @@ class DynamicNTFields extends StatelessWidget {
                 required: true,
                 tooltip: 'Descriptive name for the role.',
                 child: AmsTextInput(
-                  initialValue: initialData?['roleName']?.toString(),
+                  initialValue: data['rolename']?.toString(),
                   readOnly: isViewMode,
                   placeholder: 'e.g. Senior Auditor',
                   onChanged:
@@ -1070,8 +1070,8 @@ class DynamicNTFields extends StatelessWidget {
                 required: true,
                 tooltip: 'Primary categorization of the role.',
                 child: AmsDropdown(
-                  initialValue: initialData?['roleType'] != null
-                      ? '${initialData!['roleType']} - ${initialData!['roleType'] == 'M' ? 'Master' : (initialData!['roleType'] == 'S' ? 'System' : 'Transaction')}'
+                  initialValue: data['roletype'] != null
+                      ? '${data['roletype']} - ${data['roletype'] == 'M' ? 'Master' : (data['roletype'] == 'S' ? 'System' : 'Transaction')}'
                       : null,
                   items: const ['M - Master', 'S - System', 'T - Transaction'],
                   onChanged:
@@ -1082,7 +1082,7 @@ class DynamicNTFields extends StatelessWidget {
                 label: 'ROLESUBTYPE',
                 tooltip: 'Secondary categorization for future usage.',
                 child: AmsTextInput(
-                  initialValue: initialData?['roleSubType']?.toString(),
+                  initialValue: data['rolesubtype']?.toString(),
                   readOnly: isViewMode,
                   placeholder: 'e.g. AUDIT',
                   onChanged:
@@ -1090,21 +1090,16 @@ class DynamicNTFields extends StatelessWidget {
                 ),
               ),
               _AccessToggleGroup(
-                initialViewAccess: (initialData?['viewAccess']?.toString() ??
-                        '')
-                    .startsWith('1'),
-                initialAuthAccess: (initialData?['authAccess']?.toString() ??
-                        '')
-                    .startsWith('1'),
-                initialMakerAccess: (initialData?['makerAccess']?.toString() ??
-                        '')
-                    .startsWith('1'),
-                initialAdminAccess: (initialData?['adminAccess']?.toString() ??
-                        '')
-                    .startsWith('1'),
+                initialViewAccess:
+                    (data['viewaccess']?.toString() ?? '').startsWith('1'),
+                initialAuthAccess:
+                    (data['authaccess']?.toString() ?? '').startsWith('1'),
+                initialMakerAccess:
+                    (data['makeraccess']?.toString() ?? '').startsWith('1'),
+                initialAdminAccess:
+                    (data['adminaccess']?.toString() ?? '').startsWith('1'),
                 initialSysAdminAccess:
-                    (initialData?['sysAdminAccess']?.toString() ?? '')
-                        .startsWith('1'),
+                    (data['sysadminaccess']?.toString() ?? '').startsWith('1'),
                 isViewMode: isViewMode,
                 onChanged: onChanged,
               ),
