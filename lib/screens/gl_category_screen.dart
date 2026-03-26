@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../theme.dart';
 import '../widgets/widgets.dart';
+import '../services/api_service.dart';
 
 class GLCategoryScreen extends StatefulWidget {
   final VoidCallback onBack;
@@ -25,6 +26,11 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
   int _currentPage = 1;
   static const int _pageSize = 10;
 
+  // API state
+  List<Map<String, dynamic>> _categories = [];
+  bool _isLoading = false;
+  String? _loadError;
+
   final _orgCodeController = TextEditingController();
   final _catCodeController = TextEditingController();
   final _catNameController = TextEditingController();
@@ -42,12 +48,123 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
   String? _catTypeError;
   String? _viewStatus;
 
+  // Track if we're in edit mode and which record
+  bool _isEditMode = false;
+  int? _editingGlCatCd;
+
   @override
   void initState() {
     super.initState();
     _orgCodeController.addListener(_onFormChange);
     _catCodeController.addListener(_onFormChange);
     _catNameController.addListener(_onFormChange);
+    _loadCategories();
+  }
+
+  // ─── API CALLS ────────────────────────────────────────────────────────────
+
+  Future<void> _loadCategories() async {
+    setState(() {
+      _isLoading = true;
+      _loadError = null;
+    });
+
+    final result = await apiService.getAllGlCategories();
+
+    setState(() {
+      _isLoading = false;
+      if (result != null) {
+        _categories = result;
+      } else {
+        _loadError = 'Failed to load categories. Please try again.';
+      }
+    });
+  }
+
+  Future<void> _saveCategory() async {
+    if (!_isFormValid) {
+      _validateAll();
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    final data = {
+      'orgCode': _orgCodeController.text.trim(),
+      'glCatCd': int.tryParse(_catCodeController.text.trim()) ?? 0,
+      'glCatName': _catNameController.text.trim(),
+      'glCatType': _selectedCategoryType,
+      if (_subTypeController.text.trim().isNotEmpty)
+        'glSubType': _subTypeController.text.trim(),
+    };
+
+    // ✅ Edit mode → PUT (updateGlCategory), Create mode → POST (createGlCategory)
+    final success = _isEditMode
+        ? await apiService.updateGlCategory(_editingGlCatCd!, data)
+        : await apiService.createGlCategory(data);
+
+    setState(() => _isLoading = false);
+
+    if (success) {
+      _showSnackbar(
+        _isEditMode
+            ? '${_catNameController.text} updated successfully'
+            : '${_catNameController.text} created successfully',
+        isError: false,
+      );
+      _clearFields();
+      setState(() {
+        _showForm = false;
+        _isEditMode = false;
+        _editingGlCatCd = null;
+      });
+      await _loadCategories(); // Refresh list
+    } else {
+      _showSnackbar('Failed to save category. Please try again.',
+          isError: true);
+    }
+  }
+
+  Future<void> _deleteCategory(Map<String, dynamic> c) async {
+    // glCatCd is the primary key used for delete
+    final glCatCd = c['glCatCd'] is int
+        ? c['glCatCd'] as int
+        : int.tryParse(c['glCatCd']?.toString() ?? '');
+
+    if (glCatCd == null) {
+      _showSnackbar('Cannot delete: invalid category code.', isError: true);
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    final success = await apiService.deleteGlCategory(glCatCd);
+
+    setState(() => _isLoading = false);
+
+    if (success) {
+      _showSnackbar('${c['glCatName'] ?? c['name']} deleted successfully',
+          isError: false);
+      await _loadCategories(); // Refresh list from API
+    } else {
+      _showSnackbar('Failed to delete category. Please try again.',
+          isError: true);
+    }
+  }
+
+  // ─── HELPERS ──────────────────────────────────────────────────────────────
+
+  void _showSnackbar(String message, {required bool isError}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message,
+            style: bodyStyle(color: Colors.white, weight: FontWeight.w600)),
+        backgroundColor: isError ? AppColors.red : AppColors.ink2,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      ),
+    );
   }
 
   void _onFormChange() {
@@ -64,11 +181,14 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
       if (fieldName == 'org') {
         _orgError = value.trim().isEmpty ? 'Org Code is required' : null;
       } else if (fieldName == 'code') {
-        _catCodeError = value.trim().isEmpty ? 'Category Code is required' : null;
+        _catCodeError =
+            value.trim().isEmpty ? 'Category Code is required' : null;
       } else if (fieldName == 'name') {
-        _catNameError = value.trim().isEmpty ? 'Category Name is required' : null;
+        _catNameError =
+            value.trim().isEmpty ? 'Category Name is required' : null;
       } else if (fieldName == 'type') {
-        _catTypeError = _selectedCategoryType == null ? 'Category Type is required' : null;
+        _catTypeError =
+            _selectedCategoryType == null ? 'Category Type is required' : null;
       }
     });
     if (value.trim().isNotEmpty && nextFocus != null) {
@@ -78,17 +198,21 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
 
   bool get _isFormValid {
     return _orgCodeController.text.trim().isNotEmpty &&
-           _catCodeController.text.trim().isNotEmpty &&
-           _catNameController.text.trim().isNotEmpty &&
-           _selectedCategoryType != null;
+        _catCodeController.text.trim().isNotEmpty &&
+        _catNameController.text.trim().isNotEmpty &&
+        _selectedCategoryType != null;
   }
 
   void _validateAll() {
     setState(() {
-      if (_orgCodeController.text.trim().isEmpty) _orgError = 'Org Code is required';
-      if (_catCodeController.text.trim().isEmpty) _catCodeError = 'Category Code is required';
-      if (_catNameController.text.trim().isEmpty) _catNameError = 'Category Name is required';
-      if (_selectedCategoryType == null) _catTypeError = 'Category Type is required';
+      if (_orgCodeController.text.trim().isEmpty)
+        _orgError = 'Org Code is required';
+      if (_catCodeController.text.trim().isEmpty)
+        _catCodeError = 'Category Code is required';
+      if (_catNameController.text.trim().isEmpty)
+        _catNameError = 'Category Name is required';
+      if (_selectedCategoryType == null)
+        _catTypeError = 'Category Type is required';
     });
   }
 
@@ -114,6 +238,8 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
     setState(() {
       _selectedCategoryType = null;
       _isViewOnly = false;
+      _isEditMode = false;
+      _editingGlCatCd = null;
       _orgError = null;
       _catCodeError = null;
       _catNameError = null;
@@ -121,15 +247,31 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
     });
   }
 
-  // Dummy data based on the screenshot
-  final List<Map<String, dynamic>> _categories = [
-    {'orgCode': 'ORG01', 'code': '1001', 'name': 'Current Assets', 'type': 'Asset', 'subType': 'Operating', 'status': 'Active'},
-    {'orgCode': 'ORG01', 'code': '1002', 'name': 'Fixed Assets', 'type': 'Asset', 'subType': 'Non-Operating', 'status': 'Active'},
-    {'orgCode': 'ORG01', 'code': '2001', 'name': 'Current Liabilities', 'type': 'Liability', 'subType': 'Short-term', 'status': 'Active'},
-    {'orgCode': 'ORG01', 'code': '3001', 'name': 'Share Capital', 'type': 'Capital', 'subType': 'Equity', 'status': 'Active'},
-    {'orgCode': 'ORG01', 'code': '4001', 'name': 'Sales Revenue', 'type': 'Income', 'subType': 'Operating', 'status': 'Active'},
-    {'orgCode': 'ORG02', 'code': '5001', 'name': 'Operating Expense', 'type': 'Expense', 'subType': 'Indirect', 'status': 'Inactive'},
-  ];
+  // ─── FIELD MAPPING HELPERS ────────────────────────────────────────────────
+  // API may return different key names — handle both gracefully
+
+  String _getField(Map<String, dynamic> c, List<String> keys,
+      {String fallback = ''}) {
+    for (final k in keys) {
+      if (c.containsKey(k) && c[k] != null) return c[k].toString();
+    }
+    return fallback;
+  }
+
+  String _getName(Map<String, dynamic> c) =>
+      _getField(c, ['glCatName', 'name']);
+  String _getCode(Map<String, dynamic> c) =>
+      _getField(c, ['glCatCd', 'code', 'glCatCode']);
+  String _getType(Map<String, dynamic> c) =>
+      _getField(c, ['glCatType', 'type']);
+  String _getOrg(Map<String, dynamic> c) =>
+      _getField(c, ['orgCode', 'org'], fallback: 'ORG01');
+  String _getSubType(Map<String, dynamic> c) =>
+      _getField(c, ['glSubType', 'subType']);
+  String _getStatus(Map<String, dynamic> c) =>
+      _getField(c, ['status'], fallback: 'Active');
+
+  // ─── BUILD ────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
@@ -138,7 +280,8 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
       body: Column(
         children: [
           AmsIdentityHeader(
-            icon: const Icon(Icons.category_rounded, size: 28, color: AppColors.tBlue),
+            icon: const Icon(Icons.category_rounded,
+                size: 28, color: AppColors.tBlue),
             title: 'GL Category',
             subtitle: 'List View • Create / Edit Form',
             badges: [],
@@ -153,7 +296,7 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // LEFT PANEL: List View
+                  // ── LEFT PANEL: List View ──────────────────────────────
                   Expanded(
                     flex: 6,
                     child: Container(
@@ -172,10 +315,28 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
                                   child: AmsTextInput(
                                     icon: Icons.search_rounded,
                                     placeholder: 'Search categories...',
-                                    onChanged: (v) => setState(() => _searchQuery = v),
+                                    onChanged: (v) =>
+                                        setState(() => _searchQuery = v),
                                   ),
                                 ),
                                 const SizedBox(width: 16),
+                                // Refresh button
+                                IconButton(
+                                  tooltip: 'Refresh',
+                                  icon: _isLoading
+                                      ? const SizedBox(
+                                          width: 18,
+                                          height: 18,
+                                          child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              color: AppColors.tBlue),
+                                        )
+                                      : const Icon(Icons.refresh_rounded,
+                                          color: AppColors.ink3),
+                                  onPressed:
+                                      _isLoading ? null : _loadCategories,
+                                ),
+                                const SizedBox(width: 8),
                                 AmsButton(
                                   label: '+ Add New',
                                   variant: AmsButtonVariant.primary,
@@ -183,6 +344,7 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
                                     setState(() {
                                       _showForm = true;
                                       _isViewOnly = false;
+                                      _isEditMode = false;
                                       _clearFields();
                                     });
                                   },
@@ -199,7 +361,7 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
 
                   if (_showForm) const SizedBox(width: 20),
 
-                  // RIGHT PANEL: Form
+                  // ── RIGHT PANEL: Form ──────────────────────────────────
                   if (_showForm)
                     Expanded(
                       flex: 4,
@@ -211,8 +373,10 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
                         ),
                         child: Focus(
                           onKeyEvent: (node, event) {
-                            if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.f2) {
-                              FocusManager.instance.primaryFocus?.previousFocus();
+                            if (event is KeyDownEvent &&
+                                event.logicalKey == LogicalKeyboardKey.f2) {
+                              FocusManager.instance.primaryFocus
+                                  ?.previousFocus();
                               return KeyEventResult.handled;
                             }
                             return KeyEventResult.ignored;
@@ -222,24 +386,31 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
                             children: [
                               Container(
                                 width: double.infinity,
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 12),
                                 decoration: const BoxDecoration(
                                   color: AppColors.tBlue,
-                                  borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+                                  borderRadius: BorderRadius.vertical(
+                                      top: Radius.circular(8)),
                                 ),
                                 child: Text(
                                   _isViewOnly
                                       ? 'View GL Category'
-                                      : (_catCodeController.text.isNotEmpty
+                                      : (_isEditMode
                                           ? 'Edit GL Category'
                                           : 'Create GL Category'),
-                                  style: bodyStyle(size: 14, color: Colors.white, weight: FontWeight.w700),
+                                  style: bodyStyle(
+                                      size: 14,
+                                      color: Colors.white,
+                                      weight: FontWeight.w700),
                                 ),
                               ),
                               Expanded(
                                 child: SingleChildScrollView(
                                   padding: const EdgeInsets.all(24),
-                                  child: _isViewOnly ? _buildViewUI() : _buildFormUI(),
+                                  child: _isViewOnly
+                                      ? _buildViewUI()
+                                      : _buildFormUI(),
                                 ),
                               ),
                             ],
@@ -256,6 +427,8 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
     );
   }
 
+  // ─── VIEW UI ──────────────────────────────────────────────────────────────
+
   Widget _buildViewUI() {
     final firstLetter = _catNameController.text.isNotEmpty
         ? _catNameController.text.substring(0, 1).toUpperCase()
@@ -264,7 +437,6 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Profile/Header Session
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
@@ -279,7 +451,10 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
                 height: 60,
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [AppColors.tBlue, AppColors.tBlue.withValues(alpha: 0.8)],
+                    colors: [
+                      AppColors.tBlue,
+                      AppColors.tBlue.withValues(alpha: 0.8)
+                    ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
@@ -292,11 +467,11 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
                   ],
                 ),
                 child: Center(
-                  child: Text(
-                    firstLetter,
-                    style: bodyStyle(
-                        size: 24, color: Colors.white, weight: FontWeight.w800),
-                  ),
+                  child: Text(firstLetter,
+                      style: bodyStyle(
+                          size: 24,
+                          color: Colors.white,
+                          weight: FontWeight.w800)),
                 ),
               ),
               const SizedBox(width: 20),
@@ -330,17 +505,15 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
           ),
         ),
         const SizedBox(height: 24),
-
         Text('Category Details',
-            style: bodyStyle(size: 14, weight: FontWeight.w700, color: AppColors.ink2)),
+            style: bodyStyle(
+                size: 14, weight: FontWeight.w700, color: AppColors.ink2)),
         const SizedBox(height: 16),
-
-        // Info Cards Side-by-Side
         Row(
           children: [
             Expanded(
-              child: _buildInfoCard(
-                  'Organization', _orgCodeController.text, Icons.business_rounded),
+              child: _buildInfoCard('Organization', _orgCodeController.text,
+                  Icons.business_rounded),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -350,14 +523,15 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
           ],
         ),
         const SizedBox(height: 16),
-        _buildInfoCard(
-            'Classification', _selectedCategoryType ?? '—', Icons.category_rounded),
+        _buildInfoCard('Classification', _selectedCategoryType ?? '—',
+            Icons.category_rounded),
         const SizedBox(height: 16),
         _buildInfoCard(
             'Sub-Classification',
-            _subTypeController.text.isEmpty ? 'Not Provided' : _subTypeController.text,
+            _subTypeController.text.isEmpty
+                ? 'Not Provided'
+                : _subTypeController.text,
             Icons.account_tree_outlined),
-
         const SizedBox(height: 40),
         SizedBox(
           width: double.infinity,
@@ -383,7 +557,8 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
         color: isActive ? AppColors.greenLt : AppColors.redLt,
         borderRadius: BorderRadius.circular(6),
         border: Border.all(
-          color: (isActive ? AppColors.green : AppColors.red).withValues(alpha: 0.1),
+          color: (isActive ? AppColors.green : AppColors.red)
+              .withValues(alpha: 0.1),
         ),
       ),
       child: Row(
@@ -398,13 +573,11 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
             ),
           ),
           const SizedBox(width: 6),
-          Text(
-            status,
-            style: bodyStyle(
-                size: 11,
-                weight: FontWeight.w700,
-                color: isActive ? AppColors.green : AppColors.red),
-          ),
+          Text(status,
+              style: bodyStyle(
+                  size: 11,
+                  weight: FontWeight.w700,
+                  color: isActive ? AppColors.green : AppColors.red)),
         ],
       ),
     );
@@ -434,18 +607,21 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
               const SizedBox(width: 8),
               Text(label,
                   style: bodyStyle(
-                      size: 11, color: AppColors.ink3, weight: FontWeight.w600)),
+                      size: 11,
+                      color: AppColors.ink3,
+                      weight: FontWeight.w600)),
             ],
           ),
           const SizedBox(height: 8),
-          Text(
-            value,
-            style: bodyStyle(size: 14, color: AppColors.ink, weight: FontWeight.w700),
-          ),
+          Text(value,
+              style: bodyStyle(
+                  size: 14, color: AppColors.ink, weight: FontWeight.w700)),
         ],
       ),
     );
   }
+
+  // ─── FORM UI ──────────────────────────────────────────────────────────────
 
   Widget _buildFormUI() {
     return Column(
@@ -460,7 +636,8 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
             controller: _orgCodeController,
             focusNode: _orgFocus,
             errorText: _orgError,
-            isValid: _orgCodeController.text.trim().isNotEmpty && _orgError == null,
+            isValid:
+                _orgCodeController.text.trim().isNotEmpty && _orgError == null,
             textInputAction: TextInputAction.next,
             onFieldSubmitted: (v) => _validateField(v, 'org', _catCodeFocus),
             placeholder: 'e.g. ORG01',
@@ -470,15 +647,18 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
           label: 'Category Code',
           required: true,
           labelAbove: true,
-          tooltip: 'Enter the unique Category Code (e.g. 1001)',
+          tooltip: 'Enter the unique Category Code (numeric, e.g. 1001)',
           child: AmsTextInput(
             controller: _catCodeController,
             focusNode: _catCodeFocus,
             errorText: _catCodeError,
-            isValid: _catCodeController.text.trim().isNotEmpty && _catCodeError == null,
+            isValid: _catCodeController.text.trim().isNotEmpty &&
+                _catCodeError == null,
             textInputAction: TextInputAction.next,
             onFieldSubmitted: (v) => _validateField(v, 'code', _catNameFocus),
             placeholder: 'e.g. 1001',
+            // Numeric keyboard hint
+            keyboardType: TextInputType.number,
           ),
         ),
         AmsField(
@@ -490,7 +670,8 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
             controller: _catNameController,
             focusNode: _catNameFocus,
             errorText: _catNameError,
-            isValid: _catNameController.text.trim().isNotEmpty && _catNameError == null,
+            isValid: _catNameController.text.trim().isNotEmpty &&
+                _catNameError == null,
             textInputAction: TextInputAction.next,
             onFieldSubmitted: (v) => _validateField(v, 'name', _catTypeFocus),
             placeholder: 'Enter name...',
@@ -526,51 +707,55 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
             controller: _subTypeController,
             focusNode: _subTypeFocus,
             textInputAction: TextInputAction.done,
-            onFieldSubmitted: (v) {
-              if (_isFormValid) {
-                setState(() => _showForm = false);
-                _clearFields();
-              } else {
-                _validateAll();
-              }
-            },
+            onFieldSubmitted: (v) => _saveCategory(),
             placeholder: 'Optional sub-type',
           ),
         ),
         const SizedBox(height: 16),
         Text('* Required fields',
-            style: bodyStyle(size: 11, color: AppColors.ink3, weight: FontWeight.w500).copyWith(fontStyle: FontStyle.italic)),
+            style: bodyStyle(
+                    size: 11, color: AppColors.ink3, weight: FontWeight.w500)
+                .copyWith(fontStyle: FontStyle.italic)),
         const SizedBox(height: 24),
         Row(
           children: [
-            AmsButton(
-              label: 'Save',
-              variant: AmsButtonVariant.primary,
-              onPressed: () {
-                if (_isFormValid) {
-                  setState(() => _showForm = false);
-                  _clearFields();
-                } else {
-                  _validateAll();
-                }
-              },
-            ),
+            // Save button — shows spinner while loading
+            _isLoading
+                ? const SizedBox(
+                    width: 80,
+                    height: 36,
+                    child: Center(
+                      child: SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: AppColors.tBlue),
+                      ),
+                    ),
+                  )
+                : AmsButton(
+                    label: _isEditMode ? 'Update' : 'Save',
+                    variant: AmsButtonVariant.primary,
+                    onPressed: _saveCategory,
+                  ),
             const SizedBox(width: 8),
             AmsButton(
               label: 'Clear',
               icon: Icons.clear_all_rounded,
               variant: AmsButtonVariant.outline,
-              onPressed: _clearFields,
+              onPressed: _isLoading ? null : _clearFields,
             ),
             const SizedBox(width: 8),
             AmsButton(
               label: 'Cancel',
               icon: Icons.close_rounded,
               variant: AmsButtonVariant.danger,
-              onPressed: () {
-                _clearFields();
-                setState(() => _showForm = false);
-              },
+              onPressed: _isLoading
+                  ? null
+                  : () {
+                      _clearFields();
+                      setState(() => _showForm = false);
+                    },
             ),
           ],
         ),
@@ -578,168 +763,44 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
     );
   }
 
-
-  Widget _buildPaginationFooter() {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Builder(builder: (context) {
-            final filteredCount = _categories.where((c) {
-              if (_searchQuery.isEmpty) return true;
-              final q = _searchQuery.toLowerCase();
-              return c['name'].toString().toLowerCase().contains(q) || c['code'].toString().toLowerCase().contains(q);
-            }).length;
-            if (filteredCount == 0) return const SizedBox();
-            final start = ((_currentPage - 1) * _pageSize) + 1;
-            final end = (start + _pageSize - 1).clamp(0, filteredCount);
-            return Text('Showing $start–$end', style: bodyStyle(size: 13, color: AppColors.ink3));
-          }),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              IconButton(
-                icon: Icon(Icons.chevron_left_rounded, size: 20, color: _currentPage > 1 ? AppColors.ink3 : AppColors.border),
-                onPressed: _currentPage > 1 ? () => setState(() => _currentPage--) : null,
-              ),
-              ...List.generate(((_categories.where((c) {
-                if (_searchQuery.isEmpty) return true;
-                final q = _searchQuery.toLowerCase();
-                return c['name'].toString().toLowerCase().contains(q) || c['code'].toString().toLowerCase().contains(q);
-              }).length) / _pageSize).ceil(), (index) {
-                final pageNum = index + 1;
-                final isCurrent = pageNum == _currentPage;
-                return GestureDetector(
-                  onTap: () => setState(() => _currentPage = pageNum),
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: isCurrent ? AppColors.tBlue : Colors.transparent,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text('$pageNum',
-                        style: bodyStyle(size: 13, color: isCurrent ? Colors.white : AppColors.ink3, weight: isCurrent ? FontWeight.w700 : FontWeight.w500)),
-                  ),
-                );
-              }),
-              IconButton(
-                icon: Icon(Icons.chevron_right_rounded,
-                    size: 20,
-                    color: (_currentPage * _pageSize <
-                            _categories.where((c) {
-                              if (_searchQuery.isEmpty) return true;
-                              final q = _searchQuery.toLowerCase();
-                              return c['name'].toString().toLowerCase().contains(q) || c['code'].toString().toLowerCase().contains(q);
-                            }).length)
-                        ? AppColors.ink3
-                        : AppColors.border),
-                onPressed: (_currentPage * _pageSize <
-                        _categories.where((c) {
-                          if (_searchQuery.isEmpty) return true;
-                          final q = _searchQuery.toLowerCase();
-                          return c['name'].toString().toLowerCase().contains(q) || c['code'].toString().toLowerCase().contains(q);
-                        }).length)
-                    ? () => setState(() => _currentPage++)
-                    : null,
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _editCategory(Map<String, dynamic> c) {
-    setState(() {
-      _showForm = true;
-      _isViewOnly = false;
-      _orgCodeController.text = c['orgCode']?.toString() ?? 'ORG01';
-      _catCodeController.text = c['code']?.toString() ?? '';
-      _catNameController.text = c['name']?.toString() ?? '';
-      _subTypeController.text = c['subType']?.toString() ?? '';
-
-      final type = c['type']?.toString();
-      if (['Asset', 'Liability', 'Capital', 'Income', 'Expense'].contains(type)) {
-        _selectedCategoryType = type;
-      } else {
-        _selectedCategoryType = null;
-      }
-
-      _orgError = null;
-      _catCodeError = null;
-      _catNameError = null;
-      _catTypeError = null;
-    });
-  }
-
-  void _viewCategory(Map<String, dynamic> c) {
-    setState(() {
-      _showForm = true;
-      _isViewOnly = true;
-      _viewStatus = c['status']?.toString() ?? 'Active';
-      _orgCodeController.text = c['orgCode']?.toString() ?? 'ORG01';
-      _catCodeController.text = c['code']?.toString() ?? '';
-      _catNameController.text = c['name']?.toString() ?? '';
-      _subTypeController.text = c['subType']?.toString() ?? '';
-
-      final type = c['type']?.toString();
-      if (['Asset', 'Liability', 'Capital', 'Income', 'Expense'].contains(type)) {
-        _selectedCategoryType = type;
-      } else {
-        _selectedCategoryType = null;
-      }
-
-      _orgError = null;
-      _catCodeError = null;
-      _catNameError = null;
-      _catTypeError = null;
-    });
-  }
-
-  void _confirmDelete(Map<String, dynamic> c) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('Delete Category', style: bodyStyle(size: 16, weight: FontWeight.w700)),
-        content: Text('Are you sure you want to delete ${c['name']}?', style: bodyStyle(size: 14)),
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        actions: [
-          AmsButton(
-            label: 'No',
-            variant: AmsButtonVariant.ghost,
-            onPressed: () => Navigator.pop(ctx),
-          ),
-          AmsButton(
-            label: 'Yes, Delete',
-            variant: AmsButtonVariant.primary,
-            onPressed: () {
-              Navigator.pop(ctx);
-              setState(() {
-                _categories.removeWhere((item) => item['code'] == c['code']);
-              });
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('${c['name']} deleted successfully', style: bodyStyle(color: Colors.white, weight: FontWeight.w600)),
-                  backgroundColor: AppColors.ink2,
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                ),
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
+  // ─── TABLE ────────────────────────────────────────────────────────────────
 
   Widget _buildTable() {
+    // Show error state
+    if (_loadError != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.cloud_off_rounded, size: 40, color: AppColors.red),
+            const SizedBox(height: 16),
+            Text(_loadError!,
+                style: bodyStyle(
+                    size: 14, color: AppColors.red, weight: FontWeight.w600)),
+            const SizedBox(height: 16),
+            AmsButton(
+              label: 'Retry',
+              icon: Icons.refresh_rounded,
+              variant: AmsButtonVariant.outline,
+              onPressed: _loadCategories,
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Show loading skeleton
+    if (_isLoading && _categories.isEmpty) {
+      return const Center(
+        child: CircularProgressIndicator(color: AppColors.tBlue),
+      );
+    }
+
     final filtered = _categories.where((c) {
       if (_searchQuery.isEmpty) return true;
       final q = _searchQuery.toLowerCase();
-      return c['name'].toString().toLowerCase().contains(q) || c['code'].toString().toLowerCase().contains(q);
+      return _getName(c).toLowerCase().contains(q) ||
+          _getCode(c).toLowerCase().contains(q);
     }).toList();
 
     final startIndex = (_currentPage - 1) * _pageSize;
@@ -759,11 +820,17 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
             const SizedBox(height: 80),
             Container(
               padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(color: AppColors.bg, shape: BoxShape.circle, border: Border.all(color: AppColors.border)),
-              child: const Icon(Icons.search_off_rounded, size: 32, color: AppColors.ink4),
+              decoration: BoxDecoration(
+                  color: AppColors.bg,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppColors.border)),
+              child: const Icon(Icons.search_off_rounded,
+                  size: 32, color: AppColors.ink4),
             ),
             const SizedBox(height: 16),
-            Text('No data available', style: bodyStyle(size: 14, color: AppColors.ink3, weight: FontWeight.w600)),
+            Text('No data available',
+                style: bodyStyle(
+                    size: 14, color: AppColors.ink3, weight: FontWeight.w600)),
             const SizedBox(height: 80),
           ],
         ),
@@ -776,33 +843,31 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
       separatorBuilder: (ctx, idx) => const SizedBox(height: 12),
       itemBuilder: (ctx, idx) {
         final c = paginated[idx];
-        final isAsset = c['type'] == 'Asset';
-        final isLiab = c['type'] == 'Liability';
-        final isCap = c['type'] == 'Capital';
-        final isInc = c['type'] == 'Income';
-        final isExp = c['type'] == 'Expense';
+        final type = _getType(c);
+        final name = _getName(c);
+        final code = _getCode(c);
+        final status = _getStatus(c);
 
         Color typeBg = AppColors.bg;
         Color typeFg = AppColors.ink2;
-
-        if (isAsset) {
+        if (type == 'Asset') {
           typeBg = AppColors.tBlueLt.withValues(alpha: 0.5);
           typeFg = AppColors.tBlue;
-        } else if (isLiab) {
+        } else if (type == 'Liability') {
           typeBg = const Color(0xFFF3E8FF);
           typeFg = const Color(0xFF7E22CE);
-        } else if (isCap) {
+        } else if (type == 'Capital') {
           typeBg = AppColors.nTealLt.withValues(alpha: 0.5);
           typeFg = AppColors.nTeal;
-        } else if (isInc) {
+        } else if (type == 'Income') {
           typeBg = AppColors.greenLt;
           typeFg = AppColors.green;
-        } else if (isExp) {
+        } else if (type == 'Expense') {
           typeBg = AppColors.amberLt.withValues(alpha: 0.5);
           typeFg = AppColors.amber;
         }
 
-        final isActive = c['status'] == 'Active';
+        final isActive = status == 'Active';
 
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
@@ -810,17 +875,28 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
             color: Colors.white,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: AppColors.border),
-            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 8, offset: const Offset(0, 2))],
+            boxShadow: [
+              BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.02),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2))
+            ],
           ),
           child: Row(
             children: [
               Container(
                 width: 40,
                 height: 40,
-                decoration: const BoxDecoration(color: AppColors.tBlueLt, shape: BoxShape.circle),
+                decoration: const BoxDecoration(
+                    color: AppColors.tBlueLt, shape: BoxShape.circle),
                 child: Center(
-                  child: Text(c['name'].toString().substring(0, 1).toUpperCase(),
-                      style: bodyStyle(size: 16, color: AppColors.tBlue, weight: FontWeight.w800)),
+                  child: Text(
+                    name.isNotEmpty ? name.substring(0, 1).toUpperCase() : '?',
+                    style: bodyStyle(
+                        size: 16,
+                        color: AppColors.tBlue,
+                        weight: FontWeight.w800),
+                  ),
                 ),
               ),
               const SizedBox(width: 16),
@@ -828,68 +904,65 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(c['name'], style: bodyStyle(size: 14, weight: FontWeight.w700)),
+                    Text(name,
+                        style: bodyStyle(size: 14, weight: FontWeight.w700)),
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        Text('Type: ', style: bodyStyle(size: 12, color: AppColors.ink3)),
-                        Text('${c['type']}', style: bodyStyle(size: 12, color: typeFg, weight: FontWeight.w600)),
-                        Text('   |   Status: ', style: bodyStyle(size: 12, color: AppColors.ink3)),
-                        Text('${c['status']}', style: bodyStyle(size: 12, color: isActive ? AppColors.green : AppColors.red, weight: FontWeight.w600)),
+                        Text('Type: ',
+                            style: bodyStyle(size: 12, color: AppColors.ink3)),
+                        Text(type,
+                            style: bodyStyle(
+                                size: 12,
+                                color: typeFg,
+                                weight: FontWeight.w600)),
+                        Text('   |   Status: ',
+                            style: bodyStyle(size: 12, color: AppColors.ink3)),
+                        Text(status,
+                            style: bodyStyle(
+                                size: 12,
+                                color:
+                                    isActive ? AppColors.green : AppColors.red,
+                                weight: FontWeight.w600)),
                       ],
                     ),
                   ],
                 ),
               ),
-              AmsBadge(label: c['code']),
+              AmsBadge(label: code),
               const SizedBox(width: 16),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(color: typeBg, borderRadius: BorderRadius.circular(4)),
-                child: Text(c['type'], style: bodyStyle(size: 11, color: typeFg, weight: FontWeight.w600)),
+                decoration: BoxDecoration(
+                    color: typeBg, borderRadius: BorderRadius.circular(4)),
+                child: Text(type,
+                    style: bodyStyle(
+                        size: 11, color: typeFg, weight: FontWeight.w600)),
               ),
               const SizedBox(width: 24),
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  InkWell(
+                  _actionIcon(
+                    icon: Icons.visibility_outlined,
+                    color: AppColors.green,
+                    bg: Colors.white,
                     onTap: () => _viewCategory(c),
-                    borderRadius: BorderRadius.circular(6),
-                    child: Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: AppColors.border, width: 1.5),
-                        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 4, offset: const Offset(0, 2))],
-                      ),
-                      child: const Icon(Icons.visibility_outlined, size: 16, color: AppColors.green),
-                    ),
                   ),
                   const SizedBox(width: 8),
-                  InkWell(
+                  _actionIcon(
+                    icon: Icons.edit_outlined,
+                    color: AppColors.tBlue,
+                    bg: Colors.white,
                     onTap: () => _editCategory(c),
-                    borderRadius: BorderRadius.circular(6),
-                    child: Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: AppColors.border, width: 1.5),
-                        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 4, offset: const Offset(0, 2))],
-                      ),
-                      child: const Icon(Icons.edit_outlined, size: 16, color: AppColors.tBlue),
-                    ),
                   ),
                   const SizedBox(width: 8),
-                  InkWell(
+                  _actionIcon(
+                    icon: Icons.delete_outline_rounded,
+                    color: AppColors.red,
+                    bg: AppColors.redLt,
+                    borderColor: AppColors.red.withValues(alpha: 0.2),
                     onTap: () => _confirmDelete(c),
-                    borderRadius: BorderRadius.circular(6),
-                    child: Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(color: AppColors.redLt, borderRadius: BorderRadius.circular(6), border: Border.all(color: AppColors.red.withValues(alpha: 0.2), width: 1.5)),
-                      child: const Icon(Icons.delete_outline_rounded, size: 16, color: AppColors.red),
-                    ),
                   ),
                 ],
               ),
@@ -897,6 +970,186 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
           ),
         );
       },
+    );
+  }
+
+  Widget _actionIcon({
+    required IconData icon,
+    required Color color,
+    required Color bg,
+    Color? borderColor,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(6),
+      child: Container(
+        padding: const EdgeInsets.all(6),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(6),
+          border:
+              Border.all(color: borderColor ?? AppColors.border, width: 1.5),
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black.withValues(alpha: 0.02),
+                blurRadius: 4,
+                offset: const Offset(0, 2))
+          ],
+        ),
+        child: Icon(icon, size: 16, color: color),
+      ),
+    );
+  }
+
+  // ─── PAGINATION FOOTER ────────────────────────────────────────────────────
+
+  Widget _buildPaginationFooter() {
+    final filteredCount = _categories.where((c) {
+      if (_searchQuery.isEmpty) return true;
+      final q = _searchQuery.toLowerCase();
+      return _getName(c).toLowerCase().contains(q) ||
+          _getCode(c).toLowerCase().contains(q);
+    }).length;
+
+    if (filteredCount == 0) return const SizedBox(height: 16);
+
+    final totalPages = (filteredCount / _pageSize).ceil();
+    final start = ((_currentPage - 1) * _pageSize) + 1;
+    final end = (start + _pageSize - 1).clamp(0, filteredCount);
+
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text('Showing $start–$end of $filteredCount',
+              style: bodyStyle(size: 13, color: AppColors.ink3)),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                icon: Icon(Icons.chevron_left_rounded,
+                    size: 20,
+                    color:
+                        _currentPage > 1 ? AppColors.ink3 : AppColors.border),
+                onPressed: _currentPage > 1
+                    ? () => setState(() => _currentPage--)
+                    : null,
+              ),
+              ...List.generate(totalPages, (index) {
+                final pageNum = index + 1;
+                final isCurrent = pageNum == _currentPage;
+                return GestureDetector(
+                  onTap: () => setState(() => _currentPage = pageNum),
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: isCurrent ? AppColors.tBlue : Colors.transparent,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text('$pageNum',
+                        style: bodyStyle(
+                            size: 13,
+                            color: isCurrent ? Colors.white : AppColors.ink3,
+                            weight:
+                                isCurrent ? FontWeight.w700 : FontWeight.w500)),
+                  ),
+                );
+              }),
+              IconButton(
+                icon: Icon(Icons.chevron_right_rounded,
+                    size: 20,
+                    color: _currentPage < totalPages
+                        ? AppColors.ink3
+                        : AppColors.border),
+                onPressed: _currentPage < totalPages
+                    ? () => setState(() => _currentPage++)
+                    : null,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ─── ROW ACTIONS ──────────────────────────────────────────────────────────
+
+  void _editCategory(Map<String, dynamic> c) {
+    final type = _getType(c);
+    setState(() {
+      _showForm = true;
+      _isViewOnly = false;
+      _isEditMode = true;
+      _editingGlCatCd = c['glCatCd'] is int
+          ? c['glCatCd'] as int
+          : int.tryParse(c['glCatCd']?.toString() ?? '');
+      _orgCodeController.text = _getOrg(c);
+      _catCodeController.text = _getCode(c);
+      _catNameController.text = _getName(c);
+      _subTypeController.text = _getSubType(c);
+      _selectedCategoryType =
+          ['Asset', 'Liability', 'Capital', 'Income', 'Expense'].contains(type)
+              ? type
+              : null;
+      _orgError = null;
+      _catCodeError = null;
+      _catNameError = null;
+      _catTypeError = null;
+    });
+  }
+
+  void _viewCategory(Map<String, dynamic> c) {
+    final type = _getType(c);
+    setState(() {
+      _showForm = true;
+      _isViewOnly = true;
+      _viewStatus = _getStatus(c);
+      _orgCodeController.text = _getOrg(c);
+      _catCodeController.text = _getCode(c);
+      _catNameController.text = _getName(c);
+      _subTypeController.text = _getSubType(c);
+      _selectedCategoryType =
+          ['Asset', 'Liability', 'Capital', 'Income', 'Expense'].contains(type)
+              ? type
+              : null;
+      _orgError = null;
+      _catCodeError = null;
+      _catNameError = null;
+      _catTypeError = null;
+    });
+  }
+
+  void _confirmDelete(Map<String, dynamic> c) {
+    final name = _getName(c);
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Delete Category',
+            style: bodyStyle(size: 16, weight: FontWeight.w700)),
+        content: Text('Are you sure you want to delete $name?',
+            style: bodyStyle(size: 14)),
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        actions: [
+          AmsButton(
+            label: 'No',
+            variant: AmsButtonVariant.ghost,
+            onPressed: () => Navigator.pop(ctx),
+          ),
+          AmsButton(
+            label: 'Yes, Delete',
+            variant: AmsButtonVariant.primary,
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await _deleteCategory(c); // ← Real API delete
+            },
+          ),
+        ],
+      ),
     );
   }
 }

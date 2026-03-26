@@ -4,7 +4,6 @@ import '../models/models.dart';
 
 class ApiService {
   static const String baseUrl = 'http://localhost:8080/api';
-  
   String? _token;
 
   void updateToken(String? newToken) {
@@ -12,9 +11,9 @@ class ApiService {
   }
 
   Map<String, String> get _headers => {
-    'Content-Type': 'application/json',
-    if (_token != null) 'Authorization': 'Bearer $_token',
-  };
+        'Content-Type': 'application/json',
+        if (_token != null) 'Authorization': 'Bearer $_token',
+      };
 
   Map<String, String> get headers => _headers;
 
@@ -52,20 +51,23 @@ class ApiService {
         for (var item in data) {
           int parsedLevels = 1;
           if (item['authLevels'] is num) {
-             parsedLevels = (item['authLevels'] as num).toInt();
+            parsedLevels = (item['authLevels'] as num).toInt();
           } else if (item['authLevels'] is List) {
-             parsedLevels = (item['authLevels'] as List).length;
+            parsedLevels = (item['authLevels'] as List).length;
           }
           final cfg = Auth101Config(
             id: item['programId']?.toString() ?? '',
             name: item['programId']?.toString() ?? '',
-            approvalReq: item['approvalReq'] == 1 || item['approvalReq'] == true,
+            approvalReq:
+                item['approvalReq'] == 1 || item['approvalReq'] == true,
             isTran: item['isTranPgm'] == 1 || item['isTranPgm'] == true,
             levels: parsedLevels,
-            preApproveProc: item['preApproveProc'] == 1 || item['preApproveProc'] == true,
+            preApproveProc:
+                item['preApproveProc'] == 1 || item['preApproveProc'] == true,
             preExecMethod: item['preExecMethod']?.toString(),
             preProcessName: item['preProcessName']?.toString(),
-            postApproveProc: item['postApproveProc'] == 1 || item['postApproveProc'] == true,
+            postApproveProc:
+                item['postApproveProc'] == 1 || item['postApproveProc'] == true,
             postExecMethod: item['postExecMethod']?.toString(),
             postProcessName: item['postProcessName']?.toString(),
           );
@@ -136,38 +138,48 @@ class ApiService {
 
   Future<List<Map<String, dynamic>>?> getUserRoleAssigns() async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/user-roles'), headers: _headers);
+      final response =
+          await http.get(Uri.parse('$baseUrl/user-roles'), headers: _headers);
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
         return data.cast<Map<String, dynamic>>();
       }
       return null;
-    } catch (e) { return null; }
+    } catch (e) {
+      return null;
+    }
   }
 
   Future<List<Map<String, dynamic>>?> getModules() async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/modules'), headers: _headers);
+      final response =
+          await http.get(Uri.parse('$baseUrl/modules'), headers: _headers);
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
         return data.cast<Map<String, dynamic>>();
       }
       return null;
-    } catch (e) { return null; }
+    } catch (e) {
+      return null;
+    }
   }
 
   Future<List<Map<String, dynamic>>?> getMenus() async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/menus'), headers: _headers);
+      final response =
+          await http.get(Uri.parse('$baseUrl/menus'), headers: _headers);
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
         return data.cast<Map<String, dynamic>>();
       }
       return null;
-    } catch (e) { return null; }
+    } catch (e) {
+      return null;
+    }
   }
 
-  Future<bool> processAuth(String authSl, String action, int level, String userId) async {
+  Future<bool> processAuth(
+      String authSl, String action, int level, String userId) async {
     try {
       final res = await http.post(
         Uri.parse('$baseUrl/auth/$action/$authSl?level=$level&userId=$userId'),
@@ -252,6 +264,78 @@ class ApiService {
     try {
       final res = await http.post(
         Uri.parse('$baseUrl/auth/authctl/create'),
+        headers: _headers,
+        body: jsonEncode(data),
+      );
+      return res.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // --- GL Category ---
+
+  Future<List<Map<String, dynamic>>?> getAllGlCategories() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/gl-category'),
+        headers: _headers,
+      );
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        return data.cast<Map<String, dynamic>>();
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  Future<List<Map<String, dynamic>>?> getGlCategoryById(int glCatCd) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/gl-categoryrrglCatCd'),
+        headers: _headers,
+      );
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        return data.cast<Map<String, dynamic>>();
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  Future<bool> createGlCategory(Map<String, dynamic> data) async {
+    try {
+      final res = await http.post(
+        Uri.parse('$baseUrl/gl-category'),
+        headers: _headers,
+        body: jsonEncode(data),
+      );
+      return res.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<bool> deleteGlCategory(int glCatCd) async {
+    try {
+      final res = await http.delete(
+        Uri.parse('$baseUrl/gl-category/$glCatCd'),
+        headers: _headers,
+      );
+      return res.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<bool> updateGlCategory(int glCatCd, Map<String, dynamic> data) async {
+    try {
+      final res = await http.put(
+        Uri.parse('$baseUrl/gl-category'),
         headers: _headers,
         body: jsonEncode(data),
       );
