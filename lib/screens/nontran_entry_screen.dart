@@ -77,6 +77,14 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
           ].contains(_selProg))
               ? 50
               : 1),
+      // For ROLE-CRT: default all access fields to 0 if user never touched the toggle
+      if (_selProg == 'ROLE-CRT') ...{
+        'viewAccess': 0,
+        'authAccess': 0,
+        'makerAccess': 0,
+        'adminAccess': 0,
+        'sysAdminAccess': 0,
+      },
       ..._dynamicData,
     };
 
@@ -1081,86 +1089,24 @@ class DynamicNTFields extends StatelessWidget {
                       isViewMode ? null : (v) => onChanged('roleSubType', v),
                 ),
               ),
-              AmsField(
-                label: 'VIEWACCESS',
-                tooltip: 'Whether this role is to view the data.',
-                child: AmsDropdown(
-                  initialValue: initialData?['viewAccess']?.toString() == '1'
-                      ? '1 - Enable'
-                      : (initialData?['viewAccess'] != null
-                          ? '0 - Disable'
-                          : null),
-                  items: const ['1 - Enable', '0 - Disable'],
-                  onChanged: isViewMode
-                      ? null
-                      : (v) => onChanged(
-                          'viewAccess', (v ?? '0').startsWith('1') ? 1 : 0),
-                ),
-              ),
-              AmsField(
-                label: 'AUTHACCESS',
-                tooltip: 'Whether this role is allowed to authorize.',
-                child: AmsDropdown(
-                  initialValue: initialData?['authAccess']?.toString() == '1'
-                      ? '1 - Enable'
-                      : (initialData?['authAccess'] != null
-                          ? '0 - Disable'
-                          : null),
-                  items: const ['1 - Enable', '0 - Disable'],
-                  onChanged: isViewMode
-                      ? null
-                      : (v) => onChanged(
-                          'authAccess', (v ?? '0').startsWith('1') ? 1 : 0),
-                ),
-              ),
-              AmsField(
-                label: 'MAKERACCESS',
-                tooltip: 'Whether this role is allowed to make entries.',
-                child: AmsDropdown(
-                  initialValue: initialData?['makerAccess']?.toString() == '1'
-                      ? '1 - Enable'
-                      : (initialData?['makerAccess'] != null
-                          ? '0 - Disable'
-                          : null),
-                  items: const ['1 - Enable', '0 - Disable'],
-                  onChanged: isViewMode
-                      ? null
-                      : (v) => onChanged(
-                          'makerAccess', (v ?? '0').startsWith('1') ? 1 : 0),
-                ),
-              ),
-              AmsField(
-                label: 'ADMINACCESS',
-                tooltip: 'Administration access for configuration.',
-                child: AmsDropdown(
-                  initialValue: initialData?['adminAccess']?.toString() == '1'
-                      ? '1 - Enable'
-                      : (initialData?['adminAccess'] != null
-                          ? '0 - Disable'
-                          : null),
-                  items: const ['1 - Enable', '0 - Disable'],
-                  onChanged: isViewMode
-                      ? null
-                      : (v) => onChanged(
-                          'adminAccess', (v ?? '0').startsWith('1') ? 1 : 0),
-                ),
-              ),
-              AmsField(
-                label: 'SYSADMINACCESS',
-                tooltip: 'System administration access.',
-                child: AmsDropdown(
-                  initialValue:
-                      initialData?['sysAdminAccess']?.toString() == '1'
-                          ? '1 - Enable'
-                          : (initialData?['sysAdminAccess'] != null
-                              ? '0 - Disable'
-                              : null),
-                  items: const ['1 - Enable', '0 - Disable'],
-                  onChanged: isViewMode
-                      ? null
-                      : (v) => onChanged(
-                          'sysAdminAccess', (v ?? '0').startsWith('1') ? 1 : 0),
-                ),
+              _AccessToggleGroup(
+                initialViewAccess: (initialData?['viewAccess']?.toString() ??
+                        '')
+                    .startsWith('1'),
+                initialAuthAccess: (initialData?['authAccess']?.toString() ??
+                        '')
+                    .startsWith('1'),
+                initialMakerAccess: (initialData?['makerAccess']?.toString() ??
+                        '')
+                    .startsWith('1'),
+                initialAdminAccess: (initialData?['adminAccess']?.toString() ??
+                        '')
+                    .startsWith('1'),
+                initialSysAdminAccess:
+                    (initialData?['sysAdminAccess']?.toString() ?? '')
+                        .startsWith('1'),
+                isViewMode: isViewMode,
+                onChanged: onChanged,
               ),
             ],
           ),
@@ -1381,6 +1327,135 @@ class DynamicNTFields extends StatelessWidget {
       default:
         return const SizedBox();
     }
+  }
+}
+
+// ─── Access Toggle Group ──────────────────────────────────────────────────────
+class _AccessToggleGroup extends StatefulWidget {
+  final bool initialViewAccess;
+  final bool initialAuthAccess;
+  final bool initialMakerAccess;
+  final bool initialAdminAccess;
+  final bool initialSysAdminAccess;
+  final bool isViewMode;
+  final void Function(String key, dynamic val) onChanged;
+
+  const _AccessToggleGroup({
+    required this.initialViewAccess,
+    required this.initialAuthAccess,
+    required this.initialMakerAccess,
+    required this.initialAdminAccess,
+    required this.initialSysAdminAccess,
+    required this.isViewMode,
+    required this.onChanged,
+  });
+
+  @override
+  State<_AccessToggleGroup> createState() => _AccessToggleGroupState();
+}
+
+class _AccessToggleGroupState extends State<_AccessToggleGroup> {
+  late bool _viewAccess;
+  late bool _authAccess;
+  late bool _makerAccess;
+  late bool _adminAccess;
+  late bool _sysAdminAccess;
+
+  @override
+  void initState() {
+    super.initState();
+    _viewAccess = widget.initialViewAccess;
+    _authAccess = widget.initialAuthAccess;
+    _makerAccess = widget.initialMakerAccess;
+    _adminAccess = widget.initialAdminAccess;
+    _sysAdminAccess = widget.initialSysAdminAccess;
+  }
+
+  Widget _buildToggleRow({
+    required String label,
+    required String tooltip,
+    required bool value,
+    required ValueChanged<bool>? onChanged,
+  }) {
+    return AmsField(
+      label: label,
+      tooltip: tooltip,
+      child: Transform.scale(
+        scale: 0.80,
+        alignment: Alignment.centerLeft,
+        child: Switch(
+          value: value,
+          onChanged: onChanged,
+          activeColor: Colors.white,
+          activeTrackColor: const Color(0xFF2563EB),
+          inactiveThumbColor: Colors.white,
+          inactiveTrackColor: const Color(0xFFD1D5DB),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        _buildToggleRow(
+          label: 'VIEWACCESS',
+          tooltip: 'Whether this role is allowed to view the data.',
+          value: _viewAccess,
+          onChanged: widget.isViewMode
+              ? null
+              : (v) {
+                  setState(() => _viewAccess = v);
+                  widget.onChanged('viewAccess', v ? 1 : 0);
+                },
+        ),
+        _buildToggleRow(
+          label: 'AUTHACCESS',
+          tooltip: 'Whether this role is allowed to authorize.',
+          value: _authAccess,
+          onChanged: widget.isViewMode
+              ? null
+              : (v) {
+                  setState(() => _authAccess = v);
+                  widget.onChanged('authAccess', v ? 1 : 0);
+                },
+        ),
+        _buildToggleRow(
+          label: 'MAKERACCESS',
+          tooltip: 'Whether this role is allowed to make entries.',
+          value: _makerAccess,
+          onChanged: widget.isViewMode
+              ? null
+              : (v) {
+                  setState(() => _makerAccess = v);
+                  widget.onChanged('makerAccess', v ? 1 : 0);
+                },
+        ),
+        _buildToggleRow(
+          label: 'ADMINACCESS',
+          tooltip: 'Administration access for configuration.',
+          value: _adminAccess,
+          onChanged: widget.isViewMode
+              ? null
+              : (v) {
+                  setState(() => _adminAccess = v);
+                  widget.onChanged('adminAccess', v ? 1 : 0);
+                },
+        ),
+        _buildToggleRow(
+          label: 'SYSADMINACCESS',
+          tooltip: 'System administration access.',
+          value: _sysAdminAccess,
+          onChanged: widget.isViewMode
+              ? null
+              : (v) {
+                  setState(() => _sysAdminAccess = v);
+                  widget.onChanged('sysAdminAccess', v ? 1 : 0);
+                },
+        ),
+      ],
+    );
   }
 }
 
