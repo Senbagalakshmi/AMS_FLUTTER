@@ -140,129 +140,134 @@ class _GLMasterScreenState extends State<GLMasterScreen> {
   ];
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.bg,
-      body: Column(
-        children: [
-          AmsIdentityHeader(
-            icon: const Icon(Icons.account_balance_wallet_rounded, size: 28, color: AppColors.tBlue),
-            title: 'GL Master Account (GL102)',
-            subtitle: 'List View + Create / Edit Form',
-            badges: [],
-            accentColor: AppColors.tBlue,
-            accentLt: AppColors.tBlueLt,
-            accentMd: AppColors.tBlueMd,
-            onBack: widget.onBack,
+Widget build(BuildContext context) {
+  return Scaffold(
+    backgroundColor: AppColors.bg,
+    body: Column(
+      children: [
+        AmsIdentityHeader(
+          icon: const Icon(Icons.account_balance_wallet_rounded,
+              size: 28, color: AppColors.tBlue),
+          title: 'GL Master Account (GL102)',
+          subtitle: 'List View + Create / Edit Form',
+          badges: [],
+          accentColor: AppColors.tBlue,
+          accentLt: AppColors.tBlueLt,
+          accentMd: AppColors.tBlueMd,
+          onBack: widget.onBack,
+        ),
+
+        /// ✅ BODY SWITCH (IMPORTANT CHANGE)
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+
+            /// 🔥 SWITCH BETWEEN LIST & FORM
+            child: _showForm ? _buildFormScreen() : _buildListScreen(),
           ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // LEFT PANEL: List View
-                  Expanded(
-                    flex: 6,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        border: Border.all(color: AppColors.border),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Column(
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: AmsTextInput(
-                                    icon: Icons.search_rounded,
-                                    placeholder: 'Search GL accounts...',
-                                    onChanged: (v) => setState(() => _searchQuery = v),
-                                  ),
-                                ),
-                                const SizedBox(width: 16),
-                                AmsButton(
-                                  label: '+ New GL',
-                                  variant: AmsButtonVariant.primary,
-                                  onPressed: () {
-                                    setState(() {
-                                      _showForm = true;
-                                      _isViewOnly = false;
-                                      _clearFields();
-                                    });
-                                  },
-                                ),
-                              ],
-                            ),
-                          ),
-                          Expanded(child: _buildTable()),
-                          _buildPaginationFooter(),
-                        ],
-                      ),
-                    ),
-                  ),
+        ),
+      ],
+    ),
+  );
+}
 
-                  if (_showForm) const SizedBox(width: 20),
-
-                  // RIGHT PANEL: Form
-                  if (_showForm)
-                    Expanded(
-                      flex: 4,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          border: Border.all(color: AppColors.border),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Focus(
-                          onKeyEvent: (node, event) {
-                            if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.f2) {
-                              FocusManager.instance.primaryFocus?.previousFocus();
-                              return KeyEventResult.handled;
-                            }
-                            return KeyEventResult.ignored;
-                          },
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Container(
-                                width: double.infinity,
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                decoration: const BoxDecoration(
-                                  color: AppColors.tBlue, // Matching the GL Category header color
-                                  borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
-                                ),
-                                child: Text(
-                                  _isViewOnly
-                                      ? 'View GL Account'
-                                      : (_glNumberController.text.isNotEmpty
-                                          ? 'Edit GL Account'
-                                          : 'Create GL Account'),
-                                  style: bodyStyle(size: 14, color: Colors.white, weight: FontWeight.w700),
-                                ),
-                              ),
-                              Expanded(
-                                child: SingleChildScrollView(
-                                  padding: const EdgeInsets.all(24),
-                                  child: _isViewOnly ? _buildViewUI() : _buildFormUI(),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
+Widget _buildListScreen() {
+  return Container(
+    decoration: BoxDecoration(
+      color: Colors.white,
+      border: Border.all(color: AppColors.border),
+      borderRadius: BorderRadius.circular(8),
+    ),
+    child: Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Row(
+            children: [
+              Expanded(
+                child: AmsTextInput(
+                  icon: Icons.search_rounded,
+                  placeholder: 'Search GL accounts...',
+                  onChanged: (v) => setState(() => _searchQuery = v),
+                ),
               ),
+              const SizedBox(width: 16),
+              AmsButton(
+                label: '+ New GL',
+                variant: AmsButtonVariant.primary,
+                onPressed: () {
+                  setState(() {
+                    _showForm = true;
+                    _isViewOnly = false;
+                    _clearFields();
+                  });
+                },
+              ),
+            ],
+          ),
+        ),
+        Expanded(child: _buildTable()),
+        _buildPaginationFooter(),
+      ],
+    ),
+  );
+}
+
+Widget _buildFormScreen() {
+  return Container(
+    decoration: BoxDecoration(
+      color: Colors.white,
+      border: Border.all(color: AppColors.border),
+      borderRadius: BorderRadius.circular(8),
+    ),
+    child: Focus(
+      onKeyEvent: (node, event) {
+        if (event is KeyDownEvent &&
+            event.logicalKey == LogicalKeyboardKey.f2) {
+          FocusManager.instance.primaryFocus?.previousFocus();
+          return KeyEventResult.handled;
+        }
+        return KeyEventResult.ignored;
+      },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          /// HEADER
+          Container(
+            width: double.infinity,
+            padding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: const BoxDecoration(
+              color: AppColors.tBlue,
+              borderRadius:
+                  BorderRadius.vertical(top: Radius.circular(8)),
+            ),
+            child: Text(
+              _isViewOnly
+                  ? 'View GL Account'
+                  : (_glNumberController.text.isNotEmpty
+                      ? 'Edit GL Account'
+                      : 'Create GL Account'),
+              style: bodyStyle(
+                  size: 14,
+                  color: Colors.white,
+                  weight: FontWeight.w700),
+            ),
+          ),
+
+          /// FORM BODY
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child:
+                  _isViewOnly ? _buildViewUI() : _buildFormUI(),
             ),
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildViewUI() {
     final firstLetter = _glNameController.text.isNotEmpty

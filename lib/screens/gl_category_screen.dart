@@ -274,158 +274,158 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
   // ─── BUILD ────────────────────────────────────────────────────────────────
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.bg,
-      body: Column(
-        children: [
-          AmsIdentityHeader(
-            icon: const Icon(Icons.category_rounded,
-                size: 28, color: AppColors.tBlue),
-            title: 'GL Category',
-            subtitle: 'List View • Create / Edit Form',
-            badges: [],
-            accentColor: AppColors.tBlue,
-            accentLt: AppColors.tBlueLt,
-            accentMd: AppColors.tBlueMd,
-            onBack: widget.onBack,
+Widget build(BuildContext context) {
+  return Scaffold(
+    backgroundColor: AppColors.bg,
+    body: Column(
+      children: [
+        AmsIdentityHeader(
+          icon: const Icon(Icons.category_rounded,
+              size: 28, color: AppColors.tBlue),
+          title: 'GL Category',
+          subtitle: 'List View • Create / Edit Form',
+          badges: [],
+          accentColor: AppColors.tBlue,
+          accentLt: AppColors.tBlueLt,
+          accentMd: AppColors.tBlueMd,
+          onBack: widget.onBack,
+        ),
+
+        /// 🔥 FULL WIDTH SWITCH (NO ROW)
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            child: _showForm
+                ? _buildFullFormView()   // 👉 FORM FULL WIDTH
+                : _buildFullListView(),  // 👉 LIST FULL WIDTH
           ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // ── LEFT PANEL: List View ──────────────────────────────
-                  Expanded(
-                    flex: 6,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        border: Border.all(color: AppColors.border),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Column(
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: AmsTextInput(
-                                    icon: Icons.search_rounded,
-                                    placeholder: 'Search categories...',
-                                    onChanged: (v) =>
-                                        setState(() => _searchQuery = v),
-                                  ),
-                                ),
-                                const SizedBox(width: 16),
-                                // Refresh button
-                                IconButton(
-                                  tooltip: 'Refresh',
-                                  icon: _isLoading
-                                      ? const SizedBox(
-                                          width: 18,
-                                          height: 18,
-                                          child: CircularProgressIndicator(
-                                              strokeWidth: 2,
-                                              color: AppColors.tBlue),
-                                        )
-                                      : const Icon(Icons.refresh_rounded,
-                                          color: AppColors.ink3),
-                                  onPressed:
-                                      _isLoading ? null : _loadCategories,
-                                ),
-                                const SizedBox(width: 8),
-                                AmsButton(
-                                  label: '+ Add New',
-                                  variant: AmsButtonVariant.primary,
-                                  onPressed: () {
-                                    setState(() {
-                                      _showForm = true;
-                                      _isViewOnly = false;
-                                      _isEditMode = false;
-                                      _clearFields();
-                                    });
-                                  },
-                                ),
-                              ],
-                            ),
-                          ),
-                          Expanded(child: _buildTable()),
-                          _buildPaginationFooter(),
-                        ],
-                      ),
-                    ),
-                  ),
+        ),
+      ],
+    ),
+  );
+}
 
-                  if (_showForm) const SizedBox(width: 20),
-
-                  // ── RIGHT PANEL: Form ──────────────────────────────────
-                  if (_showForm)
-                    Expanded(
-                      flex: 4,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          border: Border.all(color: AppColors.border),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Focus(
-                          onKeyEvent: (node, event) {
-                            if (event is KeyDownEvent &&
-                                event.logicalKey == LogicalKeyboardKey.f2) {
-                              FocusManager.instance.primaryFocus
-                                  ?.previousFocus();
-                              return KeyEventResult.handled;
-                            }
-                            return KeyEventResult.ignored;
-                          },
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Container(
-                                width: double.infinity,
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 16, vertical: 12),
-                                decoration: const BoxDecoration(
-                                  color: AppColors.tBlue,
-                                  borderRadius: BorderRadius.vertical(
-                                      top: Radius.circular(8)),
-                                ),
-                                child: Text(
-                                  _isViewOnly
-                                      ? 'View GL Category'
-                                      : (_isEditMode
-                                          ? 'Edit GL Category'
-                                          : 'Create GL Category'),
-                                  style: bodyStyle(
-                                      size: 14,
-                                      color: Colors.white,
-                                      weight: FontWeight.w700),
-                                ),
-                              ),
-                              Expanded(
-                                child: SingleChildScrollView(
-                                  padding: const EdgeInsets.all(24),
-                                  child: _isViewOnly
-                                      ? _buildViewUI()
-                                      : _buildFormUI(),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
+Widget _buildFullListView() {
+  return Container(
+    decoration: BoxDecoration(
+      color: Colors.white,
+      border: Border.all(color: AppColors.border),
+      borderRadius: BorderRadius.circular(8),
+    ),
+    child: Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Row(
+            children: [
+              Expanded(
+                child: AmsTextInput(
+                  icon: Icons.search_rounded,
+                  placeholder: 'Search categories...',
+                  onChanged: (v) => setState(() => _searchQuery = v),
+                ),
               ),
-            ),
+              const SizedBox(width: 16),
+
+              /// Refresh
+              IconButton(
+                icon: _isLoading
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: AppColors.tBlue,
+                        ),
+                      )
+                    : const Icon(Icons.refresh_rounded),
+                onPressed: _isLoading ? null : _loadCategories,
+              ),
+
+              const SizedBox(width: 8),
+
+              /// Add Button
+              AmsButton(
+                label: '+ Add New',
+                variant: AmsButtonVariant.primary,
+                onPressed: () {
+                  setState(() {
+                    _showForm = true;
+                    _isViewOnly = false;
+                    _isEditMode = false;
+                    _clearFields();
+                  });
+                },
+              ),
+            ],
           ),
-        ],
-      ),
-    );
-  }
+        ),
+
+        Expanded(child: _buildTable()),
+
+        _buildPaginationFooter(),
+      ],
+    ),
+  );
+}
+
+Widget _buildFullFormView() {
+  return Container(
+    decoration: BoxDecoration(
+      color: Colors.white,
+      border: Border.all(color: AppColors.border),
+      borderRadius: BorderRadius.circular(8),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        /// HEADER
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: const BoxDecoration(
+            color: AppColors.tBlue,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                _isViewOnly
+                    ? 'View GL Category'
+                    : (_isEditMode
+                        ? 'Edit GL Category'
+                        : 'Create GL Category'),
+                style: bodyStyle(
+                  size: 14,
+                  color: Colors.white,
+                  weight: FontWeight.w700,
+                ),
+              ),
+
+              /// 🔥 CLOSE BUTTON (IMPORTANT UX)
+              IconButton(
+                icon: const Icon(Icons.close, color: Colors.white),
+                onPressed: () {
+                  _clearFields();
+                  setState(() => _showForm = false);
+                },
+              )
+            ],
+          ),
+        ),
+
+        /// BODY
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: _isViewOnly ? _buildViewUI() : _buildFormUI(),
+          ),
+        ),
+      ],
+    ),
+  );
+}
 
   // ─── VIEW UI ──────────────────────────────────────────────────────────────
 
