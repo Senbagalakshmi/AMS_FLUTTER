@@ -135,23 +135,27 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
   }
 
   Widget _buildKPIRow() {
-    return Row(
-      children: [
-        _kpiCard('Pending Approvals', '12', Icons.pending_actions_rounded, AppColors.tBlue, '+2 today'),
-        const SizedBox(width: 24),
-        _kpiCard('System Security', '98%', Icons.security_rounded, AppColors.green, 'Healthy'),
-        const SizedBox(width: 24),
-        _kpiCard('Active Sessions', '45', Icons.people_alt_rounded, AppColors.amber, '-5% vs yesterday'),
-        const SizedBox(width: 24),
-        _kpiCard('Queue Status', 'Normal', Icons.sync_rounded, AppColors.ink3, 'All synced'),
-      ],
+    return SizedBox(
+      width: double.infinity,
+      child: Wrap(
+        spacing: 24,
+        runSpacing: 24,
+        children: [
+          _kpiCard('Pending Approvals', '12', Icons.pending_actions_rounded, AppColors.tBlue, '+2 today'),
+          _kpiCard('System Security', '98%', Icons.security_rounded, AppColors.green, 'Healthy'),
+          _kpiCard('Active Sessions', '45', Icons.people_alt_rounded, AppColors.amber, '-5% vs yesterday'),
+          _kpiCard('Queue Status', 'Normal', Icons.sync_rounded, AppColors.ink3, 'All synced'),
+          _kpiCard('Total Users', '342', Icons.groups_rounded, AppColors.tBlue, '+15 this week'),
+        ],
+      ),
     );
   }
 
   Widget _kpiCard(String title, String val, IconData icon, Color color, String trend) {
-    return Expanded(
+    return SizedBox(
+      width: 210, // Decreased to fit 5 cards inline
       child: Container(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),

@@ -81,22 +81,25 @@ class SubmenuDashboardScreen extends StatelessWidget {
 
           // 🔹 GRID
           Expanded(
-            child: GridView.builder(
+            child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 8),
-              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                maxCrossAxisExtent: 280, // Increased for subtitle
-                mainAxisSpacing: 24,
-                crossAxisSpacing: 24,
-                childAspectRatio: 0.82,
+              child: SizedBox(
+                width: double.infinity, // Ensures left alignment inside scroll view
+                child: Wrap(
+                  spacing: 24,
+                  runSpacing: 24,
+                  children: items.map((item) {
+                    return SizedBox(
+                      width: 260, // Optimized to 280 so 4 cards perfectly fit inline without a huge empty right gap or stretching
+                      height: 260,
+                      child: _MenuCard(
+                        item: item,
+                        onTap: () => onNavigate(item.screen, item.programId),
+                      ),
+                    );
+                  }).toList(),
+                ),
               ),
-              itemCount: items.length,
-              itemBuilder: (context, index) {
-                final item = items[index];
-                return _MenuCard(
-                  item: item,
-                  onTap: () => onNavigate(item.screen, item.programId),
-                );
-              },
             ),
           ),
         ],

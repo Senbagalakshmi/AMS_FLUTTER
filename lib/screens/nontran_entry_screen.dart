@@ -533,7 +533,7 @@ class _UserRoleListViewState extends State<_UserRoleListView> {
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
-                AmsBadge(label: d['usersCd']),
+                AmsBadge(label: (d['usersCd'] ?? d['users_cd'] ?? d['userCd'] ?? '—').toString()),
                 const SizedBox(width: 16),
                 Expanded(
                   child: Column(
@@ -677,7 +677,7 @@ class _MenuListViewState extends State<_MenuListView> {
                     ],
                   ),
                 ),
-                AmsBadge(label: d['menuId']),
+                AmsBadge(label: (d['menuId'] ?? d['menu_id'] ?? '—').toString()),
               ],
             ),
           );

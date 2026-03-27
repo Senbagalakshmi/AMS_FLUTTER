@@ -1107,19 +1107,19 @@ class AmsSidebarItem extends StatelessWidget {
               horizontal: isCollapsed ? 0 : 16, vertical: 12),
           decoration: BoxDecoration(
             color: isSelected
-                ? AppColors.tBlueLt.withValues(alpha: 0.5)
+                ? Colors.white.withValues(alpha: 0.15)
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
             border: isSelected
                 ? const Border(
-                    left: BorderSide(color: AppColors.tBlue, width: 3))
+                    left: BorderSide(color: Colors.white, width: 3))
                 : null,
           ),
           child: isCollapsed
               ? Center(
                   child: Icon(icon,
                       size: 20,
-                      color: color ?? (isSelected ? AppColors.tBlue : AppColors.ink2)),
+                      color: color ?? (isSelected ? Colors.white : Colors.white70)),
                 )
               : SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
@@ -1130,7 +1130,7 @@ class AmsSidebarItem extends StatelessWidget {
                     children: [
                       Icon(icon,
                           size: 20,
-                          color: color ?? (isSelected ? AppColors.tBlue : AppColors.ink2)),
+                          color: color ?? (isSelected ? Colors.white : Colors.white70)),
                       const SizedBox(width: 14),
                       SizedBox(
                         width: 200,
@@ -1139,7 +1139,7 @@ class AmsSidebarItem extends StatelessWidget {
                           style: bodyStyle(
                             size: 14,
                             weight: isSelected ? FontWeight.w700 : FontWeight.w600,
-                            color: color ?? (isSelected ? AppColors.tBlue : AppColors.ink),
+                            color: color ?? (isSelected ? Colors.white : Colors.white70),
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -1184,11 +1184,11 @@ class AmsSubSidebarItem extends StatelessWidget {
           padding: EdgeInsets.symmetric(
               horizontal: isCollapsed ? 8 : 16, vertical: 10),
           decoration: BoxDecoration(
-            color: isSelected ? AppColors.tBlueLt.withValues(alpha: 0.5) : Colors.transparent,
+            color: isSelected ? Colors.white.withValues(alpha: 0.15) : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
             border: Border(
               left: BorderSide(
-                color: isSelected ? AppColors.tBlue : AppColors.border2,
+                color: isSelected ? Colors.white : Colors.white30,
                 width: 2,
               ),
             ),
@@ -1197,7 +1197,7 @@ class AmsSubSidebarItem extends StatelessWidget {
               ? Center(
                   child: Icon(icon ?? Icons.adjust_rounded,
                       size: 16,
-                      color: isSelected ? AppColors.tBlue : AppColors.ink3),
+                      color: isSelected ? Colors.white : Colors.white70),
                 )
               : SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
@@ -1208,7 +1208,7 @@ class AmsSubSidebarItem extends StatelessWidget {
                     children: [
                       Icon(icon ?? Icons.circle,
                           size: 6,
-                          color: isSelected ? AppColors.tBlue : AppColors.ink3),
+                          color: isSelected ? Colors.white : Colors.white70),
                       const SizedBox(width: 12),
                       SizedBox(
                         width: 185,
@@ -1217,7 +1217,7 @@ class AmsSubSidebarItem extends StatelessWidget {
                           style: bodyStyle(
                             size: 12,
                             weight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                            color: isSelected ? AppColors.tBlue : AppColors.ink2,
+                            color: isSelected ? Colors.white : Colors.white70,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -1275,70 +1275,19 @@ class _AmsSidebarState extends State<AmsSidebar> {
   Widget build(BuildContext context) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 250),
-      width: widget.isCollapsed ? 70 : 260,
+      width: widget.isCollapsed ? 70 : 240,
       decoration: const BoxDecoration(
-        color: Colors.white,
+        color: Color(0xFF1E2B5E), // Dark Blue Sidebar
         border: Border(
           right: BorderSide(color: AppColors.border, width: 1),
         ),
       ),
       child: Column(
         children: [
-          // 🔹 TOP BAR
-          Container(
-            height: 70,
-            padding: EdgeInsets.symmetric(horizontal: widget.isCollapsed ? 0 : 20),
-            alignment: Alignment.center,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: widget.isCollapsed ? MainAxisAlignment.center : MainAxisAlignment.start,
-              children: [
-                if (!widget.isCollapsed) ...[
-                  // Container(
-                  //   padding: const EdgeInsets.all(6),
-                  //   decoration: BoxDecoration(
-                  //     color: AppColors.tBlue,
-                  //     borderRadius: BorderRadius.circular(6),
-                  //   ),
-                  //   child: const Icon(Icons.shield_rounded, color: Colors.white, size: 20),
-                  // ),
-                  // const SizedBox(width: 10),
-                  // Text(
-                  //   'AMS',
-                  //   style: bodyStyle(
-                  //       size: 18,
-                  //       weight: FontWeight.w900,
-                  //       color: AppColors.ink),
-                  // ),
-                  const Spacer(),
-                ],
-                SizedBox(
-                  width: 28,
-                  height: 28,
-                  child: MouseRegion(
-                    cursor: SystemMouseCursors.click,
-                    child: GestureDetector(
-                      onTap: widget.onToggle,
-                      child: Center(
-                        child: Icon(
-                          widget.isCollapsed ? Icons.menu_rounded : Icons.menu_open_rounded,
-                          color: AppColors.ink2,
-                          size: 20,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const Divider(height: 1, color: AppColors.border2),
-          const SizedBox(height: 16),
-
           // 🔹 MENU LIST
           Expanded(
             child: ListView(
+              padding: const EdgeInsets.only(top: 24, bottom: 24),
               children: [
                 if (!widget.isCollapsed) _sectionHeader('GENERAL'),
 
@@ -1558,7 +1507,7 @@ class _AmsSidebarState extends State<AmsSidebar> {
       padding: const EdgeInsets.fromLTRB(24, 8, 24, 8),
       child: Text(
         title,
-        style: monoStyle(size: 10, weight: FontWeight.w800, color: AppColors.ink4),
+        style: monoStyle(size: 10, weight: FontWeight.w800, color: Colors.white54),
       ),
     );
   }
@@ -1631,13 +1580,13 @@ class _AmsShellState extends State<AmsShell> {
       height: 70,
       padding: const EdgeInsets.symmetric(horizontal: 24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color(0xFF1E2B5E), // Match Sidebar Dark Blue
         border: const Border(
-          bottom: BorderSide(color: AppColors.border),
+          bottom: BorderSide(color: Colors.transparent),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           )
@@ -1668,12 +1617,12 @@ class _AmsShellState extends State<AmsShell> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text("AMS",
+                  Text("FINANCE",
                       style:
-                          bodyStyle(size: 20, weight: FontWeight.w800)),
+                          bodyStyle(size: 18, weight: FontWeight.w800, color: Colors.white)),
                   Text("Management System",
                       style: bodyStyle(
-                          size: 10, color: AppColors.ink3)),
+                          size: 10, color: Colors.white70)),
                 ],
               ),
             ],
@@ -1695,7 +1644,7 @@ class _AmsShellState extends State<AmsShell> {
 
           const SizedBox(width: 16),
 
-          Container(height: 32, width: 1, color: AppColors.border),
+          Container(height: 32, width: 1, color: Colors.white24),
 
           const SizedBox(width: 16),
 
@@ -1714,6 +1663,89 @@ class _AmsShellState extends State<AmsShell> {
     return _PremiumProfileMenu(
       userName: widget.userName,
       onNavigate: widget.onNavigate,
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// 🔹 ANIMATED NINE DOTS 
+// ─────────────────────────────────────────────────────────────
+class _AnimatedNineDots extends StatefulWidget {
+  final bool isHovered;
+  const _AnimatedNineDots({required this.isHovered});
+
+  @override
+  State<_AnimatedNineDots> createState() => _AnimatedNineDotsState();
+}
+
+class _AnimatedNineDotsState extends State<_AnimatedNineDots> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+  }
+
+  @override
+  void didUpdateWidget(_AnimatedNineDots oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isHovered && !oldWidget.isHovered) {
+      _controller.forward(from: 0.0);
+    } else if (!widget.isHovered && oldWidget.isHovered) {
+      _controller.reset();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 26,
+      height: 26,
+      child: Center(
+        child: Wrap(
+          spacing: 2,
+          runSpacing: 2,
+          children: List.generate(9, (index) {
+            final delay = index * 0.05;
+            final animation = TweenSequence([
+              TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.6), weight: 50),
+              TweenSequenceItem(tween: Tween(begin: 1.6, end: 1.0), weight: 50),
+            ]).animate(
+              CurvedAnimation(
+                parent: _controller,
+                curve: Interval(delay, delay + 0.5, curve: Curves.easeInOut),
+              ),
+            );
+
+            return AnimatedBuilder(
+              animation: animation,
+              builder: (context, child) {
+                return Transform.scale(
+                  scale: widget.isHovered ? animation.value : 1.0,
+                  child: Container(
+                    width: 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: widget.isHovered ? Colors.blue : Colors.white,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                );
+              },
+            );
+          }),
+        ),
+      ),
     );
   }
 }
@@ -1743,11 +1775,10 @@ class _PremiumAppLauncherState extends State<_PremiumAppLauncher> {
           duration: const Duration(milliseconds: 150),
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: _hover ? AppColors.bg : Colors.transparent,
+            color: _hover ? Colors.white.withValues(alpha: 0.1) : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Icon(Icons.apps_rounded,
-              size: 22, color: AppColors.ink2),
+          child: _AnimatedNineDots(isHovered: _hover),
         ),
       ),
       itemBuilder: (context) => [
@@ -1793,23 +1824,35 @@ class _PremiumAppLauncherState extends State<_PremiumAppLauncher> {
 // 🔹 SEARCH BAR
 // ─────────────────────────────────────────────────────────────
 class _PremiumSearchBar extends StatelessWidget {
+  const _PremiumSearchBar({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 280,
-      height: 40,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      width: 320,
+      height: 42,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: AppColors.bg,
+        color: Colors.white.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: Colors.white24),
       ),
-      child: const Row(
+      child: Row(
         children: [
-          Icon(Icons.search, size: 18, color: AppColors.ink3),
-          SizedBox(width: 8),
-          Text("Search...",
-              style: TextStyle(color: AppColors.ink3, fontSize: 13)),
+          const Icon(Icons.search_rounded, size: 20, color: Colors.white54),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: TextField(
+              decoration: InputDecoration(
+                hintText: "Search programs, module, or ID...",
+                hintStyle: TextStyle(fontSize: 13, color: Colors.white54),
+                border: InputBorder.none,
+                isDense: true,
+                contentPadding: EdgeInsets.zero,
+              ),
+              style: TextStyle(fontSize: 13, color: Colors.white),
+            ),
+          ),
         ],
       ),
     );
@@ -1840,11 +1883,11 @@ class _HoverIconButtonState extends State<_HoverIconButton> {
         duration: const Duration(milliseconds: 150),
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: _hover ? AppColors.bg : Colors.transparent,
+          color: _hover ? Colors.white.withValues(alpha: 0.1) : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
         ),
         child: Icon(widget.icon,
-            size: 20, color: AppColors.ink2),
+            size: 20, color: _hover ? Colors.white : Colors.white70),
       ),
     );
   }
@@ -1865,25 +1908,178 @@ class _PremiumProfileMenu extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return PopupMenuButton(
+      tooltip: '', // Disable the default 'Show menu' tooltip
       offset: const Offset(0, 45),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          CircleAvatar(
-            radius: 14,
+          Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                userName ?? "User@gmail.com",
+                style: bodyStyle(size: 13, weight: FontWeight.w700, color: Colors.white),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                "Administrator",
+                style: bodyStyle(size: 11, color: Colors.white),
+              ),
+            ],
+          ),
+          const SizedBox(width: 12),
+           GestureDetector(
+                         onTap: () async {
+                         final user = await UserService.getUserProfile();
+
+                         print("USER DATA : $user");
+
+                         if (user == null) return;
+
+                           showMenu(
+                          context: context,
+                          position: RelativeRect.fromLTRB(
+                          MediaQuery.of(context).size.width - 300, 60, 20, 0,
+                         ),
+                         items: [
+                       PopupMenuItem(
+  enabled: false,
+  child: Container(
+    width: 280,
+    padding: const EdgeInsets.symmetric(vertical: 10),
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+
+        /// Avatar
+        Container(
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.blue.withOpacity(.25),
+                blurRadius: 12,
+              )
+            ],
+          ),
+          child: CircleAvatar(
+            radius: 28,
             backgroundColor: AppColors.tBlue,
             child: Text(
-              (userName ?? "U")[0].toUpperCase(),
-              style: const TextStyle(color: Colors.white),
+              (user['username'] ?? "A")[0],
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
-          const SizedBox(width: 8),
-          Text(userName ?? "User",
-              style: bodyStyle(size: 13, weight: FontWeight.w600)),
-        ],
-      ),
+        ),
+
+        const SizedBox(height: 12),
+
+        /// Username
+        Text(
+          user['username'] ?? "",
+          style: const TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 15,
+            color: Colors.black87,
+          ),
+        ),
+
+        const SizedBox(height: 4),
+
+        /// Email
+        Text(
+          user['email'] ?? "",
+          style: const TextStyle(
+            fontSize: 13,
+            color: Colors.grey,
+          ),
+        ),
+
+        const SizedBox(height: 8),
+
+        /// Role Badge
+        Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: 10,
+            vertical: 4,
+          ),
+          decoration: BoxDecoration(
+            color: AppColors.tBlue.withOpacity(.1),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Text(
+            "ROLE: ${user['role'] ?? ""}",
+            style: TextStyle(
+              fontSize: 12,
+              color: AppColors.tBlue,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+
+        const SizedBox(height: 12),
+
+        const Divider(),
+
+        /// Logout Button
+        InkWell(
+          onTap: () async {
+            Navigator.pop(context);
+            apiService.updateToken(null);
+            onNavigate('login', null);
+          },
+          borderRadius: BorderRadius.circular(8),
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+              vertical: 10,
+              horizontal: 12,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: const [
+                Icon(Icons.logout, size: 18, color: Colors.red),
+                SizedBox(width: 6),
+                Text(
+                  "Logout",
+                  style: TextStyle(
+                    color: Colors.red,
+                    fontWeight: FontWeight.w600,
+                  ),
+                )
+              ],
+            ),
+          ),
+        ),
+
+      ],
+    ),
+  ),
+),
+                              ],
+                           );
+                          },
+
+                       child: CircleAvatar(
+                        radius: 18,
+                        backgroundColor: AppColors.tBlueLt,
+                         child: Text(
+                          (userName ?? 'A')[0].toUpperCase(),
+                            style: bodyStyle(
+                                  size: 14, weight: FontWeight.w800, color: AppColors.tBlue),
+                            ),
+                          ),
+                         ),
+                        ],
+                      ),
+          
       itemBuilder: (context) => [
         PopupMenuItem(
           child: const Text("Profile"),
