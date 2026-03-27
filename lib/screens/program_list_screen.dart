@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../theme.dart';
 import '../models/models.dart';
 import '../widgets/widgets.dart';
+import 'package:intl/intl.dart';
 
 class ProgramListScreen extends StatefulWidget {
   final Map<String, Auth101Config> authConfigs;
@@ -30,146 +31,348 @@ class ProgramListScreen extends StatefulWidget {
 class _ProgramListScreenState extends State<ProgramListScreen> {
   @override
   Widget build(BuildContext context) {
-  return Scaffold(
-    backgroundColor: const Color(0xFFF8FAFC),
-    body: SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 30),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 20),
-          Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 1200),
-              child: GridView.count(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisCount: MediaQuery.of(context).size.width > 1200 ? 4 : (MediaQuery.of(context).size.width > 800 ? 3 : 2),
-                crossAxisSpacing: 24,
-                mainAxisSpacing: 24,
-                childAspectRatio: 1.1,
-                children: [
-                  _DashboardTile(
-                    label: 'User',
-                    icon: Icons.person_add_rounded,
-                    onTap: () => widget.onSelect('USR-CRT'),
+    return Scaffold(
+      backgroundColor: AppColors.bg,
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 🔹 1. WELCOME HEADER
+            _buildWelcomeHeader(),
+            const SizedBox(height: 32),
+
+            // 🔹 2. KPI TOP ROW
+            _buildKPIRow(),
+            const SizedBox(height: 32),
+
+            // 🔹 3. MAIN DASHBOARD AREA (Split Layout)
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // LEFT SIDE (Charts & Activity)
+                Expanded(
+                  flex: 7,
+                  child: Column(
+                    children: [
+                      _buildActivityChart(),
+                      const SizedBox(height: 24),
+                      _buildAuthWatchlist(),
+                    ],
                   ),
-                  _DashboardTile(
-                    label: 'Role Associate',
-                    icon: Icons.assignment_ind_rounded,
-                    onTap: () => widget.onSelect('USR-ROLE'),
+                ),
+                const SizedBox(width: 24),
+                // RIGHT SIDE (Quick Actions & Stats)
+                Expanded(
+                  flex: 3,
+                  child: Column(
+                    children: [
+                      _buildQuickActions(),
+                      const SizedBox(height: 24),
+                      _buildResourceStatus(),
+                    ],
                   ),
-                  _DashboardTile(
-                    label: 'Role',
-                    icon: Icons.admin_panel_settings_rounded,
-                    onTap: () => widget.onSelect('ROLE-CRT'),
-                  ),
-                  _DashboardTile(
-                    label: 'Modules',
-                    icon: Icons.view_module_rounded,
-                    onTap: () => widget.onSelect('MOD-CRT'),
-                  ),
-                  _DashboardTile(
-                    label: 'Menus',
-                    icon: Icons.menu_open_rounded,
-                    onTap: () => widget.onSelect('MENU-CRT'),
-                  ),
-                  _DashboardTile(
-                    label: 'Program',
-                    icon: Icons.app_settings_alt_rounded,
-                    onTap: () => widget.onSelect('PGM-CRT'),
-                  ),
-                  // _DashboardTile(
-                  //   label: 'Auth Controller',
-                  //   icon: Icons.security_rounded,
-                  //   onTap: () => widget.onSelect('AUTHCTL'),
-                  // ),
-                  _DashboardTile(
-                    label: 'Authorization',
-                    icon: Icons.verified_user_rounded,
-                    onTap: () => widget.onProceed('AUTH'),
-                  ),
-                  _DashboardTile(
-                    label: 'GL Category',
-                    icon: Icons.category_rounded,
-                    onTap: () => widget.onSelect('GL-CAT'),
-                  ),
-                  _DashboardTile(
-                    label: 'GL Master',
-                    icon: Icons.account_balance_rounded,
-                    onTap: () => widget.onSelect('GL-MST'),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-    ),
-  );
-}
-}
+    );
+  }
 
-class _DashboardTile extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final VoidCallback onTap;
+  Widget _buildWelcomeHeader() {
+    final now = DateTime.now();
+    final dateStr = DateFormat('d MMM yyyy').format(now);
+    final dayStr = DateFormat('EEEE').format(now);
 
-  const _DashboardTile({
-    required this.label,
-    required this.icon,
-    required this.onTap,
-  });
+    String displayName = widget.userName ?? 'Administrator';
+    if (displayName.contains('@')) {
+      displayName = displayName.split('@').first;
+    }
+    // Capitalize first letter
+    if (displayName.isNotEmpty) {
+      displayName = displayName[0].toUpperCase() + displayName.substring(1);
+    }
 
-  @override
-  Widget build(BuildContext context) {
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Hi, $displayName!',
+              style: bodyStyle(size: 26, weight: FontWeight.w900, color: AppColors.ink),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Here is what’s happening in your system today.',
+              style: bodyStyle(size: 14, color: AppColors.ink3),
+            ),
+          ],
+        ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.03),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
+            border: Border.all(color: AppColors.border),
           ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+          child: Row(
             children: [
-              Container(
-                width: 70,
-                height: 70,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF2D3E8B), // Dark Blue Icon Box
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  icon,
-                  color: Colors.white,
-                  size: 32,
-                ),
-              ),
-              const SizedBox(height: 16),
+              const Icon(Icons.calendar_today_rounded, size: 16, color: AppColors.ink2),
+              const SizedBox(width: 10),
               Text(
-                label,
-                textAlign: TextAlign.center,
-                style: bodyStyle(
-                  size: 14,
-                  weight: FontWeight.w600,
-                  color: const Color(0xFF4B5563),
-                ),
+                '$dayStr, $dateStr',
+                style: bodyStyle(size: 13, weight: FontWeight.w700, color: AppColors.ink2),
               ),
             ],
           ),
         ),
+      ],
+    );
+  }
+
+  Widget _buildKPIRow() {
+    return Row(
+      children: [
+        _kpiCard('Pending Approvals', '12', Icons.pending_actions_rounded, AppColors.tBlue, '+2 today'),
+        const SizedBox(width: 24),
+        _kpiCard('System Security', '98%', Icons.security_rounded, AppColors.green, 'Healthy'),
+        const SizedBox(width: 24),
+        _kpiCard('Active Sessions', '45', Icons.people_alt_rounded, AppColors.amber, '-5% vs yesterday'),
+        const SizedBox(width: 24),
+        _kpiCard('Queue Status', 'Normal', Icons.sync_rounded, AppColors.ink3, 'All synced'),
+      ],
+    );
+  }
+
+  Widget _kpiCard(String title, String val, IconData icon, Color color, String trend) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.border),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.02),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Icon(icon, color: color, size: 24),
+                Text(trend, style: bodyStyle(size: 10, weight: FontWeight.w800, color: trend.contains('+') ? AppColors.green : (trend == 'Healthy' ? AppColors.green : AppColors.ink4))),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Text(val, style: bodyStyle(size: 28, weight: FontWeight.w900, color: AppColors.ink)),
+            const SizedBox(height: 4),
+            Text(title, style: bodyStyle(size: 13, color: AppColors.ink3, weight: FontWeight.w600)),
+          ],
+        ),
       ),
+    );
+  }
+
+  Widget _buildActivityChart() {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: _cardDecoration(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Authorization Volume (Last 7 Days)', style: bodyStyle(size: 16, weight: FontWeight.w800)),
+              const Icon(Icons.more_horiz_rounded, color: AppColors.ink3),
+            ],
+          ),
+          const SizedBox(height: 40),
+          SizedBox(
+            height: 200,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                _bar(40, 'Mon'),
+                _bar(65, 'Tue'),
+                _bar(50, 'Wed'),
+                _bar(85, 'Thu'),
+                _bar(60, 'Fri'),
+                _bar(20, 'Sat'),
+                _bar(15, 'Sun'),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _bar(double h, String day) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        AnimatedContainer(
+          duration: const Duration(seconds: 1),
+          height: h * 1.5,
+          width: 30,
+          decoration: BoxDecoration(
+            color: h > 60 ? AppColors.tBlue : AppColors.tBlue.withValues(alpha: 0.3),
+            borderRadius: BorderRadius.circular(4),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Text(day, style: monoStyle(size: 10, color: AppColors.ink4, weight: FontWeight.w700)),
+      ],
+    );
+  }
+
+  Widget _buildAuthWatchlist() {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: _cardDecoration(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Policy Compliance Watchlist', style: bodyStyle(size: 16, weight: FontWeight.w800)),
+          const SizedBox(height: 24),
+          _watchlistTile('User Authorization', 'High priority security audit required', AppColors.red, 'nontranauth'),
+          _watchlistTile('GL Master Entries', '3 new unmapped accounts found', AppColors.amber, 'GL-MST'),
+          _watchlistTile('System Config', 'Version 2.4.1 deployment healthy', AppColors.green, 'AUTHCTL'),
+        ],
+      ),
+    );
+  }
+
+  Widget _watchlistTile(String label, String sub, Color color, String progId) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Row(
+        children: [
+          Container(height: 32, width: 4, decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(2))),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: bodyStyle(size: 14, weight: FontWeight.w700)),
+                Text(sub, style: bodyStyle(size: 12, color: AppColors.ink3)),
+              ],
+            ),
+          ),
+          TextButton(
+             onPressed: () {
+               if (progId == 'nontranauth') {
+                 widget.onProceed('AUTH'); // or specific route if available
+               } else {
+                 widget.onSelect(progId);
+               }
+             },
+             child: Text('View', style: bodyStyle(size: 12, color: AppColors.tBlue, weight: FontWeight.w800)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuickActions() {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: _cardDecoration(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Quick Actions', style: bodyStyle(size: 16, weight: FontWeight.w800)),
+          const SizedBox(height: 20),
+          _actionBtn(Icons.add_moderator_rounded, 'New User Gate', 'MASTERS'),
+          _actionBtn(Icons.account_tree_rounded, 'Configure GL', 'GL'),
+          _actionBtn(Icons.verified_user_rounded, 'Audit Logs', 'AUTH'),
+          _actionBtn(Icons.settings_input_composite_rounded, 'System Settings', 'CONFIG'),
+        ],
+      ),
+    );
+  }
+
+  Widget _actionBtn(IconData icon, String label, String cat) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: () => widget.onProceed(cat),
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: AppColors.bg,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: AppColors.border2),
+          ),
+          child: Row(
+            children: [
+              Icon(icon, size: 18, color: AppColors.tBlue),
+              const SizedBox(width: 12),
+              Text(label, style: bodyStyle(size: 13, weight: FontWeight.w700, color: AppColors.ink2)),
+              const Spacer(),
+              const Icon(Icons.chevron_right_rounded, size: 16, color: AppColors.ink4),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildResourceStatus() {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(colors: [AppColors.tBlue.withValues(alpha: 0.8), AppColors.tBlueDk]),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.tBlue.withValues(alpha: 0.2),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.cloud_done_rounded, color: Colors.white, size: 32),
+          const SizedBox(height: 20),
+          const Text('System Resource', style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500)),
+          const SizedBox(height: 4),
+          const Text('92.4% Optimal', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w900)),
+          const SizedBox(height: 16),
+          LinearProgressIndicator(value: 0.92, backgroundColor: Colors.white24, valueColor: AlwaysStoppedAnimation(Colors.white)),
+        ],
+      ),
+    );
+  }
+
+  BoxDecoration _cardDecoration() {
+    return BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(16),
+      border: Border.all(color: AppColors.border),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: 0.02),
+          blurRadius: 10,
+          offset: const Offset(0, 4),
+        ),
+      ],
     );
   }
 }

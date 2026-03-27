@@ -12,6 +12,7 @@ import 'screens/nontran_entry_screen.dart';
 import 'screens/program_list_screen.dart';
 import 'screens/gl_category_screen.dart';
 import 'screens/gl_master_screen.dart';
+import 'screens/submenu_dashboard_screen.dart';
 
 import 'screens/nontran_auth_screen.dart';
 import 'screens/auth_config_screen.dart';
@@ -86,8 +87,13 @@ class _AmsRootState extends State<AmsRoot> {
   }
 
   void _handleProceed(String type) {
-    if (type == 'AUTH') {
-      setState(() => _state = _state.copyWith(screen: 'auth'));
+    if (['MASTERS', 'GL', 'CONFIG', 'AUTH'].contains(type)) {
+      setState(() {
+        _state = _state.copyWith(
+          screen: 'submenu_dashboard',
+          selectedCategory: type,
+        );
+      });
       return;
     }
     if (type == 'AUTH_CONFIG') {
@@ -151,6 +157,7 @@ class _AmsRootState extends State<AmsRoot> {
       } else {
         showAmsToast(context, '✅', 'Record saved directly: $authsl', type: 's');
       }
+      _navigate('list');
       _refreshData();
     } else {
       showAmsToast(context, '❌', 'Failed to save record.', type: 'e');
@@ -366,6 +373,39 @@ class _AmsRootState extends State<AmsRoot> {
           onBack: () => _navigate('list'),
           userName: _state.userName,
         );
+      case 'submenu_dashboard':
+        final cat = _state.selectedCategory;
+        String title = 'Dashboard';
+        List<SubmenuItem> items = [];
+        
+        if (cat == 'MASTERS') {
+          title = 'Masters';
+          items = mastersSubmenus;
+        } else if (cat == 'GL') {
+          title = 'GL Module';
+          items = glSubmenus;
+        } else if (cat == 'CONFIG') {
+          title = 'Configuration';
+          items = configSubmenus;
+        } else if (cat == 'AUTH') {
+          title = 'Authorization';
+          items = authSubmenus;
+        }
+
+        body = SubmenuDashboardScreen(
+          title: title,
+          items: items,
+          onNavigate: (s, p) {
+            setState(() {
+              _state = _state.copyWith(
+                screen: s,
+                selectedProg: p,
+                selectedType: p != null ? (tranPrograms.contains(p) ? 'T' : 'N') : _state.selectedType,
+                clearCategory: true,
+              );
+            });
+          },
+        );
       default:
         body = LoginScreen(onLogin: _handleLogin);
     }
@@ -400,10 +440,20 @@ class _AmsRootState extends State<AmsRoot> {
               _navigate('login');
               return;
             }
+            
+            // Handle category navigation
+            String? cat;
+            if (s == 'submenu_dashboard') {
+              cat = p; // In this case 'p' is the category name
+              p = null;
+            }
+
             setState(() {
               _state = _state.copyWith(
                 screen: s,
                 selectedProg: p,
+                selectedCategory: cat,
+                clearCategory: cat == null,
                 selectedType: p != null ? (tranPrograms.contains(p) ? 'T' : 'N') : _state.selectedType,
                 clearProg: p == null,
               );

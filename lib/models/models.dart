@@ -234,9 +234,10 @@ class AuthDataBlock {
 }
 
 class AppState {
-  final String screen; // login, select, tran, nontran, queue, direct
+  final String screen; 
   final String? selectedType; // 'T' or 'N'
   final String? selectedProg;
+  final String? selectedCategory;
   final List<QueueEntry> queue;
   final List<AuthRecord> authQueue;
   final Map<String, Auth101Config> authConfigs;
@@ -248,6 +249,7 @@ class AppState {
     required this.screen,
     this.selectedType,
     this.selectedProg,
+    this.selectedCategory,
     required this.queue,
     required this.authQueue,
     required this.authConfigs,
@@ -260,6 +262,7 @@ class AppState {
     String? screen,
     String? selectedType,
     String? selectedProg,
+    String? selectedCategory,
     List<QueueEntry>? queue,
     List<AuthRecord>? authQueue,
     Map<String, Auth101Config>? authConfigs,
@@ -267,12 +270,14 @@ class AppState {
     String? token,
     String? userName,
     bool clearProg = false,
+    bool clearCategory = false,
     bool clearSubmitted = false,
   }) {
     return AppState(
       screen: screen ?? this.screen,
       selectedType: selectedType ?? this.selectedType,
       selectedProg: clearProg ? null : (selectedProg ?? this.selectedProg),
+      selectedCategory: clearCategory ? null : (selectedCategory ?? this.selectedCategory),
       queue: queue ?? this.queue,
       authQueue: authQueue ?? this.authQueue,
       authConfigs: authConfigs ?? this.authConfigs,
