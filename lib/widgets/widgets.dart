@@ -1593,65 +1593,63 @@ class _AmsShellState extends State<AmsShell> {
         ],
       ),
       child: Row(
-        children: [
+      children: [
 
-          /// ✅ 9 DOTS
-          _PremiumAppLauncher(),
-          const SizedBox(width: 12),
+    /// ✅ 9 DOTS
+    _PremiumAppLauncher(),
+    const SizedBox(width: 12),
 
-          /// 🔹 LOGO
-          Row(
-            children: [
-              Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  color: AppColors.tBlue,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(Icons.shield_rounded,
-                    color: Colors.white, size: 22),
-              ),
-              const SizedBox(width: 10),
-              Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text("FINANCE",
-                      style:
-                          bodyStyle(size: 18, weight: FontWeight.w800, color: Colors.white)),
-                  Text("Management System",
-                      style: bodyStyle(
-                          size: 10, color: Colors.white70)),
-                ],
-              ),
-            ],
+    /// 🔹 LOGO
+    Row(
+      children: [
+        Container(
+          width: 38,
+          height: 38,
+          decoration: BoxDecoration(
+            color: AppColors.tBlue,
+            borderRadius: BorderRadius.circular(10),
           ),
+          child: const Icon(Icons.shield_rounded,
+              color: Colors.white, size: 22),
+        ),
+        const SizedBox(width: 10),
+        Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text("FINANCE",
+                style: bodyStyle(
+                    size: 18,
+                    weight: FontWeight.w800,
+                    color: Colors.white)),
+            Text("Management System",
+                style: bodyStyle(
+                    size: 10,
+                    color: Colors.white70)),
+          ],
+        ),
+      ],
+    ),
 
-          const SizedBox(width: 30),
+    const Spacer(),
 
-          /// 🔍 SEARCH
-          _PremiumSearchBar(),
+    /// 🔹 ICONS
+    _topIconBox(Icons.help_outline_rounded),
+    const SizedBox(width: 8),
+    _topIconBox(Icons.notifications_none_rounded),
+    const SizedBox(width: 8),
+    _topIconBox(Icons.settings_outlined),
 
-          const Spacer(),
+    const SizedBox(width: 16),
 
-          /// 🔹 ICONS
-          _topIconBox(Icons.help_outline_rounded),
-          const SizedBox(width: 8),
-          _topIconBox(Icons.notifications_none_rounded),
-          const SizedBox(width: 8),
-          _topIconBox(Icons.settings_outlined),
+    Container(height: 32, width: 1, color: Colors.white24),
 
-          const SizedBox(width: 16),
+    const SizedBox(width: 16),
 
-          Container(height: 32, width: 1, color: Colors.white24),
-
-          const SizedBox(width: 16),
-
-          /// 🔹 PROFILE
-          _profileAvatar(context),
-        ],
-      ),
+    /// 🔹 PROFILE
+    _profileAvatar(context),
+  ],
+ ),
     );
   }
 
@@ -1820,44 +1818,7 @@ class _PremiumAppLauncherState extends State<_PremiumAppLauncher> {
   }
 }
 
-// ─────────────────────────────────────────────────────────────
-// 🔹 SEARCH BAR
-// ─────────────────────────────────────────────────────────────
-class _PremiumSearchBar extends StatelessWidget {
-  const _PremiumSearchBar({super.key});
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 320,
-      height: 42,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.white24),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.search_rounded, size: 20, color: Colors.white54),
-          const SizedBox(width: 12),
-          const Expanded(
-            child: TextField(
-              decoration: InputDecoration(
-                hintText: "Search programs, module, or ID...",
-                hintStyle: TextStyle(fontSize: 13, color: Colors.white54),
-                border: InputBorder.none,
-                isDense: true,
-                contentPadding: EdgeInsets.zero,
-              ),
-              style: TextStyle(fontSize: 13, color: Colors.white),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 // ─────────────────────────────────────────────────────────────
 // 🔹 ICON HOVER
