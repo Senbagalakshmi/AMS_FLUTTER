@@ -291,21 +291,23 @@ class ApiService {
     }
   }
 
-  Future<List<Map<String, dynamic>>?> getGlCategoryById(int glCatCd) async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/gl-categoryrrglCatCd'),
-        headers: _headers,
-      );
-      if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
-        return data.cast<Map<String, dynamic>>();
-      }
-      return null;
-    } catch (e) {
-      return null;
+  Future<Map<String, dynamic>?> getGlCategoryById(int glCatCd) async {
+  try {
+    final response = await http.get(
+  Uri.parse('$baseUrl/gl-category/$glCatCd'),
+  headers: _headers,
+);
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data;
     }
+    return null;
+  } catch (e) {
+    print("getGlCategoryById error: $e");
+    return null;
   }
+}
 
   Future<bool> createGlCategory(Map<String, dynamic> data) async {
     try {
