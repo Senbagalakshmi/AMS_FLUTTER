@@ -2197,3 +2197,181 @@ class _AmsPaginatedViewState<T> extends State<AmsPaginatedView<T>> {
   }
 }
 
+// ─── SEARCHABLE DROPDOWN ───────────────────────────────────────
+class AmsSearchableDropdown extends StatefulWidget {
+  final List<String> items;
+  final String? initialValue;
+  final String? placeholder;
+  final void Function(String?)? onChanged;
+  final bool readOnly;
+  final String? errorText;
+  final bool isValid;
+
+  const AmsSearchableDropdown({
+    super.key,
+    required this.items,
+    this.initialValue,
+    this.placeholder,
+    this.onChanged,
+    this.readOnly = false,
+    this.errorText,
+    this.isValid = false,
+  });
+
+  @override
+  State<AmsSearchableDropdown> createState() => _AmsSearchableDropdownState();
+}
+
+class _AmsSearchableDropdownState extends State<AmsSearchableDropdown> {
+  late List<String> _filteredItems;
+  late TextEditingController _controller;
+  late FocusNode _focusNode;
+  bool _isOpen = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _filteredItems = widget.items;
+    _controller = TextEditingController(text: widget.initialValue ?? '');
+    _focusNode = FocusNode();
+    _focusNode.addListener(() {
+      if (!_focusNode.hasFocus) {
+        setState(() => _isOpen = false);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  void _filterItems(String query) {
+    setState(() {
+      if (query.isEmpty) {
+        _filteredItems = widget.items;
+      } else {
+        _filteredItems = widget.items
+            .where((item) => item.toLowerCase().contains(query.toLowerCase()))
+            .toList();
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Focus(
+      onFocusChange: (hasFocus) {
+        if (hasFocus && !widget.readOnly) {
+          setState(() => _isOpen = true);
+        }
+      },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          TextFormField(
+            controller: _controller,
+            focusNode: _focusNode,
+            readOnly: widget.readOnly,
+            onChanged: widget.readOnly ? null : _filterItems,
+            style: bodyStyle(size: 13, color: AppColors.ink),
+            decoration: InputDecoration(
+              hintText: widget.placeholder,
+              hintStyle: bodyStyle(size: 13, color: AppColors.ink4),
+              errorText: widget.errorText,
+              errorStyle: bodyStyle(size: 11, color: AppColors.red),
+              filled: true,
+              fillColor: widget.readOnly
+                  ? const Color(0xFFF7F9FC)
+                  : Colors.white,
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
+              suffixIcon: Icon(
+                _isOpen ? Icons.arrow_drop_up : Icons.arrow_drop_down,
+                color: AppColors.ink3,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(5),
+                borderSide: BorderSide(
+                  color: widget.isValid
+                      ? AppColors.green
+                      : const Color(0xFFD1D5DB),
+                  width: 1.0,
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(5),
+                borderSide: BorderSide(
+                  color: widget.isValid ? AppColors.green : AppColors.tBlue,
+                  width: 1.0,
+                ),
+              ),
+              errorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(5),
+                borderSide:
+                    const BorderSide(color: AppColors.red, width: 1.0),
+              ),
+              focusedErrorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(5),
+                borderSide:
+                    const BorderSide(color: AppColors.red, width: 1.0),
+              ),
+              disabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(5),
+                borderSide:
+                    const BorderSide(color: AppColors.border, width: 1.0),
+              ),
+            ),
+          ),
+          if (_isOpen && !widget.readOnly && _filteredItems.isNotEmpty)
+            Container(
+              margin: const EdgeInsets.only(top: 4),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                border: Border.all(color: AppColors.border),
+                borderRadius: BorderRadius.circular(5),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.08),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxHeight: 200),
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: _filteredItems.length,
+                  itemBuilder: (context, index) {
+                    final item = _filteredItems[index];
+                    return InkWell(
+                      onTap: () {
+                        _controller.text = item;
+                        setState(() => _isOpen = false);
+                        widget.onChanged?.call(item);
+                        _focusNode.unfocus();
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
+                        child: Text(
+                          item,
+                          style: bodyStyle(size: 13, color: AppColors.ink),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
