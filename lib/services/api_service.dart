@@ -292,22 +292,22 @@ class ApiService {
   }
 
   Future<Map<String, dynamic>?> getGlCategoryById(int glCatCd) async {
-  try {
-    final response = await http.get(
-  Uri.parse('$baseUrl/gl-category/$glCatCd'),
-  headers: _headers,
-);
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/gl-category/$glCatCd'),
+        headers: _headers,
+      );
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      return data;
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data;
+      }
+      return null;
+    } catch (e) {
+      print("getGlCategoryById error: $e");
+      return null;
     }
-    return null;
-  } catch (e) {
-    print("getGlCategoryById error: $e");
-    return null;
   }
-}
 
   Future<bool> createGlCategory(Map<String, dynamic> data) async {
     try {
@@ -343,6 +343,82 @@ class ApiService {
       );
       return res.statusCode == 200;
     } catch (e) {
+      return false;
+    }
+  }
+  // --- GL Master ---
+
+  Future<List<Map<String, dynamic>>?> getAllGlMasters() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/gl-master'),
+        headers: _headers,
+      );
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        return data.cast<Map<String, dynamic>>();
+      }
+      return null;
+    } catch (e) {
+      print("getAllGlMasters error: $e");
+      return null;
+    }
+  }
+
+  Future<List<Map<String, dynamic>>?> getGlMasterByGlNo(int glNo) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/gl-master/$glNo'),
+        headers: _headers,
+      );
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        return data.cast<Map<String, dynamic>>();
+      }
+      return null;
+    } catch (e) {
+      print("getGlMasterByGlNo error: $e");
+      return null;
+    }
+  }
+
+  Future<bool> createGlMaster(Map<String, dynamic> data) async {
+    try {
+      final res = await http.post(
+        Uri.parse('$baseUrl/gl-master'),
+        headers: _headers,
+        body: jsonEncode(data),
+      );
+      return res.statusCode == 200;
+    } catch (e) {
+      print("createGlMaster error: $e");
+      return false;
+    }
+  }
+
+  Future<bool> updateGlMaster(Map<String, dynamic> data) async {
+    try {
+      final res = await http.put(
+        Uri.parse('$baseUrl/gl-master'),
+        headers: _headers,
+        body: jsonEncode(data),
+      );
+      return res.statusCode == 200;
+    } catch (e) {
+      print("updateGlMaster error: $e");
+      return false;
+    }
+  }
+
+  Future<bool> deleteGlMaster(int glNo) async {
+    try {
+      final res = await http.delete(
+        Uri.parse('$baseUrl/gl-master/$glNo'),
+        headers: _headers,
+      );
+      return res.statusCode == 200;
+    } catch (e) {
+      print("deleteGlMaster error: $e");
       return false;
     }
   }
