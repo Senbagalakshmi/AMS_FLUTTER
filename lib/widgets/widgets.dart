@@ -2391,11 +2391,17 @@ class _AmsSearchableDropdownState extends State<AmsSearchableDropdown> {
     _filteredItems = widget.items;
     _controller = TextEditingController(text: widget.initialValue ?? '');
     _focusNode = FocusNode();
-    _focusNode.addListener(() {
-      if (!_focusNode.hasFocus) {
-        setState(() => _isOpen = false);
-      }
-    });
+  }
+
+  @override
+  void didUpdateWidget(AmsSearchableDropdown oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialValue != widget.initialValue) {
+      _controller.text = widget.initialValue ?? '';
+    }
+    if (oldWidget.items != widget.items) {
+      _filterItems(_controller.text);
+    }
   }
 
   @override
@@ -2419,69 +2425,68 @@ class _AmsSearchableDropdownState extends State<AmsSearchableDropdown> {
 
   @override
   Widget build(BuildContext context) {
-    return Focus(
-      onFocusChange: (hasFocus) {
-        if (hasFocus && !widget.readOnly) {
-          setState(() => _isOpen = true);
+    return TapRegion(
+      onTapOutside: (event) {
+        if (_isOpen) {
+          setState(() => _isOpen = false);
+          _focusNode.unfocus();
         }
       },
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          TextFormField(
-            controller: _controller,
-            focusNode: _focusNode,
-            readOnly: widget.readOnly,
-            onChanged: widget.readOnly ? null : _filterItems,
-            style: bodyStyle(size: 13, color: AppColors.ink),
-            decoration: InputDecoration(
-              hintText: widget.placeholder,
-              hintStyle: bodyStyle(size: 13, color: AppColors.ink4),
-              errorText: widget.errorText,
-              errorStyle: bodyStyle(size: 11, color: AppColors.red),
-              filled: true,
-              fillColor: widget.readOnly
-                  ? const Color(0xFFF7F9FC)
-                  : Colors.white,
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
-              suffixIcon: Icon(
-                _isOpen ? Icons.arrow_drop_up : Icons.arrow_drop_down,
-                color: AppColors.ink3,
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(5),
-                borderSide: BorderSide(
-                  color: widget.isValid
-                      ? AppColors.green
-                      : const Color(0xFFD1D5DB),
-                  width: 1.0,
+      child: Focus(
+        onFocusChange: (hasFocus) {
+          if (hasFocus && !widget.readOnly) {
+            setState(() => _isOpen = true);
+          }
+        },
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            TextFormField(
+              controller: _controller,
+              focusNode: _focusNode,
+              readOnly: widget.readOnly,
+              onChanged: widget.readOnly ? null : _filterItems,
+              style: bodyStyle(size: 13, color: AppColors.ink),
+              decoration: InputDecoration(
+                hintText: widget.placeholder,
+                hintStyle: bodyStyle(size: 13, color: AppColors.ink4),
+                errorText: widget.errorText,
+                errorStyle: bodyStyle(size: 11, color: AppColors.red),
+                filled: true,
+                fillColor: widget.readOnly ? const Color(0xFFF7F9FC) : Colors.white,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
+                suffixIcon: Icon(
+                  _isOpen ? Icons.arrow_drop_up : Icons.arrow_drop_down,
+                  color: AppColors.ink3,
                 ),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(5),
-                borderSide: BorderSide(
-                  color: widget.isValid ? AppColors.green : AppColors.tBlue,
-                  width: 1.0,
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(5),
+                  borderSide: BorderSide(
+                    color: widget.isValid ? AppColors.green : const Color(0xFFD1D5DB),
+                    width: 1.0,
+                  ),
                 ),
-              ),
-              errorBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(5),
-                borderSide:
-                    const BorderSide(color: AppColors.red, width: 1.0),
-              ),
-              focusedErrorBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(5),
-                borderSide:
-                    const BorderSide(color: AppColors.red, width: 1.0),
-              ),
-              disabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(5),
-                borderSide:
-                    const BorderSide(color: AppColors.border, width: 1.0),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(5),
+                  borderSide: BorderSide(
+                    color: widget.isValid ? AppColors.green : AppColors.tBlue,
+                    width: 1.0,
+                  ),
+                ),
+                errorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(5),
+                  borderSide: const BorderSide(color: AppColors.red, width: 1.0),
+                ),
+                focusedErrorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(5),
+                  borderSide: const BorderSide(color: AppColors.red, width: 1.0),
+                ),
+                disabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(5),
+                  borderSide: const BorderSide(color: AppColors.border, width: 1.0),
+                ),
               ),
             ),
-          ),
           if (_isOpen && !widget.readOnly && _filteredItems.isNotEmpty)
             Container(
               margin: const EdgeInsets.only(top: 4),
@@ -2528,7 +2533,8 @@ class _AmsSearchableDropdownState extends State<AmsSearchableDropdown> {
             ),
         ],
       ),
-    );
+    ),
+  );
   }
 }
 
