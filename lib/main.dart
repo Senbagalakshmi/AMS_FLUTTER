@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-
+import 'screens/gl_allowed_branch_screen.dart';
+import 'screens/gl_allowed_currency_screen.dart';
 import 'services/api_service.dart';
 import 'theme.dart';
 import 'data.dart';
@@ -342,7 +343,23 @@ class _AmsRootState extends State<AmsRoot> {
             onBackToModule: () => _handleProceed('GL'),
             userName: _state.userName,
           );
-        } else {
+        } 
+        
+        else if (_state.selectedProg == 'GL-CUR') {
+  body = AllowedCurrencyScreen(
+    
+    onChanged: (k, v) {},
+  );
+}
+
+else if (_state.selectedProg == 'GL-BRN') {
+  body = AllowedBranchScreen(
+    onBack: () => _navigate('list'),
+    onBackToModule: () => _handleProceed('GL'),
+    onChanged: (k, v) {},
+  );
+}
+          else {
           body = NonTranEntryScreen(
             authConfigs: _state.authConfigs,
             nonTranPrograms: nonTranPrograms,
