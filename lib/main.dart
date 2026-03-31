@@ -220,6 +220,12 @@ class _AmsRootState extends State<AmsRoot> {
     }
   }
 
+  Future<void> _handleAuthLock(AuthRecord record) async {
+    await apiService.updateAuthLock(record.authSl);
+    // Silent update, no toast needed for UI selection usually, 
+    // but the backend will now have the lock.
+  }
+
   void _handleConfigUpdate(String id, Auth101Config newCfg) {
     setState(() {
       final newConfigs = Map<String, Auth101Config>.from(_state.authConfigs);
@@ -361,6 +367,7 @@ class _AmsRootState extends State<AmsRoot> {
           authQueue: _state.authQueue,
           onRefresh: _refreshData,
           onProcess: _handleAuthProcess,
+          onLock: _handleAuthLock,
           onBack: () => _navigate('list'),
           userName: _state.userName,
         );
