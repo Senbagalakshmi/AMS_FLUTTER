@@ -80,8 +80,7 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
             'USR-ROLE',
             'MOD-CRT',
             'MENU-CRT',
-            'AUTHCTL',
-            'PGM-CRT'
+            'AUTHCTL'
           ].contains(_selProg))
               ? 50
               : 1),
@@ -127,15 +126,14 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
     final isModuleScreenList = _selProg == 'MOD-CRT' && !_showForm;
     final isMenuScreenList = _selProg == 'MENU-CRT' && !_showForm;
     final isAuthCtrlScreenList = _selProg == 'AUTHCTL' && !_showForm;
-    final isProgramScreenList = _selProg == 'PGM-CRT' && !_showForm;
+
 
     final isAnyList = isUserScreenList ||
         isRoleScreenList ||
         isUserRoleScreenList ||
         isModuleScreenList ||
         isMenuScreenList ||
-        isAuthCtrlScreenList ||
-        isProgramScreenList;
+        isAuthCtrlScreenList;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -183,8 +181,7 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
                       'ROLE-CRT',
                       'MOD-CRT',
                       'MENU-CRT',
-                      'AUTHCTL',
-                      'PGM-CRT'
+                      'AUTHCTL'
                     ].contains(_selProg) &&
                     _showForm
                 ? () => setState(() => _showForm = false)
@@ -273,8 +270,7 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
                           return _MenuListView(onView: handleView);
                         if (isAuthCtrlScreenList)
                           return _AuthCtrlListView(onView: handleView);
-                        if (isProgramScreenList)
-                          return _ProgramListView(onView: handleView);
+
 
                         return SingleChildScrollView(
                           padding: const EdgeInsets.all(24),
@@ -857,77 +853,7 @@ class _AuthCtrlListViewState extends State<_AuthCtrlListView> {
   }
 }
 
-class _ProgramListView extends StatefulWidget {
-  final void Function(Map<String, dynamic>)? onView;
-  const _ProgramListView({this.onView});
-  @override
-  State<_ProgramListView> createState() => _ProgramListViewState();
-}
 
-class _ProgramListViewState extends State<_ProgramListView> {
-  Map<String, Auth101Config>? _configs;
-  bool _loading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _load();
-  }
-
-  Future<void> _load() async {
-    final data = await apiService.getAuthConfigs();
-    setState(() {
-      _configs = data ?? auth101;
-      _loading = false;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (_loading) return const Center(child: CircularProgressIndicator());
-    final cfgList = _configs!.values.toList();
-    return AmsPaginatedView<Auth101Config>(
-      items: cfgList,
-      builder: (ctx, currentItems) => ListView.builder(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-        itemCount: currentItems.length,
-        itemBuilder: (ctx, idx) {
-          final c = currentItems[idx];
-          return AmsCard(
-            onTap: widget.onView != null
-                ? () => widget.onView!({
-                      'programId': c.id,
-                      'isTranPgm': c.isTran ? 1 : 0,
-                      'orgCode': 50,
-                    })
-                : null,
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(c.id,
-                          style: bodyStyle(size: 15, weight: FontWeight.w600)),
-                      const SizedBox(height: 4),
-                      Text(
-                          'Type: ${c.isTran ? 'Financial' : 'Non-Financial'}',
-                          style: bodyStyle(color: AppColors.ink3)),
-                    ],
-                  ),
-                ),
-                AmsBadge(
-                    label: c.isTran ? 'TRAN' : 'N-TRAN',
-                    color: c.isTran ? AppColors.tBlue : AppColors.ink4),
-              ],
-            ),
-          );
-        },
-      ),
-    );
-  }
-}
 
 class DynamicNTFields extends StatefulWidget {
   final String prog;
@@ -968,8 +894,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
   final _menuScdCtrl = TextEditingController();
   final _menuNameCtrl = TextEditingController();
 
-  final _pScdCtrl = TextEditingController();
-  final _pNameCtrl = TextEditingController();
+
 
   final _authModCtrl = TextEditingController();
   final _authPgmCtrl = TextEditingController();
@@ -1006,9 +931,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
     } else if (widget.prog == 'MENU-CRT') {
       _menuScdCtrl.text = data['menucd']?.toString() ?? '';
       _menuNameCtrl.text = data['menuname']?.toString() ?? '';
-    } else if (widget.prog == 'PGM-CRT') {
-      _pScdCtrl.text = data['pgmcd']?.toString() ?? '';
-      _pNameCtrl.text = data['pgmname']?.toString() ?? '';
+
     } else if (widget.prog == 'AUTHCTL') {
       _authModCtrl.text = data['modcd']?.toString() ?? '';
       _authPgmCtrl.text = data['pgmcd']?.toString() ?? '';
@@ -1040,9 +963,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
       } else if (widget.prog == 'MENU-CRT') {
         if (_menuScdCtrl.text.trim().isEmpty) { _errors['menuCd'] = 'Menu Code required'; isValid = false; }
         if (_menuNameCtrl.text.trim().isEmpty) { _errors['menuName'] = 'Menu Name required'; isValid = false; }
-      } else if (widget.prog == 'PGM-CRT') {
-        if (_pScdCtrl.text.trim().isEmpty) { _errors['pgmCd'] = 'Program Code required'; isValid = false; }
-        if (_pNameCtrl.text.trim().isEmpty) { _errors['pgmName'] = 'Program Name required'; isValid = false; }
+
       } else if (widget.prog == 'USR-ROLE') {
         if (_uScdCtrl.text.trim().isEmpty) { _errors['usersCd'] = 'User Code required'; isValid = false; }
         if (_rScdCtrl.text.trim().isEmpty) { _errors['roleCd'] = 'Role Code required'; isValid = false; }
@@ -1068,7 +989,6 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
     _rScdCtrl.clear(); _rNameCtrl.clear();
     _mScdCtrl.clear(); _mNameCtrl.clear();
     _menuScdCtrl.clear(); _menuNameCtrl.clear();
-    _pScdCtrl.clear(); _pNameCtrl.clear();
     _authModCtrl.clear(); _authPgmCtrl.clear();
     setState(() {
       _gender = null; _menuType = null; _title = null; _errors.clear();
@@ -1081,7 +1001,6 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
     _rScdCtrl.dispose(); _rNameCtrl.dispose();
     _mScdCtrl.dispose(); _mNameCtrl.dispose();
     _menuScdCtrl.dispose(); _menuNameCtrl.dispose();
-    _pScdCtrl.dispose(); _pNameCtrl.dispose();
     _authModCtrl.dispose(); _authPgmCtrl.dispose();
     super.dispose();
   }
@@ -1534,59 +1453,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
             ],
           ),
         );
-      case 'PGM-CRT':
-        return Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: AmsFormGrid(
-            children: [
-              AmsField(
-                label: 'PGMCD',
-                required: true,
-                labelAbove: true,
-                tooltip: 'Unique program code.',
-                child: AmsTextInput(
-                  controller: _pScdCtrl,
-                  readOnly: widget.isViewMode,
-                  placeholder: 'e.g. GL-001',
-                  textInputAction: TextInputAction.next,
-                  errorText: _errors['pgmCd'],
-                  isValid: _errors['pgmCd'] == null && _pScdCtrl.text.isNotEmpty,
-                  onChanged: (v) {
-                    setState(() {
-                      _errors['pgmCd'] = v.trim().isEmpty ? 'Program Code required' : null;
-                    });
-                    widget.onChanged('pgmCd', v);
-                  },
-                ),
-              ),
-              AmsField(
-                label: 'PGMNAME',
-                required: true,
-                labelAbove: true,
-                tooltip: 'Descriptive program name.',
-                child: AmsTextInput(
-                  controller: _pNameCtrl,
-                  readOnly: widget.isViewMode,
-                  placeholder: 'e.g. GL Entry Program',
-                  textInputAction: TextInputAction.done,
-                  errorText: _errors['pgmName'],
-                  isValid: _errors['pgmName'] == null && _pNameCtrl.text.isNotEmpty,
-                  onChanged: (v) {
-                    setState(() {
-                      _errors['pgmName'] = v.trim().isEmpty ? 'Program Name required' : null;
-                    });
-                    widget.onChanged('pgmName', v);
-                  },
-                ),
-              ),
-            ],
-          ),
-        );
+
       case 'AUTHCTL':
         return Container(
           padding: const EdgeInsets.all(24),

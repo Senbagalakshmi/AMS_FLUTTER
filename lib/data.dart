@@ -105,12 +105,7 @@ final Map<String, Auth101Config> auth101 = {
       approvalReq: true,
       isTran: false,
       levels: 1),
-  'PGM-CRT': const Auth101Config(
-      id: 'PGM-CRT',
-      name: 'Program',
-      approvalReq: true,
-      isTran: false,
-      levels: 1),
+
 };
 
 final Map<String, List<Auth103Limit>> auth103 = {
@@ -151,7 +146,7 @@ final Map<String, List<Auth103Limit>> auth103 = {
 };
 
 const List<String> tranPrograms = [];
-const List<String> nonTranPrograms = ['PGM-CRT'];
+const List<String> nonTranPrograms = [];
 
 final Map<String, String> tranProgPkPrefix = {
   'LOAN-DIS': 'LN',
@@ -174,7 +169,7 @@ final Map<String, String> nonTranProgPkPrefix = {
   'GL-BRN': 'GLB',
   'GL-SEG': 'GLS',
   'GL-ATT': 'GLA',
-  'PGM-CRT': 'PGM',
+
 };
 
 List<QueueEntry> seedQueue() => [
@@ -394,14 +389,7 @@ final List<SubmenuItem> mastersSubmenus = [
     metric: '42 Nodes',
     trend: 'Optimized',
   ),
-  SubmenuItem(
-    label: 'Program Registry', 
-    icon: Icons.app_registration_rounded, 
-    programId: 'PGM-CRT',
-    subtitle: 'Manage executable service endpoints & APIs.',
-    metric: '65 Svcs',
-    trend: 'Active',
-  ),
+
 ];
 
 final List<SubmenuItem> glSubmenus = [
