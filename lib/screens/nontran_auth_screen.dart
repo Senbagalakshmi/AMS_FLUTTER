@@ -128,10 +128,13 @@ class _NonTranAuthScreenState extends State<NonTranAuthScreen> {
               AmsButton(
                 label: 'Approve',
                 variant: AmsButtonVariant.primary,
-                icon: Icons.check_circle_outline_rounded,
+                icon: Icons.arrow_forward_rounded,
                 onPressed: () async {
                   if (_selectedRecord == null) return;
                   await widget.onProcess(_selectedRecord!, true);
+                  if (widget.onRefresh != null) {
+                    await widget.onRefresh!();
+                  }
                   if (context.mounted) {
                     showAmsToast(context, '✅', 'Record Approved');
                   }
@@ -143,9 +146,36 @@ class _NonTranAuthScreenState extends State<NonTranAuthScreen> {
                 variant: AmsButtonVariant.outline,
                 onPressed: () async {
                   if (_selectedRecord == null) return;
-                  await widget.onProcess(_selectedRecord!, false);
-                  if (context.mounted) {
-                    showAmsToast(context, '❌', 'Record Rejected', type: 'e');
+                  
+                  final confirmed = await showDialog<bool>(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      title: Text('Confirm Rejection', style: bodyStyle(weight: FontWeight.w700)),
+                      content: Text('Are you sure you want to reject this record?', style: bodyStyle()),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx, false),
+                          child: Text('Cancel', style: bodyStyle(color: AppColors.ink3)),
+                        ),
+                        AmsButton(
+                          label: 'Yes, Reject',
+                          variant: AmsButtonVariant.danger,
+                          small: true,
+                          onPressed: () => Navigator.pop(ctx, true),
+                        ),
+                      ],
+                    ),
+                  );
+
+                  if (confirmed == true) {
+                    await widget.onProcess(_selectedRecord!, false);
+                    if (widget.onRefresh != null) {
+                      await widget.onRefresh!();
+                    }
+                    if (context.mounted) {
+                      showAmsToast(context, '❌', 'Record Rejected', type: 'e');
+                    }
                   }
                 },
               ),
