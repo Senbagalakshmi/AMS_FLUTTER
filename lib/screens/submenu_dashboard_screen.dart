@@ -20,6 +20,26 @@ class SubmenuItem {
     this.metric,
     this.trend,
   });
+
+  SubmenuItem copyWith({
+    String? label,
+    IconData? icon,
+    String? programId,
+    String? screen,
+    String? subtitle,
+    String? metric,
+    String? trend,
+  }) {
+    return SubmenuItem(
+      label: label ?? this.label,
+      icon: icon ?? this.icon,
+      programId: programId ?? this.programId,
+      screen: screen ?? this.screen,
+      subtitle: subtitle ?? this.subtitle,
+      metric: metric ?? this.metric,
+      trend: trend ?? this.trend,
+    );
+  }
 }
 
 class SubmenuDashboardScreen extends StatelessWidget {

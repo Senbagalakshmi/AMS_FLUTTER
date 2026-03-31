@@ -473,7 +473,7 @@ final List<SubmenuItem> authSubmenus = [
     programId: 'nontranauth', 
     screen: 'nontranauth',
     subtitle: 'Monitor and approve pending security requests.',
-    metric: '12 Pend',
+    metric: '—',
     trend: 'Priority',
   ),
 ];

@@ -389,7 +389,12 @@ class _AmsRootState extends State<AmsRoot> {
           items = configSubmenus;
         } else if (cat == 'AUTH') {
           title = 'Authorization';
-          items = authSubmenus;
+          items = authSubmenus.map((item) {
+            if (item.programId == 'nontranauth') {
+              return item.copyWith(metric: '${_state.authQueue.length} Pend');
+            }
+            return item;
+          }).toList();
         }
 
         body = SubmenuDashboardScreen(
