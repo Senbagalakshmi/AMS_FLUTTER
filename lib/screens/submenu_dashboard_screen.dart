@@ -147,17 +147,8 @@ class _MenuCardState extends State<_MenuCard> {
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: _isHovered ? AppColors.tBlue : AppColors.border2,
-              width: _isHovered ? 2 : 1,
+              width: _isHovered ? 2 : 1.5,
             ),
-            boxShadow: [
-              BoxShadow(
-                color: _isHovered 
-                  ? AppColors.tBlue.withValues(alpha: 0.1) 
-                  : Colors.black.withValues(alpha: 0.03),
-                blurRadius: _isHovered ? 15 : 10,
-                offset: Offset(0, _isHovered ? 6 : 4),
-              ),
-            ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -175,7 +166,7 @@ class _MenuCardState extends State<_MenuCard> {
                     ),
                     child: Icon(
                       widget.item.icon,
-                      size: 24,
+                      size: 32,
                       color: _isHovered ? Colors.white : AppColors.tBlue,
                     ),
                   ),

@@ -901,6 +901,7 @@ class AmsIdentityHeader extends StatelessWidget {
   final Color accentMd;
   final List<HeaderBreadcrumb>? breadcrumbs;
   final VoidCallback onBack;
+  final List<Widget>? actions;
 
   const AmsIdentityHeader({
     super.key,
@@ -913,6 +914,7 @@ class AmsIdentityHeader extends StatelessWidget {
     required this.accentMd,
     this.breadcrumbs,
     required this.onBack,
+    this.actions,
   });
 
   @override
@@ -924,13 +926,6 @@ class AmsIdentityHeader extends StatelessWidget {
         color: Colors.white,
         border: Border.all(color: AppColors.border, width: 1),
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -1012,6 +1007,10 @@ class AmsIdentityHeader extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
+          if (actions != null) ...[
+            ...actions!,
+            const SizedBox(width: 8),
+          ],
           MouseRegion(
             cursor: SystemMouseCursors.click,
             child: GestureDetector(
@@ -1022,13 +1021,6 @@ class AmsIdentityHeader extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: AppColors.red,
                   borderRadius: BorderRadius.circular(8),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.red.withOpacity(0.2),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -1066,39 +1058,23 @@ class AmsSubmitBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       decoration: BoxDecoration(
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 30,
-            offset: const Offset(0, -10),
+        color: Colors.white,
+        border: Border(
+          top: BorderSide(
+              color: borderColor.withOpacity(0.2), width: 1.5),
+        ),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: actions,
           ),
         ],
-      ),
-      child: ClipRRect(
-        child: BackdropFilter(
-          filter: ui.ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.85),
-              border: Border(
-                top: BorderSide(
-                    color: borderColor.withOpacity(0.2), width: 1.5),
-              ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
-                  children: actions,
-                ),
-              ],
-            ),
-          ),
-        ),
       ),
     );
   }
@@ -1172,15 +1148,12 @@ class AmsSidebarItem extends StatelessWidget {
         onTap: onTap,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          margin: EdgeInsets.symmetric(
-              vertical: 2, horizontal: isCollapsed ? 6 : 12),
+          margin: EdgeInsets.only(
+              left: isCollapsed ? 6 : 12, right: 0, top: 2, bottom: 2),
           padding: EdgeInsets.symmetric(
               horizontal: isCollapsed ? 0 : 16, vertical: 12),
           decoration: BoxDecoration(
-            color: isSelected
-                ? Colors.white.withValues(alpha: 0.15)
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(8),
+            color: Colors.transparent,
             border: isSelected
                 ? const Border(
                     left: BorderSide(color: Colors.white, width: 3))
@@ -1251,18 +1224,19 @@ class AmsSubSidebarItem extends StatelessWidget {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           margin: EdgeInsets.only(
-              left: isCollapsed ? 6 : 36, right: 6, top: 2, bottom: 2),
+              left: isCollapsed ? 6 : 30, right: 0, top: 1, bottom: 1),
           padding: EdgeInsets.symmetric(
               horizontal: isCollapsed ? 8 : 16, vertical: 10),
           decoration: BoxDecoration(
-            color: isSelected ? Colors.white.withValues(alpha: 0.15) : Colors.transparent,
-            borderRadius: BorderRadius.circular(8),
-            border: Border(
-              left: BorderSide(
-                color: isSelected ? Colors.white : Colors.white30,
-                width: 2,
-              ),
-            ),
+            color: Colors.transparent,
+            border: isSelected
+                ? const Border(
+                    left: BorderSide(
+                      color: Colors.white,
+                      width: 2,
+                    ),
+                  )
+                : null,
           ),
           child: isCollapsed
               ? Center(
@@ -1653,15 +1627,8 @@ class _AmsShellState extends State<AmsShell> {
       decoration: BoxDecoration(
         color: const Color(0xFF1E2B5E), // Match Sidebar Dark Blue
         border: const Border(
-          bottom: BorderSide(color: Colors.transparent),
+          bottom: BorderSide(color: Colors.white12),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          )
-        ],
       ),
       child: Row(
       children: [

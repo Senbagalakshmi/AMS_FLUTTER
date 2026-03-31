@@ -133,59 +133,55 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
       backgroundColor: Colors.white,
       body: Column(
         children: [
-          // Header Section (Identity)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      _selProg == 'USR-ROLE'
-                          ? (isAnyList ? 'Role Assign' : 'New Role Assign')
-                          : (_cfg != null
-                              ? (isAnyList ? _cfg!.name : 'New ${_cfg!.name}')
-                              : 'New Record'),
-                      style: bodyStyle(
-                        size: 22,
-                        weight: FontWeight.w600,
-                        color: const Color(0xFF1F2937),
-                      ),
-                    ),
-                    if (isAnyList)
-                      AmsButton(
-                        label: 'New ${_cfg?.name ?? 'Record'}',
-                        icon: Icons.add_rounded,
-                        onPressed: () => setState(() {
-                          _viewRecord = null;
-                          _showForm = true;
-                        }),
-                      )
-                    else
-                      AmsButton(
-                        label: 'Back',
-                        variant: AmsButtonVariant.outline,
-                        small: true,
-                        icon: Icons.arrow_back_ios_new_rounded,
-                        onPressed: [
-                                  'USR-CRT',
-                                  'USR-ROLE',
-                                  'ROLE-CRT',
-                                  'MOD-CRT',
-                                  'MENU-CRT',
-                                  'AUTHCTL',
-                                  'PGM-CRT'
-                                ].contains(_selProg) &&
-                                _showForm
-                            ? () => setState(() => _showForm = false)
-                            : widget.onBack,
-                      ),
-                  ],
-                ),
-              ],
+          AmsIdentityHeader(
+            icon: Icon(
+              _selProg == 'USR-CRT' ? Icons.person_add_rounded : 
+              _selProg == 'ROLE-CRT' ? Icons.shield_rounded :
+              Icons.admin_panel_settings_rounded,
+              size: 28, color: AppColors.tBlue
             ),
+            title: _selProg == 'USR-ROLE'
+                ? (isAnyList ? 'Role Assign' : 'New Role Assign')
+                : (_cfg != null
+                    ? (isAnyList ? _cfg!.name : 'New ${_cfg!.name}')
+                    : 'New Record'),
+            subtitle: isAnyList ? 'Manage and view existing records.' : 'Fill in the information to create a new record.',
+            badges: [
+              if (isAnyList) AmsBadge(label: 'List View') else AmsBadge(label: 'Entry Form', background: AppColors.tBlueLt, color: AppColors.tBlue),
+            ],
+            accentColor: AppColors.tBlue,
+            accentLt: AppColors.tBlueLt,
+            accentMd: AppColors.tBlueMd,
+            breadcrumbs: [
+              HeaderBreadcrumb(label: 'Home', onTap: widget.onBack),
+              HeaderBreadcrumb(label: 'Masters', onTap: widget.onBack),
+              if (_selProg != null) HeaderBreadcrumb(label: _cfg?.name ?? _selProg!),
+            ],
+            onBack: [
+                      'USR-CRT',
+                      'USR-ROLE',
+                      'ROLE-CRT',
+                      'MOD-CRT',
+                      'MENU-CRT',
+                      'AUTHCTL',
+                      'PGM-CRT'
+                    ].contains(_selProg) &&
+                    _showForm
+                ? () => setState(() => _showForm = false)
+                : widget.onBack,
+            actions: [
+              if (isAnyList)
+                AmsButton(
+                  label: 'New ${_cfg?.name ?? 'Record'}',
+                  icon: Icons.add_rounded,
+                  small: true,
+                  backgroundColor: AppColors.sidebar,
+                  onPressed: () => setState(() {
+                    _viewRecord = null;
+                    _showForm = true;
+                  }),
+                ),
+            ],
           ),
 
           // Main Content Area (Single Scrollable View)
@@ -238,6 +234,7 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
                 AmsButton(
                     label: _viewRecord != null ? 'Back to List' : 'Cancel',
                     variant: AmsButtonVariant.ghost,
+                    backgroundColor: Colors.transparent,
                     onPressed: () {
                       if ([
                             'USR-CRT',
@@ -263,6 +260,7 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
                       variant: isDirectSave
                           ? AmsButtonVariant.green
                           : AmsButtonVariant.primary,
+                      backgroundColor: isDirectSave ? AppColors.green : AppColors.sidebar,
                       onPressed: _doSubmit),
               ],
             ),
