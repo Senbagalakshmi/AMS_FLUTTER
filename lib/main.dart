@@ -1,3 +1,4 @@
+import 'package:ams_flutter/screens/gl_segments_screen.dart';
 import 'package:flutter/material.dart';
 import 'screens/gl_allowed_branch_screen.dart';
 import 'screens/gl_allowed_currency_screen.dart';
@@ -354,6 +355,12 @@ class _AmsRootState extends State<AmsRoot> {
             onBack: () => _navigate('list'),
             onBackToModule: () => _handleProceed('GL'),
             onChanged: (k, v) {},
+          );
+        } else if (_state.selectedProg == 'GL-SEG') {
+          body = GlSegmentsScreen(
+            onBack: () => _navigate('list'),
+            onBackToModule: () => _handleProceed('GL'),
+            userName: _state.userName,
           );
         } else {
           body = NonTranEntryScreen(
