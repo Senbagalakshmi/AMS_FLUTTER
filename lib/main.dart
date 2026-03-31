@@ -15,7 +15,7 @@ import 'screens/program_list_screen.dart';
 import 'screens/gl_category_screen.dart';
 import 'screens/gl_master_screen.dart';
 import 'screens/submenu_dashboard_screen.dart';
-
+import 'screens/gl_attribute_screen.dart';
 import 'screens/nontran_auth_screen.dart';
 import 'screens/auth_config_screen.dart';
 import 'screens/modal_queue_direct.dart';
@@ -344,7 +344,15 @@ class _AmsRootState extends State<AmsRoot> {
             onBackToModule: () => _handleProceed('GL'),
             userName: _state.userName,
           );
-        } else if (_state.selectedProg == 'GL-CUR') {
+        } 
+        else if (_state.selectedProg == 'GL-ATT') {
+  body = GLAttributeScreen(
+    onBack: () => _navigate('list'),
+    onBackToModule: () => _handleProceed('GL'),
+    userName: _state.userName,
+  );
+}
+        else if (_state.selectedProg == 'GL-CUR') {
           body = AllowedCurrencyScreen(
             onBack: () => _navigate('list'),
             onBackToModule: () => _handleProceed('GL'),
