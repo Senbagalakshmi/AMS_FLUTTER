@@ -29,6 +29,7 @@ class NonTranAuthScreen extends StatefulWidget {
 class _NonTranAuthScreenState extends State<NonTranAuthScreen> {
   AuthRecord? _selectedRecord;
   final _remarksCtrl = TextEditingController();
+  bool _showForm = false; // State to toggle between Queue and Detail screen
 
   @override
   void initState() {
@@ -40,6 +41,13 @@ class _NonTranAuthScreenState extends State<NonTranAuthScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_showForm && _selectedRecord != null) {
+      return _buildFullDetailScreen();
+    }
+    return _buildQueueScreen();
+  }
+
+  Widget _buildQueueScreen() {
     return Scaffold(
       backgroundColor: AppColors.bg,
       body: Column(
@@ -58,7 +66,7 @@ class _NonTranAuthScreenState extends State<NonTranAuthScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                          'Authorization',
+                            'Authorization',
                             style: bodyStyle(
                                 size: 22,
                                 weight: FontWeight.w700,
@@ -108,7 +116,12 @@ class _NonTranAuthScreenState extends State<NonTranAuthScreen> {
                         widget.onLock!(r);
                       }
                     },
-                    onView: _showDetailsDialog,
+                    onView: (r) {
+                      setState(() {
+                        _selectedRecord = r;
+                        _showForm = true;
+                      });
+                    },
                   ),
 
                   if (_selectedRecord != null) ...[
@@ -122,175 +135,168 @@ class _NonTranAuthScreenState extends State<NonTranAuthScreen> {
           ),
 
           // ── Submit Bar ───────────────────────────────────────────────
-          AmsSubmitBar(
-            borderColor: AppColors.tBlue,
-            actions: [
-              AmsButton(
-                label: 'Approve',
-                variant: AmsButtonVariant.primary,
-                icon: Icons.arrow_forward_rounded,
-                onPressed: () async {
-                  if (_selectedRecord == null) return;
-                  await widget.onProcess(_selectedRecord!, true);
-                  if (widget.onRefresh != null) {
-                    await widget.onRefresh!();
-                  }
-                  if (context.mounted) {
-                    showAmsToast(context, '✅', 'Record Approved');
-                  }
-                },
-              ),
-              const SizedBox(width: 8),
-              AmsButton(
-                label: 'Reject',
-                variant: AmsButtonVariant.outline,
-                onPressed: () async {
-                  if (_selectedRecord == null) return;
-                  
-                  final confirmed = await showDialog<bool>(
-                    context: context,
-                    builder: (ctx) => AlertDialog(
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      title: Text('Confirm Rejection', style: bodyStyle(weight: FontWeight.w700)),
-                      content: Text('Are you sure you want to reject this record?', style: bodyStyle()),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(ctx, false),
-                          child: Text('Cancel', style: bodyStyle(color: AppColors.ink3)),
-                        ),
-                        AmsButton(
-                          label: 'Yes, Reject',
-                          variant: AmsButtonVariant.danger,
-                          small: true,
-                          onPressed: () => Navigator.pop(ctx, true),
-                        ),
-                      ],
-                    ),
-                  );
+          _buildActionFooter(),
+        ],
+      ),
+    );
+  }
 
-                  if (confirmed == true) {
-                    await widget.onProcess(_selectedRecord!, false);
-                    if (widget.onRefresh != null) {
-                      await widget.onRefresh!();
-                    }
-                    if (context.mounted) {
-                      showAmsToast(context, '❌', 'Record Rejected', type: 'e');
-                    }
-                  }
-                },
+  Widget _buildActionFooter() {
+    return AmsSubmitBar(
+      borderColor: AppColors.tBlue,
+      actions: [
+        AmsButton(
+          label: 'Approve',
+          variant: AmsButtonVariant.primary,
+          icon: Icons.arrow_forward_rounded,
+          onPressed: () async {
+            if (_selectedRecord == null) return;
+            await widget.onProcess(_selectedRecord!, true);
+            if (widget.onRefresh != null) {
+              await widget.onRefresh!();
+            }
+            if (mounted) {
+              showAmsToast(context, '✅', 'Record Approved');
+              setState(() {
+                _showForm = false;
+                if (widget.authQueue.isEmpty) _selectedRecord = null;
+              });
+            }
+          },
+        ),
+        const SizedBox(width: 8),
+        AmsButton(
+          label: 'Reject',
+          variant: AmsButtonVariant.outline,
+          onPressed: () async {
+            if (_selectedRecord == null) return;
+            
+            final confirmed = await showDialog<bool>(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                title: Text('Confirm Rejection', style: bodyStyle(weight: FontWeight.w700)),
+                content: Text('Are you sure you want to reject this record?', style: bodyStyle()),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx, false),
+                    child: Text('Cancel', style: bodyStyle(color: AppColors.ink3)),
+                  ),
+                  AmsButton(
+                    label: 'Yes, Reject',
+                    variant: AmsButtonVariant.danger,
+                    small: true,
+                    onPressed: () => Navigator.pop(ctx, true),
+                  ),
+                ],
               ),
-              const SizedBox(width: 8),
-              AmsButton(
-                label: 'Request for Correction',
-                variant: AmsButtonVariant.outline,
-                icon: Icons.edit_note_rounded,
-                onPressed: () {
-                  showAmsToast(
-                      context, '🔄', 'Sent for Correction',
-                      type: 'w');
-                },
-              ),
+            );
+
+            if (confirmed == true) {
+              await widget.onProcess(_selectedRecord!, false);
+              if (widget.onRefresh != null) {
+                await widget.onRefresh!();
+              }
+              if (mounted) {
+                showAmsToast(context, '❌', 'Record Rejected', type: 'e');
+                setState(() {
+                  _showForm = false;
+                });
+              }
+            }
+          },
+        ),
+        const SizedBox(width: 8),
+        AmsButton(
+          label: 'Correction',
+          variant: AmsButtonVariant.outline,
+          icon: Icons.edit_note_rounded,
+          onPressed: () {
+            showAmsToast(context, '🔄', 'Sent for Correction', type: 'w');
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFullDetailScreen() {
+    final record = _selectedRecord!;
+    return Scaffold(
+      backgroundColor: AppColors.bg,
+      body: Column(
+        children: [
+          AmsIdentityHeader(
+            icon: const Icon(Icons.description_rounded, color: AppColors.tBlue, size: 28),
+            title: 'Authorize - ${record.authSl}',
+            subtitle: '${record.programId} Review',
+            badges: [AmsBadge(label: record.primaryKey, color: AppColors.ink)],
+            accentColor: AppColors.tBlue,
+            accentLt: AppColors.tBlueLt,
+            accentMd: AppColors.tBlueMd,
+            breadcrumbs: [
+              HeaderBreadcrumb(label: 'Home', onTap: widget.onBack),
+              HeaderBreadcrumb(label: 'Auth Queue', onTap: () => setState(() => _showForm = false)),
+              HeaderBreadcrumb(label: 'Record Details'),
             ],
+            onBack: () => setState(() => _showForm = false),
+          ),
+          Expanded(
+            child: Container(
+              margin: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: Column(
+                children: [
+                  // Form-like header
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: const BoxDecoration(
+                      color: AppColors.sidebar,
+                      borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+                    ),
+                    child: Text(
+                      "Review Record Data (View Only)",
+                      style: bodyStyle(color: Colors.white, weight: FontWeight.w700),
+                    ),
+                  ),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          ...record.dataBlocks.map((block) {
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                DynamicNTFields(
+                                  prog: record.programId,
+                                  onChanged: (k, v) {},
+                                  initialData: block.data,
+                                  isViewMode: true,
+                                ),
+                              ],
+                            );
+                          }),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 
-  void _showDetailsDialog(AuthRecord record) {
-    showDialog(
-      context: context,
-      builder: (ctx) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        insetPadding:
-            const EdgeInsets.symmetric(horizontal: 40, vertical: 60),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 620, maxHeight: 600),
-          child: Column(
-            children: [
-              // Dialog header
-              Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 24, vertical: 18),
-                decoration: const BoxDecoration(
-                  color: AppColors.tBlue,
-                  borderRadius:
-                      BorderRadius.vertical(top: Radius.circular(16)),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.description_rounded,
-                        color: Colors.white, size: 20),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Record Details — ${record.authSl}',
-                              style: bodyStyle(
-                                  size: 16,
-                                  weight: FontWeight.w700,
-                                  color: Colors.white)),
-                          Text(
-                              '${record.programId} · ${record.primaryKey}',
-                              style: monoStyle(
-                                  size: 11,
-                                  color: Colors.white70)),
-                        ],
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close,
-                          color: Colors.white, size: 20),
-                      onPressed: () => Navigator.pop(ctx),
-                    ),
-                  ],
-                ),
-              ),
-              // Dialog body
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      ...record.dataBlocks.map((block) {
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            DynamicNTFields(
-                              prog: record.programId,
-                              onChanged: (k, v) {}, // Locked inside isViewMode
-                              initialData: block.data,
-                              isViewMode: true,
-                            ),
-                            const Divider(height: 28),
-                          ],
-                        );
-                      }),
-                    ],
-                  ),
-                ),
-              ),
-              // Dialog footer
-              Padding(
-                padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
-                child: Align(
-                  alignment: Alignment.centerRight,
-                  child: AmsButton(
-                    label: 'Close',
-                    variant: AmsButtonVariant.outline,
-                    small: true,
-                    onPressed: () => Navigator.pop(ctx),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+
+
 
 
 }
@@ -536,12 +542,42 @@ class _ViewButtonState extends State<_ViewButton> {
 class _AuthDetailPanel extends StatelessWidget {
   final AuthRecord record;
   final TextEditingController remarksCtrl;
+  final bool readOnly;
 
-  const _AuthDetailPanel(
-      {required this.record, required this.remarksCtrl});
+  const _AuthDetailPanel({
+    required this.record,
+    required this.remarksCtrl,
+    this.readOnly = false,
+  });
 
   @override
   Widget build(BuildContext context) {
+    if (readOnly) {
+      return AmsCard(
+        headLeft: Row(
+          children: [
+            const Icon(Icons.comment_rounded, size: 18, color: AppColors.tBlue),
+            const SizedBox(width: 8),
+            Text('Reviewer Remarks',
+                style: bodyStyle(
+                    size: 14,
+                    weight: FontWeight.w600,
+                    color: AppColors.tBlue)),
+          ],
+        ),
+        child: AmsField(
+          label: 'Remarks History',
+          labelAbove: true,
+          child: AmsTextInput(
+            controller: remarksCtrl,
+            placeholder: 'No historical remarks...',
+            keyboardType: TextInputType.multiline,
+            readOnly: true,
+          ),
+        ),
+      );
+    }
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -577,6 +613,7 @@ class _AuthDetailPanel extends StatelessWidget {
                     controller: remarksCtrl,
                     placeholder: 'Enter your remarks...',
                     keyboardType: TextInputType.multiline,
+                    readOnly: readOnly,
                   ),
                 ),
               ],

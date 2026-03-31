@@ -1058,46 +1058,57 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                 label: 'MENUTYPE',
                 required: true,
                 labelAbove: true,
-                tooltip:
-                    'Method of menu assignment (Role-based vs User-based).',
-                child: AmsDropdown(
-                  initialValue: _menuType ?? (data['menutype']?.toString() == '2' ? '2 - Userwise' : '1 - Rolewise'),
-                  items: const ['1 - Rolewise', '2 - Userwise'],
-                  errorText: _errors['menuType'],
-                  isValid: _errors['menuType'] == null && _menuType != null,
-                  onChanged: widget.isViewMode
-                      ? null
-                      : (v) {
-                          setState(() { 
-                            _menuType = v; 
-                            _errors['menuType'] = v == null ? 'Menu Type required' : null; 
-                          });
-                          widget.onChanged('menuType', (v ?? '1').startsWith('1') ? 1 : 2);
-                        },
-                ),
+                tooltip: 'Method of menu assignment (Role-based vs User-based).',
+                child: widget.isViewMode 
+                  ? AmsTextInput(
+                      initialValue: (data['menutype']?.toString() == '2') ? '2 - Userwise' : '1 - Rolewise',
+                      readOnly: true,
+                    )
+                  : AmsDropdown(
+                      initialValue: _menuType ?? (data['menutype']?.toString() == '2' ? '2 - Userwise' : '1 - Rolewise'),
+                      items: const ['1 - Rolewise', '2 - Userwise'],
+                      errorText: _errors['menuType'],
+                      isValid: _errors['menuType'] == null && _menuType != null,
+                      onChanged: (v) {
+                        setState(() { 
+                          _menuType = v; 
+                          _errors['menuType'] = v == null ? 'Menu Type required' : null; 
+                        });
+                        widget.onChanged('menuType', (v ?? '1').startsWith('1') ? 1 : 2);
+                      },
+                    ),
               ),
               AmsField(
                 label: 'GENDER',
                 required: true,
                 labelAbove: true,
                 tooltip: 'The user\'s gender for profile identification.',
-                child: AmsDropdown(
-                  initialValue: _gender ?? (data['gender']?.toString().toLowerCase().startsWith('f') == true
-                      ? 'Female'
-                      : (data['gender']?.toString().toLowerCase().startsWith('o') == true
+                child: widget.isViewMode
+                  ? AmsTextInput(
+                      initialValue: _gender ?? (data['gender']?.toString().toLowerCase().startsWith('f') == true
+                        ? 'Female'
+                        : (data['gender']?.toString().toLowerCase().startsWith('o') == true
                           ? 'Other'
-                          : (data['gender'] != null ? 'Male' : null))),
-                  items: const ['Male', 'Female', 'Other'],
-                  errorText: _errors['gender'],
-                  isValid: _errors['gender'] == null && _gender != null,
-                  onChanged: widget.isViewMode ? null : (v) {
-                    setState(() { 
-                      _gender = v; 
-                      _errors['gender'] = v == null ? 'Gender required' : null; 
-                    });
-                    widget.onChanged('gender', v);
-                  },
-                ),
+                          : 'Male')),
+                      readOnly: true,
+                    )
+                  : AmsDropdown(
+                      initialValue: _gender ?? (data['gender']?.toString().toLowerCase().startsWith('f') == true
+                          ? 'Female'
+                          : (data['gender']?.toString().toLowerCase().startsWith('o') == true
+                              ? 'Other'
+                              : (data['gender'] != null ? 'Male' : null))),
+                      items: const ['Male', 'Female', 'Other'],
+                      errorText: _errors['gender'],
+                      isValid: _errors['gender'] == null && _gender != null,
+                      onChanged: (v) {
+                        setState(() { 
+                          _gender = v; 
+                          _errors['gender'] = v == null ? 'Gender required' : null; 
+                        });
+                        widget.onChanged('gender', v);
+                      },
+                    ),
               ),
               AmsField(
                 label: 'Primary Contact',
@@ -1109,15 +1120,21 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                   children: [
                     Expanded(
                       flex: 2,
-                      child: AmsDropdown(
-                        initialValue: _title ?? data['title']?.toString(),
-                        items: const ['Mr.', 'Ms.', 'Mrs.', 'Dr.', 'Prof.'],
-                        placeholder: 'TITLE',
-                        onChanged: widget.isViewMode ? null : (v) {
-                          setState(() => _title = v);
-                          widget.onChanged('title', v);
-                        },
-                      ),
+                      child: widget.isViewMode
+                        ? AmsTextInput(
+                            initialValue: _title ?? data['title']?.toString() ?? 'Mr.',
+                            readOnly: true,
+                            placeholder: 'TITLE',
+                          )
+                        : AmsDropdown(
+                            initialValue: _title ?? data['title']?.toString(),
+                            items: const ['Mr.', 'Ms.', 'Mrs.', 'Dr.', 'Prof.'],
+                            placeholder: 'TITLE',
+                            onChanged: (v) {
+                              setState(() => _title = v);
+                              widget.onChanged('title', v);
+                            },
+                          ),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
