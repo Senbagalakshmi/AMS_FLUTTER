@@ -343,23 +343,19 @@ class _AmsRootState extends State<AmsRoot> {
             onBackToModule: () => _handleProceed('GL'),
             userName: _state.userName,
           );
-        } 
-        
-        else if (_state.selectedProg == 'GL-CUR') {
-  body = AllowedCurrencyScreen(
-    
-    onChanged: (k, v) {},
-  );
-}
-
-else if (_state.selectedProg == 'GL-BRN') {
-  body = AllowedBranchScreen(
-    onBack: () => _navigate('list'),
-    onBackToModule: () => _handleProceed('GL'),
-    onChanged: (k, v) {},
-  );
-}
-          else {
+        } else if (_state.selectedProg == 'GL-CUR') {
+          body = AllowedCurrencyScreen(
+            onBack: () => _navigate('list'),
+            onBackToModule: () => _handleProceed('GL'),
+            onChanged: (k, v) {},
+          );
+        } else if (_state.selectedProg == 'GL-BRN') {
+          body = AllowedBranchScreen(
+            onBack: () => _navigate('list'),
+            onBackToModule: () => _handleProceed('GL'),
+            onChanged: (k, v) {},
+          );
+        } else {
           body = NonTranEntryScreen(
             authConfigs: _state.authConfigs,
             nonTranPrograms: nonTranPrograms,
