@@ -64,7 +64,7 @@ class _AllowedBranchScreenState
               size: 28,
               color: AppColors.tBlue,
             ),
-            title: 'Allowed Branch',
+            title: 'Allowed Branches (GL104)',
             subtitle: '',
             badges: [],
             accentColor: AppColors.tBlue,
@@ -88,7 +88,7 @@ class _AllowedBranchScreenState
 
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               child: showForm
                   ? _buildFormView()
                   : _buildListView(),
@@ -164,61 +164,101 @@ class _AllowedBranchScreenState
       ),
       child: Column(
         children: [
-
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(12),
-            color: Colors.orange,
+            color: AppColors.sidebar,
             child: Row(
-              mainAxisAlignment:
-                  MainAxisAlignment.spaceBetween,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-
                 Text(
-                  "GL104 — Allowed Branches",
+                  "Create Allowed Branches",
                   style: bodyStyle(
                     color: Colors.white,
                     weight: FontWeight.bold,
                   ),
                 ),
-
-                IconButton(
-                  icon: const Icon(
-                    Icons.close,
-                    color: Colors.white,
-                  ),
-                  onPressed: () {
-                    setState(() {
-                      showForm = false;
-                    });
-                  },
-                )
-
+                const Icon(
+                  Icons.keyboard_arrow_down_rounded,
+                  color: Colors.white,
+                ),
               ],
             ),
           ),
-
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(24),
-              child: _buildForm(),
+              child: _buildFormContentOnly(),
             ),
           ),
-
+          if (!_isViewOnly) _buildFixedFooter(),
         ],
       ),
     );
   }
 
-  /// ================================
-  /// FORM UI
-  /// ================================
-  Widget _buildForm() {
-    return Column(
-      crossAxisAlignment:
-          CrossAxisAlignment.start,
-      children: [
+  Widget _buildFixedFooter() {
+    return AmsSubmitBar(
+      borderColor: AppColors.border,
+      actions: [
+        if (_isLoading)
+          const SizedBox(
+            width: 80,
+            height: 36,
+            child: Center(
+              child: SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: AppColors.tBlue,
+                ),
+              ),
+            ),
+          )
+        else ...[
+          AmsButton(
+            label: _isEditMode ? 'Update' : 'Save',
+            variant: AmsButtonVariant.primary,
+            backgroundColor: AppColors.sidebar,
+            onPressed: () {
+              showAmsToast(context, '✅', 'Allowed branches updated successfully.');
+              setState(() {
+                showForm = false;
+              });
+            },
+          ),
+          AmsButton(
+            label: 'Clear',
+            icon: Icons.clear_all_rounded,
+            variant: AmsButtonVariant.outline,
+            onPressed: () {
+              setState(() {
+                for (var b in branches) {
+                  b["enabled"] = false;
+                }
+              });
+            },
+          ),
+          AmsButton(
+            label: 'Cancel',
+            icon: Icons.close_rounded,
+            variant: AmsButtonVariant.danger,
+            onPressed: () {
+              setState(() {
+                showForm = false;
+              });
+            },
+          ),
+        ],
+      ],
+    );
+  }
 
+  Widget _buildFormContentOnly() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
         /// Select GL
         AmsField(
           label: "Select GL Account",
@@ -228,129 +268,144 @@ class _AllowedBranchScreenState
             onChanged: (v) {},
           ),
         ),
-
         const SizedBox(height: 20),
-
         /// Branch List
         ...branches.map((branch) {
-
-          return Container(
-            margin: const EdgeInsets.only(bottom: 10),
-            padding: const EdgeInsets.all(12),
+          final isEnabled = branch["enabled"] == true;
+          return AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: branch["enabled"]
-                  ? Colors.green.shade50
-                  : Colors.grey.shade200,
+              color: isEnabled
+                  ? AppColors.tBlue.withOpacity(0.05)
+                  : Colors.white,
+              borderRadius: BorderRadius.circular(10),
               border: Border.all(
-                color: AppColors.border,
+                color: isEnabled ? AppColors.tBlue.withOpacity(0.3) : AppColors.border,
+                width: 1,
               ),
+              boxShadow: isEnabled ? [
+                BoxShadow(
+                  color: AppColors.tBlue.withOpacity(0.1),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                )
+              ] : [],
             ),
-            child: Row(
+            child: Stack(
               children: [
-
-                SizedBox(
-                  width: 60,
-                  child: Text(
-                    branch["code"],
-                    style: bodyStyle(
-                      weight: FontWeight.bold,
+                // Unique Left Accent Bar
+                if (isEnabled)
+                  Positioned(
+                    left: 0,
+                    top: 0,
+                    bottom: 0,
+                    child: Container(
+                      width: 4,
+                      decoration: BoxDecoration(
+                        color: AppColors.tBlue,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
                     ),
                   ),
-                ),
-
-                Expanded(
-                  child: Text(
-                    branch["name"],
-                    style: bodyStyle(),
-                  ),
-                ),
-
-                GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      branch["enabled"] =
-                          !branch["enabled"];
-                    });
-                  },
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(
-                            horizontal: 20,
-                            vertical: 8),
-                    color: branch["enabled"]
-                        ? Colors.green
-                        : Colors.grey,
-                    child: Text(
-                      branch["enabled"]
-                          ? "ON"
-                          : "OFF",
-                      style: const TextStyle(
-                          color: Colors.white),
-                    ),
+                Padding(
+                  padding: EdgeInsets.only(left: isEnabled ? 12 : 0),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: isEnabled ? AppColors.tBlueLt : AppColors.bg,
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(
+                            color: isEnabled ? AppColors.tBlue.withOpacity(0.2) : AppColors.border,
+                          ),
+                        ),
+                        child: Text(
+                          branch["code"],
+                          style: bodyStyle(
+                            size: 11,
+                            weight: FontWeight.w800,
+                            color: isEnabled ? AppColors.tBlue : AppColors.ink2,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 20),
+                      Expanded(
+                        child: Text(
+                          branch["name"],
+                          style: bodyStyle(
+                            color: isEnabled ? AppColors.ink : AppColors.ink3,
+                            weight: isEnabled ? FontWeight.w600 : FontWeight.normal,
+                          ),
+                        ),
+                      ),
+                      _PremiumToggle(
+                        value: branch["enabled"],
+                        onChanged: (v) {
+                          setState(() {
+                            branch["enabled"] = v;
+                          });
+                        },
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
           );
-
         }).toList(),
-
         const SizedBox(height: 20),
+      ],
+    );
+  }
+}
 
-        /// Footer
-        if (!_isViewOnly)
-          AmsSubmitBar(
-            borderColor: AppColors.border,
-            actions: [
-              if (_isLoading)
-                const SizedBox(
-                  width: 80,
-                  height: 36,
-                  child: Center(
-                    child: SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: AppColors.tBlue,
-                      ),
-                    ),
-                  ),
-                )
-              else ...[
-                AmsButton(
-                  label: _isEditMode ? 'Update' : 'Save',
-                  variant: AmsButtonVariant.primary,
-                  backgroundColor: AppColors.sidebar,
-                  onPressed: () {
-                    setState(() {
-                      showForm = false;
-                    });
-                  },
-                ),
+class _PremiumToggle extends StatelessWidget {
+  final bool value;
+  final ValueChanged<bool> onChanged;
 
-                AmsButton(
-                  label: 'Clear',
-                  icon: Icons.clear_all_rounded,
-                  variant: AmsButtonVariant.outline,
-                  onPressed: () {},
-                ),
+  const _PremiumToggle({
+    required this.value,
+    required this.onChanged,
+  });
 
-                AmsButton(
-                  label: 'Cancel',
-                  icon: Icons.close_rounded,
-                  variant: AmsButtonVariant.danger,
-                  onPressed: () {
-                    setState(() {
-                      showForm = false;
-                    });
-                  },
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => onChanged(!value),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        width: 52,
+        height: 26,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(13),
+          color: value
+              ? AppColors.tBlue.withOpacity(0.8)
+              : Colors.grey.withOpacity(0.3),
+        ),
+        padding: const EdgeInsets.all(2),
+        child: AnimatedAlign(
+          duration: const Duration(milliseconds: 200),
+          alignment: value ? Alignment.centerRight : Alignment.centerLeft,
+          child: Container(
+            width: 22,
+            height: 22,
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black12,
+                  blurRadius: 4,
+                  offset: Offset(0, 2),
                 ),
               ],
-            ],
+            ),
           ),
-
-      ],
+        ),
+      ),
     );
   }
 }

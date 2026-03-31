@@ -2,22 +2,6 @@ import 'package:flutter/material.dart';
 import '../theme.dart';
 import '../widgets/widgets.dart';
 
-// class AllowedCurrencyScreen extends StatefulWidget {
-//   final void Function(String key, dynamic val) onChanged;
-//   final Map<String, dynamic>? initialData;
-//   final bool isViewMode;
-
-//   const AllowedCurrencyScreen({
-//     super.key,
-//     required this.onChanged,
-//     this.initialData,
-//     this.isViewMode = false,
-//   });
-
-//   @override
-//   State<AllowedCurrencyScreen> createState() =>
-//       _AllowedCurrencyScreenState();
-// }
 class AllowedCurrencyScreen extends StatefulWidget {
   final VoidCallback onBack;
   final VoidCallback onBackToModule;
@@ -35,18 +19,16 @@ class AllowedCurrencyScreen extends StatefulWidget {
   });
 
   @override
-  State<AllowedCurrencyScreen> createState() =>
-      _AllowedCurrencyScreenState();
+  State<AllowedCurrencyScreen> createState() => _AllowedCurrencyScreenState();
 }
 
-class _AllowedCurrencyScreenState
-    extends State<AllowedCurrencyScreen> {
-
+class _AllowedCurrencyScreenState extends State<AllowedCurrencyScreen> {
   bool showForm = false;
   bool _isLoading = false;
   bool _isEditMode = false;
   bool _isViewOnly = false;
-   /// GL Accounts List
+
+  /// GL Accounts List
   List<String> glAccounts = [
     "GL 10020 — Bank Operating A/c",
     "GL 10021 — Cash Account",
@@ -56,16 +38,9 @@ class _AllowedCurrencyScreenState
     "GL 10025 — Expense Account",
   ];
 
-  final TextEditingController _currencyCtrl =
-      TextEditingController();
+  final TextEditingController _currencyCtrl = TextEditingController();
 
-  List<String> currencies = [
-    "INR",
-    "USD",
-    "GBP",
-    "EUR",
-    "SGD"
-  ];
+  List<String> currencies = ["INR", "USD", "GBP", "EUR", "SGD"];
 
   final List<Color> chipColors = [
     Colors.green.shade100,
@@ -96,111 +71,88 @@ class _AllowedCurrencyScreenState
       backgroundColor: AppColors.bg,
       body: Column(
         children: [
-
-          /// Header
- /// Header
-AmsIdentityHeader(
-  icon: const Icon(
-    Icons.currency_exchange_rounded,
-    size: 28,
-    color: AppColors.tBlue,
-  ),
-  title: 'Allowed Currency',
-  subtitle: '',
-  badges: [],
-  accentColor: AppColors.tBlue,
-  accentLt: AppColors.tBlueLt,
-  accentMd: AppColors.tBlueMd,
-  breadcrumbs: [
-    HeaderBreadcrumb(
-      label: 'Home',
-      onTap: () {},
-    ),
-    HeaderBreadcrumb(
-      label: 'GL Module',
-      onTap: () {},
-    ),
-    HeaderBreadcrumb(
-      label: 'Allowed Currency',
-    ),
-  ],
-  onBack: () {
-    Navigator.pop(context);
-  },
-),
-
+          AmsIdentityHeader(
+            icon: const Icon(
+              Icons.currency_exchange_rounded,
+              size: 28,
+              color: AppColors.tBlue,
+            ),
+            title: 'Allowed Currencies',
+            subtitle: '',
+            badges: [],
+            accentColor: AppColors.tBlue,
+            accentLt: AppColors.tBlueLt,
+            accentMd: AppColors.tBlueMd,
+            breadcrumbs: [
+              HeaderBreadcrumb(
+                label: 'Home',
+                onTap: widget.onBack,
+              ),
+              HeaderBreadcrumb(
+                label: 'GL Module',
+                onTap: widget.onBackToModule,
+              ),
+              HeaderBreadcrumb(
+                label: 'Allowed Currency',
+              ),
+            ],
+            onBack: widget.onBackToModule,
+          ),
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: showForm
-                  ? _buildFullFormView()
-                  : _buildFullListView(),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              child: showForm ? _buildFormView() : _buildListView(),
             ),
           ),
-
         ],
       ),
     );
   }
 
-  /// List View
-Widget _buildFullListView() {
-  return Container(
-    decoration: BoxDecoration(
-      color: Colors.white,
-      border: Border.all(color: AppColors.border),
-      borderRadius: BorderRadius.circular(8),
-    ),
-    child: Column(
-      children: [
-
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-
-              /// Search
-              Expanded(
-                child: AmsTextInput(
-                  icon: Icons.search_rounded,
-                  placeholder: 'Search branches...',
-                  onChanged: (v) {},
+  Widget _buildListView() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: AppColors.border),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Expanded(
+                  child: AmsTextInput(
+                    icon: Icons.search_rounded,
+                    placeholder: 'Search currencies...',
+                    onChanged: (v) {},
+                  ),
                 ),
-              ),
-
-              const SizedBox(width: 16),
-
-              /// Refresh
-              IconButton(
-                icon: const Icon(
-                  Icons.refresh_rounded,
+                const SizedBox(width: 16),
+                IconButton(
+                  icon: const Icon(Icons.refresh_rounded),
+                  onPressed: () {},
                 ),
-                onPressed: () {},
-              ),
-
-              const SizedBox(width: 16),
-
-              /// Add New
-              AmsButton(
-                label: '+ Add New',
-                variant: AmsButtonVariant.primary,
-                onPressed: () {
-                  setState(() {
-                    showForm = true;
-                  });
-                },
-              ),
-
-            ],
+                const SizedBox(width: 16),
+                AmsButton(
+                  label: '+ Add New',
+                  variant: AmsButtonVariant.primary,
+                  onPressed: () {
+                    setState(() {
+                      showForm = true;
+                    });
+                  },
+                ),
+              ],
+            ),
           ),
-        ),
+        ],
+      ),
+    );
+  }
 
-      ],
-    ),
-  );
-}
-  /// Form View
-  Widget _buildFullFormView() {
+  Widget _buildFormView() {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -209,209 +161,279 @@ Widget _buildFullListView() {
       ),
       child: Column(
         children: [
-
-          /// Form Header
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(12),
-            color: Colors.purple,
+            color: AppColors.sidebar,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-
                 Text(
-                  "GL103 — Allowed Currencies",
+                  "Create Allowed Currencies",
                   style: bodyStyle(
                     color: Colors.white,
                     weight: FontWeight.bold,
                   ),
                 ),
-
-                IconButton(
-                  icon: const Icon(
-                    Icons.close,
-                    color: Colors.white,
-                  ),
-                  onPressed: () {
-                    setState(() {
-                      showForm = false;
-                    });
-                  },
-                )
-
+                const Icon(
+                  Icons.keyboard_arrow_down_rounded,
+                  color: Colors.white,
+                ),
               ],
             ),
           ),
-
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(24),
-              child: _buildForm(),
+              child: _buildFormContentOnly(),
             ),
-          )
-
+          ),
+          if (!_isViewOnly) _buildFixedFooter(),
         ],
       ),
     );
   }
 
-  /// Form UI
-  Widget _buildForm() {
+  Widget _buildFixedFooter() {
+    return AmsSubmitBar(
+      borderColor: AppColors.border,
+      actions: [
+        if (_isLoading)
+          const SizedBox(
+            width: 80,
+            height: 36,
+            child: Center(
+              child: SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: AppColors.tBlue,
+                ),
+              ),
+            ),
+          )
+        else ...[
+          AmsButton(
+            label: _isEditMode ? 'Update' : 'Save',
+            variant: AmsButtonVariant.primary,
+            backgroundColor: AppColors.sidebar,
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  backgroundColor: Colors.transparent,
+                  elevation: 0,
+                  content: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                    decoration: BoxDecoration(
+                      color: AppColors.sidebar,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.2),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        )
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.check_circle_rounded, color: Colors.greenAccent, size: 28),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Success!',
+                                style: bodyStyle(color: Colors.white, weight: FontWeight.w800, size: 16),
+                              ),
+                              Text(
+                                'Allowed currencies updated successfully.',
+                                style: bodyStyle(color: Colors.white.withOpacity(0.8), size: 14),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+              setState(() {
+                showForm = false;
+              });
+            },
+          ),
+          AmsButton(
+            label: 'Clear',
+            icon: Icons.clear_all_rounded,
+            variant: AmsButtonVariant.outline,
+            onPressed: () {
+              setState(() {
+                currencies.clear();
+                _currencyCtrl.clear();
+              });
+            },
+          ),
+          AmsButton(
+            label: 'Cancel',
+            icon: Icons.close_rounded,
+            variant: AmsButtonVariant.danger,
+            onPressed: () {
+              setState(() {
+                showForm = false;
+              });
+            },
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildFormContentOnly() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-
         /// Select GL
         AmsField(
           label: "Select GL Account",
           labelAbove: true,
           child: AmsDropdown(
-              items: glAccounts,
+            items: glAccounts,
             onChanged: (v) {},
           ),
         ),
-
         const SizedBox(height: 20),
-
         Text(
-          "Allowed Currencies",
+          "Manage Currencies",
           style: bodyStyle(
-            weight: FontWeight.w600,
+            weight: FontWeight.w700,
+            size: 14,
+            color: AppColors.ink2,
           ),
         ),
-
-        const SizedBox(height: 12),
-
-        /// Chips
-        Wrap(
-          spacing: 12,
-          runSpacing: 12,
-          children:
-              currencies.asMap().entries.map((entry) {
-
-            int index = entry.key;
-            String c = entry.value;
-
-            return Container(
-              padding:
-                  const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 10),
-              decoration: BoxDecoration(
-                color: chipColors[
-                    index %
-                        chipColors.length],
-                border: Border.all(
-                  color: chipColors[
-                      index %
-                          chipColors.length],
+        const SizedBox(height: 16),
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: AppColors.border),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.02),
+                blurRadius: 8,
+                offset: const Offset(0, 4),
+              )
+            ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Current Allowed Currencies",
+                  style: bodyStyle(weight: FontWeight.w600, color: AppColors.ink),
                 ),
-              ),
-              child: Row(
-                mainAxisSize:
-                    MainAxisSize.min,
-                children: [
-                  Text(c),
-                  const SizedBox(width: 6),
-                  GestureDetector(
-                    onTap: () =>
-                        removeCurrency(c),
-                    child: const Icon(
-                      Icons.close,
-                      size: 16,
+                const SizedBox(height: 16),
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: currencies.asMap().entries.map((entry) {
+                    int index = entry.key;
+                    String c = entry.value;
+                    final baseColor = chipColors[index % chipColors.length];
+                    return AnimatedContainer(
+                      duration: const Duration(milliseconds: 300),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [baseColor.withOpacity(0.1), Colors.white],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        border: Border.all(
+                          color: baseColor.withOpacity(0.4),
+                          width: 1.5,
+                        ),
+                        borderRadius: BorderRadius.circular(10),
+                        boxShadow: [
+                          BoxShadow(
+                            color: baseColor.withOpacity(0.1),
+                            blurRadius: 8,
+                            offset: const Offset(0, 4),
+                          )
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: baseColor,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.currency_exchange_rounded, size: 10, color: Colors.white),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(c, style: bodyStyle(weight: FontWeight.w800, color: AppColors.ink, size: 13)),
+                          const SizedBox(width: 10),
+                          GestureDetector(
+                            onTap: () => removeCurrency(c),
+                            child: Icon(
+                              Icons.close_rounded,
+                              size: 16,
+                              color: AppColors.ink.withOpacity(0.4),
+                            ),
+                          )
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  "Add New Currency",
+                  style: bodyStyle(weight: FontWeight.w600, color: AppColors.ink),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: AmsTextInput(
+                        controller: _currencyCtrl,
+                        placeholder: "e.g. JPY, CAD, AUD",
+                      ),
                     ),
-                  )
-                ],
-              ),
-            );
-          }).toList(),
-        ),
-
-        const SizedBox(height: 20),
-
-        /// Add Currency
-        Row(
-          children: [
-            Expanded(
-              child: AmsTextInput(
-                controller: _currencyCtrl,
-                placeholder:
-                    "Add currency code (e.g. JPY)",
-              ),
-            ),
-            const SizedBox(width: 8),
-            GestureDetector(
-              onTap: addCurrency,
-              child: Container(
-                padding:
-                    const EdgeInsets.all(12),
-                color: Colors.deepPurple,
-                child: const Icon(
-                  Icons.add,
-                  color: Colors.white,
+                    const SizedBox(width: 12),
+                    GestureDetector(
+                      onTap: addCurrency,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: AppColors.sidebar,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.add_rounded, color: Colors.white, size: 20),
+                            const SizedBox(width: 8),
+                            Text("Add", style: bodyStyle(color: Colors.white, weight: FontWeight.w600)),
+                          ],
+                        ),
+                      ),
+                    )
+                  ],
                 ),
-              ),
-            )
-          ],
-        ),
-
-        const SizedBox(height: 20),
-
-        /// Buttons
- if (!_isViewOnly)
-  AmsSubmitBar(
-    borderColor: AppColors.border,
-    actions: [
-      if (_isLoading)
-        const SizedBox(
-          width: 80,
-          height: 36,
-          child: Center(
-            child: SizedBox(
-              width: 20,
-              height: 20,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: AppColors.tBlue,
-              ),
+              ],
             ),
           ),
-        )
-      else ...[
-        AmsButton(
-          label: _isEditMode ? 'Update' : 'Save',
-          variant: AmsButtonVariant.primary,
-          backgroundColor: AppColors.sidebar,
-          onPressed: () {
-            setState(() {
-              showForm = false;
-            });
-          },
         ),
-
-        AmsButton(
-          label: 'Clear',
-          icon: Icons.clear_all_rounded,
-          variant: AmsButtonVariant.outline,
-          onPressed: () {},
-        ),
-
-        AmsButton(
-          label: 'Cancel',
-          icon: Icons.close_rounded,
-          variant: AmsButtonVariant.danger,
-          onPressed: () {
-            setState(() {
-              showForm = false;
-            });
-          },
-        ),
-      ],
-    ],
-    ),
-
-      
-
+        const SizedBox(height: 20),
       ],
     );
   }

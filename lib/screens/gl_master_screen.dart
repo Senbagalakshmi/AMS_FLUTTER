@@ -366,7 +366,7 @@ class _GLMasterScreenState extends State<GLMasterScreen> {
           AmsIdentityHeader(
             icon: const Icon(Icons.account_balance_wallet_rounded,
                 size: 28, color: AppColors.tBlue),
-            title: 'GL Master Account (GL102)',
+            title: 'GL Master Account',
             subtitle: '',
             badges: [],
             accentColor: AppColors.tBlue,
@@ -374,7 +374,8 @@ class _GLMasterScreenState extends State<GLMasterScreen> {
             accentMd: AppColors.tBlueMd,
             breadcrumbs: [
               HeaderBreadcrumb(label: 'Home', onTap: widget.onBack),
-              HeaderBreadcrumb(label: 'GL Module', onTap: widget.onBackToModule),
+              HeaderBreadcrumb(
+                  label: 'GL Module', onTap: widget.onBackToModule),
               HeaderBreadcrumb(label: 'GL Master'),
             ],
             onBack: widget.onBackToModule,
@@ -702,7 +703,9 @@ class _GLMasterScreenState extends State<GLMasterScreen> {
                   Text(
                     _isViewOnly
                         ? 'View GL Account'
-                        : (_isEditing ? 'Edit GL Account' : 'Create GL Account'),
+                        : (_isEditing
+                            ? 'Edit GL Account'
+                            : 'Create GL Account'),
                     style: bodyStyle(
                         size: 14, color: Colors.white, weight: FontWeight.w700),
                   ),
@@ -890,117 +893,113 @@ class _GLMasterScreenState extends State<GLMasterScreen> {
 
   Widget _buildFormUI() {
     return AmsFormGrid(
-        children: [
-          AmsField(
-            label: 'Org Code',
-            required: true,
-            labelAbove: true,
-            tooltip: 'Organization Code',
-            child: AmsTextInput(
-              controller: _orgCodeController,
-              focusNode: _orgFocus,
-              errorText: _orgError,
-              isValid: _orgCodeController.text.trim().isNotEmpty &&
-                  _orgError == null,
-              textInputAction: TextInputAction.next,
-              onFieldSubmitted: (v) =>
-                  _validateField(v, 'org', _glNumberFocus),
-              placeholder: 'e.g. 1',
-            ),
+      children: [
+        AmsField(
+          label: 'Org Code',
+          required: true,
+          labelAbove: true,
+          tooltip: 'Organization Code',
+          child: AmsTextInput(
+            controller: _orgCodeController,
+            focusNode: _orgFocus,
+            errorText: _orgError,
+            isValid:
+                _orgCodeController.text.trim().isNotEmpty && _orgError == null,
+            textInputAction: TextInputAction.next,
+            onFieldSubmitted: (v) => _validateField(v, 'org', _glNumberFocus),
+            placeholder: 'e.g. 1',
           ),
-          AmsField(
-            label: 'GL Number',
-            required: true,
-            labelAbove: true,
-            tooltip: 'Unique GL Number',
-            child: AmsTextInput(
-              controller: _glNumberController,
-              focusNode: _glNumberFocus,
-              errorText: _glNumberError,
-              isValid: _glNumberController.text.trim().isNotEmpty &&
-                  _glNumberError == null,
-              textInputAction: TextInputAction.next,
-              onFieldSubmitted: (v) =>
-                  _validateField(v, 'number', _glNameFocus),
-              placeholder: 'e.g. 10010',
-            ),
+        ),
+        AmsField(
+          label: 'GL Number',
+          required: true,
+          labelAbove: true,
+          tooltip: 'Unique GL Number',
+          child: AmsTextInput(
+            controller: _glNumberController,
+            focusNode: _glNumberFocus,
+            errorText: _glNumberError,
+            isValid: _glNumberController.text.trim().isNotEmpty &&
+                _glNumberError == null,
+            textInputAction: TextInputAction.next,
+            onFieldSubmitted: (v) => _validateField(v, 'number', _glNameFocus),
+            placeholder: 'e.g. 10010',
           ),
-          AmsField(
-            label: 'GL Name',
-            required: true,
-            labelAbove: true,
-            tooltip: 'Descriptive name for this GL Account',
-            child: AmsTextInput(
-              controller: _glNameController,
-              focusNode: _glNameFocus,
-              errorText: _glNameError,
-              isValid: _glNameController.text.trim().isNotEmpty &&
-                  _glNameError == null,
-              textInputAction: TextInputAction.next,
-              onFieldSubmitted: (v) =>
-                  _validateField(v, 'name', _categoryFocus),
-              placeholder: 'e.g. Cash In Hand',
-            ),
+        ),
+        AmsField(
+          label: 'GL Name',
+          required: true,
+          labelAbove: true,
+          tooltip: 'Descriptive name for this GL Account',
+          child: AmsTextInput(
+            controller: _glNameController,
+            focusNode: _glNameFocus,
+            errorText: _glNameError,
+            isValid: _glNameController.text.trim().isNotEmpty &&
+                _glNameError == null,
+            textInputAction: TextInputAction.next,
+            onFieldSubmitted: (v) => _validateField(v, 'name', _categoryFocus),
+            placeholder: 'e.g. Cash In Hand',
           ),
-          AmsField(
-            label: 'GL Category',
-            required: true,
-            labelAbove: true,
-            tooltip: 'Select the category for this GL Account',
-            child: _loadingCategories
-                ? const Padding(
-                    padding: EdgeInsets.all(8),
-                    child: SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2)),
-                  )
-                : AmsDropdown(
-                    focusNode: _categoryFocus,
-                    placeholder: 'Select category',
-                    initialValue: _selectedCategoryName,
-                    errorText: _categoryError,
-                    isValid: _selectedCategoryName != null &&
-                        _categoryError == null,
-                    onChanged: (val) {
-                      final match = _categoryList.firstWhere(
-                        (c) => c['glCatName']?.toString() == val,
-                        orElse: () => {},
-                      );
-                      setState(() {
-                        _selectedCategoryName = val;
-                        _selectedCategoryCd = match['glCatCd'] is int
-                            ? match['glCatCd'] as int
-                            : int.tryParse(
-                                match['glCatCd']?.toString() ?? '');
-                        _categoryError = null;
-                      });
-                      _statusFocus.requestFocus();
-                    },
-                    items: _categoryNames,
-                  ),
+        ),
+        AmsField(
+          label: 'GL Category',
+          required: true,
+          labelAbove: true,
+          tooltip: 'Select the category for this GL Account',
+          child: _loadingCategories
+              ? const Padding(
+                  padding: EdgeInsets.all(8),
+                  child: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2)),
+                )
+              : AmsDropdown(
+                  focusNode: _categoryFocus,
+                  placeholder: 'Select category',
+                  initialValue: _selectedCategoryName,
+                  errorText: _categoryError,
+                  isValid:
+                      _selectedCategoryName != null && _categoryError == null,
+                  onChanged: (val) {
+                    final match = _categoryList.firstWhere(
+                      (c) => c['glCatName']?.toString() == val,
+                      orElse: () => {},
+                    );
+                    setState(() {
+                      _selectedCategoryName = val;
+                      _selectedCategoryCd = match['glCatCd'] is int
+                          ? match['glCatCd'] as int
+                          : int.tryParse(match['glCatCd']?.toString() ?? '');
+                      _categoryError = null;
+                    });
+                    _statusFocus.requestFocus();
+                  },
+                  items: _categoryNames,
+                ),
+        ),
+        AmsField(
+          label: 'Status',
+          required: true,
+          labelAbove: true,
+          tooltip: 'Set the current status of the GL Account',
+          child: AmsDropdown(
+            focusNode: _statusFocus,
+            placeholder: 'Active / Inactive',
+            initialValue: _selectedStatus,
+            errorText: _statusError,
+            isValid: _selectedStatus != null && _statusError == null,
+            onChanged: (val) {
+              setState(() {
+                _selectedStatus = val;
+                _statusError = null;
+              });
+            },
+            items: const ['Active', 'Inactive'],
           ),
-          AmsField(
-            label: 'Status',
-            required: true,
-            labelAbove: true,
-            tooltip: 'Set the current status of the GL Account',
-            child: AmsDropdown(
-              focusNode: _statusFocus,
-              placeholder: 'Active / Inactive',
-              initialValue: _selectedStatus,
-              errorText: _statusError,
-              isValid: _selectedStatus != null && _statusError == null,
-              onChanged: (val) {
-                setState(() {
-                  _selectedStatus = val;
-                  _statusError = null;
-                });
-              },
-              items: const ['Active', 'Inactive'],
-            ),
-          ),
-        ],
+        ),
+      ],
     );
   }
 
