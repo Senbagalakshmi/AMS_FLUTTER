@@ -191,6 +191,18 @@ class ApiService {
     }
   }
 
+  Future<bool> updateAuthLock(String authSl) async {
+    try {
+      final res = await http.post(
+        Uri.parse('$baseUrl/auth/lock/$authSl'),
+        headers: _headers,
+      );
+      return res.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
+
   // --- Administrative CRUD ---
 
   Future<bool> createUser(Map<String, dynamic> data) async {

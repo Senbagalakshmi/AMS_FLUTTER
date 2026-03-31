@@ -7,6 +7,7 @@ import 'nontran_entry_screen.dart';
 class NonTranAuthScreen extends StatefulWidget {
   final List<AuthRecord> authQueue;
   final Future<void> Function(AuthRecord record, bool isApprove) onProcess;
+  final Future<void> Function(AuthRecord record)? onLock;
   final VoidCallback onBack;
   final String? userName;
   final Future<void> Function()? onRefresh;
@@ -16,6 +17,7 @@ class NonTranAuthScreen extends StatefulWidget {
     required this.authQueue,
     required this.onProcess,
     required this.onBack,
+    this.onLock,
     this.userName,
     this.onRefresh,
   });
@@ -100,7 +102,12 @@ class _NonTranAuthScreenState extends State<NonTranAuthScreen> {
                   _AuthQueueTable(
                     queue: widget.authQueue,
                     selectedRecord: _selectedRecord,
-                    onSelect: (r) => setState(() => _selectedRecord = r),
+                    onSelect: (r) {
+                      setState(() => _selectedRecord = r);
+                      if (widget.onLock != null) {
+                        widget.onLock!(r);
+                      }
+                    },
                     onView: _showDetailsDialog,
                   ),
 
