@@ -4,7 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../theme.dart';
 import '../services/user_service.dart';
 import '../services/api_service.dart';
-import 'profile_popup.dart';
+
 
 // ─── TEXT STYLES ─────────────────────────────────────────────
 TextStyle monoStyle({
@@ -110,6 +110,7 @@ class AmsButton extends StatefulWidget {
   final bool large;
   final bool small;
   final IconData? icon;
+  final Color? backgroundColor;
 
   const AmsButton({
     super.key,
@@ -119,6 +120,7 @@ class AmsButton extends StatefulWidget {
     this.large = false,
     this.small = false,
     this.icon,
+    this.backgroundColor,
   });
 
   @override
@@ -130,7 +132,7 @@ class _AmsButtonState extends State<AmsButton> {
 
   @override
   Widget build(BuildContext context) {
-    late final Color bg;
+    late Color bg;
     late final Color fg;
     Border? border;
     List<BoxShadow>? shadow;
@@ -160,6 +162,8 @@ class _AmsButtonState extends State<AmsButton> {
         fg = Colors.white;
         border = Border.all(color: AppColors.red.withValues(alpha: 0.2));
     }
+
+    if (widget.backgroundColor != null) bg = widget.backgroundColor!;
 
     final double vPad = widget.small ? 6 : widget.large ? 10 : 8;
     final double hPad = widget.small ? 12 : widget.large ? 24 : 16;
@@ -529,7 +533,7 @@ class AmsTextInput extends StatelessWidget {
             ? const Color(0xFFF7F9FC)
             : Colors.white,
         contentPadding:
-            const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
+            const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
         prefixIcon: icon != null
             ? Icon(icon, size: 18, color: AppColors.ink3)
             : null,
@@ -599,7 +603,7 @@ class AmsDropdown extends StatelessWidget {
         filled: true,
         fillColor: Colors.white,
         contentPadding:
-            const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
+            const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(5),
           borderSide:
@@ -878,6 +882,14 @@ class AmsTopBar extends StatelessWidget {
   }
 }
 
+// ─── BREADCRUMB ITEM ─────────────────────────────────────────
+class HeaderBreadcrumb {
+  final String label;
+  final VoidCallback? onTap;
+
+  HeaderBreadcrumb({required this.label, this.onTap});
+}
+
 // ─── IDENTITY HEADER ─────────────────────────────────────────
 class AmsIdentityHeader extends StatelessWidget {
   final Widget icon;
@@ -887,6 +899,7 @@ class AmsIdentityHeader extends StatelessWidget {
   final Color accentColor;
   final Color accentLt;
   final Color accentMd;
+  final List<HeaderBreadcrumb>? breadcrumbs;
   final VoidCallback onBack;
 
   const AmsIdentityHeader({
@@ -898,6 +911,7 @@ class AmsIdentityHeader extends StatelessWidget {
     required this.accentColor,
     required this.accentLt,
     required this.accentMd,
+    this.breadcrumbs,
     required this.onBack,
   });
 
@@ -935,11 +949,56 @@ class AmsIdentityHeader extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
+                if (breadcrumbs != null && breadcrumbs!.isNotEmpty) ...[
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: breadcrumbs!.asMap().entries.map((entry) {
+                        final idx = entry.key;
+                        final item = entry.value;
+                        final isLast = idx == breadcrumbs!.length - 1;
+                        return Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            GestureDetector(
+                              onTap: item.onTap,
+                              child: MouseRegion(
+                                cursor: item.onTap != null
+                                    ? SystemMouseCursors.click
+                                    : SystemMouseCursors.basic,
+                                child: Text(
+                                  item.label,
+                                  style: bodyStyle(
+                                    size: 11,
+                                    weight: isLast ? FontWeight.w800 : FontWeight.w500,
+                                    color: isLast ? accentColor : AppColors.ink4,
+                                  ).copyWith(
+                                    decoration: (item.onTap != null && !isLast)
+                                        ? TextDecoration.none
+                                        : null,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            if (!isLast)
+                              Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 6),
+                                child: Icon(Icons.chevron_right_rounded, 
+                                  size: 14, 
+                                  color: AppColors.ink4.withOpacity(0.5)
+                                ),
+                              ),
+                          ],
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                ],
                 Text(title,
                     style: bodyStyle(
-                        size: 18,
-                        weight: FontWeight.w800,
-                        color: accentColor)),
+                        size: 18, weight: FontWeight.w800, color: accentColor)),
                 if (subtitle.isNotEmpty) ...[
                   const SizedBox(height: 2),
                   Text(subtitle,
@@ -958,18 +1017,30 @@ class AmsIdentityHeader extends StatelessWidget {
             child: GestureDetector(
               onTap: onBack,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 decoration: BoxDecoration(
-                  color: AppColors.redLt,
+                  color: AppColors.red,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppColors.red.withOpacity(0.3)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.red.withOpacity(0.2),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.arrow_back_ios_new_rounded, size: 13, color: AppColors.red),
-                    const SizedBox(width: 6),
-                    Text('Back', style: bodyStyle(size: 13, weight: FontWeight.w700, color: AppColors.red)),
+                    const Icon(Icons.arrow_back_ios_new_rounded,
+                        size: 13, color: Colors.white),
+                    const SizedBox(width: 8),
+                    Text('Back',
+                        style: bodyStyle(
+                            size: 13,
+                            weight: FontWeight.w700,
+                            color: Colors.white)),
                   ],
                 ),
               ),
@@ -1312,7 +1383,7 @@ class _AmsSidebarState extends State<AmsSidebar> {
                   label: widget.isCollapsed ? '' : 'Masters',
                   icon: openMenu == 'masters' ? Icons.folder_open_rounded : Icons.folder_shared_rounded,
                   isCollapsed: widget.isCollapsed,
-                  isSelected: openMenu == 'masters' || ['USR-CRT', 'USR-ROLE', 'ROLE-CRT', 'MOD-CRT', 'MENU-CRT', 'PGM-CRT'].contains(widget.selectedProg) || widget.currentScreen == 'submenu_dashboard' && ['MASTERS', 'GL'].contains(widget.selectedProg),
+                  isSelected: (widget.currentScreen == 'submenu_dashboard' && widget.selectedProg == 'MASTERS'),
                   onTap: () {
                     setState(() {
                       openMenu = openMenu == 'masters' ? '' : 'masters';
@@ -1373,7 +1444,7 @@ class _AmsSidebarState extends State<AmsSidebar> {
                   label: widget.isCollapsed ? '' : 'GL Module',
                   icon: openMenu == 'gl' ? Icons.account_balance_rounded : Icons.account_balance_outlined,
                   isCollapsed: widget.isCollapsed,
-                  isSelected: openMenu == 'gl' || ['GL-CAT', 'GL-MST', 'GL-CUR', 'GL-BRN', 'GL-SEG', 'GL-ATT'].contains(widget.selectedProg),
+                  isSelected: (widget.currentScreen == 'submenu_dashboard' && widget.selectedProg == 'GL'),
                   onTap: () {
                     setState(() {
                       openMenu = openMenu == 'gl' ? '' : 'gl';
@@ -1435,7 +1506,7 @@ class _AmsSidebarState extends State<AmsSidebar> {
                   label: widget.isCollapsed ? '' : 'Configuration',
                   icon: Icons.settings_suggest_rounded,
                   isCollapsed: widget.isCollapsed,
-                  isSelected: openMenu == 'config' || widget.selectedProg == 'AUTHCTL' || (widget.currentScreen == 'submenu_dashboard' && widget.selectedProg == 'CONFIG'),
+                  isSelected: (widget.currentScreen == 'submenu_dashboard' && widget.selectedProg == 'CONFIG'),
                   onTap: () {
                     setState(() {
                       openMenu = openMenu == 'config' ? '' : 'config';
@@ -1461,7 +1532,7 @@ class _AmsSidebarState extends State<AmsSidebar> {
                   label: widget.isCollapsed ? '' : 'Auth Queue',
                   icon: Icons.security_rounded,
                   isCollapsed: widget.isCollapsed,
-                  isSelected: openMenu == 'auth' || widget.currentScreen == 'nontranauth' || (widget.currentScreen == 'submenu_dashboard' && widget.selectedProg == 'AUTH'),
+                  isSelected: (widget.currentScreen == 'submenu_dashboard' && widget.selectedProg == 'AUTH'),
                   onTap: () {
                     setState(() {
                       openMenu = openMenu == 'auth' ? '' : 'auth';

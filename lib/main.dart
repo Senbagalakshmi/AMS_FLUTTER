@@ -58,7 +58,13 @@ class _AmsRootState extends State<AmsRoot> {
   String? _modalAmount;
 
   void _navigate(String screen) {
-    setState(() => _state = _state.copyWith(screen: screen));
+    setState(() {
+      _state = _state.copyWith(
+        screen: screen,
+        clearProg: screen == 'list' || screen == 'login',
+        clearCategory: screen == 'list' || screen == 'login',
+      );
+    });
   }
 
   Future<void> _refreshData() async {
@@ -92,6 +98,7 @@ class _AmsRootState extends State<AmsRoot> {
         _state = _state.copyWith(
           screen: 'submenu_dashboard',
           selectedCategory: type,
+          selectedProg: type,
         );
       });
       return;
@@ -126,10 +133,10 @@ class _AmsRootState extends State<AmsRoot> {
     });
   }
 
-  void _handleNonTranSubmit(
-      String prog, Auth101Config cfg, String authsl, Map<String, dynamic> data) async {
+  void _handleNonTranSubmit(String prog, Auth101Config cfg, String authsl,
+      Map<String, dynamic> data) async {
     bool success = false;
-    
+
     // Choose API method based on program
     if (prog == 'USR-CRT') {
       success = await apiService.createUser(data);
@@ -145,7 +152,7 @@ class _AmsRootState extends State<AmsRoot> {
       success = await apiService.createAuthConfig(data);
     } else {
       // Mock success for other non-tran programs for now
-      success = true; 
+      success = true;
     }
 
     if (!mounted) return;
@@ -203,13 +210,18 @@ class _AmsRootState extends State<AmsRoot> {
 
   Future<void> _handleAuthProcess(AuthRecord record, bool isApprove) async {
     final action = isApprove ? 'approve' : 'reject';
-    
+
     int level = 1;
-    if (record.flUser != null && record.flUser != '0' && record.flUser!.trim().isNotEmpty) level = 2;
-    if (record.slUser != null && record.slUser != '0' && record.slUser!.trim().isNotEmpty) level = 3;
+    if (record.flUser != null &&
+        record.flUser != '0' &&
+        record.flUser!.trim().isNotEmpty) level = 2;
+    if (record.slUser != null &&
+        record.slUser != '0' &&
+        record.slUser!.trim().isNotEmpty) level = 3;
     final userId = _state.userName ?? 'SYSTEM';
 
-    final success = await apiService.processAuth(record.authSl, action, level, userId);
+    final success =
+        await apiService.processAuth(record.authSl, action, level, userId);
 
     if (success) {
       _toast(isApprove ? '✅' : '❌',
@@ -222,7 +234,7 @@ class _AmsRootState extends State<AmsRoot> {
 
   Future<void> _handleAuthLock(AuthRecord record) async {
     await apiService.updateAuthLock(record.authSl);
-    // Silent update, no toast needed for UI selection usually, 
+    // Silent update, no toast needed for UI selection usually,
     // but the backend will now have the lock.
   }
 
@@ -252,8 +264,8 @@ class _AmsRootState extends State<AmsRoot> {
   }
 
   void _handleNewEntry() {
-    setState(() => _state = _state.copyWith(
-        screen: 'list', clearProg: true, clearSubmitted: true));
+    setState(() => _state =
+        _state.copyWith(screen: 'list', clearProg: true, clearSubmitted: true));
   }
 
   void _closeModal() {
@@ -321,11 +333,13 @@ class _AmsRootState extends State<AmsRoot> {
         if (_state.selectedProg == 'GL-CAT') {
           body = GLCategoryScreen(
             onBack: () => _navigate('list'),
+            onBackToModule: () => _handleProceed('GL'),
             userName: _state.userName,
           );
         } else if (_state.selectedProg == 'GL-MST') {
           body = GLMasterScreen(
             onBack: () => _navigate('list'),
+            onBackToModule: () => _handleProceed('GL'),
             userName: _state.userName,
           );
         } else {
@@ -384,7 +398,7 @@ class _AmsRootState extends State<AmsRoot> {
         final cat = _state.selectedCategory;
         String title = 'Dashboard';
         List<SubmenuItem> items = [];
-        
+
         if (cat == 'MASTERS') {
           title = 'Masters';
           items = mastersSubmenus;
@@ -407,12 +421,15 @@ class _AmsRootState extends State<AmsRoot> {
         body = SubmenuDashboardScreen(
           title: title,
           items: items,
+          onBack: () => _navigate('list'),
           onNavigate: (s, p) {
             setState(() {
               _state = _state.copyWith(
                 screen: s,
                 selectedProg: p,
-                selectedType: p != null ? (tranPrograms.contains(p) ? 'T' : 'N') : _state.selectedType,
+                selectedType: p != null
+                    ? (tranPrograms.contains(p) ? 'T' : 'N')
+                    : _state.selectedType,
                 clearCategory: true,
               );
             });
@@ -452,12 +469,12 @@ class _AmsRootState extends State<AmsRoot> {
               _navigate('login');
               return;
             }
-            
+
             // Handle category navigation
             String? cat;
             if (s == 'submenu_dashboard') {
-              cat = p; // In this case 'p' is the category name
-              p = null;
+              cat = p; // Category name (e.g. 'GL')
+              // Keep p as category ID for sidebar selection logic
             }
 
             setState(() {
@@ -466,7 +483,9 @@ class _AmsRootState extends State<AmsRoot> {
                 selectedProg: p,
                 selectedCategory: cat,
                 clearCategory: cat == null,
-                selectedType: p != null ? (tranPrograms.contains(p) ? 'T' : 'N') : _state.selectedType,
+                selectedType: p != null
+                    ? (tranPrograms.contains(p) ? 'T' : 'N')
+                    : _state.selectedType,
                 clearProg: p == null,
               );
             });

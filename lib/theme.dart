@@ -12,18 +12,19 @@ class AppColors {
   static const Color border = Color(0xFFE2E8F0);
   static const Color border2 = Color(0xFFF1F5F9);
   static const Color cardHead = Color(0xFFFFFFFF);
+  static const Color sidebar = Color(0xFF1E2B5E);
 
-  // Transaction — light blue
-  static const Color tBlue = Color(0xFF2196F3);
-  static const Color tBlueLt = Color(0xFFE3F2FD);
-  static const Color tBlueMd = Color(0xFF90CAF9);
-  static const Color tBlueDk = Color(0xFF1976D2);
+  // Transaction — dark navy (sidebar color)
+  static const Color tBlue = Color(0xFF1E2B5E);
+  static const Color tBlueLt = Color(0xFFE8EAF6);
+  static const Color tBlueMd = Color(0xFF7986CB);
+  static const Color tBlueDk = Color(0xFF1A237E);
 
-  // Non-Transaction — deep ocean blue
-  static const Color nTeal = Color(0xFF0277BD);
-  static const Color nTealLt = Color(0xFFE1F5FE);
-  static const Color nTealMd = Color(0xFF4FC3F7);
-  static const Color nTealDk = Color(0xFF01579B);
+  // Non-Transaction — dark navy (consistent with sidebar)
+  static const Color nTeal = Color(0xFF1E2B5E);
+  static const Color nTealLt = Color(0xFFE8EAF6);
+  static const Color nTealMd = Color(0xFF7986CB);
+  static const Color nTealDk = Color(0xFF1A237E);
 
   // Semantic
   static const Color green = Color(0xFF22C55E); // Real green (from feature/ui)

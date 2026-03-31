@@ -47,11 +47,14 @@ class SubmenuDashboardScreen extends StatelessWidget {
   final List<SubmenuItem> items;
   final void Function(String screen, String? prog) onNavigate;
 
+  final VoidCallback onBack;
+
   const SubmenuDashboardScreen({
     super.key,
     required this.title,
     required this.items,
     required this.onNavigate,
+    required this.onBack,
   });
 
   @override
@@ -61,43 +64,30 @@ class SubmenuDashboardScreen extends StatelessWidget {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 🔹 HEADER
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      title,
-                      style: bodyStyle(
-                        size: 28,
-                        weight: FontWeight.w900,
-                        color: AppColors.ink,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 6),
-                      child: Text(
-                        '(${items.length} Modules)',
-                        style: bodyStyle(size: 14, color: AppColors.ink4, weight: FontWeight.w600),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Manage and monitor your system configurations and security protocols.',
-                  style: bodyStyle(size: 14, color: AppColors.ink3),
-                ),
-                const SizedBox(height: 24),
-                const Divider(height: 1, color: AppColors.border2),
-              ],
+        // 🔹 HEADER (Standardized)
+        Padding(
+          padding: const EdgeInsets.all(20),
+          child: AmsIdentityHeader(
+            icon: Icon(
+              title.contains('GL') ? Icons.account_balance_wallet_rounded : Icons.folder_shared_rounded,
+              size: 28, 
+              color: AppColors.tBlue
             ),
+            title: title,
+            subtitle: 'Administrative control module for system parameters.',
+            badges: [
+              AmsBadge(label: '${items.length} Modules'),
+            ],
+            accentColor: AppColors.tBlue,
+            accentLt: AppColors.tBlueLt,
+            accentMd: AppColors.tBlueMd,
+            breadcrumbs: [
+              HeaderBreadcrumb(label: 'Home', onTap: onBack),
+              HeaderBreadcrumb(label: title),
+            ],
+            onBack: onBack,
           ),
+        ),
 
           // 🔹 GRID
           Expanded(
