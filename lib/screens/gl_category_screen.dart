@@ -391,7 +391,7 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
           /// HEADER
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: const BoxDecoration(
               color: AppColors.sidebar,
               borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
@@ -432,6 +432,52 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
               child: _isViewOnly ? _buildViewUI() : _buildFormUI(),
             ),
           ),
+
+          /// FIXED FOOTER
+          if (!_isViewOnly)
+            AmsSubmitBar(
+              borderColor: AppColors.border,
+              actions: [
+                if (_isLoading)
+                  const SizedBox(
+                    width: 80,
+                    height: 36,
+                    child: Center(
+                      child: SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: AppColors.tBlue),
+                      ),
+                    ),
+                  )
+                else ...[
+                  AmsButton(
+                    label: _isEditMode ? 'Update' : 'Save',
+                    variant: AmsButtonVariant.primary,
+                    backgroundColor: AppColors.sidebar,
+                    onPressed: _saveCategory,
+                  ),
+                  AmsButton(
+                    label: 'Clear',
+                    icon: Icons.clear_all_rounded,
+                    variant: AmsButtonVariant.outline,
+                    onPressed: _isLoading ? null : _clearFields,
+                  ),
+                  AmsButton(
+                    label: 'Cancel',
+                    icon: Icons.close_rounded,
+                    variant: AmsButtonVariant.danger,
+                    onPressed: _isLoading
+                        ? null
+                        : () {
+                            _clearFields();
+                            setState(() => _showForm = false);
+                          },
+                  ),
+                ],
+              ],
+            ),
         ],
       ),
     );
@@ -594,7 +640,7 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
 
   Widget _buildInfoCard(String label, String value, IconData icon) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(10),
@@ -607,215 +653,115 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, size: 14, color: AppColors.ink3),
-              const SizedBox(width: 8),
-              Text(label,
-                  style: bodyStyle(
-                      size: 11,
-                      color: AppColors.ink3,
-                      weight: FontWeight.w600)),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(value,
-              style: bodyStyle(
-                  size: 14, color: AppColors.ink, weight: FontWeight.w700)),
-        ],
-      ),
     );
   }
-
-  // ─── FORM UI ──────────────────────────────────────────────────────────────
 
   Widget _buildFormUI() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Row 1: Org Code & Category Code
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        AmsFormGrid(
           children: [
-            Expanded(
-              child: AmsField(
-                label: 'Org Code',
-                required: true,
-                labelAbove: true,
-                tooltip: 'Enter the Organization Code identifying this record',
-                child: AmsTextInput(
-                  controller: _orgCodeController,
-                  focusNode: _orgFocus,
-                  errorText: _orgError,
-                  isValid: _orgCodeController.text.trim().isNotEmpty &&
-                      _orgError == null,
-                  textInputAction: TextInputAction.next,
-                  onFieldSubmitted: (v) =>
-                      _validateField(v, 'org', _catCodeFocus),
-                  placeholder: 'e.g. ORG01',
-                ),
+            AmsField(
+              label: 'Org Code',
+              required: true,
+              labelAbove: true,
+              tooltip: 'Unique organization code identifying this entry',
+              child: AmsTextInput(
+                controller: _orgCodeController,
+                focusNode: _orgFocus,
+                errorText: _orgError,
+                isValid: _orgCodeController.text.trim().isNotEmpty &&
+                    _orgError == null,
+                textInputAction: TextInputAction.next,
+                onFieldSubmitted: (v) =>
+                    _validateField(v, 'org', _catCodeFocus),
+                placeholder: 'e.g. 1',
               ),
             ),
-            const SizedBox(width: 20),
-            Expanded(
-              child: AmsField(
-                label: 'Category Code',
-                required: true,
-                labelAbove: true,
-                tooltip: 'Enter the unique Category Code (numeric, e.g. 1001)',
-                child: AmsTextInput(
-                  controller: _catCodeController,
-                  focusNode: _catCodeFocus,
-                  errorText: _catCodeError,
-                  isValid: _catCodeController.text.trim().isNotEmpty &&
-                      _catCodeError == null,
-                  textInputAction: TextInputAction.next,
-                  onFieldSubmitted: (v) =>
-                      _validateField(v, 'code', _catNameFocus),
-                  placeholder: 'e.g. 1001',
-                  keyboardType: TextInputType.number,
-                ),
+            AmsField(
+              label: 'Category Code',
+              required: true,
+              labelAbove: true,
+              tooltip: 'Unique code for this GL Category',
+              child: AmsTextInput(
+                controller: _catCodeController,
+                focusNode: _catCodeFocus,
+                errorText: _catCodeError,
+                isValid: _catCodeController.text.trim().isNotEmpty &&
+                    _catCodeError == null,
+                textInputAction: TextInputAction.next,
+                onFieldSubmitted: (v) =>
+                    _validateField(v, 'code', _catNameFocus),
+                placeholder: 'e.g. 1001',
+                keyboardType: TextInputType.number,
+              ),
+            ),
+            AmsField(
+              label: 'Category Name',
+              required: true,
+              labelAbove: true,
+              tooltip: 'Provide a descriptive name for this Category',
+              child: AmsTextInput(
+                controller: _catNameController,
+                focusNode: _catNameFocus,
+                errorText: _catNameError,
+                isValid: _catNameController.text.trim().isNotEmpty &&
+                    _catNameError == null,
+                textInputAction: TextInputAction.next,
+                onFieldSubmitted: (v) =>
+                    _validateField(v, 'name', _catTypeFocus),
+                placeholder: 'Enter name...',
+              ),
+            ),
+            AmsField(
+              label: 'Category Type',
+              required: true,
+              labelAbove: true,
+              tooltip: 'Select the classification of this Category Element',
+              child: AmsDropdown(
+                focusNode: _catTypeFocus,
+                placeholder: 'Select type',
+                initialValue: _selectedCategoryType,
+                errorText: _catTypeError,
+                isValid: _selectedCategoryType != null && _catTypeError == null,
+                onChanged: (val) {
+                  setState(() {
+                    _selectedCategoryType = val;
+                    _catTypeError = null;
+                  });
+                  _subTypeFocus.requestFocus();
+                },
+                items: const [
+                  'Asset',
+                  'Liability',
+                  'Capital',
+                  'Income',
+                  'Expense'
+                ],
+              ),
+            ),
+            AmsField(
+              label: 'Sub Type',
+              required: false,
+              labelAbove: true,
+              tooltip:
+                  'Optional sub-classification type for granular filtering',
+              child: AmsTextInput(
+                controller: _subTypeController,
+                focusNode: _subTypeFocus,
+                textInputAction: TextInputAction.done,
+                onFieldSubmitted: (v) => _saveCategory(),
+                placeholder: 'Optional sub-type',
               ),
             ),
           ],
         ),
-
-        // Row 2: Category Name & Category Type
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: AmsField(
-                label: 'Category Name',
-                required: true,
-                labelAbove: true,
-                tooltip: 'Provide a descriptive name for this Category',
-                child: AmsTextInput(
-                  controller: _catNameController,
-                  focusNode: _catNameFocus,
-                  errorText: _catNameError,
-                  isValid: _catNameController.text.trim().isNotEmpty &&
-                      _catNameError == null,
-                  textInputAction: TextInputAction.next,
-                  onFieldSubmitted: (v) =>
-                      _validateField(v, 'name', _catTypeFocus),
-                  placeholder: 'Enter name...',
-                ),
-              ),
-            ),
-            const SizedBox(width: 20),
-            Expanded(
-              child: AmsField(
-                label: 'Category Type',
-                required: true,
-                labelAbove: true,
-                tooltip: 'Select the classification of this Category Element',
-                child: AmsDropdown(
-                  focusNode: _catTypeFocus,
-                  placeholder: 'Select type',
-                  initialValue: _selectedCategoryType,
-                  errorText: _catTypeError,
-                  isValid:
-                      _selectedCategoryType != null && _catTypeError == null,
-                  onChanged: (val) {
-                    setState(() {
-                      _selectedCategoryType = val;
-                      _catTypeError = null;
-                    });
-                    _subTypeFocus.requestFocus();
-                  },
-                  items: const [
-                    'Asset',
-                    'Liability',
-                    'Capital',
-                    'Income',
-                    'Expense'
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-
-        // Row 3: Sub Type
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: AmsField(
-                label: 'Sub Type',
-                required: false,
-                labelAbove: true,
-                tooltip:
-                    'Optional sub-classification type for granular filtering',
-                child: AmsTextInput(
-                  controller: _subTypeController,
-                  focusNode: _subTypeFocus,
-                  textInputAction: TextInputAction.done,
-                  onFieldSubmitted: (v) => _saveCategory(),
-                  placeholder: 'Optional sub-type',
-                ),
-              ),
-            ),
-            const SizedBox(width: 20),
-            const Expanded(child: SizedBox()), // Balancer for 2-column layout
-          ],
-        ),
-
         const SizedBox(height: 16),
         Text('* Required fields',
             style: bodyStyle(
                     size: 11, color: AppColors.ink3, weight: FontWeight.w500)
                 .copyWith(fontStyle: FontStyle.italic)),
-        const SizedBox(height: 24),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.end, // Buttons to right corner
-          children: [
-            if (_isLoading)
-              const SizedBox(
-                width: 80,
-                height: 36,
-                child: Center(
-                  child: SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                        strokeWidth: 2, color: AppColors.tBlue),
-                  ),
-                ),
-              )
-            else ...[
-              AmsButton(
-                label: _isEditMode ? 'Update' : 'Save',
-                variant: AmsButtonVariant.primary,
-                backgroundColor: AppColors.sidebar,
-                onPressed: _saveCategory,
-              ),
-              const SizedBox(width: 12),
-              AmsButton(
-                label: 'Clear',
-                icon: Icons.clear_all_rounded,
-                variant: AmsButtonVariant.outline,
-                onPressed: _isLoading ? null : _clearFields,
-              ),
-              const SizedBox(width: 12),
-              AmsButton(
-                label: 'Cancel',
-                icon: Icons.close_rounded,
-                variant: AmsButtonVariant.danger,
-                onPressed: _isLoading
-                    ? null
-                    : () {
-                        _clearFields();
-                        setState(() => _showForm = false);
-                      },
-              ),
-            ],
-          ],
-        ),
       ],
     );
   }

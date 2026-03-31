@@ -262,26 +262,7 @@ class _NonTranAuthScreenState extends State<NonTranAuthScreen> {
     );
   }
 
-  Widget _detailRow(String key, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 150,
-            child: Text(key,
-                style: monoStyle(size: 11, color: AppColors.ink3)),
-          ),
-          Expanded(
-            child: Text(value,
-                style:
-                    bodyStyle(size: 13, weight: FontWeight.w600)),
-          ),
-        ],
-      ),
-    );
-  }
+
 }
 
 // ─── Auth Queue Table ──────────────────────────────────────────────────────────

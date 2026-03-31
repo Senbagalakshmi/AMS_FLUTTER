@@ -723,6 +723,45 @@ class _GLMasterScreenState extends State<GLMasterScreen> {
                 child: _isViewOnly ? _buildViewUI() : _buildFormUI(),
               ),
             ),
+
+            /// FIXED FOOTER
+            if (!_isViewOnly)
+              AmsSubmitBar(
+                borderColor: AppColors.border,
+                actions: [
+                  if (_saving)
+                    const SizedBox(
+                      width: 80,
+                      height: 36,
+                      child: Center(
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    )
+                  else ...[
+                    AmsButton(
+                      label: _isEditing ? 'Update' : 'Save',
+                      variant: AmsButtonVariant.primary,
+                      backgroundColor: AppColors.sidebar,
+                      onPressed: _saveGlMaster,
+                    ),
+                    AmsButton(
+                      label: 'Clear',
+                      icon: Icons.clear_all_rounded,
+                      variant: AmsButtonVariant.outline,
+                      onPressed: _clearFields,
+                    ),
+                    AmsButton(
+                      label: 'Cancel',
+                      icon: Icons.close_rounded,
+                      variant: AmsButtonVariant.danger,
+                      onPressed: () {
+                        _clearFields();
+                        setState(() => _showForm = false);
+                      },
+                    ),
+                  ],
+                ],
+              ),
           ],
         ),
       ),
@@ -850,188 +889,118 @@ class _GLMasterScreenState extends State<GLMasterScreen> {
   // ─────────────────────────────────────────────────────────────────────
 
   Widget _buildFormUI() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: AmsField(
-                label: 'Org Code',
-                required: true,
-                labelAbove: true,
-                tooltip: 'Organization Code',
-                child: AmsTextInput(
-                  controller: _orgCodeController,
-                  focusNode: _orgFocus,
-                  errorText: _orgError,
-                  isValid: _orgCodeController.text.trim().isNotEmpty &&
-                      _orgError == null,
-                  textInputAction: TextInputAction.next,
-                  onFieldSubmitted: (v) =>
-                      _validateField(v, 'org', _glNumberFocus),
-                  placeholder: 'e.g. 1',
-                ),
-              ),
+    return AmsFormGrid(
+        children: [
+          AmsField(
+            label: 'Org Code',
+            required: true,
+            labelAbove: true,
+            tooltip: 'Organization Code',
+            child: AmsTextInput(
+              controller: _orgCodeController,
+              focusNode: _orgFocus,
+              errorText: _orgError,
+              isValid: _orgCodeController.text.trim().isNotEmpty &&
+                  _orgError == null,
+              textInputAction: TextInputAction.next,
+              onFieldSubmitted: (v) =>
+                  _validateField(v, 'org', _glNumberFocus),
+              placeholder: 'e.g. 1',
             ),
-            const SizedBox(width: 20),
-            Expanded(
-              child: AmsField(
-                label: 'GL Number',
-                required: true,
-                labelAbove: true,
-                tooltip: 'Unique GL Number',
-                child: AmsTextInput(
-                  controller: _glNumberController,
-                  focusNode: _glNumberFocus,
-                  errorText: _glNumberError,
-                  isValid: _glNumberController.text.trim().isNotEmpty &&
-                      _glNumberError == null,
-                  textInputAction: TextInputAction.next,
-                  onFieldSubmitted: (v) =>
-                      _validateField(v, 'number', _glNameFocus),
-                  placeholder: 'e.g. 10010',
-                ),
-              ),
+          ),
+          AmsField(
+            label: 'GL Number',
+            required: true,
+            labelAbove: true,
+            tooltip: 'Unique GL Number',
+            child: AmsTextInput(
+              controller: _glNumberController,
+              focusNode: _glNumberFocus,
+              errorText: _glNumberError,
+              isValid: _glNumberController.text.trim().isNotEmpty &&
+                  _glNumberError == null,
+              textInputAction: TextInputAction.next,
+              onFieldSubmitted: (v) =>
+                  _validateField(v, 'number', _glNameFocus),
+              placeholder: 'e.g. 10010',
             ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: AmsField(
-                label: 'GL Name',
-                required: true,
-                labelAbove: true,
-                tooltip: 'Descriptive name for this GL Account',
-                child: AmsTextInput(
-                  controller: _glNameController,
-                  focusNode: _glNameFocus,
-                  errorText: _glNameError,
-                  isValid: _glNameController.text.trim().isNotEmpty &&
-                      _glNameError == null,
-                  textInputAction: TextInputAction.next,
-                  onFieldSubmitted: (v) =>
-                      _validateField(v, 'name', _categoryFocus),
-                  placeholder: 'e.g. Cash In Hand',
-                ),
-              ),
+          ),
+          AmsField(
+            label: 'GL Name',
+            required: true,
+            labelAbove: true,
+            tooltip: 'Descriptive name for this GL Account',
+            child: AmsTextInput(
+              controller: _glNameController,
+              focusNode: _glNameFocus,
+              errorText: _glNameError,
+              isValid: _glNameController.text.trim().isNotEmpty &&
+                  _glNameError == null,
+              textInputAction: TextInputAction.next,
+              onFieldSubmitted: (v) =>
+                  _validateField(v, 'name', _categoryFocus),
+              placeholder: 'e.g. Cash In Hand',
             ),
-            const SizedBox(width: 20),
-            Expanded(
-              child: AmsField(
-                label: 'GL Category',
-                required: true,
-                labelAbove: true,
-                tooltip: 'Select the category for this GL Account',
-                child: _loadingCategories
-                    ? const Padding(
-                        padding: EdgeInsets.all(8),
-                        child: SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2)),
-                      )
-                    : AmsDropdown(
-                        focusNode: _categoryFocus,
-                        placeholder: 'Select category',
-                        initialValue: _selectedCategoryName,
-                        errorText: _categoryError,
-                        isValid: _selectedCategoryName != null &&
-                            _categoryError == null,
-                        onChanged: (val) {
-                          final match = _categoryList.firstWhere(
-                            (c) => c['glCatName']?.toString() == val,
-                            orElse: () => {},
-                          );
-                          setState(() {
-                            _selectedCategoryName = val;
-                            _selectedCategoryCd = match['glCatCd'] is int
-                                ? match['glCatCd'] as int
-                                : int.tryParse(
-                                    match['glCatCd']?.toString() ?? '');
-                            _categoryError = null;
-                          });
-                          _statusFocus.requestFocus();
-                        },
-                        items: _categoryNames,
-                      ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: AmsField(
-                label: 'Status',
-                required: true,
-                labelAbove: true,
-                tooltip: 'Set the current status of the GL Account',
-                child: AmsDropdown(
-                  focusNode: _statusFocus,
-                  placeholder: 'Active / Inactive',
-                  initialValue: _selectedStatus,
-                  errorText: _statusError,
-                  isValid: _selectedStatus != null && _statusError == null,
-                  onChanged: (val) {
-                    setState(() {
-                      _selectedStatus = val;
-                      _statusError = null;
-                    });
-                  },
-                  items: const ['Active', 'Inactive'],
-                ),
-              ),
-            ),
-            const SizedBox(width: 20),
-            const Expanded(child: SizedBox()),
-          ],
-        ),
-        const SizedBox(height: 16),
-        Text(
-          '* Required fields',
-          style: bodyStyle(
-                  size: 11, color: AppColors.ink3, weight: FontWeight.w500)
-              .copyWith(fontStyle: FontStyle.italic),
-        ),
-        const SizedBox(height: 24),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            _saving
-                ? const SizedBox(
-                    width: 80,
-                    child: Center(
-                        child: CircularProgressIndicator(strokeWidth: 2)))
-                : AmsButton(
-                    label: _isEditing ? 'Update' : 'Save',
-                    variant: AmsButtonVariant.primary,
-                    backgroundColor: AppColors.sidebar,
-                    onPressed: _saveGlMaster,
+          ),
+          AmsField(
+            label: 'GL Category',
+            required: true,
+            labelAbove: true,
+            tooltip: 'Select the category for this GL Account',
+            child: _loadingCategories
+                ? const Padding(
+                    padding: EdgeInsets.all(8),
+                    child: SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2)),
+                  )
+                : AmsDropdown(
+                    focusNode: _categoryFocus,
+                    placeholder: 'Select category',
+                    initialValue: _selectedCategoryName,
+                    errorText: _categoryError,
+                    isValid: _selectedCategoryName != null &&
+                        _categoryError == null,
+                    onChanged: (val) {
+                      final match = _categoryList.firstWhere(
+                        (c) => c['glCatName']?.toString() == val,
+                        orElse: () => {},
+                      );
+                      setState(() {
+                        _selectedCategoryName = val;
+                        _selectedCategoryCd = match['glCatCd'] is int
+                            ? match['glCatCd'] as int
+                            : int.tryParse(
+                                match['glCatCd']?.toString() ?? '');
+                        _categoryError = null;
+                      });
+                      _statusFocus.requestFocus();
+                    },
+                    items: _categoryNames,
                   ),
-            const SizedBox(width: 12),
-            AmsButton(
-              label: 'Clear',
-              icon: Icons.clear_all_rounded,
-              variant: AmsButtonVariant.outline,
-              onPressed: _clearFields,
-            ),
-            const SizedBox(width: 12),
-            AmsButton(
-              label: 'Cancel',
-              icon: Icons.close_rounded,
-              variant: AmsButtonVariant.danger,
-              onPressed: () {
-                _clearFields();
-                setState(() => _showForm = false);
+          ),
+          AmsField(
+            label: 'Status',
+            required: true,
+            labelAbove: true,
+            tooltip: 'Set the current status of the GL Account',
+            child: AmsDropdown(
+              focusNode: _statusFocus,
+              placeholder: 'Active / Inactive',
+              initialValue: _selectedStatus,
+              errorText: _statusError,
+              isValid: _selectedStatus != null && _statusError == null,
+              onChanged: (val) {
+                setState(() {
+                  _selectedStatus = val;
+                  _statusError = null;
+                });
               },
+              items: const ['Active', 'Inactive'],
             ),
-          ],
-        ),
-      ],
+          ),
+        ],
     );
   }
 

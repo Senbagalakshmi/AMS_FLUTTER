@@ -204,7 +204,10 @@ class _AmsButtonState extends State<AmsButton> {
                           size: fSize,
                           weight: FontWeight.w700,
                           color: fg)),
-                  if (widget.variant == AmsButtonVariant.primary && !widget.small) ...[
+                  if ((widget.variant == AmsButtonVariant.primary || 
+                       widget.variant == AmsButtonVariant.teal || 
+                       widget.variant == AmsButtonVariant.green) && 
+                      !widget.small) ...[
                     const SizedBox(width: 8),
                     Icon(Icons.arrow_forward_rounded,
                         size: fSize + 2, color: fg),
@@ -468,6 +471,38 @@ class AmsField extends StatelessWidget {
               ],
             ),
     );
+  }
+}
+
+class AmsFormGrid extends StatelessWidget {
+  final List<Widget> children;
+  final int cols;
+  final double spacing;
+
+  const AmsFormGrid({
+    super.key,
+    required this.children,
+    this.cols = 2,
+    this.spacing = 16,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(builder: (ctx, constraints) {
+      final effectiveCols = constraints.maxWidth < 600
+          ? 1
+          : (constraints.maxWidth < 850 ? 2 : cols);
+      return Wrap(
+        spacing: spacing,
+        runSpacing: 0, // AmsField already has vertical padding
+        children: children.map((child) {
+          final w =
+              (constraints.maxWidth - (effectiveCols - 1) * spacing) /
+                  effectiveCols;
+          return SizedBox(width: w.clamp(0, double.infinity), child: child);
+        }).toList(),
+      );
+    });
   }
 }
 
@@ -920,8 +955,8 @@ class AmsIdentityHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border.all(color: AppColors.border, width: 1),
@@ -931,14 +966,14 @@ class AmsIdentityHeader extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Container(
-            padding: const EdgeInsets.all(10),
+            padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
               color: accentColor.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(8),
             ),
             child: icon,
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -989,11 +1024,11 @@ class AmsIdentityHeader extends StatelessWidget {
                       }).toList(),
                     ),
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 2),
                 ],
                 Text(title,
                     style: bodyStyle(
-                        size: 18, weight: FontWeight.w800, color: accentColor)),
+                        size: 16, weight: FontWeight.w800, color: accentColor)),
                 if (subtitle.isNotEmpty) ...[
                   const SizedBox(height: 2),
                   Text(subtitle,
@@ -1162,7 +1197,7 @@ class AmsSidebarItem extends StatelessWidget {
           child: isCollapsed
               ? Center(
                   child: Icon(icon,
-                      size: 20,
+                      size: 24,
                       color: color ?? (isSelected ? Colors.white : Colors.white70)),
                 )
               : SingleChildScrollView(
@@ -1173,7 +1208,7 @@ class AmsSidebarItem extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: [
                       Icon(icon,
-                          size: 20,
+                          size: 24,
                           color: color ?? (isSelected ? Colors.white : Colors.white70)),
                       const SizedBox(width: 14),
                       SizedBox(
@@ -1241,7 +1276,7 @@ class AmsSubSidebarItem extends StatelessWidget {
           child: isCollapsed
               ? Center(
                   child: Icon(icon ?? Icons.adjust_rounded,
-                      size: 16,
+                      size: 18,
                       color: isSelected ? Colors.white : Colors.white70),
                 )
               : SingleChildScrollView(
@@ -1252,7 +1287,7 @@ class AmsSubSidebarItem extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: [
                       Icon(icon ?? Icons.circle,
-                          size: 6,
+                          size: 8,
                           color: isSelected ? Colors.white : Colors.white70),
                       const SizedBox(width: 12),
                       SizedBox(

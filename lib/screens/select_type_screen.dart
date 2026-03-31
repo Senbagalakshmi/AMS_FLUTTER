@@ -18,12 +18,13 @@ class _SelectTypeScreenState extends State<SelectTypeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       body: Column(
         children: [
           AmsTopBar(currentStep: 2, userName: widget.userName),
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(28, 28, 28, 80),
+              padding: const EdgeInsets.fromLTRB(28, 28, 28, 60),
               child: Center(
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 1000),
@@ -32,15 +33,13 @@ class _SelectTypeScreenState extends State<SelectTypeScreen> {
                     children: [
                       // Page header
                       Text('Select Program Type',
-                          style: bodyStyle(
-                              size: 20, weight: FontWeight.w800)),
+                          style: bodyStyle(size: 20, weight: FontWeight.w800)),
                       const SizedBox(height: 4),
                       Text(
                           'Choose what kind of entry you want to create. '
                           'The entry form, fields, and workflow differ significantly '
                           'between Transaction Programs and Non-Transaction Programs.',
-                          style: bodyStyle(
-                              size: 13, color: AppColors.ink2)),
+                          style: bodyStyle(size: 13, color: AppColors.ink2)),
                       const SizedBox(height: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(
@@ -48,7 +47,8 @@ class _SelectTypeScreenState extends State<SelectTypeScreen> {
                         decoration: BoxDecoration(
                           color: AppColors.tBlueLt,
                           borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: AppColors.tBlueMd, width: 1.5),
+                          border:
+                              Border.all(color: AppColors.tBlueMd, width: 1.5),
                         ),
                         child: Text(
                             'STEP 2 OF 5 · PROGRAM TYPE SELECTION · AUTH101 LOOKUP',
@@ -69,17 +69,15 @@ class _SelectTypeScreenState extends State<SelectTypeScreen> {
                                       child: _TypeCard(
                                           type: 'T',
                                           chosen: _chosen == 'T',
-                                          onTap: () => setState(
-                                              () => _chosen =
-                                                  _chosen == 'T' ? null : 'T'))),
+                                          onTap: () => setState(() => _chosen =
+                                              _chosen == 'T' ? null : 'T'))),
                                   const SizedBox(width: 20),
                                   Expanded(
                                       child: _TypeCard(
                                           type: 'N',
                                           chosen: _chosen == 'N',
-                                          onTap: () => setState(
-                                              () => _chosen =
-                                                  _chosen == 'N' ? null : 'N'))),
+                                          onTap: () => setState(() => _chosen =
+                                              _chosen == 'N' ? null : 'N'))),
                                 ],
                               )
                             : Column(children: [
@@ -96,41 +94,42 @@ class _SelectTypeScreenState extends State<SelectTypeScreen> {
                                         _chosen == 'N' ? null : 'N')),
                               ]);
                       }),
-                      const SizedBox(height: 20),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          AmsButton(
-                            label: 'Queue',
-                            variant: AmsButtonVariant.outline,
-                            icon: Icons.checklist_rtl_rounded,
-                            onPressed: () => widget.onProceed('AUTH'),
-                          ),
-                          const SizedBox(width: 8),
-                          AmsButton(
-                            label: 'Controller',
-                            variant: AmsButtonVariant.outline,
-                            icon: Icons.settings_applications_rounded,
-                            onPressed: () => widget.onProceed('AUTH_CONFIG'),
-                          ),
-                          const SizedBox(width: 12),
-                          AmsButton(
-                            label: 'Proceed →',
-                            large: true,
-                            variant: _chosen == 'N'
-                                ? AmsButtonVariant.teal
-                                : AmsButtonVariant.primary,
-                            onPressed: _chosen != null
-                                ? () => widget.onProceed(_chosen!)
-                                : null,
-                          ),
-                        ],
-                      ),
                     ],
                   ),
                 ),
               ),
             ),
+          ),
+
+          /// FIXED FOOTER
+          AmsSubmitBar(
+            borderColor: AppColors.border,
+            actions: [
+              AmsButton(
+                label: 'Queue',
+                variant: AmsButtonVariant.outline,
+                icon: Icons.checklist_rtl_rounded,
+                onPressed: () => widget.onProceed('AUTH'),
+              ),
+              const SizedBox(width: 8),
+              AmsButton(
+                label: 'Controller',
+                variant: AmsButtonVariant.outline,
+                icon: Icons.settings_applications_rounded,
+                onPressed: () => widget.onProceed('AUTH_CONFIG'),
+              ),
+              const SizedBox(width: 12),
+              AmsButton(
+                label: 'Proceed →',
+                large: true,
+                variant: _chosen == 'N'
+                    ? AmsButtonVariant.teal
+                    : AmsButtonVariant.primary,
+                onPressed: _chosen != null
+                    ? () => widget.onProceed(_chosen!)
+                    : null,
+              ),
+            ],
           ),
         ],
       ),
@@ -177,9 +176,7 @@ class _TypeCard extends StatelessWidget {
           boxShadow: chosen
               ? [
                   BoxShadow(
-                      color: accentLt,
-                      spreadRadius: 4,
-                      blurRadius: 0),
+                      color: accentLt, spreadRadius: 4, blurRadius: 0),
                   const BoxShadow(
                       color: Color(0x12000000),
                       blurRadius: 14,
@@ -201,8 +198,7 @@ class _TypeCard extends StatelessWidget {
                 height: 3,
                 margin: const EdgeInsets.only(bottom: 16),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                      colors: [accent, accentMd]),
+                  gradient: LinearGradient(colors: [accent, accentMd]),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -213,8 +209,8 @@ class _TypeCard extends StatelessWidget {
                 child: Container(
                   width: 22,
                   height: 22,
-                  decoration: BoxDecoration(
-                      color: accent, shape: BoxShape.circle),
+                  decoration:
+                      BoxDecoration(color: accent, shape: BoxShape.circle),
                   child: const Center(
                     child: Text('✓',
                         style: TextStyle(
@@ -224,8 +220,7 @@ class _TypeCard extends StatelessWidget {
                   ),
                 ),
               ),
-            Text(icon,
-                style: const TextStyle(fontSize: 34)),
+            Text(icon, style: const TextStyle(fontSize: 34)),
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -240,17 +235,15 @@ class _TypeCard extends StatelessWidget {
                 style: bodyStyle(
                     size: 17, weight: FontWeight.w800, color: accent)),
             const SizedBox(height: 8),
-            Text(desc,
-                style:
-                    bodyStyle(size: 12, color: AppColors.ink2)),
+            Text(desc, style: bodyStyle(size: 12, color: AppColors.ink2)),
             const SizedBox(height: 14),
             // Program rows
             ...programs.map((pid) {
               final cfg = auth101[pid]!;
               return Container(
                 margin: const EdgeInsets.only(bottom: 6),
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 10, vertical: 7),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
                 decoration: BoxDecoration(
                   color: accentLt,
                   borderRadius: BorderRadius.circular(8),
@@ -259,14 +252,11 @@ class _TypeCard extends StatelessWidget {
                   children: [
                     Text(pid,
                         style: monoStyle(
-                            size: 11,
-                            weight: FontWeight.w700,
-                            color: accent)),
+                            size: 11, weight: FontWeight.w700, color: accent)),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(cfg.name,
-                          style: bodyStyle(
-                              size: 11, color: AppColors.ink2)),
+                          style: bodyStyle(size: 11, color: AppColors.ink2)),
                     ),
                     Container(
                       padding: const EdgeInsets.symmetric(
@@ -278,9 +268,7 @@ class _TypeCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
-                          cfg.approvalReq
-                              ? 'APPROVALREQ=1'
-                              : 'APPROVALREQ=0',
+                          cfg.approvalReq ? 'APPROVALREQ=1' : 'APPROVALREQ=0',
                           style: monoStyle(
                               size: 8,
                               weight: FontWeight.w700,
