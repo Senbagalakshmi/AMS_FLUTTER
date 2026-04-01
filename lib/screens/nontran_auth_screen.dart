@@ -11,6 +11,7 @@ class NonTranAuthScreen extends StatefulWidget {
   final VoidCallback onBack;
   final String? userName;
   final Future<void> Function()? onRefresh;
+  final Future<void> Function(AuthRecord record, String remarks)? onCorrection;
 
   const NonTranAuthScreen({
     super.key,
@@ -20,6 +21,7 @@ class NonTranAuthScreen extends StatefulWidget {
     this.onLock,
     this.userName,
     this.onRefresh,
+    this.onCorrection,
   });
 
   @override
@@ -156,6 +158,7 @@ class _NonTranAuthScreenState extends State<NonTranAuthScreen> {
             }
             if (mounted) {
               showAmsToast(context, '✅', 'Record Approved');
+              _remarksCtrl.clear();
               setState(() {
                 _showForm = false;
                 if (widget.authQueue.isEmpty) _selectedRecord = null;
@@ -202,6 +205,7 @@ class _NonTranAuthScreenState extends State<NonTranAuthScreen> {
               }
               if (mounted) {
                 showAmsToast(context, '❌', 'Record Rejected', type: 'e');
+                _remarksCtrl.clear();
                 setState(() {
                   _showForm = false;
                 });
@@ -214,8 +218,23 @@ class _NonTranAuthScreenState extends State<NonTranAuthScreen> {
           label: 'Correction',
           variant: AmsButtonVariant.outline,
           icon: Icons.edit_note_rounded,
-          onPressed: () {
-            showAmsToast(context, '🔄', 'Sent for Correction', type: 'w');
+          onPressed: () async {
+            if (_selectedRecord == null) return;
+            if (_remarksCtrl.text.isEmpty) {
+              showAmsToast(context, '⚠', 'Please enter remarks for correction',
+                  type: 'w');
+              return;
+            }
+
+            if (widget.onCorrection != null) {
+              await widget.onCorrection!(_selectedRecord!, _remarksCtrl.text);
+              _remarksCtrl.clear();
+              if (mounted) {
+                setState(() => _showForm = false);
+              }
+            } else {
+              showAmsToast(context, '🔄', 'Sent for Correction', type: 'w');
+            }
           },
         ),
       ],
@@ -574,6 +593,7 @@ class _AuthDetailPanel extends StatelessWidget {
                   labelAbove: true,
                   child: AmsTextInput(
                     controller: remarksCtrl,
+                    readOnly: readOnly,
                     placeholder: 'Enter your remarks...',
                     keyboardType: TextInputType.multiline,
                   ),
