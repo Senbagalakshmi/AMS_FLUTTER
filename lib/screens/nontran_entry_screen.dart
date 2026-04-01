@@ -910,6 +910,18 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
   }
 
   @override
+  void didUpdateWidget(DynamicNTFields oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.prog != widget.prog ||
+        oldWidget.initialData != widget.initialData) {
+      _loadInitialData();
+      if (widget.prog == 'USR-ROLE' || widget.prog == 'AUTHCTL') {
+        _fetchDropdownData();
+      }
+    }
+  }
+
+  @override
   void initState() {
     super.initState();
     _loadInitialData();
@@ -970,6 +982,12 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
       } else if (data['datablock'] is List) {
         _authLevels = List<Map<String, dynamic>>.from(data['datablock']);
       }
+    } else if (prog == 'USR-ROLE') {
+      _uScdCtrl.text = data['userscd']?.toString() ??
+          data['users_cd']?.toString() ??
+          data['usercd']?.toString() ??
+          '';
+      _rScdCtrl.text = data['rolecd']?.toString() ?? '';
     }
   }
 
