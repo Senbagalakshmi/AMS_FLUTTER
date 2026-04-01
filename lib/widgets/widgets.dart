@@ -1039,6 +1039,11 @@ class _AmsIdentityHeaderState extends State<AmsIdentityHeader> {
               ),
               const Spacer(),
 
+              if (widget.actions != null) ...[
+                ...widget.actions!,
+                const SizedBox(width: 12),
+              ],
+
               /// Back Button
               GestureDetector(
                 onTap: widget.onBack,
