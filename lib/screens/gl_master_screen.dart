@@ -209,15 +209,8 @@ class _GLMasterScreenState extends State<GLMasterScreen> {
       _categoryList.map((c) => c['glCatName']?.toString() ?? '').toList();
 
   void _showSnack(String message, {bool isError = false}) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message,
-            style: bodyStyle(color: Colors.white, weight: FontWeight.w600)),
-        backgroundColor: isError ? AppColors.red : AppColors.ink2,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      ),
-    );
+    if (!mounted) return;
+    showAmsSnack(context, message, type: isError ? 'e' : 's');
   }
 
   void _onFormChange() {

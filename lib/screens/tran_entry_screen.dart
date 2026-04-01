@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import '../theme.dart';
 import '../data.dart';
 import '../models/models.dart';
@@ -72,13 +72,13 @@ class _TransactionEntryScreenState extends State<TransactionEntryScreen> {
         _amtBar = _AmtBarState(
           ok: true,
           msg:
-              '✅ Within AUTH103 limit ₹${match.from.toInt().toString()} – ₹${match.to.toInt().toString()} · Approver: ${match.approver} (${match.role})',
+              'âœ… Within AUTH103 limit â‚¹${match.from.toInt().toString()} â€“ â‚¹${match.to.toInt().toString()} Â· Approver: ${match.approver} (${match.role})',
         );
       } else {
         _amtBar = _AmtBarState(
           ok: false,
           msg:
-              '⚠ Amount ₹$val is outside configured AUTH103 limits for $_selProg',
+              'âš  Amount â‚¹$val is outside configured AUTH103 limits for $_selProg',
         );
       }
     });
@@ -86,15 +86,15 @@ class _TransactionEntryScreenState extends State<TransactionEntryScreen> {
 
   void _doSubmit() {
     if (_selProg == null) {
-      showAmsToast(context, '⚠', 'Please select a program first.', type: 'w');
+      showAmsSnack(context, 'Please select a program first.', type: 'w');
       return;
     }
     if (_cifidCtrl.text.isEmpty) {
-      showAmsToast(context, '⚠', 'Customer ID (CIFID) is required.', type: 'w');
+      showAmsSnack(context, 'Customer ID (CIFID) is required.', type: 'w');
       return;
     }
     if (_amtCtrl.text.isEmpty) {
-      showAmsToast(context, '⚠', 'Transaction Amount is required.', type: 'w');
+      showAmsSnack(context, 'Transaction Amount is required.', type: 'w');
       return;
     }
     final authsl =
@@ -131,7 +131,7 @@ class _TransactionEntryScreenState extends State<TransactionEntryScreen> {
                         ? '${_cfg!.name} Entry'
                         : 'Transaction Entry',
                     subtitle:
-                        'Transaction Program — Amount field is active, AUTH103 limits apply.',
+                        'Transaction Program â€” Amount field is active, AUTH103 limits apply.',
                     badges: [
                       const AmsBadge(label: 'ISTRANPGM = 1'),
                       const AmsBadge(
@@ -164,9 +164,9 @@ class _TransactionEntryScreenState extends State<TransactionEntryScreen> {
                       unselectedLabelStyle:
                           bodyStyle(size: 13, weight: FontWeight.w600),
                       tabs: const [
-                        Tab(text: '1 · BASIC INFO'),
-                        Tab(text: '2 · TRANSACTION DETAILS'),
-                        Tab(text: '3 · SYSTEM & REMARKS'),
+                        Tab(text: '1 Â· BASIC INFO'),
+                        Tab(text: '2 Â· TRANSACTION DETAILS'),
+                        Tab(text: '3 Â· SYSTEM & REMARKS'),
                       ],
                     ),
                   ),
@@ -259,7 +259,7 @@ class _TransactionEntryScreenState extends State<TransactionEntryScreen> {
                                         'The organization where this transaction originated.',
                                     child: const AmsTextInput(
                                         initialValue:
-                                            'ORG001 — Head Office',
+                                            'ORG001 â€” Head Office',
                                         readOnly: true),
                                   ),
                                   AmsField(
@@ -269,7 +269,7 @@ class _TransactionEntryScreenState extends State<TransactionEntryScreen> {
                                         'The specific transaction program code (e.g., LOAN-DIS).',
                                     child: AmsTextInput(
                                         initialValue: _selProg != null
-                                            ? '$_selProg — ${_cfg!.name}'
+                                            ? '$_selProg â€” ${_cfg!.name}'
                                             : '',
                                         readOnly: true,
                                         placeholder:
@@ -317,7 +317,7 @@ class _TransactionEntryScreenState extends State<TransactionEntryScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   AmsField(
-                                    label: 'Transaction Amount (₹)',
+                                    label: 'Transaction Amount (â‚¹)',
                                     required: true,
                                     tooltip:
                                         'Total amount for this transaction in INR.',
@@ -360,9 +360,9 @@ class _TransactionEntryScreenState extends State<TransactionEntryScreen> {
                                     tooltip:
                                         'Currency in which the transaction is processed.',
                                     child: AmsDropdown(items: const [
-                                      'INR — Indian Rupee',
-                                      'USD — US Dollar',
-                                      'EUR — Euro'
+                                      'INR â€” Indian Rupee',
+                                      'USD â€” US Dollar',
+                                      'EUR â€” Euro'
                                     ]),
                                   ),
                                   AmsField(
@@ -644,7 +644,7 @@ class _DynamicTranFields extends StatelessWidget {
           AmsField(
             label: 'Auto-Renewal',
             child: AmsDropdown(
-                items: const ['Yes — Auto Renew', 'No — Pay on Maturity']),
+                items: const ['Yes â€” Auto Renew', 'No â€” Pay on Maturity']),
           ),
         ]);
       case 'RD-OPEN':

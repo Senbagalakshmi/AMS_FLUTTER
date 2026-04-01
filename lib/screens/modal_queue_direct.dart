@@ -3,9 +3,9 @@ import '../theme.dart';
 import '../models/models.dart';
 import '../widgets/widgets.dart';
 
-// ═══════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // DECISION MODAL
-// ═══════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 class DecisionModal extends StatelessWidget {
   final String prog;
   final Auth101Config cfg;
@@ -65,7 +65,7 @@ class DecisionModal extends StatelessWidget {
                             shape: BoxShape.circle,
                           ),
                           child: Center(
-                            child: Text(cfg.approvalReq ? '📥' : '💾',
+                            child: Text(cfg.approvalReq ? 'ðŸ“¥' : 'ðŸ’¾',
                                 style: const TextStyle(fontSize: 30)),
                           ),
                         ),
@@ -96,15 +96,15 @@ class DecisionModal extends StatelessWidget {
                         ? _RouteOption(
                             color: AppColors.tBlue,
                             bg: AppColors.tBlueLt,
-                            title: '📥 ADD TO QUEUE',
+                            title: 'ðŸ“¥ ADD TO QUEUE',
                             desc:
-                                'AUTHSL: $authsl · Waiting for ${cfg.levels}-level approval. Once approved, the transaction will be processed.',
+                                'AUTHSL: $authsl Â· Waiting for ${cfg.levels}-level approval. Once approved, the transaction will be processed.',
                             onTap: onQueue,
                           )
                         : _RouteOption(
                             color: AppColors.green,
                             bg: AppColors.greenLt,
-                            title: '💾 SAVE DIRECTLY',
+                            title: 'ðŸ’¾ SAVE DIRECTLY',
                             desc:
                                 'Entry will be saved immediately to the target table. No additional authorization required.',
                             onTap: onDirect,
@@ -246,9 +246,9 @@ class _RouteOptionState extends State<_RouteOption> {
   }
 }
 
-// ═══════════════════════════════════════════════════════════
-// SCREEN 4 — PENDING QUEUE
-// ═══════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// SCREEN 4 â€” PENDING QUEUE
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 class QueueScreen extends StatefulWidget {
   final List<QueueEntry> queue;
   final QueueEntry? lastSubmitted;
@@ -313,7 +313,7 @@ class _QueueScreenState extends State<QueueScreen> {
                       const SizedBox(height: 4),
                       // Filters
                       AmsCard(
-                        headLeft: sectionTitle('🔍 FILTERS'),
+                        headLeft: sectionTitle('ðŸ” FILTERS'),
                         headRight: AmsButton(
                             label: 'Clear',
                             variant: AmsButtonVariant.ghost,
@@ -341,8 +341,8 @@ class _QueueScreenState extends State<QueueScreen> {
                                   label: 'Program Type',
                                   child: AmsDropdown(items: const [
                                     'All Types',
-                                    '💰 Transaction',
-                                    '📄 Non-Transaction'
+                                    'ðŸ’° Transaction',
+                                    'ðŸ“„ Non-Transaction'
                                   ])),
                             ),
                             SizedBox(
@@ -373,7 +373,7 @@ class _QueueScreenState extends State<QueueScreen> {
                       // Table
                       AmsCard(
                         headLeft:
-                            sectionTitle('⏳ PENDING AUTHORIZATIONS'),
+                            sectionTitle('â³ PENDING AUTHORIZATIONS'),
                         headRight: Row(
                           children: [
                             Text('${rows.length} records',
@@ -408,12 +408,12 @@ class _QueueScreenState extends State<QueueScreen> {
                                   horizontalMargin: 16,
                                   dividerThickness: 1,
                                   columns: const [
-                                    DataColumn(label: Text('AUTH REF ↕')),
+                                    DataColumn(label: Text('AUTH REF â†•')),
                                     DataColumn(label: Text('PROG TYPE')),
                                     DataColumn(label: Text('PROGRAM')),
                                     DataColumn(label: Text('ENTRY USER')),
-                                    DataColumn(label: Text('DATE ↕')),
-                                    DataColumn(label: Text('AMOUNT ↕')),
+                                    DataColumn(label: Text('DATE â†•')),
+                                    DataColumn(label: Text('AMOUNT â†•')),
                                     DataColumn(label: Text('STATUS')),
                                     DataColumn(label: Text('LEVEL')),
                                     DataColumn(label: Text('FLAGS')),
@@ -456,8 +456,8 @@ class _QueueScreenState extends State<QueueScreen> {
                                       // PROG TYPE
                                       DataCell(AmsBadge(
                                         label: isT
-                                            ? '💰 Txn'
-                                            : '📄 Non-Txn',
+                                            ? 'ðŸ’° Txn'
+                                            : 'ðŸ“„ Non-Txn',
                                         color: isT
                                             ? AppColors.tBlue
                                             : AppColors.nTeal,
@@ -495,7 +495,7 @@ class _QueueScreenState extends State<QueueScreen> {
                                               color: AppColors.ink))),
                                       // STATUS
                                       DataCell(AmsBadge(
-                                        label: '● Pending',
+                                        label: 'â— Pending',
                                         color: const Color(0xFF78350F),
                                         background: AppColors.amberLt,
                                       )),
@@ -519,16 +519,16 @@ class _QueueScreenState extends State<QueueScreen> {
                                         children: [
                                           if (r.risk)
                                             const AmsBadge(
-                                                label: '⚠ Risk',
+                                                label: 'âš  Risk',
                                                 color: AppColors.red,
                                                 background: AppColors.redLt),
                                           if (r.locked)
                                             const AmsBadge(
-                                                label: '🔒 Locked',
+                                                label: 'ðŸ”’ Locked',
                                                 color: AppColors.ink3,
                                                 background: AppColors.grayLt),
                                           if (!r.risk && !r.locked)
-                                            Text('—',
+                                            Text('â€”',
                                                 style: monoStyle(
                                                     size: 11,
                                                     color: AppColors.ink3)),
@@ -537,8 +537,8 @@ class _QueueScreenState extends State<QueueScreen> {
                                       // ACTION
                                       DataCell(AmsButton(
                                         label: r.locked
-                                            ? '🔒 Locked'
-                                            : 'Review →',
+                                            ? 'ðŸ”’ Locked'
+                                            : 'Review â†’',
                                         small: true,
                                         variant: r.locked
                                             ? AmsButtonVariant.ghost
@@ -547,9 +547,8 @@ class _QueueScreenState extends State<QueueScreen> {
                                                 : AmsButtonVariant.teal),
                                         onPressed: r.locked
                                             ? null
-                                            : () => showAmsToast(
+                                            : () => showAmsSnack(
                                                 context,
-                                                '🔍',
                                                 'Opening ${r.authsl} — AUTHLOCK=1 set.',
                                                 type: 'i'),
                                       )),
@@ -608,14 +607,14 @@ class _ConfirmBanner extends StatelessWidget {
                 color: AppColors.tBlueLt,
                 borderRadius: BorderRadius.circular(11)),
             child: const Center(
-                child: Text('📥', style: TextStyle(fontSize: 20))),
+                child: Text('ðŸ“¥', style: TextStyle(fontSize: 20))),
           ),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('SUBMITTED SUCCESSFULLY · AUTH001 + AUTH002 CREATED',
+                Text('SUBMITTED SUCCESSFULLY Â· AUTH001 + AUTH002 CREATED',
                     style: monoStyle(
                         size: 10,
                         weight: FontWeight.w700,
@@ -627,7 +626,7 @@ class _ConfirmBanner extends StatelessWidget {
                         weight: FontWeight.w800,
                         color: AppColors.tBlue)),
                 Text(
-                    '${entry.prog} · ${entry.name}${entry.amount != '—' ? ' · ${entry.amount}' : ''}',
+                    '${entry.prog} Â· ${entry.name}${entry.amount != 'â€”' ? ' Â· ${entry.amount}' : ''}',
                     style: bodyStyle(size: 12, color: AppColors.ink2)),
                 RichText(
                   text: TextSpan(
@@ -641,7 +640,7 @@ class _ConfirmBanner extends StatelessWidget {
                               weight: FontWeight.w700,
                               color: AppColors.tBlue)),
                       const TextSpan(
-                          text: ' · Awaiting Branch Manager approval'),
+                          text: ' Â· Awaiting Branch Manager approval'),
                     ],
                   ),
                 ),
@@ -668,11 +667,11 @@ class _StatsGrid extends StatelessWidget {
     return LayoutBuilder(builder: (ctx, constraints) {
       final cols = constraints.maxWidth > 700 ? 4 : 2;
       final stats = [
-        (l1Count.toString(), 'Pending L1', '↑ 1 just added',
+        (l1Count.toString(), 'Pending L1', 'â†‘ 1 just added',
             AppColors.amber),
         ('3', 'Pending L2', 'Unchanged', AppColors.purple),
         ('2', 'Risk Flagged', 'Needs attention', AppColors.red),
-        ('18', 'Approved Today', '↑ 3 vs yesterday', AppColors.green),
+        ('18', 'Approved Today', 'â†‘ 3 vs yesterday', AppColors.green),
       ];
       return Wrap(
         spacing: 14,
@@ -731,9 +730,9 @@ class _StatsGrid extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════
-// SCREEN 5 — DIRECT SAVE SUCCESS
-// ═══════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// SCREEN 5 â€” DIRECT SAVE SUCCESS
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 class DirectSaveScreen extends StatefulWidget {
   final String prog;
   final VoidCallback onNewEntry;
@@ -827,7 +826,7 @@ class _DirectSaveScreenState extends State<DirectSaveScreen>
                                 ],
                               ),
                               child: const Center(
-                                  child: Text('✅',
+                                  child: Text('âœ…',
                                       style: TextStyle(fontSize: 28))),
                             ),
                           ),
@@ -840,7 +839,7 @@ class _DirectSaveScreenState extends State<DirectSaveScreen>
                           const SizedBox(height: 10),
                           Text(
                               'APPROVALREQ = 0 is configured for ${widget.prog}.\n'
-                              'No authorization workflow was triggered — the entry was saved directly to the target database table.',
+                              'No authorization workflow was triggered â€” the entry was saved directly to the target database table.',
                               style: bodyStyle(
                                   size: 13, color: AppColors.ink2),
                               textAlign: TextAlign.center),
@@ -878,12 +877,12 @@ class _DirectSaveScreenState extends State<DirectSaveScreen>
                                         color: AppColors.ink3)),
                                 const SizedBox(height: 14),
                                 ...[
-                                  ('📋', 'AUTH101 Checked for Program',
+                                  ('ðŸ“‹', 'AUTH101 Checked for Program',
                                       'APPROVALREQ flag queried for ${widget.prog}'),
-                                  ('🔄', 'APPROVALREQ = 0 — Authorization Bypass',
+                                  ('ðŸ”„', 'APPROVALREQ = 0 â€” Authorization Bypass',
                                       'Program configured to skip authorization workflow'),
-                                  ('💾', 'Direct Insert to Target Table',
-                                      'No AUTH001/AUTH002 records created · Data written immediately'),
+                                  ('ðŸ’¾', 'Direct Insert to Target Table',
+                                      'No AUTH001/AUTH002 records created Â· Data written immediately'),
                                 ].asMap().entries.map((e) {
                                   final i = e.key;
                                   final row = e.value;
@@ -950,7 +949,7 @@ class _DirectSaveScreenState extends State<DirectSaveScreen>
                             alignment: WrapAlignment.center,
                             children: [
                               AmsButton(
-                                  label: '← Back to Dashboard',
+                                  label: 'â† Back to Dashboard',
                                   variant: AmsButtonVariant.outline,
                                   onPressed: widget.onNewEntry),
                               AmsButton(
@@ -1000,3 +999,4 @@ class _Chip extends StatelessWidget {
     );
   }
 }
+

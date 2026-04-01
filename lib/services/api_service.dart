@@ -398,13 +398,17 @@ class ApiService {
 
   Future<bool> updateGlCategory(int glCatCd, Map<String, dynamic> data) async {
     try {
+      print('🚀 Updating GL Category $glCatCd with data: ${jsonEncode(data)}');
       final res = await http.put(
         Uri.parse('$baseUrl/gl-category'),
         headers: _headers,
         body: jsonEncode(data),
       );
-      return res.statusCode == 200;
+      print('📥 Response Code: ${res.statusCode}');
+      if (res.body.isNotEmpty) print('📥 Response Body: ${res.body}');
+      return res.statusCode >= 200 && res.statusCode < 300;
     } catch (e) {
+      print('❌ updateGlCategory error: $e');
       return false;
     }
   }

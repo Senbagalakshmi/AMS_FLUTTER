@@ -1113,17 +1113,19 @@ class AmsSubmitBar extends StatelessWidget {
 }
 
 // ─── SNACKBAR TOAST ───────────────────────────────────────────
-void showAmsToast(BuildContext context, String icon, String msg,
-    {String type = 's'}) {
-  final Color bg = type == 's'
-      ? AppColors.tBlue
-      : type == 'w'
-          ? AppColors.amber
-          : AppColors.tBlue;
+void showAmsSnack(BuildContext context, String msg, {String type = 's'}) {
+  final icon = type == 's' ? '✅' : type == 'e' ? '❌' : type == 'w' ? '⚠️' : 'ℹ️';
+  final bg = type == 's'
+      ? AppColors.green
+      : type == 'e'
+          ? AppColors.red
+          : type == 'w'
+              ? AppColors.amber
+              : AppColors.tBlue;
   final size = MediaQuery.of(context).size;
   // Calculate bottom margin to place it near the top (e.g. 80px from top)
-  // We subtract 80px + approximate height of snackbar (50px) = 130px
-  final double bottomMargin = size.height > 150 ? size.height - 130 : 20;
+  // Standard desktop top spacing
+  final double bottomMargin = size.height - 110; 
   // Width around 320px
   final double leftMargin = size.width > 360 ? size.width - 340 : 20;
 
@@ -1131,7 +1133,7 @@ void showAmsToast(BuildContext context, String icon, String msg,
     content: Row(
       children: [
         Text(icon, style: const TextStyle(fontSize: 15)),
-        const SizedBox(width: 9),
+        const SizedBox(width: 10),
         Expanded(
             child: Text(msg,
                 style: bodyStyle(
@@ -1147,8 +1149,8 @@ void showAmsToast(BuildContext context, String icon, String msg,
       left: leftMargin,
       right: 20,
     ),
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11)),
-    duration: const Duration(milliseconds: 3500),
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+    duration: const Duration(milliseconds: 3000),
   ));
 }
 

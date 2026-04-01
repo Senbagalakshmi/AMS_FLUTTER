@@ -175,7 +175,7 @@ class _NonTranAuthScreenState extends State<NonTranAuthScreen> {
               await widget.onRefresh!();
             }
             if (mounted) {
-              showAmsToast(context, '✅', 'Record Approved');
+              showAmsSnack(context, 'Record Approved', type: 's');
               _remarksCtrl.clear();
               setState(() {
                 _showForm = false;
@@ -222,7 +222,7 @@ class _NonTranAuthScreenState extends State<NonTranAuthScreen> {
                 await widget.onRefresh!();
               }
               if (mounted) {
-                showAmsToast(context, '❌', 'Record Rejected', type: 'e');
+                showAmsSnack(context, 'Record Rejected', type: 'e');
                 _remarksCtrl.clear();
                 setState(() {
                   _showForm = false;
@@ -291,8 +291,8 @@ class _NonTranAuthScreenState extends State<NonTranAuthScreen> {
               }
             } else if (confirmed == true && remarksController.text.isEmpty) {
               if (mounted) {
-                showAmsToast(
-                    context, '⚠️', 'Remarks are mandatory for correction',
+                showAmsSnack(
+                    context, 'Remarks are mandatory for correction',
                     type: 'w');
               }
             }

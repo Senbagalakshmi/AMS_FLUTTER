@@ -52,6 +52,7 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
   // Track if we're in edit mode and which record
   bool _isEditMode = false;
   int? _editingGlCatCd;
+  int? _lastModifiedId; // 🔥 Track recently saved/updated for top positioning
 
   @override
   void initState() {
@@ -77,6 +78,19 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
       _isLoading = false;
       if (result != null) {
         _categories = result.items;
+        // 🔥 SORT BY glCatCd DESCENDING (LATEST ON TOP)
+        _categories.sort((a, b) {
+          final idA = int.tryParse(_getCode(a)) ?? 0;
+          final idB = int.tryParse(_getCode(b)) ?? 0;
+          
+          // 🔥 Move the most recently saved/updated record to the very top
+          if (_lastModifiedId != null) {
+            if (idA == _lastModifiedId) return -1;
+            if (idB == _lastModifiedId) return 1;
+          }
+          
+          return idB.compareTo(idA);
+        });
       } else {
         _loadError = 'Failed to load categories. Please try again.';
       }
@@ -92,12 +106,12 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
     setState(() => _isLoading = true);
 
     final data = {
-      'orgCode': _orgCodeController.text.trim(),
+      'orgCode': _orgCodeController.text.trim(), // Send as String
       'glCatCd': int.tryParse(_catCodeController.text.trim()) ?? 0,
       'glCatName': _catNameController.text.trim(),
       'glCatType': _selectedCategoryType,
       if (_subTypeController.text.trim().isNotEmpty)
-        'glSubType': _subTypeController.text.trim(),
+        'glCatSubType': _subTypeController.text.trim(),
     };
 
     // ✅ Edit mode → PUT (updateGlCategory), Create mode → POST (createGlCategory)
@@ -108,6 +122,7 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
     setState(() => _isLoading = false);
 
     if (success) {
+      _lastModifiedId = int.tryParse(_catCodeController.text.trim()) ?? 0;
       _showSnackbar(
         _isEditMode
             ? '${_catNameController.text} updated successfully'
@@ -158,15 +173,7 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
 
   void _showSnackbar(String message, {required bool isError}) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message,
-            style: bodyStyle(color: Colors.white, weight: FontWeight.w600)),
-        backgroundColor: isError ? AppColors.red : AppColors.ink2,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      ),
-    );
+    showAmsSnack(context, message, type: isError ? 'e' : 's');
   }
 
   void _onFormChange() {
@@ -265,17 +272,22 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
   }
 
   String _getName(Map<String, dynamic> c) =>
-      _getField(c, ['glCatName', 'name']);
+      _getField(c, ['glCatName', 'name', 'gl_cat_name']);
   String _getCode(Map<String, dynamic> c) =>
-      _getField(c, ['glCatCd', 'code', 'glCatCode']);
+      _getField(c, ['glCatCd', 'code', 'glCatCode', 'gl_cat_cd']);
   String _getType(Map<String, dynamic> c) =>
-      _getField(c, ['glCatType', 'type']);
+      _getField(c, ['glCatType', 'type', 'gl_cat_type']);
   String _getOrg(Map<String, dynamic> c) =>
-      _getField(c, ['orgCode', 'org'], fallback: 'ORG01');
-  String _getSubType(Map<String, dynamic> c) =>
-      _getField(c, ['glSubType', 'subType']);
+      _getField(c, ['orgCode', 'org', 'org_code'], fallback: 'ORG01');
+  String _getSubType(Map<String, dynamic> c) => _getField(c, [
+        'glCatSubType',
+        'glSubType',
+        'subType',
+        'gl_sub_type',
+        'gl_cat_sub_type'
+      ]);
   String _getStatus(Map<String, dynamic> c) =>
-      _getField(c, ['status'], fallback: 'Active');
+      _getField(c, ['status', 'gl_status'], fallback: 'Active');
 
   // ─── BUILD ────────────────────────────────────────────────────────────────
 
@@ -641,7 +653,7 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
 
   Widget _buildInfoCard(String label, String value, IconData icon) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(10),
@@ -652,6 +664,26 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 14, color: AppColors.ink3),
+              const SizedBox(width: 8),
+              Text(label,
+                  style: bodyStyle(
+                      size: 11,
+                      color: AppColors.ink3,
+                      weight: FontWeight.w600)),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(value,
+              style: bodyStyle(
+                  size: 14, color: AppColors.ink, weight: FontWeight.w700)),
         ],
       ),
     );
