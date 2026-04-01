@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import '../theme.dart';
 import '../widgets/widgets.dart';
 import '../services/api_service.dart';
@@ -65,18 +64,19 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
 
   // ─── API CALLS ────────────────────────────────────────────────────────────
 
-  Future<void> _loadCategories() async {
+  Future<void> _loadCategories({int page = 1}) async {
     setState(() {
       _isLoading = true;
       _loadError = null;
     });
 
-    final result = await apiService.getAllGlCategories();
+    final result =
+        await apiService.getAllGlCategories(page: page - 1, size: _pageSize);
 
     setState(() {
       _isLoading = false;
       if (result != null) {
-        _categories = result;
+        _categories = result.items;
       } else {
         _loadError = 'Failed to load categories. Please try again.';
       }
@@ -296,7 +296,8 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
             accentMd: AppColors.tBlueMd,
             breadcrumbs: [
               HeaderBreadcrumb(label: 'Home', onTap: widget.onBack),
-              HeaderBreadcrumb(label: 'GL Module', onTap: widget.onBackToModule),
+              HeaderBreadcrumb(
+                  label: 'GL Module', onTap: widget.onBackToModule),
               HeaderBreadcrumb(label: 'GL Category'),
             ],
             onBack: widget.onBackToModule,
@@ -794,8 +795,9 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
 
     // Show loading skeleton
     if (_isLoading && _categories.isEmpty) {
-      return const Center(
-        child: CircularProgressIndicator(color: AppColors.tBlue),
+      return const Padding(
+        padding: EdgeInsets.all(16.0),
+        child: AmsTableSkeleton(rows: 10),
       );
     }
 
@@ -1008,25 +1010,15 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
   // ─── PAGINATION FOOTER ────────────────────────────────────────────────────
 
   Widget _buildPaginationFooter() {
-    final filteredCount = _categories.where((c) {
-      if (_searchQuery.isEmpty) return true;
-      final q = _searchQuery.toLowerCase();
-      return _getName(c).toLowerCase().contains(q) ||
-          _getCode(c).toLowerCase().contains(q);
-    }).length;
-
-    if (filteredCount == 0) return const SizedBox(height: 16);
-
-    final totalPages = (filteredCount / _pageSize).ceil();
     final start = ((_currentPage - 1) * _pageSize) + 1;
-    final end = (start + _pageSize - 1).clamp(0, filteredCount);
+    final end = (start + _categories.length - 1);
 
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text('Showing $start–$end of $filteredCount',
+          Text('Showing $start–$end',
               style: bodyStyle(size: 13, color: AppColors.ink3)),
           Row(
             mainAxisSize: MainAxisSize.min,
@@ -1037,39 +1029,23 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
                     color:
                         _currentPage > 1 ? AppColors.ink3 : AppColors.border),
                 onPressed: _currentPage > 1
-                    ? () => setState(() => _currentPage--)
+                    ? () {
+                        setState(() => _currentPage--);
+                        _loadCategories(page: _currentPage);
+                      }
                     : null,
               ),
-              ...List.generate(totalPages, (index) {
-                final pageNum = index + 1;
-                final isCurrent = pageNum == _currentPage;
-                return GestureDetector(
-                  onTap: () => setState(() => _currentPage = pageNum),
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: isCurrent ? AppColors.tBlue : Colors.transparent,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text('$pageNum',
-                        style: bodyStyle(
-                            size: 13,
-                            color: isCurrent ? Colors.white : AppColors.ink3,
-                            weight:
-                                isCurrent ? FontWeight.w700 : FontWeight.w500)),
-                  ),
-                );
-              }),
               IconButton(
                 icon: Icon(Icons.chevron_right_rounded,
                     size: 20,
-                    color: _currentPage < totalPages
+                    color: _categories.length == _pageSize
                         ? AppColors.ink3
                         : AppColors.border),
-                onPressed: _currentPage < totalPages
-                    ? () => setState(() => _currentPage++)
+                onPressed: _categories.length == _pageSize
+                    ? () {
+                        setState(() => _currentPage++);
+                        _loadCategories(page: _currentPage);
+                      }
                     : null,
               ),
             ],

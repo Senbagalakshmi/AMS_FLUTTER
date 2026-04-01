@@ -382,53 +382,37 @@ class _UserListView extends StatefulWidget {
 
 class _UserListViewState extends State<_UserListView> {
   List<Map<String, dynamic>>? _users;
+  int _totalItems = 0;
   bool _loading = true;
 
   @override
   void initState() {
     super.initState();
-    _loadUsers();
+    _loadUsers(1);
   }
 
-  Future<void> _loadUsers() async {
-    final users = await apiService.getUsers();
-    setState(() {
-      _users = users ??
-          [
-            {
-              'usersCd': 'USR001',
-              'fName': 'Arjun',
-              'lName': 'Mehta',
-              'email': 'arjun.m@example.com',
-              'mobile': '9876543210'
-            },
-            {
-              'usersCd': 'USR002',
-              'fName': 'Priya',
-              'lName': 'R',
-              'email': 'priya.r@example.com',
-              'mobile': '9876543211'
-            },
-            {
-              'usersCd': 'USR003',
-              'fName': 'Ravi',
-              'lName': 'K',
-              'email': 'ravi.k@example.com',
-              'mobile': '9876543212'
-            },
-          ];
-      _loading = false;
-    });
+  Future<void> _loadUsers(int page) async {
+    setState(() => _loading = true);
+    final result = await apiService.getUsers(page: page - 1, size: 10);
+    if (mounted) {
+      setState(() {
+        _users = result?.items ?? [];
+        _totalItems = result?.totalElements ?? 0;
+        _loading = false;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_loading) {
-      return const Center(child: CircularProgressIndicator());
+    if (_loading && _users == null) {
+      return const AmsListSkeleton();
     }
 
     return AmsPaginatedView<Map<String, dynamic>>(
-      items: _users!,
+      items: _users ?? [],
+      totalRecords: _totalItems,
+      onPageChanged: _loadUsers,
       builder: (ctx, currentItems) => ListView.builder(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
         itemCount: currentItems.length,
@@ -438,10 +422,13 @@ class _UserListViewState extends State<_UserListView> {
           final String lName = u['lName'] ?? u['lname'] ?? u['LNAME'] ?? '';
           final String email = u['email'] ?? u['EMAIL'] ?? 'No Email';
           final String mobile = u['mobile'] ?? u['MOBILE'] ?? 'No Mobile';
-          final String userCd = u['userScd'] ?? u['usersCd'] ?? u['USERSCD'] ?? 'Unknown';
+          final String userCd =
+              u['userScd'] ?? u['usersCd'] ?? u['USERSCD'] ?? 'Unknown';
           final String initial = fName.isNotEmpty
               ? fName[0].toUpperCase()
-              : (userCd.isNotEmpty && userCd != 'Unknown' ? userCd[0].toUpperCase() : 'U');
+              : (userCd.isNotEmpty && userCd != 'Unknown'
+                  ? userCd[0].toUpperCase()
+                  : 'U');
 
           return AmsCard(
             onTap: widget.onView != null ? () => widget.onView!(u) : null,
@@ -464,7 +451,10 @@ class _UserListViewState extends State<_UserListView> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('$fName $lName'.trim(),
+                      Text(
+                          ('$fName $lName').trim().isNotEmpty
+                              ? '$fName $lName'.trim()
+                              : 'Unnamed User',
                           style: bodyStyle(size: 15, weight: FontWeight.w600)),
                       const SizedBox(height: 4),
                       Text('$email  |  $mobile',
@@ -492,50 +482,37 @@ class _RoleListView extends StatefulWidget {
 
 class _RoleListViewState extends State<_RoleListView> {
   List<Map<String, dynamic>>? _roles;
+  int _totalItems = 0;
   bool _loading = true;
 
   @override
   void initState() {
     super.initState();
-    _loadRoles();
+    _loadRoles(1);
   }
 
-  Future<void> _loadRoles() async {
-    final roles = await apiService.getRoles();
-    setState(() {
-      _roles = roles ??
-          [
-            {
-              'roleCd': '101',
-              'roleName': 'System Admin',
-              'roleType': 'M - Master',
-              'roleSubtype': 'ALL'
-            },
-            {
-              'roleCd': '102',
-              'roleName': 'Branch Manager',
-              'roleType': 'O - Operator',
-              'roleSubtype': 'BRN'
-            },
-            {
-              'roleCd': '103',
-              'roleName': 'Teller',
-              'roleType': 'B - Batch',
-              'roleSubtype': 'TRX'
-            },
-          ];
-      _loading = false;
-    });
+  Future<void> _loadRoles(int page) async {
+    setState(() => _loading = true);
+    final result = await apiService.getRoles(page: page - 1, size: 10);
+    if (mounted) {
+      setState(() {
+        _roles = result?.items ?? [];
+        _totalItems = result?.totalElements ?? 0;
+        _loading = false;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_loading) {
-      return const Center(child: CircularProgressIndicator());
+    if (_loading && _roles == null) {
+      return const AmsListSkeleton();
     }
 
     return AmsPaginatedView<Map<String, dynamic>>(
-      items: _roles!,
+      items: _roles ?? [],
+      totalRecords: _totalItems,
+      onPageChanged: _loadRoles,
       builder: (ctx, currentItems) => ListView.builder(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
         itemCount: currentItems.length,
@@ -552,7 +529,10 @@ class _RoleListViewState extends State<_RoleListView> {
                   decoration: const BoxDecoration(
                       color: AppColors.tBlueLt, shape: BoxShape.circle),
                   child: Center(
-                      child: Text(r['roleName'][0].toString().toUpperCase(),
+                      child: Text(
+                          (r['roleName']?.toString() ?? 'R').isEmpty
+                              ? 'R'
+                              : r['roleName'][0].toString().toUpperCase(),
                           style: bodyStyle(
                               weight: FontWeight.bold,
                               color: AppColors.tBlue))),
@@ -562,16 +542,16 @@ class _RoleListViewState extends State<_RoleListView> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('${r['roleName']}',
+                      Text(r['roleName']?.toString() ?? 'Unnamed Role',
                           style: bodyStyle(size: 15, weight: FontWeight.w600)),
                       const SizedBox(height: 4),
                       Text(
-                          'Type: ${r['roleType']}  |  Subtype: ${r['roleSubtype']}',
+                          'Type: ${r['roleType'] ?? "—"}  |  Subtype: ${r['roleSubtype'] ?? "—"}',
                           style: bodyStyle(color: AppColors.ink3)),
                     ],
                   ),
                 ),
-                AmsBadge(label: 'Role ${r['roleCd']}'),
+                AmsBadge(label: 'Role ${r['roleCd'] ?? "—"}'),
               ],
             ),
           );
@@ -590,39 +570,37 @@ class _UserRoleListView extends StatefulWidget {
 
 class _UserRoleListViewState extends State<_UserRoleListView> {
   List<Map<String, dynamic>>? _data;
+  int _totalItems = 0;
   bool _loading = true;
 
   @override
   void initState() {
     super.initState();
-    _load();
+    _load(1);
   }
 
-  Future<void> _load() async {
-    final data = await apiService.getUserRoleAssigns();
-    setState(() {
-      _data = data ??
-          [
-            {
-              'usersCd': 'USR001',
-              'roleName': 'System Admin',
-              'status': 'Active'
-            },
-            {
-              'usersCd': 'USR002',
-              'roleName': 'Branch Manager',
-              'status': 'Active'
-            },
-          ];
-      _loading = false;
-    });
+  Future<void> _load(int page) async {
+    setState(() => _loading = true);
+    final result =
+        await apiService.getUserRoleAssigns(page: page - 1, size: 10);
+    if (mounted) {
+      setState(() {
+        _data = result?.items ?? [];
+        _totalItems = result?.totalElements ?? 0;
+        _loading = false;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_loading) return const Center(child: CircularProgressIndicator());
+    if (_loading && _data == null) {
+      return const AmsListSkeleton();
+    }
     return AmsPaginatedView<Map<String, dynamic>>(
-      items: _data!,
+      items: _data ?? [],
+      totalRecords: _totalItems,
+      onPageChanged: _load,
       builder: (ctx, currentItems) => ListView.builder(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
         itemCount: currentItems.length,
@@ -641,7 +619,7 @@ class _UserRoleListViewState extends State<_UserRoleListView> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Role: ${d['roleName']}',
+                      Text('Role: ${d['roleName'] ?? "Unnamed"}',
                           style: bodyStyle(size: 15, weight: FontWeight.w600)),
                     ],
                   ),
@@ -664,31 +642,36 @@ class _ModuleListView extends StatefulWidget {
 
 class _ModuleListViewState extends State<_ModuleListView> {
   List<Map<String, dynamic>>? _data;
+  int _totalItems = 0;
   bool _loading = true;
 
   @override
   void initState() {
     super.initState();
-    _load();
+    _load(1);
   }
 
-  Future<void> _load() async {
-    final data = await apiService.getModules();
-    setState(() {
-      _data = data ??
-          [
-            {'moduleCd': 'CORE', 'moduleName': 'Core Banking'},
-            {'moduleCd': 'AUTH', 'moduleName': 'Authorization App'},
-          ];
-      _loading = false;
-    });
+  Future<void> _load(int page) async {
+    setState(() => _loading = true);
+    final result = await apiService.getModules(page: page - 1, size: 10);
+    if (mounted) {
+      setState(() {
+        _data = result?.items ?? [];
+        _totalItems = result?.totalElements ?? 0;
+        _loading = false;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_loading) return const Center(child: CircularProgressIndicator());
+    if (_loading && _data == null) {
+      return const AmsListSkeleton();
+    }
     return AmsPaginatedView<Map<String, dynamic>>(
-      items: _data!,
+      items: _data ?? [],
+      totalRecords: _totalItems,
+      onPageChanged: _load,
       builder: (ctx, currentItems) => ListView.builder(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
         itemCount: currentItems.length,
@@ -737,31 +720,36 @@ class _MenuListView extends StatefulWidget {
 
 class _MenuListViewState extends State<_MenuListView> {
   List<Map<String, dynamic>>? _data;
+  int _totalItems = 0;
   bool _loading = true;
 
   @override
   void initState() {
     super.initState();
-    _load();
+    _load(1);
   }
 
-  Future<void> _load() async {
-    final data = await apiService.getMenus();
-    setState(() {
-      _data = data ??
-          [
-            {'menuId': 'M01', 'menuName': 'Dashboard', 'type': 'Link'},
-            {'menuId': 'M02', 'menuName': 'User Management', 'type': 'Parent'},
-          ];
-      _loading = false;
-    });
+  Future<void> _load(int page) async {
+    setState(() => _loading = true);
+    final result = await apiService.getMenus(page: page - 1, size: 10);
+    if (mounted) {
+      setState(() {
+        _data = result?.items ?? [];
+        _totalItems = result?.totalElements ?? 0;
+        _loading = false;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_loading) return const Center(child: CircularProgressIndicator());
+    if (_loading && _data == null) {
+      return const AmsListSkeleton();
+    }
     return AmsPaginatedView<Map<String, dynamic>>(
-      items: _data!,
+      items: _data ?? [],
+      totalRecords: _totalItems,
+      onPageChanged: _load,
       builder: (ctx, currentItems) => ListView.builder(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
         itemCount: currentItems.length,
@@ -776,16 +764,17 @@ class _MenuListViewState extends State<_MenuListView> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('${d['menuName']}',
+                      Text(d['menuName']?.toString() ?? 'Unnamed Menu',
                           style: bodyStyle(size: 15, weight: FontWeight.w600)),
                       const SizedBox(height: 4),
-                      Text('Type: ${d['type']}',
+                      Text('Type: ${d['type'] ?? d['menuType'] ?? "—"}',
                           style: bodyStyle(color: AppColors.ink3)),
                     ],
                   ),
                 ),
                 AmsBadge(
-                    label: (d['menuId'] ?? d['menu_id'] ?? '—').toString()),
+                    label: (d['menuId'] ?? d['menuCd'] ?? d['menu_id'] ?? '—')
+                        .toString()),
               ],
             ),
           );
@@ -949,13 +938,17 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
     } else if (prog == 'AUTHCTL') {
       _authModCtrl.text = data['modcd']?.toString() ?? '';
       _authPgmCtrl.text = data['pgmcd']?.toString() ?? '';
-      _approvalReq = data['approvalreq'] == true || data['approvalreq'] == 1 || data['approvalreq'] == '1';
-      _isTran = data['istran'] == true || data['istran'] == 1 || data['istran'] == '1';
-      
+      _approvalReq = data['approvalreq'] == true ||
+          data['approvalreq'] == 1 ||
+          data['approvalreq'] == '1';
+      _isTran = data['istran'] == true ||
+          data['istran'] == 1 ||
+          data['istran'] == '1';
+
       if (data['levels_grid'] is List) {
         _authLevels = List<Map<String, dynamic>>.from(data['levels_grid']);
       } else if (data['datablock'] is List) {
-         _authLevels = List<Map<String, dynamic>>.from(data['datablock']);
+        _authLevels = List<Map<String, dynamic>>.from(data['datablock']);
       }
     }
   }
@@ -1686,10 +1679,12 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                   children: [
                     Switch(
                       value: _approvalReq,
-                      onChanged: widget.isViewMode ? null : (v) {
-                        setState(() => _approvalReq = v);
-                        widget.onChanged('approvalReq', v);
-                      },
+                      onChanged: widget.isViewMode
+                          ? null
+                          : (v) {
+                              setState(() => _approvalReq = v);
+                              widget.onChanged('approvalReq', v);
+                            },
                       activeThumbColor: AppColors.tBlue,
                     ),
                     Text(_approvalReq ? 'Yes' : 'No', style: bodyStyle()),
@@ -1703,10 +1698,12 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                   children: [
                     Switch(
                       value: _isTran,
-                      onChanged: widget.isViewMode ? null : (v) {
-                        setState(() => _isTran = v);
-                        widget.onChanged('isTran', v);
-                      },
+                      onChanged: widget.isViewMode
+                          ? null
+                          : (v) {
+                              setState(() => _isTran = v);
+                              widget.onChanged('isTran', v);
+                            },
                       activeThumbColor: AppColors.tBlue,
                     ),
                     Text(_isTran ? 'Yes' : 'No', style: bodyStyle()),
@@ -1716,7 +1713,9 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
               const SizedBox(height: 24),
               Text('AUTHORIZATION LEVELS',
                   style: bodyStyle(
-                      size: 14, weight: FontWeight.w700, color: AppColors.tBlue)),
+                      size: 14,
+                      weight: FontWeight.w700,
+                      color: AppColors.tBlue)),
               const SizedBox(height: 12),
               _Auth102LevelGrid(
                 isViewMode: widget.isViewMode,

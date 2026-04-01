@@ -1159,7 +1159,7 @@ class _AddEditFormState extends State<_AddEditForm> {
                   _field(
                     'Segment Type',
                     DropdownButtonFormField<String>(
-                      value: _selectedLevel,
+                      initialValue: _selectedLevel,
                       hint: const Text('Select type',
                           style: TextStyle(
                               color: Color(0xFFCBD5E1), fontSize: 14)),
@@ -1217,7 +1217,7 @@ class _AddEditFormState extends State<_AddEditForm> {
                   _field(
                     'Status',
                     DropdownButtonFormField<String>(
-                      value: _selectedActive == null
+                      initialValue: _selectedActive == null
                           ? null
                           : (_selectedActive! ? 'Active' : 'Inactive'),
                       hint: const Text('Active / Inactive',

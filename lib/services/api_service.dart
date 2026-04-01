@@ -2,6 +2,13 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/models.dart';
 
+class PaginatedResult<T> {
+  final List<T> items;
+  final int totalElements;
+
+  PaginatedResult({required this.items, required this.totalElements});
+}
+
 class ApiService {
   static const String baseUrl = 'http://localhost:8080/api';
   String? _token;
@@ -16,6 +23,22 @@ class ApiService {
       };
 
   Map<String, String> get headers => _headers;
+
+  PaginatedResult<Map<String, dynamic>> _parsePaginated(dynamic decoded) {
+    if (decoded is List) {
+      return PaginatedResult(
+        items: decoded.cast<Map<String, dynamic>>(),
+        totalElements: decoded.length,
+      );
+    } else if (decoded is Map && decoded.containsKey('content')) {
+      return PaginatedResult(
+        items: (decoded['content'] as List).cast<Map<String, dynamic>>(),
+        totalElements:
+            decoded['totalElements'] ?? (decoded['content'] as List).length,
+      );
+    }
+    return PaginatedResult(items: [], totalElements: 0);
+  }
 
   Future<String?> login(String username, String password) async {
     try {
@@ -81,37 +104,45 @@ class ApiService {
     }
   }
 
-  Future<List<AuthRecord>?> getAuthQueue() async {
+  Future<PaginatedResult<AuthRecord>?> getAuthQueue(
+      {int page = 0, int size = 10}) async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/auth/queue'),
+        Uri.parse('$baseUrl/auth/queue?page=$page&size=$size'),
         headers: _headers,
       );
 
       if (response.statusCode == 200) {
-        print('getAuthQueue response: ${response.body}');
-        final List<dynamic> data = jsonDecode(response.body);
-        return data.map((json) => AuthRecord.fromJson(json)).toList();
-      } else {
-        print('getAuthQueue failed with status: ${response.statusCode}');
+        final dynamic decoded = jsonDecode(response.body);
+        if (decoded is List) {
+          return PaginatedResult(
+            items: decoded.map((e) => AuthRecord.fromJson(e)).toList(),
+            totalElements: decoded.length,
+          );
+        } else if (decoded is Map && decoded.containsKey('content')) {
+          final List<dynamic> content = decoded['content'] ?? [];
+          return PaginatedResult(
+            items: content.map((e) => AuthRecord.fromJson(e)).toList(),
+            totalElements: decoded['totalElements'] ?? content.length,
+          );
+        }
       }
       return null;
     } catch (e) {
-      print('getAuthQueue exception: $e');
       return null;
     }
   }
 
-  Future<List<Map<String, dynamic>>?> getUsers() async {
+  Future<PaginatedResult<Map<String, dynamic>>?> getUsers(
+      {int page = 0, int size = 10}) async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/users'),
+        Uri.parse('$baseUrl/users?page=$page&size=$size'),
         headers: _headers,
       );
 
       if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
-        return data.cast<Map<String, dynamic>>();
+        return _parsePaginated(jsonDecode(response.body));
       }
       return null;
     } catch (e) {
@@ -119,16 +150,16 @@ class ApiService {
     }
   }
 
-  Future<List<Map<String, dynamic>>?> getRoles() async {
+  Future<PaginatedResult<Map<String, dynamic>>?> getRoles(
+      {int page = 0, int size = 10}) async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/roles'),
+        Uri.parse('$baseUrl/roles?page=$page&size=$size'),
         headers: _headers,
       );
 
       if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
-        return data.cast<Map<String, dynamic>>();
+        return _parsePaginated(jsonDecode(response.body));
       }
       return null;
     } catch (e) {
@@ -136,13 +167,14 @@ class ApiService {
     }
   }
 
-  Future<List<Map<String, dynamic>>?> getUserRoleAssigns() async {
+  Future<PaginatedResult<Map<String, dynamic>>?> getUserRoleAssigns(
+      {int page = 0, int size = 10}) async {
     try {
-      final response =
-          await http.get(Uri.parse('$baseUrl/user-roles'), headers: _headers);
+      final response = await http.get(
+          Uri.parse('$baseUrl/user-roles?page=$page&size=$size'),
+          headers: _headers);
       if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
-        return data.cast<Map<String, dynamic>>();
+        return _parsePaginated(jsonDecode(response.body));
       }
       return null;
     } catch (e) {
@@ -150,13 +182,14 @@ class ApiService {
     }
   }
 
-  Future<List<Map<String, dynamic>>?> getModules() async {
+  Future<PaginatedResult<Map<String, dynamic>>?> getModules(
+      {int page = 0, int size = 10}) async {
     try {
-      final response =
-          await http.get(Uri.parse('$baseUrl/modules'), headers: _headers);
+      final response = await http.get(
+          Uri.parse('$baseUrl/modules?page=$page&size=$size'),
+          headers: _headers);
       if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
-        return data.cast<Map<String, dynamic>>();
+        return _parsePaginated(jsonDecode(response.body));
       }
       return null;
     } catch (e) {
@@ -164,13 +197,14 @@ class ApiService {
     }
   }
 
-  Future<List<Map<String, dynamic>>?> getMenus() async {
+  Future<PaginatedResult<Map<String, dynamic>>?> getMenus(
+      {int page = 0, int size = 10}) async {
     try {
-      final response =
-          await http.get(Uri.parse('$baseUrl/menus'), headers: _headers);
+      final response = await http.get(
+          Uri.parse('$baseUrl/menus?page=$page&size=$size'),
+          headers: _headers);
       if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
-        return data.cast<Map<String, dynamic>>();
+        return _parsePaginated(jsonDecode(response.body));
       }
       return null;
     } catch (e) {
@@ -191,15 +225,32 @@ class ApiService {
     }
   }
 
-  Future<bool> updateAuthLock(String authSl) async {
+  Future<bool> requestCorrection(
+      String authSl, int level, String userId, String remarks) async {
     try {
       final res = await http.post(
-        Uri.parse('$baseUrl/auth/lock/$authSl'),
+        Uri.parse(
+            '$baseUrl/auth/correction/$authSl?level=$level&userId=$userId&remarks=${Uri.encodeComponent(remarks)}'),
         headers: _headers,
       );
       return res.statusCode == 200;
     } catch (e) {
       return false;
+    }
+  }
+
+  Future<int> updateAuthLock(String authSl, String userId) async {
+    try {
+      print('🔒 Sending lock request for AuthSl: $authSl (User: $userId)');
+      final res = await http.post(
+        Uri.parse('$baseUrl/auth/lock/$authSl?userId=$userId'),
+        headers: _headers,
+      );
+      print('🔓 Lock response: ${res.statusCode}');
+      return res.statusCode;
+    } catch (e) {
+      print('❌ Lock error: $e');
+      return 500;
     }
   }
 
@@ -246,7 +297,6 @@ class ApiService {
 
   Future<bool> createMenu(String subType, Map<String, dynamic> data) async {
     try {
-      // subType could be 'program', 'parent', 'sub', 'link'
       final path = subType == 'program' ? 'programs' : subType;
       final res = await http.post(
         Uri.parse('$baseUrl/menus/$path'),
@@ -287,15 +337,15 @@ class ApiService {
 
   // --- GL Category ---
 
-  Future<List<Map<String, dynamic>>?> getAllGlCategories() async {
+  Future<PaginatedResult<Map<String, dynamic>>?> getAllGlCategories(
+      {int page = 0, int size = 10}) async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/gl-category'),
+        Uri.parse('$baseUrl/gl-category?page=$page&size=$size'),
         headers: _headers,
       );
       if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
-        return data.cast<Map<String, dynamic>>();
+        return _parsePaginated(jsonDecode(response.body));
       }
       return null;
     } catch (e) {
@@ -358,21 +408,21 @@ class ApiService {
       return false;
     }
   }
+
   // --- GL Master ---
 
-  Future<List<Map<String, dynamic>>?> getAllGlMasters() async {
+  Future<PaginatedResult<Map<String, dynamic>>?> getAllGlMasters(
+      {int page = 0, int size = 10}) async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/gl-master'),
+        Uri.parse('$baseUrl/gl-master?page=$page&size=$size'),
         headers: _headers,
       );
       if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
-        return data.cast<Map<String, dynamic>>();
+        return _parsePaginated(jsonDecode(response.body));
       }
       return null;
     } catch (e) {
-      print("getAllGlMasters error: $e");
       return null;
     }
   }
