@@ -19,17 +19,14 @@ class AllowedBranchScreen extends StatefulWidget {
   });
 
   @override
-  State<AllowedBranchScreen> createState() =>
-      _AllowedBranchScreenState();
+  State<AllowedBranchScreen> createState() => _AllowedBranchScreenState();
 }
 
-class _AllowedBranchScreenState
-    extends State<AllowedBranchScreen> {
-
+class _AllowedBranchScreenState extends State<AllowedBranchScreen> {
   bool showForm = false;
-  bool _isLoading = false;
-  bool _isEditMode = false;
-  bool _isViewOnly = false;
+  final bool _isLoading = false;
+  final bool _isEditMode = false;
+  final bool _isViewOnly = false;
 
   /// GL Accounts
   List<String> glAccounts = [
@@ -56,7 +53,6 @@ class _AllowedBranchScreenState
       backgroundColor: AppColors.bg,
       body: Column(
         children: [
-
           /// Header
           AmsIdentityHeader(
             icon: const Icon(
@@ -89,12 +85,9 @@ class _AllowedBranchScreenState
           Expanded(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              child: showForm
-                  ? _buildFormView()
-                  : _buildListView(),
+              child: showForm ? _buildFormView() : _buildListView(),
             ),
           ),
-
         ],
       ),
     );
@@ -112,12 +105,10 @@ class _AllowedBranchScreenState
       ),
       child: Column(
         children: [
-
           Padding(
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
-
                 Expanded(
                   child: AmsTextInput(
                     icon: Icons.search_rounded,
@@ -125,16 +116,12 @@ class _AllowedBranchScreenState
                     onChanged: (v) {},
                   ),
                 ),
-
                 const SizedBox(width: 16),
-
                 IconButton(
                   icon: const Icon(Icons.refresh_rounded),
                   onPressed: () {},
                 ),
-
                 const SizedBox(width: 16),
-
                 AmsButton(
                   label: '+ Add New',
                   onPressed: () {
@@ -146,7 +133,6 @@ class _AllowedBranchScreenState
               ],
             ),
           ),
-
         ],
       ),
     );
@@ -222,7 +208,8 @@ class _AllowedBranchScreenState
             variant: AmsButtonVariant.primary,
             backgroundColor: AppColors.sidebar,
             onPressed: () {
-              showAmsToast(context, '✅', 'Allowed branches updated successfully.');
+              showAmsToast(
+                  context, '✅', 'Allowed branches updated successfully.');
               setState(() {
                 showForm = false;
               });
@@ -269,6 +256,7 @@ class _AllowedBranchScreenState
           ),
         ),
         const SizedBox(height: 20),
+
         /// Branch List
         ...branches.map((branch) {
           final isEnabled = branch["enabled"] == true;
@@ -277,21 +265,24 @@ class _AllowedBranchScreenState
             margin: const EdgeInsets.only(bottom: 12),
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: isEnabled
-                  ? AppColors.tBlue.withOpacity(0.05)
-                  : Colors.white,
+              color:
+                  isEnabled ? AppColors.tBlue.withOpacity(0.05) : Colors.white,
               borderRadius: BorderRadius.circular(10),
               border: Border.all(
-                color: isEnabled ? AppColors.tBlue.withOpacity(0.3) : AppColors.border,
+                color: isEnabled
+                    ? AppColors.tBlue.withOpacity(0.3)
+                    : AppColors.border,
                 width: 1,
               ),
-              boxShadow: isEnabled ? [
-                BoxShadow(
-                  color: AppColors.tBlue.withOpacity(0.1),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                )
-              ] : [],
+              boxShadow: isEnabled
+                  ? [
+                      BoxShadow(
+                        color: AppColors.tBlue.withOpacity(0.1),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      )
+                    ]
+                  : [],
             ),
             child: Stack(
               children: [
@@ -314,12 +305,15 @@ class _AllowedBranchScreenState
                   child: Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
                           color: isEnabled ? AppColors.tBlueLt : AppColors.bg,
                           borderRadius: BorderRadius.circular(6),
                           border: Border.all(
-                            color: isEnabled ? AppColors.tBlue.withOpacity(0.2) : AppColors.border,
+                            color: isEnabled
+                                ? AppColors.tBlue.withOpacity(0.2)
+                                : AppColors.border,
                           ),
                         ),
                         child: Text(
@@ -337,7 +331,8 @@ class _AllowedBranchScreenState
                           branch["name"],
                           style: bodyStyle(
                             color: isEnabled ? AppColors.ink : AppColors.ink3,
-                            weight: isEnabled ? FontWeight.w600 : FontWeight.normal,
+                            weight:
+                                isEnabled ? FontWeight.w600 : FontWeight.normal,
                           ),
                         ),
                       ),
@@ -355,7 +350,7 @@ class _AllowedBranchScreenState
               ],
             ),
           );
-        }).toList(),
+        }),
         const SizedBox(height: 20),
       ],
     );

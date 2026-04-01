@@ -24,9 +24,9 @@ class AllowedCurrencyScreen extends StatefulWidget {
 
 class _AllowedCurrencyScreenState extends State<AllowedCurrencyScreen> {
   bool showForm = false;
-  bool _isLoading = false;
-  bool _isEditMode = false;
-  bool _isViewOnly = false;
+  final bool _isLoading = false;
+  final bool _isEditMode = false;
+  final bool _isViewOnly = false;
 
   /// GL Accounts List
   List<String> glAccounts = [
@@ -219,7 +219,6 @@ class _AllowedCurrencyScreenState extends State<AllowedCurrencyScreen> {
             variant: AmsButtonVariant.primary,
             backgroundColor: AppColors.sidebar,
             onPressed: () {
-
             showAmsToast(
              context,
              '✅',
@@ -229,7 +228,7 @@ class _AllowedCurrencyScreenState extends State<AllowedCurrencyScreen> {
               showForm = false;
             });
           },
-          ),
+         ),
           AmsButton(
             label: 'Clear',
             icon: Icons.clear_all_rounded,
@@ -300,7 +299,8 @@ class _AllowedCurrencyScreenState extends State<AllowedCurrencyScreen> {
               children: [
                 Text(
                   "Current Allowed Currencies",
-                  style: bodyStyle(weight: FontWeight.w600, color: AppColors.ink),
+                  style:
+                      bodyStyle(weight: FontWeight.w600, color: AppColors.ink),
                 ),
                 const SizedBox(height: 16),
                 Wrap(
@@ -312,7 +312,8 @@ class _AllowedCurrencyScreenState extends State<AllowedCurrencyScreen> {
                     final baseColor = chipColors[index % chipColors.length];
                     return AnimatedContainer(
                       duration: const Duration(milliseconds: 300),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [baseColor.withOpacity(0.1), Colors.white],
@@ -341,10 +342,15 @@ class _AllowedCurrencyScreenState extends State<AllowedCurrencyScreen> {
                               color: baseColor,
                               shape: BoxShape.circle,
                             ),
-                            child: const Icon(Icons.currency_exchange_rounded, size: 10, color: Colors.white),
+                            child: const Icon(Icons.currency_exchange_rounded,
+                                size: 10, color: Colors.white),
                           ),
                           const SizedBox(width: 8),
-                          Text(c, style: bodyStyle(weight: FontWeight.w800, color: AppColors.ink, size: 13)),
+                          Text(c,
+                              style: bodyStyle(
+                                  weight: FontWeight.w800,
+                                  color: AppColors.ink,
+                                  size: 13)),
                           const SizedBox(width: 10),
                           GestureDetector(
                             onTap: () => removeCurrency(c),
@@ -362,7 +368,8 @@ class _AllowedCurrencyScreenState extends State<AllowedCurrencyScreen> {
                 const SizedBox(height: 24),
                 Text(
                   "Add New Currency",
-                  style: bodyStyle(weight: FontWeight.w600, color: AppColors.ink),
+                  style:
+                      bodyStyle(weight: FontWeight.w600, color: AppColors.ink),
                 ),
                 const SizedBox(height: 12),
                 Row(
@@ -377,16 +384,21 @@ class _AllowedCurrencyScreenState extends State<AllowedCurrencyScreen> {
                     GestureDetector(
                       onTap: addCurrency,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 12),
                         decoration: BoxDecoration(
                           color: AppColors.sidebar,
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.add_rounded, color: Colors.white, size: 20),
+                            const Icon(Icons.add_rounded,
+                                color: Colors.white, size: 20),
                             const SizedBox(width: 8),
-                            Text("Add", style: bodyStyle(color: Colors.white, weight: FontWeight.w600)),
+                            Text("Add",
+                                style: bodyStyle(
+                                    color: Colors.white,
+                                    weight: FontWeight.w600)),
                           ],
                         ),
                       ),

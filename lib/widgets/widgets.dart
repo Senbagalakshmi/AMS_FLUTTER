@@ -2410,6 +2410,8 @@ class AmsPaginatedView<T> extends StatefulWidget {
   final List<T> items;
   final int itemsPerPage;
   final bool shrinkWrap;
+  final int? totalRecords; // New: for server-side
+  final Function(int page)? onPageChanged; // New: for server-side
   final Widget Function(BuildContext context, List<T> currentItems) builder;
 
   const AmsPaginatedView({
@@ -2417,6 +2419,8 @@ class AmsPaginatedView<T> extends StatefulWidget {
     required this.items,
     this.itemsPerPage = 10,
     this.shrinkWrap = false,
+    this.totalRecords,
+    this.onPageChanged,
     required this.builder,
   });
 
@@ -2430,15 +2434,15 @@ class _AmsPaginatedViewState<T> extends State<AmsPaginatedView<T>> {
   @override
   void didUpdateWidget(AmsPaginatedView<T> oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.items != widget.items) {
+    if (widget.onPageChanged == null && oldWidget.items != widget.items) {
       _currentPage = 1;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final totalItems = widget.items.length;
-    if (totalItems == 0) {
+    final totalItems = widget.totalRecords ?? widget.items.length;
+    if (totalItems == 0 && widget.items.isEmpty) {
       return const Center(
         child: Padding(
           padding: EdgeInsets.all(32),
@@ -2448,14 +2452,14 @@ class _AmsPaginatedViewState<T> extends State<AmsPaginatedView<T>> {
     }
 
     final totalPages = (totalItems / widget.itemsPerPage).ceil();
-    if (_currentPage > totalPages) _currentPage = totalPages;
+    if (_currentPage > totalPages && totalPages > 0) _currentPage = totalPages;
 
     final startIndex = (_currentPage - 1) * widget.itemsPerPage;
-    final endIndex = (startIndex + widget.itemsPerPage) > totalItems
-        ? totalItems
-        : (startIndex + widget.itemsPerPage);
-
-    final currentItems = widget.items.sublist(startIndex, endIndex);
+    
+    // If server-side, we use items directly. If client-side, we sublist.
+    final currentItems = widget.onPageChanged != null 
+        ? widget.items 
+        : widget.items.skip(startIndex).take(widget.itemsPerPage).toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -2475,14 +2479,17 @@ class _AmsPaginatedViewState<T> extends State<AmsPaginatedView<T>> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Showing ${startIndex + 1} to $endIndex of $totalItems entries',
+                Text('Showing ${startIndex + 1} to ${startIndex + currentItems.length}',
                     style: const TextStyle(fontSize: 13, color: Color(0xFF64748B))),
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     InkWell(
                       onTap: _currentPage > 1
-                          ? () => setState(() => _currentPage--)
+                          ? () {
+                              setState(() => _currentPage--);
+                              if (widget.onPageChanged != null) widget.onPageChanged!(_currentPage);
+                            }
                           : null,
                       borderRadius: BorderRadius.circular(6),
                       child: Container(
@@ -2503,7 +2510,10 @@ class _AmsPaginatedViewState<T> extends State<AmsPaginatedView<T>> {
                     const SizedBox(width: 16),
                     InkWell(
                       onTap: _currentPage < totalPages
-                          ? () => setState(() => _currentPage++)
+                          ? () {
+                              setState(() => _currentPage++);
+                              if (widget.onPageChanged != null) widget.onPageChanged!(_currentPage);
+                            }
                           : null,
                       borderRadius: BorderRadius.circular(6),
                       child: Container(
@@ -2712,3 +2722,176 @@ class _AmsSearchableDropdownState extends State<AmsSearchableDropdown> {
   }
 }
 
+// ─── SKELETON / LOADING UI ───────────────────────────────────────
+class AmsSkeleton extends StatefulWidget {
+  final double width;
+  final double height;
+  final double radius;
+  final EdgeInsets? margin;
+
+  const AmsSkeleton({
+    super.key,
+    this.width = double.infinity,
+    this.height = 16,
+    this.radius = 4,
+    this.margin,
+  });
+
+  @override
+  State<AmsSkeleton> createState() => _AmsSkeletonState();
+}
+
+class _AmsSkeletonState extends State<AmsSkeleton> with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<double> _gradientPosition;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+        duration: const Duration(milliseconds: 1500), vsync: this)..repeat();
+    _gradientPosition = Tween<double>(begin: -1.0, end: 2.0).animate(
+        CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _gradientPosition,
+      builder: (context, child) {
+        return Container(
+          width: widget.width,
+          height: widget.height,
+          margin: widget.margin,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(widget.radius),
+            gradient: LinearGradient(
+              begin: const Alignment(-1.0, -0.3),
+              end: const Alignment(1.0, 0.3),
+              colors: const [
+                Color(0xFFF1F5F9),
+                Color(0xFFE2E8F0),
+                Color(0xFFF1F5F9),
+              ],
+              stops: [
+                _gradientPosition.value - 0.4,
+                _gradientPosition.value,
+                _gradientPosition.value + 0.4,
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class AmsTableSkeleton extends StatelessWidget {
+  final int rows;
+  final List<double> columnFlex;
+  final bool shrinkWrap;
+
+  const AmsTableSkeleton({
+    super.key,
+    this.rows = 5,
+    this.columnFlex = const [1.0, 3.0, 4.0, 2.0, 2.0, 1.5],
+    this.shrinkWrap = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: shrinkWrap ? MainAxisSize.min : MainAxisSize.max,
+      children: [
+        // Header Skeleton
+        Container(
+          height: 48,
+          decoration: const BoxDecoration(
+            color: Color(0xFFE2E8F0),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+          ),
+        ),
+        // Row Skeletons
+        if (shrinkWrap)
+          ...List.generate(rows, (i) => _buildRow())
+        else
+          Expanded(
+            child: ListView.builder(
+              itemCount: rows,
+              physics: const NeverScrollableScrollPhysics(), // Match table behavior
+              itemBuilder: (context, index) => _buildRow(),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildRow() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: Color(0xFFF1F5F9))),
+      ),
+      child: Row(
+        children: columnFlex
+            .map((flex) => Expanded(
+                  flex: (flex * 10).toInt(),
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 12),
+                    child: AmsSkeleton(
+                      height: 14,
+                    ),
+                  ),
+                ))
+            .toList(),
+      ),
+    );
+  }
+}
+class AmsListSkeleton extends StatelessWidget {
+  final int count;
+
+  const AmsListSkeleton({super.key, this.count = 6});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.builder(
+      padding: const EdgeInsets.all(20),
+      itemCount: count,
+      itemBuilder: (ctx, idx) => Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFF1F5F9)),
+        ),
+        child: Row(
+          children: [
+            const AmsSkeleton(width: 40, height: 40, radius: 20),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: const [
+                  AmsSkeleton(width: 120, height: 14),
+                  SizedBox(height: 8),
+                  AmsSkeleton(width: 200, height: 10),
+                ],
+              ),
+            ),
+            const SizedBox(width: 16),
+            const AmsSkeleton(width: 60, height: 20, radius: 4),
+          ],
+        ),
+      ),
+    );
+  }
+}

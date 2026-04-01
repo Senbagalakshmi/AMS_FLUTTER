@@ -6,7 +6,10 @@ import 'nontran_entry_screen.dart';
 
 class NonTranAuthScreen extends StatefulWidget {
   final List<AuthRecord> authQueue;
+  final int? totalRecords;
+  final bool isLoading;
   final Future<void> Function(AuthRecord record, bool isApprove) onProcess;
+  final Future<void> Function(AuthRecord record, String remarks) onCorrection;
   final Future<void> Function(AuthRecord record)? onLock;
   final VoidCallback onBack;
   final String? userName;
@@ -15,7 +18,10 @@ class NonTranAuthScreen extends StatefulWidget {
   const NonTranAuthScreen({
     super.key,
     required this.authQueue,
+    this.totalRecords,
+    this.isLoading = false,
     required this.onProcess,
+    required this.onCorrection,
     required this.onBack,
     this.onLock,
     this.userName,
@@ -36,6 +42,16 @@ class _NonTranAuthScreenState extends State<NonTranAuthScreen> {
     super.initState();
     if (widget.authQueue.isNotEmpty) {
       _selectedRecord = widget.authQueue.first;
+    }
+  }
+
+  @override
+  void didUpdateWidget(NonTranAuthScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (_selectedRecord == null && widget.authQueue.isNotEmpty && !widget.isLoading) {
+      setState(() {
+        _selectedRecord = widget.authQueue.first;
+      });
     }
   }
 
@@ -106,24 +122,28 @@ class _NonTranAuthScreenState extends State<NonTranAuthScreen> {
                   const SizedBox(height: 24),
 
                   // ── Queue Table ───────────────────────────────────────
-                  _AuthQueueTable(
-                    queue: widget.authQueue,
-                    selectedRecord: _selectedRecord,
-                    onSelect: (r) {
-                      setState(() => _selectedRecord = r);
-                      if (widget.onLock != null) {
-                        widget.onLock!(r);
-                      }
-                    },
-                    onView: (r) {
-                      setState(() {
-                        _selectedRecord = r;
-                        _showForm = true;
-                      });
-                    },
-                  ),
+                  if (widget.isLoading)
+                    const AmsTableSkeleton(rows: 8, shrinkWrap: true)
+                  else
+                    _AuthQueueTable(
+                      queue: widget.authQueue,
+                      totalRecords: widget.totalRecords,
+                      selectedRecord: _selectedRecord,
+                      onSelect: (r) {
+                        setState(() => _selectedRecord = r);
+                        if (widget.onLock != null) {
+                          widget.onLock!(r);
+                        }
+                      },
+                      onView: (r) {
+                        setState(() {
+                          _selectedRecord = r;
+                          _showForm = true;
+                        });
+                      },
+                    ),
 
-                  if (_selectedRecord != null) ...[
+                  if (_selectedRecord != null && !widget.isLoading) ...[
                     const SizedBox(height: 28),
                     _AuthDetailPanel(
                         record: _selectedRecord!, remarksCtrl: _remarksCtrl),
@@ -156,6 +176,7 @@ class _NonTranAuthScreenState extends State<NonTranAuthScreen> {
             }
             if (mounted) {
               showAmsToast(context, '✅', 'Record Approved');
+              _remarksCtrl.clear();
               setState(() {
                 _showForm = false;
                 if (widget.authQueue.isEmpty) _selectedRecord = null;
@@ -202,6 +223,7 @@ class _NonTranAuthScreenState extends State<NonTranAuthScreen> {
               }
               if (mounted) {
                 showAmsToast(context, '❌', 'Record Rejected', type: 'e');
+                _remarksCtrl.clear();
                 setState(() {
                   _showForm = false;
                 });
@@ -214,8 +236,66 @@ class _NonTranAuthScreenState extends State<NonTranAuthScreen> {
           label: 'Correction',
           variant: AmsButtonVariant.outline,
           icon: Icons.edit_note_rounded,
-          onPressed: () {
-            showAmsToast(context, '🔄', 'Sent for Correction', type: 'w');
+          onPressed: () async {
+            if (_selectedRecord == null) return;
+
+            final remarksController = TextEditingController();
+            final confirmed = await showDialog<bool>(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+                title: Text('Request Correction',
+                    style: bodyStyle(weight: FontWeight.w700)),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Please provide details for the correction:',
+                        style: bodyStyle()),
+                    const SizedBox(height: 16),
+                    AmsTextInput(
+                      controller: remarksController,
+                      placeholder: 'Correction details...',
+                      keyboardType: TextInputType.multiline,
+                    ),
+                  ],
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx, false),
+                    child:
+                        Text('Cancel', style: bodyStyle(color: AppColors.ink3)),
+                  ),
+                  AmsButton(
+                    label: 'Send Correction',
+                    variant: AmsButtonVariant.teal,
+                    small: true,
+                    onPressed: () => Navigator.pop(ctx, true),
+                  ),
+                ],
+              ),
+            );
+
+            if (confirmed == true && remarksController.text.isNotEmpty) {
+              await widget.onCorrection(
+                  _selectedRecord!, remarksController.text);
+              if (widget.onRefresh != null) {
+                await widget.onRefresh!();
+              }
+              if (mounted) {
+                setState(() {
+                  _showForm = false;
+                  if (widget.authQueue.isEmpty) _selectedRecord = null;
+                });
+              }
+            } else if (confirmed == true && remarksController.text.isEmpty) {
+              if (mounted) {
+                showAmsToast(
+                    context, '⚠️', 'Remarks are mandatory for correction',
+                    type: 'w');
+              }
+            }
           },
         ),
       ],
@@ -308,12 +388,14 @@ class _NonTranAuthScreenState extends State<NonTranAuthScreen> {
 
 class _AuthQueueTable extends StatelessWidget {
   final List<AuthRecord> queue;
+  final int? totalRecords;
   final AuthRecord? selectedRecord;
   final void Function(AuthRecord) onSelect;
   final void Function(AuthRecord) onView;
 
   const _AuthQueueTable({
     required this.queue,
+    this.totalRecords,
     required this.selectedRecord,
     required this.onSelect,
     required this.onView,
@@ -347,6 +429,7 @@ class _AuthQueueTable extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         child: AmsPaginatedView<AuthRecord>(
           items: queue,
+          totalRecords: totalRecords,
           shrinkWrap: true,
           builder: (ctx, currentItems) => Table(
             columnWidths: const {
@@ -574,6 +657,7 @@ class _AuthDetailPanel extends StatelessWidget {
                   labelAbove: true,
                   child: AmsTextInput(
                     controller: remarksCtrl,
+                    readOnly: readOnly,
                     placeholder: 'Enter your remarks...',
                     keyboardType: TextInputType.multiline,
                   ),
