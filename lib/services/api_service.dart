@@ -193,12 +193,15 @@ class ApiService {
 
   Future<bool> updateAuthLock(String authSl) async {
     try {
+      print('🔒 Sending lock request for AuthSl: $authSl');
       final res = await http.post(
         Uri.parse('$baseUrl/auth/lock/$authSl'),
         headers: _headers,
       );
+      print('🔓 Lock response: ${res.statusCode}');
       return res.statusCode == 200;
     } catch (e) {
+      print('❌ Lock error: $e');
       return false;
     }
   }
