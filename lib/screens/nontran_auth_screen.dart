@@ -272,8 +272,11 @@ class _NonTranAuthScreenState extends State<NonTranAuthScreen> {
                 });
               }
             } else if (confirmed == true && remarksController.text.isEmpty) {
-              showAmsToast(context, '⚠️', 'Remarks are mandatory for correction',
-                  type: 'w');
+              if (mounted) {
+                showAmsToast(
+                    context, '⚠️', 'Remarks are mandatory for correction',
+                    type: 'w');
+              }
             }
           },
         ),
