@@ -1,4 +1,4 @@
-import 'package:ams_flutter/screens/gl_segments_screen.dart';
+﻿import 'package:ams_flutter/screens/gl_segments_screen.dart';
 import 'package:flutter/material.dart';
 import 'screens/gl_allowed_branch_screen.dart';
 import 'screens/gl_allowed_currency_screen.dart';
@@ -30,7 +30,7 @@ class AmsApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'FMS — Finance Management System',
+      title: 'FMS Ã¢â‚¬â€ Finance Management System',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.theme,
       home: const AmsRoot(),
@@ -108,7 +108,7 @@ class _AmsRootState extends State<AmsRoot> {
           userName: userName,
         ));
     _refreshData();
-    _toast('✅', 'Authentication Successful — Welcome back!');
+    _toast('Ã¢Å“â€¦', 'Authentication Successful Ã¢â‚¬â€ Welcome back!');
   }
 
   void _handleProceed(String type) {
@@ -178,15 +178,15 @@ class _AmsRootState extends State<AmsRoot> {
 
     if (success) {
       if (cfg.approvalReq) {
-        showAmsToast(context, '🚀', 'Submitted for Authorization: $authsl',
+        showAmsSnack(context, 'Submitted for Authorization: $authsl',
             type: 's');
       } else {
-        showAmsToast(context, '✅', 'Record saved directly: $authsl', type: 's');
+        showAmsSnack(context, 'Record saved directly: $authsl', type: 's');
       }
       _navigate('list');
       _refreshData();
     } else {
-      showAmsToast(context, '❌', 'Failed to save record.', type: 'e');
+      showAmsSnack(context, 'Failed to save record.', type: 'e');
     }
   }
 
@@ -205,8 +205,8 @@ class _AmsRootState extends State<AmsRoot> {
       user: '${_state.userName ?? 'User'} (You)',
       date: _shortDate(),
       amount: amount != null && amount.isNotEmpty
-          ? '₹${_formatIndian(amount)}'
-          : '—',
+          ? 'Ã¢â€šÂ¹${_formatIndian(amount)}'
+          : 'Ã¢â‚¬â€',
       level: 'L1',
       risk: false,
       locked: false,
@@ -224,7 +224,7 @@ class _AmsRootState extends State<AmsRoot> {
       _modalAuthsl = null;
       _modalAmount = null;
     });
-    _toast('📥', '$authsl submitted — routed to L1 authorization queue!');
+    _toast('Ã°Å¸â€œÂ¥', '$authsl submitted Ã¢â‚¬â€ routed to L1 authorization queue!');
   }
 
   Future<void> _handleAuthProcess(AuthRecord record, bool isApprove) async {
@@ -247,11 +247,11 @@ class _AmsRootState extends State<AmsRoot> {
         await apiService.processAuth(record.authSl, action, level, userId);
 
     if (success) {
-      _toast(isApprove ? '✅' : '❌',
+      _toast(isApprove ? 'Ã¢Å“â€¦' : 'Ã¢ÂÅ’',
           'Request ${record.authSl} ${isApprove ? 'authorized' : 'rejected'} successfully!');
       _refreshData();
     } else {
-      _toast('⚠️', 'Failed to process authorization request.');
+      _toast('Ã¢Å¡Â Ã¯Â¸Â', 'Failed to process authorization request.');
     }
   }
 
@@ -266,10 +266,10 @@ class _AmsRootState extends State<AmsRoot> {
         record.authSl, level, _state.userName ?? 'SYSTEM', remarks);
 
     if (success) {
-      _toast('🔄', 'Record sent for correction');
+      _toast('Ã°Å¸â€â€ž', 'Record sent for correction');
       _refreshData();
     } else {
-      _toast('⚠️', 'Failed to send for correction');
+      _toast('Ã¢Å¡Â Ã¯Â¸Â', 'Failed to send for correction');
     }
   }
 
@@ -278,9 +278,9 @@ class _AmsRootState extends State<AmsRoot> {
     final status = await apiService.updateAuthLock(record.authSl, userId);
 
     if (status == 409) {
-      _toast('🔒', 'Record is already locked by another user.', type: 'w');
+      _toast('Ã°Å¸â€â€™', 'Record is already locked by another user.', type: 'w');
     } else if (status != 200) {
-      _toast('⚠️', 'Failed to acquire review lock (Status: $status)',
+      _toast('Ã¢Å¡Â Ã¯Â¸Â', 'Failed to acquire review lock (Status: $status)',
           type: 'e');
     }
   }
@@ -291,7 +291,7 @@ class _AmsRootState extends State<AmsRoot> {
       newConfigs[id] = newCfg;
       _state = _state.copyWith(authConfigs: newConfigs);
     });
-    _toast('⚙️', 'Configuration for $id updated');
+    _toast('Ã¢Å¡â„¢Ã¯Â¸Â', 'Configuration for $id updated');
   }
 
   void _handleRouteDirect() {
@@ -307,7 +307,7 @@ class _AmsRootState extends State<AmsRoot> {
       _modalAuthsl = null;
       _modalAmount = null;
     });
-    _toast('✅', 'Saved directly — no authorization required!');
+    _toast('Ã¢Å“â€¦', 'Saved directly Ã¢â‚¬â€ no authorization required!');
   }
 
   void _handleNewEntry() {
@@ -327,7 +327,7 @@ class _AmsRootState extends State<AmsRoot> {
   void _toast(String icon, String msg, {String type = 's'}) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        showAmsToast(context, icon, msg, type: type);
+        showAmsSnack(context, msg, type: type);
       }
     });
   }
