@@ -173,7 +173,7 @@ class _GLSegmentPageState extends State<GLSegmentPage> {
     final data = await apiService.getAllGlMasters();
     setState(() {
       _loadingGlMasters = false;
-      _glMasters = data ?? [];
+      _glMasters = data?.items ?? [];
       if (_glMasters.isNotEmpty && _selectedGlMaster == null) {
         _selectedGlMaster = _glMasters.first;
       }
@@ -536,6 +536,14 @@ class _GLSegmentPageState extends State<GLSegmentPage> {
             HeaderBreadcrumb(label: 'GL Segments'),
           ],
           onBack: widget.onBackToModule,
+          actions: [
+            AmsButton(
+              label: 'Add New',
+              icon: Icons.add_rounded,
+              small: true,
+              onPressed: () => _goEdit(null),
+            ),
+          ],
         ),
         Expanded(child: _buildListBody()),
       ]),
@@ -668,26 +676,6 @@ class _GLSegmentPageState extends State<GLSegmentPage> {
                   onPressed: () => setState(() => _searchQuery = ''),
                   icon: const Icon(Icons.refresh, color: kNavy, size: 20),
                 ),
-              ),
-              const SizedBox(width: 10),
-              ElevatedButton(
-                onPressed: () => _goEdit(null),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: kNavy,
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10)),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 13),
-                ),
-                child: const Row(mainAxisSize: MainAxisSize.min, children: [
-                  Text('+ New GL',
-                      style:
-                          TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
-                  SizedBox(width: 8),
-                  Icon(Icons.arrow_forward, size: 16),
-                ]),
               ),
             ]),
 
@@ -876,7 +864,7 @@ class _AddEditForm extends StatefulWidget {
   ) onSave;
   final VoidCallback onCancel;
 
-  const _AddEditForm({
+  _AddEditForm({
     super.key,
     required this.editingSegment,
     required this.glMasters,
