@@ -70,17 +70,33 @@ class _AmsRootState extends State<AmsRoot> {
   }
 
   Future<void> _refreshData() async {
-    final configs = await apiService.getAuthConfigs();
-    final result =
-        await apiService.getAuthQueue(size: 2000); // Fetch all for summary
-
     if (mounted) {
       setState(() {
-        _state = _state.copyWith(
-          authConfigs: configs,
-          authQueue: result?.items ?? [],
-        );
+        _state = _state.copyWith(isLoadingAuth: true);
       });
+    }
+
+    try {
+      final configs = await apiService.getAuthConfigs();
+      // Reduced size from 2000 to 100 for faster initial load
+      final result = await apiService.getAuthQueue(size: 100);
+
+      if (mounted) {
+        setState(() {
+          _state = _state.copyWith(
+            authConfigs: configs,
+            authQueue: result?.items ?? [],
+            authQueueTotal: result?.totalElements ?? 0,
+            isLoadingAuth: false,
+          );
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _state = _state.copyWith(isLoadingAuth: false);
+        });
+      }
     }
   }
 
@@ -434,6 +450,8 @@ class _AmsRootState extends State<AmsRoot> {
       case 'nontranauth':
         body = NonTranAuthScreen(
           authQueue: _state.authQueue,
+          totalRecords: _state.authQueueTotal,
+          isLoading: _state.isLoadingAuth,
           onRefresh: _refreshData,
           onProcess: _handleAuthProcess,
           onCorrection: _handleAuthCorrection,

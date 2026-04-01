@@ -406,7 +406,7 @@ class _UserListViewState extends State<_UserListView> {
   @override
   Widget build(BuildContext context) {
     if (_loading && _users == null) {
-      return const Center(child: CircularProgressIndicator());
+      return const AmsListSkeleton();
     }
 
     return AmsPaginatedView<Map<String, dynamic>>(
@@ -506,7 +506,7 @@ class _RoleListViewState extends State<_RoleListView> {
   @override
   Widget build(BuildContext context) {
     if (_loading && _roles == null) {
-      return const Center(child: CircularProgressIndicator());
+      return const AmsListSkeleton();
     }
 
     return AmsPaginatedView<Map<String, dynamic>>(
@@ -595,7 +595,7 @@ class _UserRoleListViewState extends State<_UserRoleListView> {
   @override
   Widget build(BuildContext context) {
     if (_loading && _data == null) {
-      return const Center(child: CircularProgressIndicator());
+      return const AmsListSkeleton();
     }
     return AmsPaginatedView<Map<String, dynamic>>(
       items: _data ?? [],
@@ -666,7 +666,7 @@ class _ModuleListViewState extends State<_ModuleListView> {
   @override
   Widget build(BuildContext context) {
     if (_loading && _data == null) {
-      return const Center(child: CircularProgressIndicator());
+      return const AmsListSkeleton();
     }
     return AmsPaginatedView<Map<String, dynamic>>(
       items: _data ?? [],
@@ -744,7 +744,7 @@ class _MenuListViewState extends State<_MenuListView> {
   @override
   Widget build(BuildContext context) {
     if (_loading && _data == null) {
-      return const Center(child: CircularProgressIndicator());
+      return const AmsListSkeleton();
     }
     return AmsPaginatedView<Map<String, dynamic>>(
       items: _data ?? [],

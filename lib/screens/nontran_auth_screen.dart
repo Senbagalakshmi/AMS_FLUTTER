@@ -6,6 +6,8 @@ import 'nontran_entry_screen.dart';
 
 class NonTranAuthScreen extends StatefulWidget {
   final List<AuthRecord> authQueue;
+  final int? totalRecords;
+  final bool isLoading;
   final Future<void> Function(AuthRecord record, bool isApprove) onProcess;
   final Future<void> Function(AuthRecord record, String remarks) onCorrection;
   final Future<void> Function(AuthRecord record)? onLock;
@@ -16,6 +18,8 @@ class NonTranAuthScreen extends StatefulWidget {
   const NonTranAuthScreen({
     super.key,
     required this.authQueue,
+    this.totalRecords,
+    this.isLoading = false,
     required this.onProcess,
     required this.onCorrection,
     required this.onBack,
@@ -38,6 +42,16 @@ class _NonTranAuthScreenState extends State<NonTranAuthScreen> {
     super.initState();
     if (widget.authQueue.isNotEmpty) {
       _selectedRecord = widget.authQueue.first;
+    }
+  }
+
+  @override
+  void didUpdateWidget(NonTranAuthScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (_selectedRecord == null && widget.authQueue.isNotEmpty && !widget.isLoading) {
+      setState(() {
+        _selectedRecord = widget.authQueue.first;
+      });
     }
   }
 
@@ -108,24 +122,28 @@ class _NonTranAuthScreenState extends State<NonTranAuthScreen> {
                   const SizedBox(height: 24),
 
                   // ── Queue Table ───────────────────────────────────────
-                  _AuthQueueTable(
-                    queue: widget.authQueue,
-                    selectedRecord: _selectedRecord,
-                    onSelect: (r) {
-                      setState(() => _selectedRecord = r);
-                      if (widget.onLock != null) {
-                        widget.onLock!(r);
-                      }
-                    },
-                    onView: (r) {
-                      setState(() {
-                        _selectedRecord = r;
-                        _showForm = true;
-                      });
-                    },
-                  ),
+                  if (widget.isLoading)
+                    const AmsTableSkeleton(rows: 8, shrinkWrap: true)
+                  else
+                    _AuthQueueTable(
+                      queue: widget.authQueue,
+                      totalRecords: widget.totalRecords,
+                      selectedRecord: _selectedRecord,
+                      onSelect: (r) {
+                        setState(() => _selectedRecord = r);
+                        if (widget.onLock != null) {
+                          widget.onLock!(r);
+                        }
+                      },
+                      onView: (r) {
+                        setState(() {
+                          _selectedRecord = r;
+                          _showForm = true;
+                        });
+                      },
+                    ),
 
-                  if (_selectedRecord != null) ...[
+                  if (_selectedRecord != null && !widget.isLoading) ...[
                     const SizedBox(height: 28),
                     _AuthDetailPanel(
                         record: _selectedRecord!, remarksCtrl: _remarksCtrl),
@@ -370,12 +388,14 @@ class _NonTranAuthScreenState extends State<NonTranAuthScreen> {
 
 class _AuthQueueTable extends StatelessWidget {
   final List<AuthRecord> queue;
+  final int? totalRecords;
   final AuthRecord? selectedRecord;
   final void Function(AuthRecord) onSelect;
   final void Function(AuthRecord) onView;
 
   const _AuthQueueTable({
     required this.queue,
+    this.totalRecords,
     required this.selectedRecord,
     required this.onSelect,
     required this.onView,
@@ -409,6 +429,7 @@ class _AuthQueueTable extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         child: AmsPaginatedView<AuthRecord>(
           items: queue,
+          totalRecords: totalRecords,
           shrinkWrap: true,
           builder: (ctx, currentItems) => Table(
             columnWidths: const {

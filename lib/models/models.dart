@@ -240,10 +240,12 @@ class AppState {
   final String? selectedCategory;
   final List<QueueEntry> queue;
   final List<AuthRecord> authQueue;
+  final int authQueueTotal;
   final Map<String, Auth101Config> authConfigs;
   final QueueEntry? lastSubmitted;
   final String? token;
   final String? userName;
+  final bool isLoadingAuth;
 
   const AppState({
     required this.screen,
@@ -252,10 +254,12 @@ class AppState {
     this.selectedCategory,
     required this.queue,
     required this.authQueue,
+    this.authQueueTotal = 0,
     required this.authConfigs,
     this.lastSubmitted,
     this.token,
     this.userName,
+    this.isLoadingAuth = false,
   });
 
     AppState copyWith({
@@ -265,10 +269,12 @@ class AppState {
     String? selectedCategory,
     List<QueueEntry>? queue,
     List<AuthRecord>? authQueue,
+    int? authQueueTotal,
     Map<String, Auth101Config>? authConfigs,
     QueueEntry? lastSubmitted,
     String? token,
     String? userName,
+    bool? isLoadingAuth,
     bool clearProg = false,
     bool clearCategory = false,
     bool clearSubmitted = false,
@@ -280,11 +286,13 @@ class AppState {
       selectedCategory: clearCategory ? null : (selectedCategory ?? this.selectedCategory),
       queue: queue ?? this.queue,
       authQueue: authQueue ?? this.authQueue,
+      authQueueTotal: authQueueTotal ?? this.authQueueTotal,
       authConfigs: authConfigs ?? this.authConfigs,
       lastSubmitted:
           clearSubmitted ? null : (lastSubmitted ?? this.lastSubmitted),
       token: token ?? this.token,
       userName: userName ?? this.userName,
+      isLoadingAuth: isLoadingAuth ?? this.isLoadingAuth,
     );
   }
 }

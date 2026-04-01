@@ -92,7 +92,7 @@ class _GLMasterScreenState extends State<GLMasterScreen> {
 
   Future<void> _loadCategories() async {
     setState(() => _loadingCategories = true);
-    final result = await apiService.getAllGlCategories(size: 2000);
+    final result = await apiService.getAllGlCategories(size: 200);
     setState(() {
       _loadingCategories = false;
       _categoryList = result?.items ?? [];
@@ -459,8 +459,11 @@ class _GLMasterScreenState extends State<GLMasterScreen> {
   // ─────────────────────────────────────────────────────────────────────
 
   Widget _buildTable() {
-    if (_loadingList) {
-      return const Center(child: CircularProgressIndicator());
+    if (_loadingList && _accounts.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.all(16.0),
+        child: AmsTableSkeleton(rows: 8),
+      );
     }
 
     if (_listError != null) {

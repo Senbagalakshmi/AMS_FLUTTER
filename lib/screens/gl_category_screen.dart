@@ -795,8 +795,9 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
 
     // Show loading skeleton
     if (_isLoading && _categories.isEmpty) {
-      return const Center(
-        child: CircularProgressIndicator(color: AppColors.tBlue),
+      return const Padding(
+        padding: EdgeInsets.all(16.0),
+        child: AmsTableSkeleton(rows: 10),
       );
     }
 
