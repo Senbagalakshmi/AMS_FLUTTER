@@ -2306,6 +2306,8 @@ class AmsPaginatedView<T> extends StatefulWidget {
   final List<T> items;
   final int itemsPerPage;
   final bool shrinkWrap;
+  final int? totalRecords; // New: for server-side
+  final Function(int page)? onPageChanged; // New: for server-side
   final Widget Function(BuildContext context, List<T> currentItems) builder;
 
   const AmsPaginatedView({
@@ -2313,6 +2315,8 @@ class AmsPaginatedView<T> extends StatefulWidget {
     required this.items,
     this.itemsPerPage = 10,
     this.shrinkWrap = false,
+    this.totalRecords,
+    this.onPageChanged,
     required this.builder,
   });
 
@@ -2326,15 +2330,15 @@ class _AmsPaginatedViewState<T> extends State<AmsPaginatedView<T>> {
   @override
   void didUpdateWidget(AmsPaginatedView<T> oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.items != widget.items) {
+    if (widget.onPageChanged == null && oldWidget.items != widget.items) {
       _currentPage = 1;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final totalItems = widget.items.length;
-    if (totalItems == 0) {
+    final totalItems = widget.totalRecords ?? widget.items.length;
+    if (totalItems == 0 && widget.items.isEmpty) {
       return const Center(
         child: Padding(
           padding: EdgeInsets.all(32),
@@ -2344,14 +2348,14 @@ class _AmsPaginatedViewState<T> extends State<AmsPaginatedView<T>> {
     }
 
     final totalPages = (totalItems / widget.itemsPerPage).ceil();
-    if (_currentPage > totalPages) _currentPage = totalPages;
+    if (_currentPage > totalPages && totalPages > 0) _currentPage = totalPages;
 
     final startIndex = (_currentPage - 1) * widget.itemsPerPage;
-    final endIndex = (startIndex + widget.itemsPerPage) > totalItems
-        ? totalItems
-        : (startIndex + widget.itemsPerPage);
-
-    final currentItems = widget.items.sublist(startIndex, endIndex);
+    
+    // If server-side, we use items directly. If client-side, we sublist.
+    final currentItems = widget.onPageChanged != null 
+        ? widget.items 
+        : widget.items.skip(startIndex).take(widget.itemsPerPage).toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -2371,14 +2375,17 @@ class _AmsPaginatedViewState<T> extends State<AmsPaginatedView<T>> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Showing ${startIndex + 1} to $endIndex of $totalItems entries',
+                Text('Showing ${startIndex + 1} to ${startIndex + currentItems.length}',
                     style: const TextStyle(fontSize: 13, color: Color(0xFF64748B))),
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     InkWell(
                       onTap: _currentPage > 1
-                          ? () => setState(() => _currentPage--)
+                          ? () {
+                              setState(() => _currentPage--);
+                              if (widget.onPageChanged != null) widget.onPageChanged!(_currentPage);
+                            }
                           : null,
                       borderRadius: BorderRadius.circular(6),
                       child: Container(
@@ -2399,7 +2406,10 @@ class _AmsPaginatedViewState<T> extends State<AmsPaginatedView<T>> {
                     const SizedBox(width: 16),
                     InkWell(
                       onTap: _currentPage < totalPages
-                          ? () => setState(() => _currentPage++)
+                          ? () {
+                              setState(() => _currentPage++);
+                              if (widget.onPageChanged != null) widget.onPageChanged!(_currentPage);
+                            }
                           : null,
                       borderRadius: BorderRadius.circular(6),
                       child: Container(

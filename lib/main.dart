@@ -71,13 +71,14 @@ class _AmsRootState extends State<AmsRoot> {
 
   Future<void> _refreshData() async {
     final configs = await apiService.getAuthConfigs();
-    final authQueue = await apiService.getAuthQueue();
+    final result =
+        await apiService.getAuthQueue(size: 2000); // Fetch all for summary
 
     if (mounted) {
       setState(() {
         _state = _state.copyWith(
           authConfigs: configs,
-          authQueue: authQueue,
+          authQueue: result?.items ?? [],
         );
       });
     }
@@ -216,10 +217,14 @@ class _AmsRootState extends State<AmsRoot> {
     int level = 1;
     if (record.flUser != null &&
         record.flUser != '0' &&
-        record.flUser!.trim().isNotEmpty) level = 2;
+        record.flUser!.trim().isNotEmpty) {
+      level = 2;
+    }
     if (record.slUser != null &&
         record.slUser != '0' &&
-        record.slUser!.trim().isNotEmpty) level = 3;
+        record.slUser!.trim().isNotEmpty) {
+      level = 3;
+    }
     final userId = _state.userName ?? 'SYSTEM';
 
     final success =
@@ -234,10 +239,34 @@ class _AmsRootState extends State<AmsRoot> {
     }
   }
 
+  Future<void> _handleAuthCorrection(AuthRecord record, String remarks) async {
+    final level = (record.flUser == null || record.flUser == '0')
+        ? 1
+        : (record.slUser == null || record.slUser == '0')
+            ? 2
+            : 3;
+
+    final success = await apiService.requestCorrection(
+        record.authSl, level, _state.userName ?? 'SYSTEM', remarks);
+
+    if (success) {
+      _toast('🔄', 'Record sent for correction');
+      _refreshData();
+    } else {
+      _toast('⚠️', 'Failed to send for correction');
+    }
+  }
+
   Future<void> _handleAuthLock(AuthRecord record) async {
-    await apiService.updateAuthLock(record.authSl);
-    // Silent update, no toast needed for UI selection usually,
-    // but the backend will now have the lock.
+    final userId = _state.userName ?? 'SYSTEM';
+    final status = await apiService.updateAuthLock(record.authSl, userId);
+
+    if (status == 409) {
+      _toast('🔒', 'Record is already locked by another user.', type: 'w');
+    } else if (status != 200) {
+      _toast('⚠️', 'Failed to acquire review lock (Status: $status)',
+          type: 'e');
+    }
   }
 
   void _handleConfigUpdate(String id, Auth101Config newCfg) {
@@ -344,15 +373,13 @@ class _AmsRootState extends State<AmsRoot> {
             onBackToModule: () => _handleProceed('GL'),
             userName: _state.userName,
           );
-        } 
-        else if (_state.selectedProg == 'GL-ATT') {
-  body = GLAttributeScreen(
-    onBack: () => _navigate('list'),
-    onBackToModule: () => _handleProceed('GL'),
-    userName: _state.userName,
-  );
-}
-        else if (_state.selectedProg == 'GL-CUR') {
+        } else if (_state.selectedProg == 'GL-ATT') {
+          body = GLAttributeScreen(
+            onBack: () => _navigate('list'),
+            onBackToModule: () => _handleProceed('GL'),
+            userName: _state.userName,
+          );
+        } else if (_state.selectedProg == 'GL-CUR') {
           body = AllowedCurrencyScreen(
             onBack: () => _navigate('list'),
             onBackToModule: () => _handleProceed('GL'),
@@ -409,6 +436,7 @@ class _AmsRootState extends State<AmsRoot> {
           authQueue: _state.authQueue,
           onRefresh: _refreshData,
           onProcess: _handleAuthProcess,
+          onCorrection: _handleAuthCorrection,
           onLock: _handleAuthLock,
           onBack: () => _navigate('list'),
           userName: _state.userName,

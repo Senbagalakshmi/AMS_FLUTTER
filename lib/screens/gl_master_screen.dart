@@ -92,23 +92,23 @@ class _GLMasterScreenState extends State<GLMasterScreen> {
 
   Future<void> _loadCategories() async {
     setState(() => _loadingCategories = true);
-    final data = await apiService.getAllGlCategories();
+    final result = await apiService.getAllGlCategories(size: 2000);
     setState(() {
       _loadingCategories = false;
-      _categoryList = data ?? [];
+      _categoryList = result?.items ?? [];
     });
   }
 
-  Future<void> _loadGlMasters() async {
+  Future<void> _loadGlMasters({int page = 1}) async {
     setState(() {
       _loadingList = true;
       _listError = null;
     });
-    final data = await apiService.getAllGlMasters();
+    final result = await apiService.getAllGlMasters(page: page - 1, size: _pageSize);
     setState(() {
       _loadingList = false;
-      if (data != null) {
-        _accounts = data;
+      if (result != null) {
+        _accounts = result.items;
       } else {
         _listError = 'Failed to load GL Master records.';
       }
@@ -1008,25 +1008,15 @@ class _GLMasterScreenState extends State<GLMasterScreen> {
   // ─────────────────────────────────────────────────────────────────────
 
   Widget _buildPaginationFooter() {
-    final filteredCount = _accounts.where((c) {
-      if (_searchQuery.isEmpty) return true;
-      final q = _searchQuery.toLowerCase();
-      return c['glName'].toString().toLowerCase().contains(q) ||
-          c['glNo'].toString().toLowerCase().contains(q);
-    }).length;
-
-    if (filteredCount == 0) return const SizedBox(height: 16);
-
-    final totalPages = (filteredCount / _pageSize).ceil();
     final start = ((_currentPage - 1) * _pageSize) + 1;
-    final end = (start + _pageSize - 1).clamp(0, filteredCount);
+    final end = start + _accounts.length - 1;
 
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text('Showing $start–$end of $filteredCount',
+          Text('Showing $start–$end',
               style: bodyStyle(size: 13, color: AppColors.ink3)),
           Row(
             mainAxisSize: MainAxisSize.min,
@@ -1034,42 +1024,29 @@ class _GLMasterScreenState extends State<GLMasterScreen> {
               IconButton(
                 icon: Icon(Icons.chevron_left_rounded,
                     size: 20,
-                    color:
-                        _currentPage > 1 ? AppColors.ink3 : AppColors.border),
+                    color: _currentPage > 1 ? AppColors.ink3 : AppColors.border),
                 onPressed: _currentPage > 1
-                    ? () => setState(() => _currentPage--)
+                    ? () {
+                        setState(() {
+                          _currentPage--;
+                        });
+                        _loadGlMasters(page: _currentPage);
+                      }
                     : null,
               ),
-              ...List.generate(totalPages, (index) {
-                final pageNum = index + 1;
-                final isCurr = pageNum == _currentPage;
-                return GestureDetector(
-                  onTap: () => setState(() => _currentPage = pageNum),
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: isCurr ? AppColors.tBlue : Colors.transparent,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text('$pageNum',
-                        style: bodyStyle(
-                            size: 13,
-                            color: isCurr ? Colors.white : AppColors.ink3,
-                            weight:
-                                isCurr ? FontWeight.w700 : FontWeight.w500)),
-                  ),
-                );
-              }),
               IconButton(
                 icon: Icon(Icons.chevron_right_rounded,
                     size: 20,
-                    color: _currentPage < totalPages
+                    color: _accounts.length == _pageSize
                         ? AppColors.ink3
                         : AppColors.border),
-                onPressed: _currentPage < totalPages
-                    ? () => setState(() => _currentPage++)
+                onPressed: _accounts.length == _pageSize
+                    ? () {
+                        setState(() {
+                          _currentPage++;
+                        });
+                        _loadGlMasters(page: _currentPage);
+                      }
                     : null,
               ),
             ],
