@@ -901,6 +901,10 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
   final _authModCtrl = TextEditingController();
   final _authPgmCtrl = TextEditingController();
 
+  List<Map<String, dynamic>> _userList = [];
+  List<Map<String, dynamic>> _roleList = [];
+  bool _loadingDropdowns = false;
+
   bool _isValidEmail(String email) {
     return RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email);
   }
@@ -909,6 +913,22 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
   void initState() {
     super.initState();
     _loadInitialData();
+    if (widget.prog == 'USR-ROLE' || widget.prog == 'AUTHCTL') {
+      _fetchDropdownData();
+    }
+  }
+
+  Future<void> _fetchDropdownData() async {
+    setState(() => _loadingDropdowns = true);
+    final usersRaw = await apiService.getUsers(size: 100);
+    final rolesRaw = await apiService.getRoles(size: 100);
+    if (mounted) {
+      setState(() {
+        _userList = usersRaw?.items ?? [];
+        _roleList = rolesRaw?.items ?? [];
+        _loadingDropdowns = false;
+      });
+    }
   }
 
   void _loadInitialData() {
@@ -1392,44 +1412,105 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                 required: true,
                 labelAbove: true,
                 tooltip: 'Select the user for role assignment.',
-                child: AmsTextInput(
-                  controller: _uScdCtrl,
-                  readOnly: widget.isViewMode,
-                  placeholder: 'e.g. USR001',
-                  textInputAction: TextInputAction.next,
-                  errorText: _errors['usersCd'],
-                  isValid:
-                      _errors['usersCd'] == null && _uScdCtrl.text.isNotEmpty,
-                  onChanged: (v) {
-                    setState(() {
-                      _errors['usersCd'] =
-                          v.trim().isEmpty ? 'User Code required' : null;
-                    });
-                    widget.onChanged('usersCd', v);
-                  },
-                ),
+                child: widget.isViewMode
+                    ? AmsTextInput(
+                        controller: _uScdCtrl,
+                        readOnly: true,
+                      )
+                    : _loadingDropdowns
+                        ? const LinearProgressIndicator()
+                        : AmsDropdown(
+                            initialValue: () {
+                              if (_userList.isEmpty) return null;
+                              final seek = _uScdCtrl.text.isNotEmpty
+                                  ? _uScdCtrl.text
+                                  : (data['userscd']?.toString() ??
+                                      data['users_cd']?.toString() ??
+                                      data['usercd']?.toString() ??
+                                      '');
+                              if (seek.isEmpty) return null;
+                              final matches = _userList.where((u) =>
+                                  (u['usersCd'] ??
+                                      u['userScd'] ??
+                                      u['USERSCD'] ??
+                                      '') ==
+                                  seek);
+                              if (matches.isEmpty) return null;
+                              final u = matches.first;
+                              return '${u['usersCd'] ?? u['userScd'] ?? u['USERSCD'] ?? ''} - ${u['fName'] ?? u['fname'] ?? ''}';
+                            }(),
+                            placeholder: 'Select USERSCD',
+                            items: _userList.map((u) {
+                              final scd = u['usersCd'] ??
+                                  u['userScd'] ??
+                                  u['USERSCD'] ??
+                                  '';
+                              final name = u['fName'] ?? u['fname'] ?? '';
+                              return '$scd - $name';
+                            }).toSet().toList(),
+                            errorText: _errors['usersCd'],
+                            isValid: _errors['usersCd'] == null &&
+                                _uScdCtrl.text.isNotEmpty,
+                            onChanged: (v) {
+                              final parts = v?.split(' - ') ?? [];
+                              final val = parts.isNotEmpty ? parts[0] : '';
+                              setState(() {
+                                _uScdCtrl.text = val;
+                                _errors['usersCd'] =
+                                    val.isEmpty ? 'User Code required' : null;
+                              });
+                              widget.onChanged('usersCd', val);
+                            },
+                          ),
               ),
               AmsField(
                 label: 'ROLECD',
                 required: true,
                 labelAbove: true,
                 tooltip: 'Select the role to assign to the user.',
-                child: AmsTextInput(
-                  controller: _rScdCtrl,
-                  readOnly: widget.isViewMode,
-                  placeholder: 'e.g. ADM',
-                  textInputAction: TextInputAction.done,
-                  errorText: _errors['roleCd'],
-                  isValid:
-                      _errors['roleCd'] == null && _rScdCtrl.text.isNotEmpty,
-                  onChanged: (v) {
-                    setState(() {
-                      _errors['roleCd'] =
-                          v.trim().isEmpty ? 'Role Code required' : null;
-                    });
-                    widget.onChanged('roleCd', v);
-                  },
-                ),
+                child: widget.isViewMode
+                    ? AmsTextInput(
+                        controller: _rScdCtrl,
+                        readOnly: true,
+                      )
+                    : _loadingDropdowns
+                        ? const LinearProgressIndicator()
+                        : AmsDropdown(
+                            initialValue: () {
+                              if (_roleList.isEmpty) return null;
+                              final seek = _rScdCtrl.text.isNotEmpty
+                                  ? _rScdCtrl.text
+                                  : (data['rolecd']?.toString() ?? '');
+                              if (seek.isEmpty) return null;
+                              final matches = _roleList.where((r) =>
+                                  (r['roleCd']?.toString() ??
+                                      r['ROLECD']?.toString() ??
+                                      '') ==
+                                  seek);
+                              if (matches.isEmpty) return null;
+                              final r = matches.first;
+                              return '${r['roleCd'] ?? r['ROLECD'] ?? ''} - ${r['roleName'] ?? r['rolename'] ?? ''}';
+                            }(),
+                            placeholder: 'Select ROLECD',
+                            items: _roleList.map((r) {
+                              final cd = r['roleCd'] ?? r['ROLECD'] ?? '';
+                              final name = r['roleName'] ?? r['rolename'] ?? '';
+                              return '$cd - $name';
+                            }).toSet().toList(),
+                            errorText: _errors['roleCd'],
+                            isValid: _errors['roleCd'] == null &&
+                                _rScdCtrl.text.isNotEmpty,
+                            onChanged: (v) {
+                              final parts = v?.split(' - ') ?? [];
+                              final val = parts.isNotEmpty ? parts[0] : '';
+                              setState(() {
+                                _rScdCtrl.text = val;
+                                _errors['roleCd'] =
+                                    val.isEmpty ? 'Role Code required' : null;
+                              });
+                              widget.onChanged('roleCd', val);
+                            },
+                          ),
               ),
             ],
           ),
@@ -1720,6 +1801,9 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
               _Auth102LevelGrid(
                 isViewMode: widget.isViewMode,
                 initialData: _authLevels,
+                userList: _userList,
+                roleList: _roleList,
+                loading: _loadingDropdowns,
                 onChanged: (levels) {
                   setState(() => _authLevels = levels);
                   widget.onChanged('levels_grid', levels);
@@ -1895,10 +1979,16 @@ class _Auth102LevelGrid extends StatefulWidget {
   final void Function(List<Map<String, dynamic>> levels) onChanged;
   final dynamic initialData;
   final bool isViewMode;
+  final List<Map<String, dynamic>> userList;
+  final List<Map<String, dynamic>> roleList;
+  final bool loading;
   const _Auth102LevelGrid({
     required this.onChanged,
     this.initialData,
     this.isViewMode = false,
+    required this.userList,
+    required this.roleList,
+    this.loading = false,
   });
 
   @override
@@ -2033,15 +2123,46 @@ class _Auth102LevelGridState extends State<_Auth102LevelGrid> {
                                 background: AppColors.grayLt,
                                 color: AppColors.ink3)
                             : null,
-                        child: AmsTextInput(
-                          initialValue: _levels[i]['roleCd']?.toString(),
-                          placeholder: 'e.g. 101',
-                          readOnly: widget.isViewMode ||
-                              _levels[i]['permissionType'] == 'U - User',
-                          onChanged: widget.isViewMode
-                              ? null
-                              : (v) => _updateLevel(i, 'roleCd', v),
-                        ),
+                        child: widget.isViewMode ||
+                                _levels[i]['permissionType'] == 'U - User'
+                            ? AmsTextInput(
+                                initialValue: _levels[i]['roleCd']?.toString(),
+                                readOnly: true,
+                              )
+                            : widget.loading
+                                ? const LinearProgressIndicator()
+                                : AmsDropdown(
+                                    initialValue: () {
+                                      if (widget.roleList.isEmpty) return null;
+                                      final seek = _levels[i]['roleCd']
+                                              ?.toString() ??
+                                          '';
+                                      if (seek.isEmpty) return null;
+                                      final matches = widget.roleList.where(
+                                          (r) =>
+                                              (r['roleCd']?.toString() ??
+                                                  r['ROLECD']?.toString() ??
+                                                  '') ==
+                                              seek);
+                                      if (matches.isEmpty) return null;
+                                      final r = matches.first;
+                                      return '${r['roleCd'] ?? r['ROLECD'] ?? ''} - ${r['roleName'] ?? r['rolename'] ?? ''}';
+                                    }(),
+                                    placeholder: 'Select ROLECD',
+                                    items: widget.roleList.map((r) {
+                                      final cd =
+                                          r['roleCd'] ?? r['ROLECD'] ?? '';
+                                      final name =
+                                          r['roleName'] ?? r['rolename'] ?? '';
+                                      return '$cd - $name';
+                                    }).toSet().toList(),
+                                    onChanged: (v) {
+                                      final parts = v?.split(' - ') ?? [];
+                                      final val =
+                                          parts.isNotEmpty ? parts[0] : '';
+                                      _updateLevel(i, 'roleCd', val);
+                                    },
+                                  ),
                       ),
                       AmsField(
                         label: 'User ID (USERID)',
@@ -2051,15 +2172,49 @@ class _Auth102LevelGridState extends State<_Auth102LevelGrid> {
                                 background: AppColors.grayLt,
                                 color: AppColors.ink3)
                             : null,
-                        child: AmsTextInput(
-                          initialValue: _levels[i]['userId']?.toString(),
-                          placeholder: 'e.g. EMP123',
-                          readOnly: widget.isViewMode ||
-                              _levels[i]['permissionType'] == 'R - Role',
-                          onChanged: widget.isViewMode
-                              ? null
-                              : (v) => _updateLevel(i, 'userId', v),
-                        ),
+                        child: widget.isViewMode ||
+                                _levels[i]['permissionType'] == 'R - Role'
+                            ? AmsTextInput(
+                                initialValue: _levels[i]['userId']?.toString(),
+                                readOnly: true,
+                              )
+                            : widget.loading
+                                ? const LinearProgressIndicator()
+                                : AmsDropdown(
+                                    initialValue: () {
+                                      if (widget.userList.isEmpty) return null;
+                                      final seek = _levels[i]['userId']
+                                              ?.toString() ??
+                                          '';
+                                      if (seek.isEmpty) return null;
+                                      final matches = widget.userList.where(
+                                          (u) =>
+                                              (u['usersCd'] ??
+                                                  u['userScd'] ??
+                                                  u['USERSCD'] ??
+                                                  '') ==
+                                              seek);
+                                      if (matches.isEmpty) return null;
+                                      final u = matches.first;
+                                      return '${u['usersCd'] ?? u['userScd'] ?? u['USERSCD'] ?? ''} - ${u['fName'] ?? u['fname'] ?? ''}';
+                                    }(),
+                                    placeholder: 'Select USERID',
+                                    items: widget.userList.map((u) {
+                                      final scd = u['usersCd'] ??
+                                          u['userScd'] ??
+                                          u['USERSCD'] ??
+                                          '';
+                                      final name =
+                                          u['fName'] ?? u['fname'] ?? '';
+                                      return '$scd - $name';
+                                    }).toSet().toList(),
+                                    onChanged: (v) {
+                                      final parts = v?.split(' - ') ?? [];
+                                      final val =
+                                          parts.isNotEmpty ? parts[0] : '';
+                                      _updateLevel(i, 'userId', val);
+                                    },
+                                  ),
                       ),
                     ],
                   ),
