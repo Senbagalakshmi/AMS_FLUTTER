@@ -191,6 +191,20 @@ class ApiService {
     }
   }
 
+  Future<bool> requestCorrection(
+      String authSl, int level, String userId, String remarks) async {
+    try {
+      final res = await http.post(
+        Uri.parse(
+            '$baseUrl/auth/correction/$authSl?level=$level&userId=$userId&remarks=${Uri.encodeComponent(remarks)}'),
+        headers: _headers,
+      );
+      return res.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
+
   Future<bool> updateAuthLock(String authSl) async {
     try {
       print('🔒 Sending lock request for AuthSl: $authSl');

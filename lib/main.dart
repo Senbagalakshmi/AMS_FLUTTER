@@ -234,6 +234,24 @@ class _AmsRootState extends State<AmsRoot> {
     }
   }
 
+  Future<void> _handleAuthCorrection(AuthRecord record, String remarks) async {
+    final level = (record.flUser == null || record.flUser == '0')
+        ? 1
+        : (record.slUser == null || record.slUser == '0')
+            ? 2
+            : 3;
+
+    final success = await apiService.requestCorrection(
+        record.authSl, level, _state.userName ?? 'SYSTEM', remarks);
+
+    if (success) {
+      _toast('🔄', 'Record sent for correction');
+      _refreshData();
+    } else {
+      _toast('⚠️', 'Failed to send for correction');
+    }
+  }
+
   Future<void> _handleAuthLock(AuthRecord record) async {
     await apiService.updateAuthLock(record.authSl);
     // Silent update, no toast needed for UI selection usually,
@@ -410,6 +428,7 @@ class _AmsRootState extends State<AmsRoot> {
           onRefresh: _refreshData,
           onProcess: _handleAuthProcess,
           onLock: _handleAuthLock,
+          onCorrection: _handleAuthCorrection,
           onBack: () => _navigate('list'),
           userName: _state.userName,
         );

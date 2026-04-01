@@ -7,6 +7,7 @@ import 'nontran_entry_screen.dart';
 class NonTranAuthScreen extends StatefulWidget {
   final List<AuthRecord> authQueue;
   final Future<void> Function(AuthRecord record, bool isApprove) onProcess;
+  final Future<void> Function(AuthRecord record, String remarks) onCorrection;
   final Future<void> Function(AuthRecord record)? onLock;
   final VoidCallback onBack;
   final String? userName;
@@ -16,6 +17,7 @@ class NonTranAuthScreen extends StatefulWidget {
     super.key,
     required this.authQueue,
     required this.onProcess,
+    required this.onCorrection,
     required this.onBack,
     this.onLock,
     this.userName,
@@ -214,8 +216,63 @@ class _NonTranAuthScreenState extends State<NonTranAuthScreen> {
           label: 'Correction',
           variant: AmsButtonVariant.outline,
           icon: Icons.edit_note_rounded,
-          onPressed: () {
-            showAmsToast(context, '🔄', 'Sent for Correction', type: 'w');
+          onPressed: () async {
+            if (_selectedRecord == null) return;
+
+            final remarksController = TextEditingController();
+            final confirmed = await showDialog<bool>(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+                title: Text('Request Correction',
+                    style: bodyStyle(weight: FontWeight.w700)),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Please provide details for the correction:',
+                        style: bodyStyle()),
+                    const SizedBox(height: 16),
+                    AmsTextInput(
+                      controller: remarksController,
+                      placeholder: 'Correction details...',
+                      keyboardType: TextInputType.multiline,
+                    ),
+                  ],
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx, false),
+                    child:
+                        Text('Cancel', style: bodyStyle(color: AppColors.ink3)),
+                  ),
+                  AmsButton(
+                    label: 'Send Correction',
+                    variant: AmsButtonVariant.teal,
+                    small: true,
+                    onPressed: () => Navigator.pop(ctx, true),
+                  ),
+                ],
+              ),
+            );
+
+            if (confirmed == true && remarksController.text.isNotEmpty) {
+              await widget.onCorrection(
+                  _selectedRecord!, remarksController.text);
+              if (widget.onRefresh != null) {
+                await widget.onRefresh!();
+              }
+              if (mounted) {
+                setState(() {
+                  _showForm = false;
+                  if (widget.authQueue.isEmpty) _selectedRecord = null;
+                });
+              }
+            } else if (confirmed == true && remarksController.text.isEmpty) {
+              showAmsToast(context, '⚠️', 'Remarks are mandatory for correction',
+                  type: 'w');
+            }
           },
         ),
       ],
