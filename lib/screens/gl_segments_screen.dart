@@ -200,7 +200,6 @@ class _GLSegmentPageState extends State<GLSegmentPage> {
       return Scaffold(
         backgroundColor: kBg,
         body: Column(children: [
-          // ── AmsIdentityHeader for Add/Edit form ──────────────────────
           AmsIdentityHeader(
             icon: const Icon(Icons.account_tree_rounded,
                 size: 28, color: AppColors.tBlue),
@@ -240,7 +239,6 @@ class _GLSegmentPageState extends State<GLSegmentPage> {
     return Scaffold(
       backgroundColor: kBg,
       body: Column(children: [
-        // ── AmsIdentityHeader for List screen ────────────────────────────
         AmsIdentityHeader(
           icon: const Icon(Icons.account_tree_rounded,
               size: 28, color: AppColors.tBlue),
@@ -262,118 +260,135 @@ class _GLSegmentPageState extends State<GLSegmentPage> {
     );
   }
 
+  // ─── UPDATED: Wrapped in white Container like GL Master ───────────────────
+
   Widget _buildBody() {
     final filtered = _filtered;
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Text('* Select GL Account',
-            style: TextStyle(
-                fontSize: 13, fontWeight: FontWeight.w600, color: kTextMid)),
-        const SizedBox(height: 8),
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: kCardBorder, width: 1.5),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 14),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              value: selectedGL,
-              isExpanded: true,
-              style: const TextStyle(color: kTextMid, fontSize: 14),
-              items: glAccounts
-                  .map((g) => DropdownMenuItem(value: g, child: Text(g)))
-                  .toList(),
-              onChanged: (v) => setState(() => selectedGL = v!),
-            ),
-          ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border.all(color: kCardBorder),
+          borderRadius: BorderRadius.circular(8),
         ),
-        const SizedBox(height: 24),
-        Row(children: [
-          Expanded(
-            child: Container(
-              height: 46,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Text('* Select GL Account',
+                style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: kTextMid)),
+            const SizedBox(height: 8),
+            Container(
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(8),
                 border: Border.all(color: kCardBorder, width: 1.5),
               ),
-              child: Row(children: [
-                const SizedBox(width: 14),
-                const Icon(Icons.search, color: kTextLight, size: 20),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: TextField(
-                    onChanged: (v) => setState(() => _searchQuery = v),
-                    style: const TextStyle(fontSize: 14, color: kTextMid),
-                    decoration: const InputDecoration(
-                      hintText: 'Search segments...',
-                      hintStyle:
-                          TextStyle(color: Color(0xFFCBD5E1), fontSize: 14),
-                      border: InputBorder.none,
-                      isDense: true,
-                    ),
-                  ),
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<String>(
+                  value: selectedGL,
+                  isExpanded: true,
+                  style: const TextStyle(color: kTextMid, fontSize: 14),
+                  items: glAccounts
+                      .map((g) => DropdownMenuItem(value: g, child: Text(g)))
+                      .toList(),
+                  onChanged: (v) => setState(() => selectedGL = v!),
                 ),
-              ]),
+              ),
             ),
-          ),
-          const SizedBox(width: 10),
-          Container(
-            width: 46,
-            height: 46,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: kCardBorder, width: 1.5),
-            ),
-            child: IconButton(
-              onPressed: () => setState(() => _searchQuery = ''),
-              icon: const Icon(Icons.refresh, color: kNavy, size: 20),
-            ),
-          ),
-          const SizedBox(width: 10),
-          ElevatedButton(
-            onPressed: _openAddForm,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: kNavy,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10)),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 13),
-            ),
-            child: const Row(mainAxisSize: MainAxisSize.min, children: [
-              Text('+ New GL',
-                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
-              SizedBox(width: 8),
-              Icon(Icons.arrow_forward, size: 16),
+            const SizedBox(height: 24),
+            Row(children: [
+              Expanded(
+                child: Container(
+                  height: 46,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: kCardBorder, width: 1.5),
+                  ),
+                  child: Row(children: [
+                    const SizedBox(width: 14),
+                    const Icon(Icons.search, color: kTextLight, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: TextField(
+                        onChanged: (v) => setState(() => _searchQuery = v),
+                        style: const TextStyle(fontSize: 14, color: kTextMid),
+                        decoration: const InputDecoration(
+                          hintText: 'Search segments...',
+                          hintStyle:
+                              TextStyle(color: Color(0xFFCBD5E1), fontSize: 14),
+                          border: InputBorder.none,
+                          isDense: true,
+                        ),
+                      ),
+                    ),
+                  ]),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Container(
+                width: 46,
+                height: 46,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: kCardBorder, width: 1.5),
+                ),
+                child: IconButton(
+                  onPressed: () => setState(() => _searchQuery = ''),
+                  icon: const Icon(Icons.refresh, color: kNavy, size: 20),
+                ),
+              ),
+              const SizedBox(width: 10),
+              ElevatedButton(
+                onPressed: _openAddForm,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: kNavy,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10)),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 13),
+                ),
+                child: const Row(mainAxisSize: MainAxisSize.min, children: [
+                  Text('+ New GL',
+                      style:
+                          TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+                  SizedBox(width: 8),
+                  Icon(Icons.arrow_forward, size: 16),
+                ]),
+              ),
             ]),
-          ),
-        ]),
-        const SizedBox(height: 10),
-        Text('Showing 1–${filtered.length} of ${segments.length}',
-            style: const TextStyle(fontSize: 12, color: kTextLight)),
-        const SizedBox(height: 14),
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: kCardBorder, width: 1.4),
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: Column(
-              children: filtered.asMap().entries.map((entry) {
-                final isLast = entry.key == filtered.length - 1;
-                return _hierarchyRow(entry.value, isLast);
-              }).toList(),
+            const SizedBox(height: 10),
+            Text('Showing 1–${filtered.length} of ${segments.length}',
+                style: const TextStyle(fontSize: 12, color: kTextLight)),
+            const SizedBox(height: 14),
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: kCardBorder, width: 1.4),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Column(
+                  children: filtered.asMap().entries.map((entry) {
+                    final isLast = entry.key == filtered.length - 1;
+                    return _hierarchyRow(entry.value, isLast);
+                  }).toList(),
+                ),
+              ),
             ),
-          ),
+          ]),
         ),
-      ]),
+      ),
     );
   }
 
@@ -486,13 +501,11 @@ class _AddEditFormState extends State<_AddEditForm> {
   String? _selectedLevel;
   bool? _selectedActive;
 
-  // ── Validation state: null = pristine, true = valid, false = invalid ──
   bool? _segIdValid;
   bool? _segValueValid;
   bool? _levelValid;
   bool? _activeValid;
 
-  // Whether user has attempted to save (triggers validation on all fields)
   bool _submitted = false;
 
   @override
@@ -505,7 +518,6 @@ class _AddEditFormState extends State<_AddEditForm> {
     _selectedLevel = seg?.level;
     _selectedActive = seg?.isActive;
 
-    // If editing, pre-validate existing values as valid
     if (seg != null) {
       _segIdValid = true;
       _segValueValid = true;
@@ -521,8 +533,6 @@ class _AddEditFormState extends State<_AddEditForm> {
     _segValueCtrl.dispose();
     super.dispose();
   }
-
-  // ── Validate individual fields ──────────────────────────────────────────────
 
   void _validateSegId(String val) {
     setState(() => _segIdValid = val.trim().isNotEmpty);
@@ -545,8 +555,6 @@ class _AddEditFormState extends State<_AddEditForm> {
       _activeValid = val != null && val.isNotEmpty;
     });
   }
-
-  // ── Validate all fields before saving ──────────────────────────────────────
 
   bool _validateAll() {
     setState(() {
@@ -574,8 +582,6 @@ class _AddEditFormState extends State<_AddEditForm> {
         _submitted = false;
       });
 
-  // ── Border color helper ─────────────────────────────────────────────────────
-
   InputBorder _borderFor(bool? valid, {bool isFocused = false}) {
     if (valid == null) {
       return OutlineInputBorder(
@@ -600,8 +606,6 @@ class _AddEditFormState extends State<_AddEditForm> {
 
   Color _fillFor(bool? valid) => Colors.white;
 
-  // ── Error message widget ────────────────────────────────────────────────────
-
   Widget _errorMsg(String message, bool? valid) {
     if (valid == false) {
       return Padding(
@@ -615,268 +619,275 @@ class _AddEditFormState extends State<_AddEditForm> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: kBg,
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.fromLTRB(28, 18, 28, 18),
-          color: kNavy,
-          child: Text(
-            widget.editingSegment != null
-                ? 'Edit Segment'
-                : 'Create GL Segment',
-            style: const TextStyle(
-                color: Colors.white, fontWeight: FontWeight.w700, fontSize: 17),
-          ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border.all(color: kCardBorder),
+          borderRadius: BorderRadius.circular(8),
         ),
-        Expanded(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(28, 32, 28, 32),
-            child: LayoutBuilder(builder: (context, constraints) {
-              final isWide = constraints.maxWidth > 600;
-
-              final fields = [
-                // ── GL No. (read-only, always valid) ──────────────────────────
-                _field(
-                  'GL No.',
-                  TextField(
-                    controller: _glNoCtrl,
-                    readOnly: true,
-                    style: const TextStyle(color: kTextLight, fontSize: 14),
-                    decoration: InputDecoration(
-                      hintText: 'Auto-filled',
-                      hintStyle: const TextStyle(
-                          color: Color(0xFFCBD5E1), fontSize: 14),
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 14),
-                      filled: true,
-                      fillColor: Colors.white,
-                      border: _borderFor(null),
-                      enabledBorder: _borderFor(null),
-                      focusedBorder: _borderFor(null, isFocused: true),
-                    ),
-                  ),
-                  info: 'Auto-filled from selected GL account',
-                  errorWidget: const SizedBox(height: 18),
-                ),
-
-                // ── Segment Type ───────────────────────────────────────────────
-                _field(
-                  'Segment Type',
-                  DropdownButtonFormField<String>(
-                    value: _selectedLevel,
-                    hint: const Text('Select type',
-                        style:
-                            TextStyle(color: Color(0xFFCBD5E1), fontSize: 14)),
-                    decoration: InputDecoration(
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 14),
-                      filled: true,
-                      fillColor: _fillFor(_submitted ? _levelValid : null),
-                      border: _borderFor(_submitted ? _levelValid : null),
-                      enabledBorder:
-                          _borderFor(_submitted ? _levelValid : null),
-                      focusedBorder: _borderFor(_levelValid, isFocused: true),
-                    ),
-                    style: const TextStyle(color: kTextDark, fontSize: 14),
-                    items: ['L1', 'L2', 'L3']
-                        .map((l) => DropdownMenuItem(value: l, child: Text(l)))
-                        .toList(),
-                    onChanged: _validateLevel,
-                  ),
-                  info: 'L1 = top level, L2 = sub, L3 = leaf',
-                  errorWidget: _errorMsg('Segment Type is required',
-                      _submitted ? _levelValid : null),
-                ),
-
-                // ── Segment ID ─────────────────────────────────────────────────
-                _field(
-                  'Segment ID',
-                  TextField(
-                    controller: _segIdCtrl,
-                    style: const TextStyle(color: kTextDark, fontSize: 14),
-                    onChanged: _validateSegId,
-                    decoration: InputDecoration(
-                      hintText: 'e.g. DEPT, COSTCTR',
-                      hintStyle: const TextStyle(
-                          color: Color(0xFFCBD5E1), fontSize: 14),
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 14),
-                      filled: true,
-                      fillColor: Colors.white,
-                      border: _borderFor(_segIdValid),
-                      enabledBorder: _borderFor(_segIdValid),
-                      focusedBorder: _borderFor(_segIdValid, isFocused: true),
-                    ),
-                  ),
-                  info: 'Unique identifier for the segment',
-                  errorWidget: _errorMsg('Segment ID is required', _segIdValid),
-                ),
-
-                // ── Segment Value ──────────────────────────────────────────────
-                _field(
-                  'Segment Value',
-                  TextField(
-                    controller: _segValueCtrl,
-                    style: const TextStyle(color: kTextDark, fontSize: 14),
-                    onChanged: _validateSegValue,
-                    decoration: InputDecoration(
-                      hintText: 'e.g. Finance, Payroll',
-                      hintStyle: const TextStyle(
-                          color: Color(0xFFCBD5E1), fontSize: 14),
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 14),
-                      filled: true,
-                      fillColor: Colors.white,
-                      border: _borderFor(_segValueValid),
-                      enabledBorder: _borderFor(_segValueValid),
-                      focusedBorder:
-                          _borderFor(_segValueValid, isFocused: true),
-                    ),
-                  ),
-                  info: 'Display value or description',
-                  errorWidget:
-                      _errorMsg('Segment Value is required', _segValueValid),
-                ),
-
-                // ── Status ─────────────────────────────────────────────────────
-                _field(
-                  'Status',
-                  DropdownButtonFormField<String>(
-                    value: _selectedActive == null
-                        ? null
-                        : (_selectedActive! ? 'Active' : 'Inactive'),
-                    hint: const Text('Active / Inactive',
-                        style:
-                            TextStyle(color: Color(0xFFCBD5E1), fontSize: 14)),
-                    decoration: InputDecoration(
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 14),
-                      filled: true,
-                      fillColor: _fillFor(_submitted ? _activeValid : null),
-                      border: _borderFor(_submitted ? _activeValid : null),
-                      enabledBorder:
-                          _borderFor(_submitted ? _activeValid : null),
-                      focusedBorder: _borderFor(_activeValid, isFocused: true),
-                    ),
-                    style: const TextStyle(color: kTextDark, fontSize: 14),
-                    items: ['Active', 'Inactive']
-                        .map((s) => DropdownMenuItem(value: s, child: Text(s)))
-                        .toList(),
-                    onChanged: _validateActive,
-                  ),
-                  info: 'Active or Inactive',
-                  errorWidget: _errorMsg(
-                      'Status is required', _submitted ? _activeValid : null),
-                ),
-              ];
-
-              return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (isWide)
-                      Wrap(
-                          spacing: 24,
-                          runSpacing: 0,
-                          children: fields
-                              .map((f) => SizedBox(
-                                  width: (constraints.maxWidth - 24) / 2,
-                                  child: f))
-                              .toList())
-                    else
-                      Column(children: fields),
-                    const Text('* Required fields',
-                        style: TextStyle(
-                            color: Color(0xFF94A3B8),
-                            fontSize: 11,
-                            fontStyle: FontStyle.italic)),
-                    const SizedBox(height: 32),
-                    Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-                      ElevatedButton(
-                        onPressed: () {
-                          if (_validateAll()) {
-                            widget.onSave(
-                              _selectedLevel ?? '',
-                              _segIdCtrl.text.trim(),
-                              _segValueCtrl.text.trim(),
-                              _selectedActive ?? true,
-                            );
-                          }
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: kNavy,
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8)),
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 24, vertical: 14),
-                        ),
-                        child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text('Save',
-                                  style: TextStyle(
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 14)),
-                              SizedBox(width: 8),
-                              Icon(Icons.arrow_forward, size: 16),
-                            ]),
-                      ),
-                      const SizedBox(width: 10),
-                      OutlinedButton(
-                        onPressed: _clear,
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: kTextMid,
-                          backgroundColor: Colors.white,
-                          side:
-                              const BorderSide(color: kCardBorder, width: 1.5),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8)),
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 20, vertical: 14),
-                        ),
-                        child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.format_align_left, size: 15),
-                              SizedBox(width: 6),
-                              Text('Clear',
-                                  style: TextStyle(
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 14)),
-                            ]),
-                      ),
-                      const SizedBox(width: 10),
-                      ElevatedButton(
-                        onPressed: widget.onCancel,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: kRedBack,
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8)),
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 20, vertical: 14),
-                        ),
-                        child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.close, size: 15),
-                              SizedBox(width: 6),
-                              Text('Cancel',
-                                  style: TextStyle(
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 14)),
-                            ]),
-                      ),
-                    ]),
-                  ]);
-            }),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(28, 18, 28, 18),
+            decoration: const BoxDecoration(
+              color: kNavy,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+            ),
+            child: Text(
+              widget.editingSegment != null
+                  ? 'Edit Segment'
+                  : 'Create GL Segment',
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 17),
+            ),
           ),
-        ),
-      ]),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(28, 32, 28, 32),
+              child: LayoutBuilder(builder: (context, constraints) {
+                final isWide = constraints.maxWidth > 600;
+
+                final fields = [
+                  _field(
+                    'GL No.',
+                    TextField(
+                      controller: _glNoCtrl,
+                      readOnly: true,
+                      style: const TextStyle(color: kTextLight, fontSize: 14),
+                      decoration: InputDecoration(
+                        hintText: 'Auto-filled',
+                        hintStyle: const TextStyle(
+                            color: Color(0xFFCBD5E1), fontSize: 14),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 14),
+                        filled: true,
+                        fillColor: Colors.white,
+                        border: _borderFor(null),
+                        enabledBorder: _borderFor(null),
+                        focusedBorder: _borderFor(null, isFocused: true),
+                      ),
+                    ),
+                    info: 'Auto-filled from selected GL account',
+                    errorWidget: const SizedBox(height: 18),
+                  ),
+                  _field(
+                    'Segment Type',
+                    DropdownButtonFormField<String>(
+                      value: _selectedLevel,
+                      hint: const Text('Select type',
+                          style: TextStyle(
+                              color: Color(0xFFCBD5E1), fontSize: 14)),
+                      decoration: InputDecoration(
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 14),
+                        filled: true,
+                        fillColor: _fillFor(_submitted ? _levelValid : null),
+                        border: _borderFor(_submitted ? _levelValid : null),
+                        enabledBorder:
+                            _borderFor(_submitted ? _levelValid : null),
+                        focusedBorder: _borderFor(_levelValid, isFocused: true),
+                      ),
+                      style: const TextStyle(color: kTextDark, fontSize: 14),
+                      items: ['L1', 'L2', 'L3']
+                          .map(
+                              (l) => DropdownMenuItem(value: l, child: Text(l)))
+                          .toList(),
+                      onChanged: _validateLevel,
+                    ),
+                    info: 'L1 = top level, L2 = sub, L3 = leaf',
+                    errorWidget: _errorMsg('Segment Type is required',
+                        _submitted ? _levelValid : null),
+                  ),
+                  _field(
+                    'Segment ID',
+                    TextField(
+                      controller: _segIdCtrl,
+                      style: const TextStyle(color: kTextDark, fontSize: 14),
+                      onChanged: _validateSegId,
+                      decoration: InputDecoration(
+                        hintText: 'e.g. DEPT, COSTCTR',
+                        hintStyle: const TextStyle(
+                            color: Color(0xFFCBD5E1), fontSize: 14),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 14),
+                        filled: true,
+                        fillColor: Colors.white,
+                        border: _borderFor(_segIdValid),
+                        enabledBorder: _borderFor(_segIdValid),
+                        focusedBorder: _borderFor(_segIdValid, isFocused: true),
+                      ),
+                    ),
+                    info: 'Unique identifier for the segment',
+                    errorWidget:
+                        _errorMsg('Segment ID is required', _segIdValid),
+                  ),
+                  _field(
+                    'Segment Value',
+                    TextField(
+                      controller: _segValueCtrl,
+                      style: const TextStyle(color: kTextDark, fontSize: 14),
+                      onChanged: _validateSegValue,
+                      decoration: InputDecoration(
+                        hintText: 'e.g. Finance, Payroll',
+                        hintStyle: const TextStyle(
+                            color: Color(0xFFCBD5E1), fontSize: 14),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 14),
+                        filled: true,
+                        fillColor: Colors.white,
+                        border: _borderFor(_segValueValid),
+                        enabledBorder: _borderFor(_segValueValid),
+                        focusedBorder:
+                            _borderFor(_segValueValid, isFocused: true),
+                      ),
+                    ),
+                    info: 'Display value or description',
+                    errorWidget:
+                        _errorMsg('Segment Value is required', _segValueValid),
+                  ),
+                  _field(
+                    'Status',
+                    DropdownButtonFormField<String>(
+                      value: _selectedActive == null
+                          ? null
+                          : (_selectedActive! ? 'Active' : 'Inactive'),
+                      hint: const Text('Active / Inactive',
+                          style: TextStyle(
+                              color: Color(0xFFCBD5E1), fontSize: 14)),
+                      decoration: InputDecoration(
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 14),
+                        filled: true,
+                        fillColor: _fillFor(_submitted ? _activeValid : null),
+                        border: _borderFor(_submitted ? _activeValid : null),
+                        enabledBorder:
+                            _borderFor(_submitted ? _activeValid : null),
+                        focusedBorder:
+                            _borderFor(_activeValid, isFocused: true),
+                      ),
+                      style: const TextStyle(color: kTextDark, fontSize: 14),
+                      items: ['Active', 'Inactive']
+                          .map(
+                              (s) => DropdownMenuItem(value: s, child: Text(s)))
+                          .toList(),
+                      onChanged: _validateActive,
+                    ),
+                    info: 'Active or Inactive',
+                    errorWidget: _errorMsg(
+                        'Status is required', _submitted ? _activeValid : null),
+                  ),
+                ];
+
+                return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (isWide)
+                        Wrap(
+                            spacing: 24,
+                            runSpacing: 0,
+                            children: fields
+                                .map((f) => SizedBox(
+                                    width: (constraints.maxWidth - 24) / 2,
+                                    child: f))
+                                .toList())
+                      else
+                        Column(children: fields),
+                      const Text('* Required fields',
+                          style: TextStyle(
+                              color: Color(0xFF94A3B8),
+                              fontSize: 11,
+                              fontStyle: FontStyle.italic)),
+                      const SizedBox(height: 32),
+                      Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+                        ElevatedButton(
+                          onPressed: () {
+                            if (_validateAll()) {
+                              widget.onSave(
+                                _selectedLevel ?? '',
+                                _segIdCtrl.text.trim(),
+                                _segValueCtrl.text.trim(),
+                                _selectedActive ?? true,
+                              );
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: kNavy,
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8)),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 24, vertical: 14),
+                          ),
+                          child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text('Save',
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 14)),
+                                SizedBox(width: 8),
+                                Icon(Icons.arrow_forward, size: 16),
+                              ]),
+                        ),
+                        const SizedBox(width: 10),
+                        OutlinedButton(
+                          onPressed: _clear,
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: kTextMid,
+                            backgroundColor: Colors.white,
+                            side: const BorderSide(
+                                color: kCardBorder, width: 1.5),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8)),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 14),
+                          ),
+                          child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.format_align_left, size: 15),
+                                SizedBox(width: 6),
+                                Text('Clear',
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 14)),
+                              ]),
+                        ),
+                        const SizedBox(width: 10),
+                        ElevatedButton(
+                          onPressed: widget.onCancel,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: kRedBack,
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8)),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 14),
+                          ),
+                          child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.close, size: 15),
+                                SizedBox(width: 6),
+                                Text('Cancel',
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 14)),
+                              ]),
+                        ),
+                      ]),
+                    ]);
+              }),
+            ),
+          ),
+        ]),
+      ),
     );
   }
 
