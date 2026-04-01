@@ -1112,46 +1112,86 @@ class AmsSubmitBar extends StatelessWidget {
   }
 }
 
-// ─── SNACKBAR TOAST ───────────────────────────────────────────
-void showAmsSnack(BuildContext context, String msg, {String type = 's'}) {
-  final icon = type == 's' ? '✅' : type == 'e' ? '❌' : type == 'w' ? '⚠️' : 'ℹ️';
-  final bg = type == 's'
-      ? AppColors.green
-      : type == 'e'
-          ? AppColors.red
-          : type == 'w'
-              ? AppColors.amber
-              : AppColors.tBlue;
-  final size = MediaQuery.of(context).size;
-  // Calculate bottom margin to place it near the top (e.g. 80px from top)
-  // Standard desktop top spacing
-  final double bottomMargin = size.height - 110; 
-  // Width around 320px
-  final double leftMargin = size.width > 360 ? size.width - 340 : 20;
+void showAmsSnack(BuildContext context, String msg,
+    {String type = 'i', int seconds = 3, String? icon}) {
+  late Color bg;
+  late Color border;
+  late Color accent;
 
-  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-    content: Row(
-      children: [
-        Text(icon, style: const TextStyle(fontSize: 15)),
-        const SizedBox(width: 10),
-        Expanded(
-            child: Text(msg,
+  switch (type) {
+    case 's': // success
+      bg = const Color(0xFFF0FDF4);
+      border = const Color(0xFFDCFCE7);
+      accent = AppColors.green;
+    case 'e': // error
+      bg = const Color(0xFFFEF2F2);
+      border = const Color(0xFFFEE2E2);
+      accent = AppColors.red;
+    case 'w': // warning
+      bg = const Color(0xFFFFFBEB);
+      border = const Color(0xFFFEF3C7);
+      accent = AppColors.amber;
+    default: // info
+      bg = const Color(0xFFF0F9FF);
+      border = const Color(0xFFE0F2FE);
+      accent = AppColors.tBlue;
+  }
+
+  final displayIcon = icon ??
+      (type == 's'
+          ? '✅'
+          : type == 'e'
+              ? '❌'
+              : type == 'w'
+                  ? '⚠️'
+                  : 'ℹ️');
+
+  ScaffoldMessenger.of(context).clearSnackBars();
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      behavior: SnackBarBehavior.floating,
+      elevation: 0,
+      backgroundColor: Colors.transparent,
+      duration: Duration(seconds: seconds),
+      content: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: bg,
+          border: Border.all(color: border),
+          borderRadius: BorderRadius.circular(10),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(
+                color: accent.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Center(
+                  child: Text(displayIcon, style: const TextStyle(fontSize: 14))),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Text(
+                msg,
                 style: bodyStyle(
-                    size: 13,
-                    weight: FontWeight.w700,
-                    color: Colors.white))),
-      ],
+                    size: 13, weight: FontWeight.w600, color: AppColors.ink),
+              ),
+            ),
+          ],
+        ),
+      ),
     ),
-    backgroundColor: bg,
-    behavior: SnackBarBehavior.floating,
-    margin: EdgeInsets.only(
-      bottom: bottomMargin,
-      left: leftMargin,
-      right: 20,
-    ),
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-    duration: const Duration(milliseconds: 3000),
-  ));
+  );
 }
 
 // ─── SIDEBAR ITEM ─────────────────────────────────────────────
@@ -2902,3 +2942,4 @@ class AmsListSkeleton extends StatelessWidget {
     );
   }
 }
+

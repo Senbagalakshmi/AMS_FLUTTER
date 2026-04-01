@@ -208,8 +208,8 @@ class _AllowedBranchScreenState extends State<AllowedBranchScreen> {
             variant: AmsButtonVariant.primary,
             backgroundColor: AppColors.sidebar,
             onPressed: () {
-              showAmsToast(
-                  context, '✅', 'Allowed branches updated successfully.');
+              showAmsSnack(context, 'Allowed branches updated successfully.',
+                  icon: '✅');
               setState(() {
                 showForm = false;
               });

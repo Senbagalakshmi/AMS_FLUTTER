@@ -61,7 +61,8 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
 
   void _doSubmit() {
     if (_selProg == null) {
-      showAmsToast(context, '⚠', 'Please select a program first.', type: 'w');
+      showAmsSnack(context, 'Please select a program first.',
+          icon: '⚠', type: 'w');
       return;
     }
 
@@ -886,6 +887,8 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
   String? _menuType;
   String? _title;
   bool _approvalReq = true;
+  bool _preApprovalReq = false;
+  bool _postApprovalReq = false;
   bool _isTran = false;
   List<Map<String, dynamic>> _authLevels = [];
 
@@ -968,12 +971,25 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
       _menuScdCtrl.text = data['menucd']?.toString() ?? '';
       _menuNameCtrl.text = data['menuname']?.toString() ?? '';
     } else if (prog == 'AUTHCTL') {
-      _authModCtrl.text = data['modcd']?.toString() ?? '';
-      _authPgmCtrl.text = data['pgmcd']?.toString() ?? '';
+      _authModCtrl.text = data['orgcode']?.toString() ??
+          data['modcd']?.toString() ??
+          '';
+      _authPgmCtrl.text = data['programid']?.toString() ??
+          data['pgmcd']?.toString() ??
+          '';
       _approvalReq = data['approvalreq'] == true ||
           data['approvalreq'] == 1 ||
           data['approvalreq'] == '1';
-      _isTran = data['istran'] == true ||
+      _preApprovalReq = data['preapproveproc'] == true ||
+          data['preapproveproc'] == 1 ||
+          data['preapproveproc'] == '1';
+      _postApprovalReq = data['postapproveproc'] == true ||
+          data['postapproveproc'] == 1 ||
+          data['postapproveproc'] == '1';
+      _isTran = data['istranpgm'] == true ||
+          data['istranpgm'] == 1 ||
+          data['istranpgm'] == '1' ||
+          data['istran'] == true ||
           data['istran'] == 1 ||
           data['istran'] == '1';
 
@@ -1068,10 +1084,10 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
       }
 
       if (!isValid) {
-        showAmsToast(
+        showAmsSnack(
           context,
-          '⚠',
           'Please fill all mandatory fields correctly.',
+          icon: '⚠',
           type: 'w',
         );
       }
@@ -1727,87 +1743,131 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
             borderRadius: BorderRadius.circular(8),
             border: Border.all(color: AppColors.border),
           ),
-          child: AmsFormGrid(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              AmsField(
-                label: 'MODCD',
-                required: true,
-                labelAbove: true,
-                child: AmsTextInput(
-                  controller: _authModCtrl,
-                  readOnly: widget.isViewMode,
-                  placeholder: 'Module Code',
-                  textInputAction: TextInputAction.next,
-                  errorText: _errors['authMod'],
-                  isValid: _errors['authMod'] == null &&
-                      _authModCtrl.text.isNotEmpty,
-                  onChanged: (v) {
-                    setState(() {
-                      _errors['authMod'] =
-                          v.trim().isEmpty ? 'Module Code required' : null;
-                    });
-                    widget.onChanged('modCd', v);
-                  },
-                ),
-              ),
-              AmsField(
-                label: 'PGMCD',
-                required: true,
-                labelAbove: true,
-                child: AmsTextInput(
-                  controller: _authPgmCtrl,
-                  readOnly: widget.isViewMode,
-                  placeholder: 'Program Code',
-                  textInputAction: TextInputAction.done,
-                  errorText: _errors['authPgm'],
-                  isValid: _errors['authPgm'] == null &&
-                      _authPgmCtrl.text.isNotEmpty,
-                  onChanged: (v) {
-                    setState(() {
-                      _errors['authPgm'] =
-                          v.trim().isEmpty ? 'Program Code required' : null;
-                    });
-                    widget.onChanged('pgmCd', v);
-                  },
-                ),
-              ),
-              AmsField(
-                label: 'APPROVAL REQ',
-                labelAbove: true,
-                child: Row(
-                  children: [
-                    Switch(
-                      value: _approvalReq,
-                      onChanged: widget.isViewMode
-                          ? null
-                          : (v) {
-                              setState(() => _approvalReq = v);
-                              widget.onChanged('approvalReq', v);
-                            },
-                      activeThumbColor: AppColors.tBlue,
+              AmsFormGrid(
+                children: [
+                  AmsField(
+                    label: 'Organization Code',
+                    required: true,
+                    labelAbove: true,
+                    child: AmsTextInput(
+                      controller: _authModCtrl,
+                      readOnly: widget.isViewMode,
+                      placeholder: 'e.g. 101',
+                      textInputAction: TextInputAction.next,
+                      errorText: _errors['authMod'],
+                      isValid: _errors['authMod'] == null &&
+                          _authModCtrl.text.isNotEmpty,
+                      onChanged: (v) {
+                        setState(() {
+                          _errors['authMod'] = v.trim().isEmpty
+                              ? 'Organization Code required'
+                              : null;
+                        });
+                        widget.onChanged('orgCode', v);
+                      },
                     ),
-                    Text(_approvalReq ? 'Yes' : 'No', style: bodyStyle()),
-                  ],
-                ),
-              ),
-              AmsField(
-                label: 'IS TRANSACTION',
-                labelAbove: true,
-                child: Row(
-                  children: [
-                    Switch(
-                      value: _isTran,
-                      onChanged: widget.isViewMode
-                          ? null
-                          : (v) {
-                              setState(() => _isTran = v);
-                              widget.onChanged('isTran', v);
-                            },
-                      activeThumbColor: AppColors.tBlue,
+                  ),
+                  AmsField(
+                    label: 'Program Id',
+                    required: true,
+                    labelAbove: true,
+                    child: AmsTextInput(
+                      controller: _authPgmCtrl,
+                      readOnly: widget.isViewMode,
+                      placeholder: 'e.g. USR-ROLE',
+                      textInputAction: TextInputAction.done,
+                      errorText: _errors['authPgm'],
+                      isValid: _errors['authPgm'] == null &&
+                          _authPgmCtrl.text.isNotEmpty,
+                      onChanged: (v) {
+                        setState(() {
+                          _errors['authPgm'] =
+                              v.trim().isEmpty ? 'Program Id required' : null;
+                        });
+                        widget.onChanged('programId', v);
+                      },
                     ),
-                    Text(_isTran ? 'Yes' : 'No', style: bodyStyle()),
-                  ],
-                ),
+                  ),
+                  AmsField(
+                    label: 'Approval Required',
+                    labelAbove: true,
+                    child: Row(
+                      children: [
+                        Switch(
+                          value: _approvalReq,
+                          onChanged: widget.isViewMode
+                              ? null
+                              : (v) {
+                                  setState(() => _approvalReq = v);
+                                  widget.onChanged('approvalReq', v ? 1 : 0);
+                                },
+                          activeThumbColor: AppColors.tBlue,
+                        ),
+                        Text(_approvalReq ? 'Yes' : 'No', style: bodyStyle()),
+                      ],
+                    ),
+                  ),
+                  AmsField(
+                    label: 'Pre Approval Required',
+                    labelAbove: true,
+                    child: Row(
+                      children: [
+                        Switch(
+                          value: _preApprovalReq,
+                          onChanged: widget.isViewMode
+                              ? null
+                              : (v) {
+                                  setState(() => _preApprovalReq = v);
+                                  widget.onChanged('preApproveProc', v ? 1 : 0);
+                                },
+                          activeThumbColor: AppColors.tBlue,
+                        ),
+                        Text(_preApprovalReq ? 'Yes' : 'No', style: bodyStyle()),
+                      ],
+                    ),
+                  ),
+                  AmsField(
+                    label: 'Post Approval Required',
+                    labelAbove: true,
+                    child: Row(
+                      children: [
+                        Switch(
+                          value: _postApprovalReq,
+                          onChanged: widget.isViewMode
+                              ? null
+                              : (v) {
+                                  setState(() => _postApprovalReq = v);
+                                  widget.onChanged('postApproveProc', v ? 1 : 0);
+                                },
+                          activeThumbColor: AppColors.tBlue,
+                        ),
+                        Text(_postApprovalReq ? 'Yes' : 'No', style: bodyStyle()),
+                      ],
+                    ),
+                  ),
+                  AmsField(
+                    label: 'Transaction program',
+                    labelAbove: true,
+                    child: Row(
+                      children: [
+                        Switch(
+                          value: _isTran,
+                          onChanged: widget.isViewMode
+                              ? null
+                              : (v) {
+                                  setState(() => _isTran = v);
+                                  widget.onChanged('isTranPgm', v ? 1 : 0);
+                                },
+                          activeThumbColor: AppColors.tBlue,
+                        ),
+                        Text(_isTran ? 'Yes' : 'No', style: bodyStyle()),
+                      ],
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 24),
               Text('AUTHORIZATION LEVELS',

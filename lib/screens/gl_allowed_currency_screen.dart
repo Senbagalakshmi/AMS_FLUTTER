@@ -219,15 +219,15 @@ class _AllowedCurrencyScreenState extends State<AllowedCurrencyScreen> {
             variant: AmsButtonVariant.primary,
             backgroundColor: AppColors.sidebar,
             onPressed: () {
-            showAmsToast(
-             context,
-             '✅',
-             'Allowed currencies updated successfully.',
-            );
-            setState(() {
-              showForm = false;
-            });
-          },
+              showAmsSnack(
+                context,
+                'Allowed currencies updated successfully.',
+                icon: '✅',
+              );
+              setState(() {
+                showForm = false;
+              });
+            },
          ),
           AmsButton(
             label: 'Clear',
