@@ -21,12 +21,18 @@ class GLAttributeScreen extends StatefulWidget {
 class _GLAttributeScreenState extends State<GLAttributeScreen> {
 
   bool _showForm = false;
+
   final _glNoController = TextEditingController();
-final _attrIdController = TextEditingController();
-final _attrValueController = TextEditingController();
-String? _glNoError;
-String? _attrIdError;
-String? _attrValueError;
+  final _attrIdController = TextEditingController();
+  final _attrValueController = TextEditingController();
+
+  String? _glNoError;
+  String? _attrIdError;
+  String? _attrValueError;
+
+  bool _glNoSuccess = false;
+  bool _attrIdSuccess = false;
+  bool _attrValueSuccess = false;
 
   final List<String> glAccounts = [
     "GL 10020 — Bank Operating A/c",
@@ -35,25 +41,25 @@ String? _attrValueError;
   String selectedAccount = "GL 10020 — Bank Operating A/c";
 
   final List<Map<String, String>> attributes = [
-  {"id": "RECON_FLAG", "value": "Y", "desc": "Reconciliation required"},
-  {"id": "COST_CENTER", "value": "CC-FINANCE-001", "desc": "Default cost centre"},
-  {"id": "IFRS_CLASS", "value": "FVTPL", "desc": "IFRS 9 classification"},
-  {"id": "REPORT_GROUP", "value": "TREASURY", "desc": "Reporting group"},
-  {"id": "TAX_CODE", "value": "GST-18", "desc": "Default tax code"},
-  {"id": "CTRL_ACCOUNT", "value": "Y", "desc": "Control account flag"},
-];
+    {"id": "RECON_FLAG", "value": "Y", "desc": "Reconciliation required"},
+    {"id": "COST_CENTER", "value": "CC-FINANCE-001", "desc": "Default cost centre"},
+    {"id": "IFRS_CLASS", "value": "FVTPL", "desc": "IFRS 9 classification"},
+    {"id": "REPORT_GROUP", "value": "TREASURY", "desc": "Reporting group"},
+    {"id": "TAX_CODE", "value": "GST-18", "desc": "Default tax code"},
+    {"id": "CTRL_ACCOUNT", "value": "Y", "desc": "Control account flag"},
+  ];
 
-/// ✅ ADD HERE
-void _deleteAttribute(int index) {
-  setState(() {
-    attributes.removeAt(index);
-  });
-}
-void _editAttribute(int index) {
-  setState(() {
-    _showForm = true;
-  });
-}
+  void _deleteAttribute(int index) {
+    setState(() {
+      attributes.removeAt(index);
+    });
+  }
+
+  void _editAttribute(int index) {
+    setState(() {
+      _showForm = true;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -137,7 +143,7 @@ void _editAttribute(int index) {
 
         const SizedBox(height: 20),
 
-        /// HEADER
+        /// HEADER ROW
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -166,171 +172,173 @@ void _editAttribute(int index) {
         const SizedBox(height: 10),
 
         /// TABLE
-       Expanded(
-  child: Container(
-    decoration: BoxDecoration(
-      border: Border.all(color: AppColors.border),
-      borderRadius: BorderRadius.circular(8),
-      color: Colors.white,
-    ),
-    child: Column(
-      children: [
- 
-        /// TABLE HEADER
-        Container(
-          padding: const EdgeInsets.symmetric(
-            vertical: 14,
-            horizontal: 16,
-          ),
-          decoration: const BoxDecoration(
-            color: Color(0xFF2F5597),
-            borderRadius: BorderRadius.vertical(
-              top: Radius.circular(8),
-            ),
-          ),
-          child: Row(
-            children: const [
- 
-              Expanded(
-                flex: 2,
-                child: Text(
-                  "Attribute ID",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
- 
-              Expanded(
-                flex: 2,
-                child: Text(
-                  "Value",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
- 
-              Expanded(
-                flex: 3,
-                child: Text(
-                  "Description",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
- 
-              Expanded(
-                flex: 1,
-                child: Text(
-                  "Actions",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
- 
-        /// TABLE DATA
         Expanded(
-          child: ListView.builder(
-            itemCount: attributes.length,
-            itemBuilder: (context, index) {
- 
-              final item = attributes[index];
- 
-              return Container(
-                padding: const EdgeInsets.symmetric(
-                  vertical: 16,
-                  horizontal: 16,
-                ),
-                decoration: BoxDecoration(
-                  border: Border(
-                    bottom: BorderSide(
-                      color: AppColors.border,
+          child: Container(
+            decoration: BoxDecoration(
+              border: Border.all(color: AppColors.border),
+              borderRadius: BorderRadius.circular(8),
+              color: Colors.white,
+            ),
+            child: Column(
+              children: [
+
+                /// TABLE HEADER
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 14,
+                    horizontal: 16,
+                  ),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF2F5597),
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(8),
                     ),
                   ),
-                ),
-                child: Row(
-                  children: [
- 
-                    /// Attribute ID
-                    Expanded(
-                      flex: 2,
-                      child: Text(
-                        item["id"]!,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w600,
+                  child: Row(
+                    children: const [
+
+                      Expanded(
+                        flex: 2,
+                        child: Text(
+                          "Attribute ID",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
-                    ),
- 
-                    /// Value
-                    Expanded(
-                      flex: 2,
-                      child: Text(item["value"]!),
-                    ),
- 
-                    /// Description
-                    Expanded(
-                      flex: 3,
-                      child: Text(item["desc"]!),
-                    ),
- 
-                    /// Actions
-                    Expanded(
-                      flex: 1,
-                      child: Row(
-                        children: [
- 
-                          /// Edit
-                          InkWell(
-                            onTap: () {
-                              _editAttribute(index);
-                            },
-                            child: const Icon(
-                              Icons.edit,
-                              size: 18,
-                              color: Colors.black54,
-                            ),
+
+                      Expanded(
+                        flex: 2,
+                        child: Text(
+                          "Value",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
                           ),
- 
-                          const SizedBox(width: 12),
- 
-                          /// Delete
-                          InkWell(
-                            onTap: () {
-                              _deleteAttribute(index);
-                            },
-                            child: const Icon(
-                              Icons.close,
-                              size: 18,
-                              color: Colors.black54,
-                            ),
-                          ),
- 
-                        ],
+                        ),
                       ),
-                    ),
- 
-                  ],
+
+                      Expanded(
+                        flex: 3,
+                        child: Text(
+                          "Description",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+
+                      Expanded(
+                        flex: 1,
+                        child: Text(
+                          "Actions",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+
+                    ],
+                  ),
                 ),
-              );
-            },
+
+                /// TABLE DATA
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: attributes.length,
+                    itemBuilder: (context, index) {
+
+                      final item = attributes[index];
+
+                      return Container(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 16,
+                          horizontal: 16,
+                        ),
+                        decoration: BoxDecoration(
+                          border: Border(
+                            bottom: BorderSide(
+                              color: AppColors.border,
+                            ),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+
+                            /// Attribute ID
+                            Expanded(
+                              flex: 2,
+                              child: Text(
+                                item["id"]!,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+
+                            /// Value
+                            Expanded(
+                              flex: 2,
+                              child: Text(item["value"]!),
+                            ),
+
+                            /// Description
+                            Expanded(
+                              flex: 3,
+                              child: Text(item["desc"]!),
+                            ),
+
+                            /// Actions
+                            Expanded(
+                              flex: 1,
+                              child: Row(
+                                children: [
+
+                                  /// Edit
+                                  InkWell(
+                                    onTap: () {
+                                      _editAttribute(index);
+                                    },
+                                    child: const Icon(
+                                      Icons.edit,
+                                      size: 18,
+                                      color: Colors.black54,
+                                    ),
+                                  ),
+
+                                  const SizedBox(width: 12),
+
+                                  /// Delete
+                                  InkWell(
+                                    onTap: () {
+                                      _deleteAttribute(index);
+                                    },
+                                    child: const Icon(
+                                      Icons.close,
+                                      size: 18,
+                                      color: Colors.black54,
+                                    ),
+                                  ),
+
+                                ],
+                              ),
+                            ),
+
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+
+              ],
+            ),
           ),
         ),
- 
-      ],
-    ),
-  ),
-)
+
       ],
     );
   }
@@ -340,254 +348,292 @@ void _editAttribute(int index) {
   /// =============================
 
   Widget _buildAddForm() {
-  return Container(
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(8),
-      border: Border.all(color: AppColors.border),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withValues(alpha: 0.03),
-          blurRadius: 8,
-          offset: const Offset(0, 3),
-        )
-      ],
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
- 
-        /// HEADER
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 12,
-          ),
-          decoration: const BoxDecoration(
-            color: AppColors.sidebar,
-            borderRadius: BorderRadius.vertical(
-              top: Radius.circular(8),
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          )
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+
+          /// FORM HEADER
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 12,
             ),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
- 
-              Text(
-                "Add GL Attribute",
-                style: bodyStyle(
-                  color: Colors.white,
-                  weight: FontWeight.w700,
-                ),
-              ),
- 
-              IconButton(
-                icon: const Icon(
-                  Icons.keyboard_arrow_up,
-                  color: Colors.white,
-                ),
-                onPressed: () {
-                  setState(() {
-                    _showForm = false;
-                  });
-                },
-              ),
- 
-            ],
-          ),
-        ),
- 
-        /// BODY
-      Expanded(
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: SingleChildScrollView(
-              child: Column(
-                children: [
- 
-                  AmsFormGrid(
-
-  children: [
- 
-    AmsField(
-
-      label: "GL No",
-
-      required: true,
-
-      labelAbove: true,
-
-      child: AmsTextInput(
-
-        controller: _glNoController,
-
-        errorText: _glNoError,
-
-        placeholder: "10020",
-
-      ),
-
-    ),
- 
-    AmsField(
-
-      label: "Attribute ID",
-
-      required: true,
-
-      labelAbove: true,
-
-      child: AmsTextInput(
-
-        controller: _attrIdController,
-
-        errorText: _attrIdError,
-
-      ),
-
-    ),
- 
-    AmsField(
-
-      label: "Attribute Value",
-
-      required: true,
-
-      labelAbove: true,
-
-      child: AmsTextInput(
-
-        controller: _attrValueController,
-
-        errorText: _attrValueError,
-
-      ),
-
-    ),
- 
-  ],
-
-),
- 
- 
-                ],
+            decoration: const BoxDecoration(
+              color: AppColors.sidebar,
+              borderRadius: BorderRadius.vertical(
+                top: Radius.circular(8),
               ),
             ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+
+                Text(
+                  "Add GL Attribute",
+                  style: bodyStyle(
+                    color: Colors.white,
+                    weight: FontWeight.w700,
+                  ),
+                ),
+
+                IconButton(
+                  icon: const Icon(
+                    Icons.keyboard_arrow_up,
+                    color: Colors.white,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _showForm = false;
+                    });
+                  },
+                ),
+
+              ],
+            ),
           ),
-        ),
-        _buildFixedFooter(),
-      ],
-    ),
-  );
-}
 
-Widget _buildFixedFooter() {
+          /// FORM BODY
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    const SizedBox(height: 16),
 
-  return AmsSubmitBar(
 
-    borderColor: AppColors.border,
 
-    actions: [
- 
-      AmsButton(
-        label: 'Save',
-        variant: AmsButtonVariant.primary,
-        backgroundColor: AppColors.sidebar,
+                    AmsFormGrid(
+                      children: [
 
-        onPressed: () {
-          _validateForm();
-
-          // showAmsToast(
-
-          //   context,
-
-          //   '✅',
-
-          //   'Attribute saved successfully.',
-
-          // );
- 
-          // setState(() {
-
-          //   _showForm = false;
-
-          // });
-
-        },
-
-      ),
- 
-      AmsButton(
-
-        label: 'Clear',
-
-        icon: Icons.clear_all_rounded,
-
-        variant: AmsButtonVariant.outline,
-
-        onPressed: () {},
-
-      ),
- 
-      AmsButton(
-
-        label: 'Cancel',
-
-        icon: Icons.close_rounded,
-
-        variant: AmsButtonVariant.danger,
-
-        onPressed: () {
-
-          setState(() {
-
-            _showForm = false;
-
-          });
-
-        },
-
-      ),
- 
-    ],
-
-  );
-
-}
-
-void _validateForm() {
-  setState(() {
-    _glNoError =
-        _glNoController.text.isEmpty ? "GL No is required" : null;
- 
-    _attrIdError =
-        _attrIdController.text.isEmpty ? "Attribute ID is required" : null;
- 
-    _attrValueError =
-        _attrValueController.text.isEmpty ? "Attribute Value is required" : null;
-  });
- 
-  if (_glNoError == null &&
-      _attrIdError == null &&
-      _attrValueError == null) {
-    _saveAttribute();
-  }
-}
-
-void _saveAttribute() {
-  setState(() {
-    attributes.add({
-      "id": _attrIdController.text,
-      "value": _attrValueController.text,
-      "desc": "",
+                        /// GL No
+                        AmsField(
+                          label: "GL No",
+                          required: true,
+                          labelAbove: true,
+                          child: _successWrapper(
+                            isSuccess: _glNoSuccess,
+                            child: AmsTextInput(
+                              controller: _glNoController,
+                              errorText: _glNoError,
+                              placeholder: "10020",
+                             onChanged: (v) {
+  final value = v ?? '';
+  if (_glNoError != null || !_glNoSuccess) {
+    setState(() {
+      _glNoSuccess = value.isNotEmpty;
+      if (value.isNotEmpty) _glNoError = null;
     });
- 
-    _showForm = false;
-  });
- 
-  _glNoController.clear();
-  _attrIdController.clear();
-  _attrValueController.clear();
+  }
+},
+                            ),
+                          ),
+                        ),
+
+                        /// Attribute ID
+                        AmsField(
+                          label: "Attribute ID",
+                          required: true,
+                          labelAbove: true,
+                          child: _successWrapper(
+                            isSuccess: _attrIdSuccess,
+                            child: AmsTextInput(
+                              controller: _attrIdController,
+                              errorText: _attrIdError,
+                              placeholder: "eg. RECON_FLAG",
+                             onChanged: (v) {
+  final value = v ?? '';
+  if (_attrIdError != null || !_attrIdSuccess) {
+    setState(() {
+      _attrIdSuccess = value.isNotEmpty;
+      if (value.isNotEmpty) _attrIdError = null;
+    });
+  }
+},
+                            ),
+                          ),
+                        ),
+
+                        /// Attribute Value
+                        AmsField(
+                          label: "Attribute Value",
+                          required: true,
+                          labelAbove: true,
+                          child: _successWrapper(
+                            isSuccess: _attrValueSuccess,
+                            child: AmsTextInput(
+                              controller: _attrValueController,
+                              errorText: _attrValueError,
+                              placeholder: "eg. Y,CC-001",
+                             onChanged: (v) {
+  final value = v ?? '';
+  if (_attrValueError != null || !_attrValueSuccess) {
+    setState(() {
+      _attrValueSuccess = value.isNotEmpty;
+      if (value.isNotEmpty) _attrValueError = null;
+    });
+  }
+},
+                            ),
+                          ),
+                        ),
+
+                        /// ✅ Common Attribute Examples Info Box
+
+
+                      ],
+                    ),
+
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          /// FOOTER
+          
+          _buildFixedFooter(),
+
+        ],
+      ),
+    );
+  }
+
+  /// =============================
+  /// SUCCESS WRAPPER
+  /// =============================
+
+Widget _successWrapper({required bool isSuccess, required Widget child}) {
+  return Stack(
+    children: [
+      child,
+      Positioned.fill(
+        child: IgnorePointer(
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(
+                color: isSuccess 
+                    ? Colors.green.shade400 
+                    : Colors.transparent, // ✅ safe change
+                width: 2,
+              ),
+            ),
+          ),
+        ),
+      ),
+    ],
+  );
 }
+
+  /// =============================
+  /// FOOTER
+  /// =============================
+
+  Widget _buildFixedFooter() {
+    return AmsSubmitBar(
+      borderColor: AppColors.border,
+      actions: [
+
+        AmsButton(
+          label: 'Save',
+          variant: AmsButtonVariant.primary,
+          backgroundColor: AppColors.sidebar,
+          onPressed: () {
+            _validateForm();
+          },
+        ),
+
+        AmsButton(
+          label: 'Clear',
+          icon: Icons.clear_all_rounded,
+          variant: AmsButtonVariant.outline,
+          onPressed: _clearForm,
+        ),
+
+        AmsButton(
+          label: 'Cancel',
+          icon: Icons.close_rounded,
+          variant: AmsButtonVariant.danger,
+          onPressed: () {
+            setState(() {
+              _showForm = false;
+            });
+          },
+        ),
+
+      ],
+    );
+  }
+
+  /// =============================
+  /// FORM LOGIC
+  /// =============================
+
+  void _validateForm() {
+    setState(() {
+      _glNoError =
+          _glNoController.text.isEmpty ? "GL No is required" : null;
+      _attrIdError =
+          _attrIdController.text.isEmpty ? "Attribute ID is required" : null;
+      _attrValueError =
+          _attrValueController.text.isEmpty ? "Attribute Value is required" : null;
+
+      /// ✅ Success flags on validate
+      _glNoSuccess = _glNoController.text.isNotEmpty;
+      _attrIdSuccess = _attrIdController.text.isNotEmpty;
+      _attrValueSuccess = _attrValueController.text.isNotEmpty;
+    });
+
+    if (_glNoError == null &&
+        _attrIdError == null &&
+        _attrValueError == null) {
+      _saveAttribute();
+    }
+  }
+
+  void _clearForm() {
+    setState(() {
+      _glNoController.clear();
+      _attrIdController.clear();
+      _attrValueController.clear();
+      _glNoError = null;
+      _attrIdError = null;
+      _attrValueError = null;
+
+      /// ✅ Reset success flags
+      _glNoSuccess = false;
+      _attrIdSuccess = false;
+      _attrValueSuccess = false;
+    });
+  }
+
+  void _saveAttribute() {
+    setState(() {
+      attributes.add({
+        "id": _attrIdController.text,
+        "value": _attrValueController.text,
+        "desc": "",
+      });
+      _showForm = false;
+    });
+
+    _glNoController.clear();
+    _attrIdController.clear();
+    _attrValueController.clear();
+  }
 }
