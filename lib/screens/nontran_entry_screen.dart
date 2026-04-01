@@ -56,7 +56,8 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
   Auth101Config? get _cfg =>
       _selProg != null ? widget.authConfigs[_selProg] : null;
 
-  final GlobalKey<DynamicNTFieldsState> _fieldsKey = GlobalKey<DynamicNTFieldsState>();
+  final GlobalKey<DynamicNTFieldsState> _fieldsKey =
+      GlobalKey<DynamicNTFieldsState>();
 
   void _doSubmit() {
     if (_selProg == null) {
@@ -127,7 +128,6 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
     final isMenuScreenList = _selProg == 'MENU-CRT' && !_showForm;
     final isAuthCtrlScreenList = _selProg == 'AUTHCTL' && !_showForm;
 
-
     final isAnyList = isUserScreenList ||
         isRoleScreenList ||
         isUserRoleScreenList ||
@@ -173,7 +173,8 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
             breadcrumbs: [
               HeaderBreadcrumb(label: 'Home', onTap: widget.onBack),
               HeaderBreadcrumb(label: 'Masters', onTap: widget.onBack),
-              if (_selProg != null) HeaderBreadcrumb(label: _cfg?.name ?? _selProg!),
+              if (_selProg != null)
+                HeaderBreadcrumb(label: _cfg?.name ?? _selProg!),
             ],
             onBack: [
                       'USR-CRT',
@@ -258,19 +259,24 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
                           });
                         }
 
-                        if (isUserScreenList)
+                        if (isUserScreenList) {
                           return _UserListView(onView: handleView);
-                        if (isRoleScreenList)
+                        }
+                        if (isRoleScreenList) {
                           return _RoleListView(onView: handleView);
-                        if (isUserRoleScreenList)
+                        }
+                        if (isUserRoleScreenList) {
                           return _UserRoleListView(onView: handleView);
-                        if (isModuleScreenList)
+                        }
+                        if (isModuleScreenList) {
                           return _ModuleListView(onView: handleView);
-                        if (isMenuScreenList)
+                        }
+                        if (isMenuScreenList) {
                           return _MenuListView(onView: handleView);
-                        if (isAuthCtrlScreenList)
+                        }
+                        if (isAuthCtrlScreenList) {
                           return _AuthCtrlListView(onView: handleView);
-
+                        }
 
                         return SingleChildScrollView(
                           padding: const EdgeInsets.all(24),
@@ -428,14 +434,14 @@ class _UserListViewState extends State<_UserListView> {
         itemCount: currentItems.length,
         itemBuilder: (ctx, idx) {
           final u = currentItems[idx];
-          final String fName = u['fName'] ?? u['fname'] ?? '';
-          final String lName = u['lName'] ?? u['lname'] ?? '';
-          final String email = u['email'] ?? 'No Email';
-          final String mobile = u['mobile'] ?? 'No Mobile';
-          final String userCd = u['userScd'] ?? u['usersCd'] ?? 'Unknown';
+          final String fName = u['fName'] ?? u['fname'] ?? u['FNAME'] ?? '';
+          final String lName = u['lName'] ?? u['lname'] ?? u['LNAME'] ?? '';
+          final String email = u['email'] ?? u['EMAIL'] ?? 'No Email';
+          final String mobile = u['mobile'] ?? u['MOBILE'] ?? 'No Mobile';
+          final String userCd = u['userScd'] ?? u['usersCd'] ?? u['USERSCD'] ?? 'Unknown';
           final String initial = fName.isNotEmpty
               ? fName[0].toUpperCase()
-              : (userCd.isNotEmpty ? userCd[0].toUpperCase() : 'U');
+              : (userCd.isNotEmpty && userCd != 'Unknown' ? userCd[0].toUpperCase() : 'U');
 
           return AmsCard(
             onTap: widget.onView != null ? () => widget.onView!(u) : null,
@@ -627,7 +633,9 @@ class _UserRoleListViewState extends State<_UserRoleListView> {
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
-                AmsBadge(label: (d['usersCd'] ?? d['users_cd'] ?? d['userCd'] ?? '—').toString()),
+                AmsBadge(
+                    label: (d['usersCd'] ?? d['users_cd'] ?? d['userCd'] ?? '—')
+                        .toString()),
                 const SizedBox(width: 16),
                 Expanded(
                   child: Column(
@@ -686,9 +694,14 @@ class _ModuleListViewState extends State<_ModuleListView> {
         itemCount: currentItems.length,
         itemBuilder: (ctx, idx) {
           final d = currentItems[idx];
-          final String moduleName = d['moduleName'] ?? d['modulename'] ?? d['module_name'] ?? 'Unknown';
-          final String moduleCd = (d['moduleCd'] ?? d['module_id'] ?? d['moduleid'] ?? '—').toString();
-          
+          final String moduleName = d['moduleName'] ??
+              d['modulename'] ??
+              d['module_name'] ??
+              'Unknown';
+          final String moduleCd =
+              (d['moduleCd'] ?? d['module_id'] ?? d['moduleid'] ?? '—')
+                  .toString();
+
           return AmsCard(
             onTap: widget.onView != null ? () => widget.onView!(d) : null,
             padding: const EdgeInsets.all(16),
@@ -771,7 +784,8 @@ class _MenuListViewState extends State<_MenuListView> {
                     ],
                   ),
                 ),
-                AmsBadge(label: (d['menuId'] ?? d['menu_id'] ?? '—').toString()),
+                AmsBadge(
+                    label: (d['menuId'] ?? d['menu_id'] ?? '—').toString()),
               ],
             ),
           );
@@ -853,8 +867,6 @@ class _AuthCtrlListViewState extends State<_AuthCtrlListView> {
   }
 }
 
-
-
 class DynamicNTFields extends StatefulWidget {
   final String prog;
   final void Function(String key, dynamic val) onChanged;
@@ -875,7 +887,7 @@ class DynamicNTFields extends StatefulWidget {
 
 class DynamicNTFieldsState extends State<DynamicNTFields> {
   final Map<String, String?> _errors = {};
-  
+
   final _uScdCtrl = TextEditingController();
   final _fNameCtrl = TextEditingController();
   final _lNameCtrl = TextEditingController();
@@ -884,6 +896,9 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
   String? _gender;
   String? _menuType;
   String? _title;
+  bool _approvalReq = true;
+  bool _isTran = false;
+  List<Map<String, dynamic>> _authLevels = [];
 
   final _rScdCtrl = TextEditingController();
   final _rNameCtrl = TextEditingController();
@@ -893,8 +908,6 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
 
   final _menuScdCtrl = TextEditingController();
   final _menuNameCtrl = TextEditingController();
-
-
 
   final _authModCtrl = TextEditingController();
   final _authPgmCtrl = TextEditingController();
@@ -911,9 +924,11 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
 
   void _loadInitialData() {
     if (widget.initialData == null) return;
-    final data = widget.initialData!.map((k, v) => MapEntry(k.toLowerCase(), v));
+    final data =
+        widget.initialData!.map((k, v) => MapEntry(k.toLowerCase(), v));
+    final prog = widget.prog.replaceAll(' ', '-').toUpperCase();
 
-    if (widget.prog == 'USR-CRT') {
+    if (prog == 'USR-CRT') {
       _uScdCtrl.text = data['userscd']?.toString() ?? '';
       _fNameCtrl.text = data['fname']?.toString() ?? '';
       _lNameCtrl.text = data['lname']?.toString() ?? '';
@@ -922,30 +937,47 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
       _gender = data['gender']?.toString();
       _menuType = data['menutype']?.toString();
       _title = data['title']?.toString();
-    } else if (widget.prog == 'ROLE-CRT') {
+    } else if (prog == 'ROLE-CRT') {
       _rScdCtrl.text = data['rolecd']?.toString() ?? '';
       _rNameCtrl.text = data['rolename']?.toString() ?? '';
-    } else if (widget.prog == 'MOD-CRT') {
+    } else if (prog == 'MOD-CRT') {
       _mScdCtrl.text = data['modcd']?.toString() ?? '';
       _mNameCtrl.text = data['modname']?.toString() ?? '';
-    } else if (widget.prog == 'MENU-CRT') {
+    } else if (prog == 'MENU-CRT') {
       _menuScdCtrl.text = data['menucd']?.toString() ?? '';
       _menuNameCtrl.text = data['menuname']?.toString() ?? '';
-
-    } else if (widget.prog == 'AUTHCTL') {
+    } else if (prog == 'AUTHCTL') {
       _authModCtrl.text = data['modcd']?.toString() ?? '';
       _authPgmCtrl.text = data['pgmcd']?.toString() ?? '';
+      _approvalReq = data['approvalreq'] == true || data['approvalreq'] == 1 || data['approvalreq'] == '1';
+      _isTran = data['istran'] == true || data['istran'] == 1 || data['istran'] == '1';
+      
+      if (data['levels_grid'] is List) {
+        _authLevels = List<Map<String, dynamic>>.from(data['levels_grid']);
+      } else if (data['datablock'] is List) {
+         _authLevels = List<Map<String, dynamic>>.from(data['datablock']);
+      }
     }
   }
 
   bool validate() {
     bool isValid = true;
+    final prog = widget.prog.replaceAll(' ', '-').toUpperCase();
     setState(() {
       _errors.clear();
-      if (widget.prog == 'USR-CRT') {
-        if (_uScdCtrl.text.trim().isEmpty) { _errors['usersCd'] = 'User Code required'; isValid = false; }
-        if (_fNameCtrl.text.trim().isEmpty) { _errors['fName'] = 'First Name required'; isValid = false; }
-        if (_lNameCtrl.text.trim().isEmpty) { _errors['lName'] = 'Last Name required'; isValid = false; }
+      if (prog == 'USR-CRT') {
+        if (_uScdCtrl.text.trim().isEmpty) {
+          _errors['usersCd'] = 'User Code required';
+          isValid = false;
+        }
+        if (_fNameCtrl.text.trim().isEmpty) {
+          _errors['fName'] = 'First Name required';
+          isValid = false;
+        }
+        if (_lNameCtrl.text.trim().isEmpty) {
+          _errors['lName'] = 'Last Name required';
+          isValid = false;
+        }
         if (_emailCtrl.text.trim().isEmpty) {
           _errors['email'] = 'Email required';
           isValid = false;
@@ -953,23 +985,55 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
           _errors['email'] = 'Invalid email format';
           isValid = false;
         }
-        if (_gender == null) { _errors['gender'] = 'Gender required'; isValid = false; }
-      } else if (widget.prog == 'ROLE-CRT') {
-        if (_rScdCtrl.text.trim().isEmpty) { _errors['roleCd'] = 'Role Code required'; isValid = false; }
-        if (_rNameCtrl.text.trim().isEmpty) { _errors['roleName'] = 'Role Name required'; isValid = false; }
-      } else if (widget.prog == 'MOD-CRT') {
-        if (_mScdCtrl.text.trim().isEmpty) { _errors['modCd'] = 'Module Code required'; isValid = false; }
-        if (_mNameCtrl.text.trim().isEmpty) { _errors['modName'] = 'Module Name required'; isValid = false; }
-      } else if (widget.prog == 'MENU-CRT') {
-        if (_menuScdCtrl.text.trim().isEmpty) { _errors['menuCd'] = 'Menu Code required'; isValid = false; }
-        if (_menuNameCtrl.text.trim().isEmpty) { _errors['menuName'] = 'Menu Name required'; isValid = false; }
-
+        if (_gender == null) {
+          _errors['gender'] = 'Gender required';
+          isValid = false;
+        }
+      } else if (prog == 'ROLE-CRT') {
+        if (_rScdCtrl.text.trim().isEmpty) {
+          _errors['roleCd'] = 'Role Code required';
+          isValid = false;
+        }
+        if (_rNameCtrl.text.trim().isEmpty) {
+          _errors['roleName'] = 'Role Name required';
+          isValid = false;
+        }
+      } else if (prog == 'MOD-CRT') {
+        if (_mScdCtrl.text.trim().isEmpty) {
+          _errors['modCd'] = 'Module Code required';
+          isValid = false;
+        }
+        if (_mNameCtrl.text.trim().isEmpty) {
+          _errors['modName'] = 'Module Name required';
+          isValid = false;
+        }
+      } else if (prog == 'MENU-CRT') {
+        if (_menuScdCtrl.text.trim().isEmpty) {
+          _errors['menuCd'] = 'Menu Code required';
+          isValid = false;
+        }
+        if (_menuNameCtrl.text.trim().isEmpty) {
+          _errors['menuName'] = 'Menu Name required';
+          isValid = false;
+        }
       } else if (widget.prog == 'USR-ROLE') {
-        if (_uScdCtrl.text.trim().isEmpty) { _errors['usersCd'] = 'User Code required'; isValid = false; }
-        if (_rScdCtrl.text.trim().isEmpty) { _errors['roleCd'] = 'Role Code required'; isValid = false; }
+        if (_uScdCtrl.text.trim().isEmpty) {
+          _errors['usersCd'] = 'User Code required';
+          isValid = false;
+        }
+        if (_rScdCtrl.text.trim().isEmpty) {
+          _errors['roleCd'] = 'Role Code required';
+          isValid = false;
+        }
       } else if (widget.prog == 'AUTHCTL') {
-        if (_authModCtrl.text.trim().isEmpty) { _errors['authMod'] = 'Module Code required'; isValid = false; }
-        if (_authPgmCtrl.text.trim().isEmpty) { _errors['authPgm'] = 'Program Code required'; isValid = false; }
+        if (_authModCtrl.text.trim().isEmpty) {
+          _errors['authMod'] = 'Module Code required';
+          isValid = false;
+        }
+        if (_authPgmCtrl.text.trim().isEmpty) {
+          _errors['authPgm'] = 'Program Code required';
+          isValid = false;
+        }
       }
 
       if (!isValid) {
@@ -985,23 +1049,42 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
   }
 
   void clearFields() {
-    _uScdCtrl.clear(); _fNameCtrl.clear(); _lNameCtrl.clear(); _emailCtrl.clear(); _countryCtrl.clear();
-    _rScdCtrl.clear(); _rNameCtrl.clear();
-    _mScdCtrl.clear(); _mNameCtrl.clear();
-    _menuScdCtrl.clear(); _menuNameCtrl.clear();
-    _authModCtrl.clear(); _authPgmCtrl.clear();
+    _uScdCtrl.clear();
+    _fNameCtrl.clear();
+    _lNameCtrl.clear();
+    _emailCtrl.clear();
+    _countryCtrl.clear();
+    _rScdCtrl.clear();
+    _rNameCtrl.clear();
+    _mScdCtrl.clear();
+    _mNameCtrl.clear();
+    _menuScdCtrl.clear();
+    _menuNameCtrl.clear();
+    _authModCtrl.clear();
+    _authPgmCtrl.clear();
     setState(() {
-      _gender = null; _menuType = null; _title = null; _errors.clear();
+      _gender = null;
+      _menuType = null;
+      _title = null;
+      _errors.clear();
     });
   }
 
   @override
   void dispose() {
-    _uScdCtrl.dispose(); _fNameCtrl.dispose(); _lNameCtrl.dispose(); _emailCtrl.dispose(); _countryCtrl.dispose();
-    _rScdCtrl.dispose(); _rNameCtrl.dispose();
-    _mScdCtrl.dispose(); _mNameCtrl.dispose();
-    _menuScdCtrl.dispose(); _menuNameCtrl.dispose();
-    _authModCtrl.dispose(); _authPgmCtrl.dispose();
+    _uScdCtrl.dispose();
+    _fNameCtrl.dispose();
+    _lNameCtrl.dispose();
+    _emailCtrl.dispose();
+    _countryCtrl.dispose();
+    _rScdCtrl.dispose();
+    _rNameCtrl.dispose();
+    _mScdCtrl.dispose();
+    _mNameCtrl.dispose();
+    _menuScdCtrl.dispose();
+    _menuNameCtrl.dispose();
+    _authModCtrl.dispose();
+    _authPgmCtrl.dispose();
     super.dispose();
   }
 
@@ -1031,7 +1114,8 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                   textInputAction: TextInputAction.next,
                   onChanged: widget.isViewMode
                       ? null
-                      : (v) => widget.onChanged('orgCode', int.tryParse(v) ?? 50),
+                      : (v) =>
+                          widget.onChanged('orgCode', int.tryParse(v) ?? 50),
                 ),
               ),
               AmsField(
@@ -1045,10 +1129,12 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                   placeholder: 'User Code (e.g. USR001)',
                   textInputAction: TextInputAction.next,
                   errorText: _errors['usersCd'],
-                  isValid: _errors['usersCd'] == null && _uScdCtrl.text.isNotEmpty,
+                  isValid:
+                      _errors['usersCd'] == null && _uScdCtrl.text.isNotEmpty,
                   onChanged: (v) {
                     setState(() {
-                      _errors['usersCd'] = v.trim().isEmpty ? 'User Code required' : null;
+                      _errors['usersCd'] =
+                          v.trim().isEmpty ? 'User Code required' : null;
                     });
                     widget.onChanged('usersCd', v);
                   },
@@ -1058,25 +1144,34 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                 label: 'MENUTYPE',
                 required: true,
                 labelAbove: true,
-                tooltip: 'Method of menu assignment (Role-based vs User-based).',
-                child: widget.isViewMode 
-                  ? AmsTextInput(
-                      initialValue: (data['menutype']?.toString() == '2') ? '2 - Userwise' : '1 - Rolewise',
-                      readOnly: true,
-                    )
-                  : AmsDropdown(
-                      initialValue: _menuType ?? (data['menutype']?.toString() == '2' ? '2 - Userwise' : '1 - Rolewise'),
-                      items: const ['1 - Rolewise', '2 - Userwise'],
-                      errorText: _errors['menuType'],
-                      isValid: _errors['menuType'] == null && _menuType != null,
-                      onChanged: (v) {
-                        setState(() { 
-                          _menuType = v; 
-                          _errors['menuType'] = v == null ? 'Menu Type required' : null; 
-                        });
-                        widget.onChanged('menuType', (v ?? '1').startsWith('1') ? 1 : 2);
-                      },
-                    ),
+                tooltip:
+                    'Method of menu assignment (Role-based vs User-based).',
+                child: widget.isViewMode
+                    ? AmsTextInput(
+                        initialValue: (data['menutype']?.toString() == '2')
+                            ? '2 - Userwise'
+                            : '1 - Rolewise',
+                        readOnly: true,
+                      )
+                    : AmsDropdown(
+                        initialValue: _menuType ??
+                            (data['menutype']?.toString() == '2'
+                                ? '2 - Userwise'
+                                : '1 - Rolewise'),
+                        items: const ['1 - Rolewise', '2 - Userwise'],
+                        errorText: _errors['menuType'],
+                        isValid:
+                            _errors['menuType'] == null && _menuType != null,
+                        onChanged: (v) {
+                          setState(() {
+                            _menuType = v;
+                            _errors['menuType'] =
+                                v == null ? 'Menu Type required' : null;
+                          });
+                          widget.onChanged(
+                              'menuType', (v ?? '1').startsWith('1') ? 1 : 2);
+                        },
+                      ),
               ),
               AmsField(
                 label: 'GENDER',
@@ -1084,31 +1179,52 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                 labelAbove: true,
                 tooltip: 'The user\'s gender for profile identification.',
                 child: widget.isViewMode
-                  ? AmsTextInput(
-                      initialValue: _gender ?? (data['gender']?.toString().toLowerCase().startsWith('f') == true
-                        ? 'Female'
-                        : (data['gender']?.toString().toLowerCase().startsWith('o') == true
-                          ? 'Other'
-                          : 'Male')),
-                      readOnly: true,
-                    )
-                  : AmsDropdown(
-                      initialValue: _gender ?? (data['gender']?.toString().toLowerCase().startsWith('f') == true
-                          ? 'Female'
-                          : (data['gender']?.toString().toLowerCase().startsWith('o') == true
-                              ? 'Other'
-                              : (data['gender'] != null ? 'Male' : null))),
-                      items: const ['Male', 'Female', 'Other'],
-                      errorText: _errors['gender'],
-                      isValid: _errors['gender'] == null && _gender != null,
-                      onChanged: (v) {
-                        setState(() { 
-                          _gender = v; 
-                          _errors['gender'] = v == null ? 'Gender required' : null; 
-                        });
-                        widget.onChanged('gender', v);
-                      },
-                    ),
+                    ? AmsTextInput(
+                        initialValue: _gender ??
+                            (data['gender']
+                                        ?.toString()
+                                        .toLowerCase()
+                                        .startsWith('f') ==
+                                    true
+                                ? 'Female'
+                                : (data['gender']
+                                            ?.toString()
+                                            .toLowerCase()
+                                            .startsWith('o') ==
+                                        true
+                                    ? 'Other'
+                                    : 'Male')),
+                        readOnly: true,
+                      )
+                    : AmsDropdown(
+                        initialValue: _gender ??
+                            (data['gender']
+                                        ?.toString()
+                                        .toLowerCase()
+                                        .startsWith('f') ==
+                                    true
+                                ? 'Female'
+                                : (data['gender']
+                                            ?.toString()
+                                            .toLowerCase()
+                                            .startsWith('o') ==
+                                        true
+                                    ? 'Other'
+                                    : (data['gender'] != null
+                                        ? 'Male'
+                                        : null))),
+                        items: const ['Male', 'Female', 'Other'],
+                        errorText: _errors['gender'],
+                        isValid: _errors['gender'] == null && _gender != null,
+                        onChanged: (v) {
+                          setState(() {
+                            _gender = v;
+                            _errors['gender'] =
+                                v == null ? 'Gender required' : null;
+                          });
+                          widget.onChanged('gender', v);
+                        },
+                      ),
               ),
               AmsField(
                 label: 'Primary Contact',
@@ -1121,20 +1237,27 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                     Expanded(
                       flex: 2,
                       child: widget.isViewMode
-                        ? AmsTextInput(
-                            initialValue: _title ?? data['title']?.toString() ?? 'Mr.',
-                            readOnly: true,
-                            placeholder: 'TITLE',
-                          )
-                        : AmsDropdown(
-                            initialValue: _title ?? data['title']?.toString(),
-                            items: const ['Mr.', 'Ms.', 'Mrs.', 'Dr.', 'Prof.'],
-                            placeholder: 'TITLE',
-                            onChanged: (v) {
-                              setState(() => _title = v);
-                              widget.onChanged('title', v);
-                            },
-                          ),
+                          ? AmsTextInput(
+                              initialValue:
+                                  _title ?? data['title']?.toString() ?? 'Mr.',
+                              readOnly: true,
+                              placeholder: 'TITLE',
+                            )
+                          : AmsDropdown(
+                              initialValue: _title ?? data['title']?.toString(),
+                              items: const [
+                                'Mr.',
+                                'Ms.',
+                                'Mrs.',
+                                'Dr.',
+                                'Prof.'
+                              ],
+                              placeholder: 'TITLE',
+                              onChanged: (v) {
+                                setState(() => _title = v);
+                                widget.onChanged('title', v);
+                              },
+                            ),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
@@ -1145,10 +1268,12 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                         placeholder: 'FNAME',
                         textInputAction: TextInputAction.next,
                         errorText: _errors['fName'],
-                        isValid: _errors['fName'] == null && _fNameCtrl.text.isNotEmpty,
+                        isValid: _errors['fName'] == null &&
+                            _fNameCtrl.text.isNotEmpty,
                         onChanged: (v) {
                           setState(() {
-                            _errors['fName'] = v.trim().isEmpty ? 'First Name required' : null;
+                            _errors['fName'] =
+                                v.trim().isEmpty ? 'First Name required' : null;
                           });
                           widget.onChanged('fName', v);
                         },
@@ -1162,7 +1287,9 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                         initialValue: data['mname']?.toString(),
                         placeholder: 'MNAME',
                         textInputAction: TextInputAction.next,
-                        onChanged: widget.isViewMode ? null : (v) => widget.onChanged('mName', v),
+                        onChanged: widget.isViewMode
+                            ? null
+                            : (v) => widget.onChanged('mName', v),
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -1174,10 +1301,12 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                         placeholder: 'LNAME',
                         textInputAction: TextInputAction.next,
                         errorText: _errors['lName'],
-                        isValid: _errors['lName'] == null && _lNameCtrl.text.isNotEmpty,
+                        isValid: _errors['lName'] == null &&
+                            _lNameCtrl.text.isNotEmpty,
                         onChanged: (v) {
                           setState(() {
-                            _errors['lName'] = v.trim().isEmpty ? 'Last Name required' : null;
+                            _errors['lName'] =
+                                v.trim().isEmpty ? 'Last Name required' : null;
                           });
                           widget.onChanged('lName', v);
                         },
@@ -1197,7 +1326,9 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                   placeholder: 'Work Email ID',
                   textInputAction: TextInputAction.next,
                   errorText: _errors['email'],
-                  isValid: _errors['email'] == null && _emailCtrl.text.isNotEmpty && _isValidEmail(_emailCtrl.text),
+                  isValid: _errors['email'] == null &&
+                      _emailCtrl.text.isNotEmpty &&
+                      _isValidEmail(_emailCtrl.text),
                   onChanged: (v) {
                     setState(() {
                       if (v.isEmpty) {
@@ -1222,7 +1353,9 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                   initialValue: data['mobile']?.toString(),
                   placeholder: 'Contact Number',
                   textInputAction: TextInputAction.next,
-                  onChanged: widget.isViewMode ? null : (v) => widget.onChanged('mobile', v),
+                  onChanged: widget.isViewMode
+                      ? null
+                      : (v) => widget.onChanged('mobile', v),
                   icon: Icons.phone_android_rounded,
                 ),
               ),
@@ -1237,10 +1370,12 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                   placeholder: '2-Digit country code',
                   textInputAction: TextInputAction.done,
                   errorText: _errors['country'],
-                  isValid: _errors['country'] == null && _countryCtrl.text.isNotEmpty,
+                  isValid: _errors['country'] == null &&
+                      _countryCtrl.text.isNotEmpty,
                   onChanged: (v) {
                     setState(() {
-                      _errors['country'] = v.trim().isEmpty ? 'Country required' : null;
+                      _errors['country'] =
+                          v.trim().isEmpty ? 'Country required' : null;
                     });
                     widget.onChanged('country', v);
                   },
@@ -1270,10 +1405,12 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                   placeholder: 'e.g. USR001',
                   textInputAction: TextInputAction.next,
                   errorText: _errors['usersCd'],
-                  isValid: _errors['usersCd'] == null && _uScdCtrl.text.isNotEmpty,
+                  isValid:
+                      _errors['usersCd'] == null && _uScdCtrl.text.isNotEmpty,
                   onChanged: (v) {
                     setState(() {
-                      _errors['usersCd'] = v.trim().isEmpty ? 'User Code required' : null;
+                      _errors['usersCd'] =
+                          v.trim().isEmpty ? 'User Code required' : null;
                     });
                     widget.onChanged('usersCd', v);
                   },
@@ -1290,10 +1427,12 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                   placeholder: 'e.g. ADM',
                   textInputAction: TextInputAction.done,
                   errorText: _errors['roleCd'],
-                  isValid: _errors['roleCd'] == null && _rScdCtrl.text.isNotEmpty,
+                  isValid:
+                      _errors['roleCd'] == null && _rScdCtrl.text.isNotEmpty,
                   onChanged: (v) {
                     setState(() {
-                      _errors['roleCd'] = v.trim().isEmpty ? 'Role Code required' : null;
+                      _errors['roleCd'] =
+                          v.trim().isEmpty ? 'Role Code required' : null;
                     });
                     widget.onChanged('roleCd', v);
                   },
@@ -1323,10 +1462,12 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                   placeholder: 'e.g. ADM',
                   textInputAction: TextInputAction.next,
                   errorText: _errors['roleCd'],
-                  isValid: _errors['roleCd'] == null && _rScdCtrl.text.isNotEmpty,
+                  isValid:
+                      _errors['roleCd'] == null && _rScdCtrl.text.isNotEmpty,
                   onChanged: (v) {
                     setState(() {
-                      _errors['roleCd'] = v.trim().isEmpty ? 'Role Code required' : null;
+                      _errors['roleCd'] =
+                          v.trim().isEmpty ? 'Role Code required' : null;
                     });
                     widget.onChanged('roleCd', v);
                   },
@@ -1343,21 +1484,28 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                   placeholder: 'e.g. Administrator',
                   textInputAction: TextInputAction.next,
                   errorText: _errors['roleName'],
-                  isValid: _errors['roleName'] == null && _rNameCtrl.text.isNotEmpty,
+                  isValid:
+                      _errors['roleName'] == null && _rNameCtrl.text.isNotEmpty,
                   onChanged: (v) {
                     setState(() {
-                      _errors['roleName'] = v.trim().isEmpty ? 'Role Name required' : null;
+                      _errors['roleName'] =
+                          v.trim().isEmpty ? 'Role Name required' : null;
                     });
                     widget.onChanged('roleName', v);
                   },
                 ),
               ),
               _AccessToggleGroup(
-                initialViewAccess: (data['viewaccess']?.toString() ?? '').startsWith('1'),
-                initialAuthAccess: (data['authaccess']?.toString() ?? '').startsWith('1'),
-                initialMakerAccess: (data['makeraccess']?.toString() ?? '').startsWith('1'),
-                initialAdminAccess: (data['adminaccess']?.toString() ?? '').startsWith('1'),
-                initialSysAdminAccess: (data['sysadminaccess']?.toString() ?? '').startsWith('1'),
+                initialViewAccess:
+                    (data['viewaccess']?.toString() ?? '').startsWith('1'),
+                initialAuthAccess:
+                    (data['authaccess']?.toString() ?? '').startsWith('1'),
+                initialMakerAccess:
+                    (data['makeraccess']?.toString() ?? '').startsWith('1'),
+                initialAdminAccess:
+                    (data['adminaccess']?.toString() ?? '').startsWith('1'),
+                initialSysAdminAccess:
+                    (data['sysadminaccess']?.toString() ?? '').startsWith('1'),
                 isViewMode: widget.isViewMode,
                 onChanged: widget.onChanged,
               ),
@@ -1385,10 +1533,12 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                   placeholder: 'e.g. FIN',
                   textInputAction: TextInputAction.next,
                   errorText: _errors['modCd'],
-                  isValid: _errors['modCd'] == null && _mScdCtrl.text.isNotEmpty,
+                  isValid:
+                      _errors['modCd'] == null && _mScdCtrl.text.isNotEmpty,
                   onChanged: (v) {
                     setState(() {
-                      _errors['modCd'] = v.trim().isEmpty ? 'Module Code required' : null;
+                      _errors['modCd'] =
+                          v.trim().isEmpty ? 'Module Code required' : null;
                     });
                     widget.onChanged('modCd', v);
                   },
@@ -1405,10 +1555,12 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                   placeholder: 'e.g. Finance',
                   textInputAction: TextInputAction.done,
                   errorText: _errors['modName'],
-                  isValid: _errors['modName'] == null && _mNameCtrl.text.isNotEmpty,
+                  isValid:
+                      _errors['modName'] == null && _mNameCtrl.text.isNotEmpty,
                   onChanged: (v) {
                     setState(() {
-                      _errors['modName'] = v.trim().isEmpty ? 'Module Name required' : null;
+                      _errors['modName'] =
+                          v.trim().isEmpty ? 'Module Name required' : null;
                     });
                     widget.onChanged('modName', v);
                   },
@@ -1438,10 +1590,12 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                   placeholder: 'e.g. GL-CAT',
                   textInputAction: TextInputAction.next,
                   errorText: _errors['menuCd'],
-                  isValid: _errors['menuCd'] == null && _menuScdCtrl.text.isNotEmpty,
+                  isValid:
+                      _errors['menuCd'] == null && _menuScdCtrl.text.isNotEmpty,
                   onChanged: (v) {
                     setState(() {
-                      _errors['menuCd'] = v.trim().isEmpty ? 'Menu Code required' : null;
+                      _errors['menuCd'] =
+                          v.trim().isEmpty ? 'Menu Code required' : null;
                     });
                     widget.onChanged('menuCd', v);
                   },
@@ -1458,10 +1612,12 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                   placeholder: 'e.g. GL Category',
                   textInputAction: TextInputAction.done,
                   errorText: _errors['menuName'],
-                  isValid: _errors['menuName'] == null && _menuNameCtrl.text.isNotEmpty,
+                  isValid: _errors['menuName'] == null &&
+                      _menuNameCtrl.text.isNotEmpty,
                   onChanged: (v) {
                     setState(() {
-                      _errors['menuName'] = v.trim().isEmpty ? 'Menu Name required' : null;
+                      _errors['menuName'] =
+                          v.trim().isEmpty ? 'Menu Name required' : null;
                     });
                     widget.onChanged('menuName', v);
                   },
@@ -1491,10 +1647,12 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                   placeholder: 'Module Code',
                   textInputAction: TextInputAction.next,
                   errorText: _errors['authMod'],
-                  isValid: _errors['authMod'] == null && _authModCtrl.text.isNotEmpty,
+                  isValid: _errors['authMod'] == null &&
+                      _authModCtrl.text.isNotEmpty,
                   onChanged: (v) {
                     setState(() {
-                      _errors['authMod'] = v.trim().isEmpty ? 'Module Code required' : null;
+                      _errors['authMod'] =
+                          v.trim().isEmpty ? 'Module Code required' : null;
                     });
                     widget.onChanged('modCd', v);
                   },
@@ -1510,14 +1668,63 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                   placeholder: 'Program Code',
                   textInputAction: TextInputAction.done,
                   errorText: _errors['authPgm'],
-                  isValid: _errors['authPgm'] == null && _authPgmCtrl.text.isNotEmpty,
+                  isValid: _errors['authPgm'] == null &&
+                      _authPgmCtrl.text.isNotEmpty,
                   onChanged: (v) {
                     setState(() {
-                      _errors['authPgm'] = v.trim().isEmpty ? 'Program Code required' : null;
+                      _errors['authPgm'] =
+                          v.trim().isEmpty ? 'Program Code required' : null;
                     });
                     widget.onChanged('pgmCd', v);
                   },
                 ),
+              ),
+              AmsField(
+                label: 'APPROVAL REQ',
+                labelAbove: true,
+                child: Row(
+                  children: [
+                    Switch(
+                      value: _approvalReq,
+                      onChanged: widget.isViewMode ? null : (v) {
+                        setState(() => _approvalReq = v);
+                        widget.onChanged('approvalReq', v);
+                      },
+                      activeThumbColor: AppColors.tBlue,
+                    ),
+                    Text(_approvalReq ? 'Yes' : 'No', style: bodyStyle()),
+                  ],
+                ),
+              ),
+              AmsField(
+                label: 'IS TRANSACTION',
+                labelAbove: true,
+                child: Row(
+                  children: [
+                    Switch(
+                      value: _isTran,
+                      onChanged: widget.isViewMode ? null : (v) {
+                        setState(() => _isTran = v);
+                        widget.onChanged('isTran', v);
+                      },
+                      activeThumbColor: AppColors.tBlue,
+                    ),
+                    Text(_isTran ? 'Yes' : 'No', style: bodyStyle()),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+              Text('AUTHORIZATION LEVELS',
+                  style: bodyStyle(
+                      size: 14, weight: FontWeight.w700, color: AppColors.tBlue)),
+              const SizedBox(height: 12),
+              _Auth102LevelGrid(
+                isViewMode: widget.isViewMode,
+                initialData: _authLevels,
+                onChanged: (levels) {
+                  setState(() => _authLevels = levels);
+                  widget.onChanged('levels_grid', levels);
+                },
               ),
             ],
           ),
@@ -1685,14 +1892,15 @@ class _AccessToggleGroupState extends State<_AccessToggleGroup> {
   }
 }
 
-
-
 class _Auth102LevelGrid extends StatefulWidget {
   final void Function(List<Map<String, dynamic>> levels) onChanged;
   final dynamic initialData;
   final bool isViewMode;
-  const _Auth102LevelGrid(
-      {required this.onChanged, this.initialData, this.isViewMode = false});
+  const _Auth102LevelGrid({
+    required this.onChanged,
+    this.initialData,
+    this.isViewMode = false,
+  });
 
   @override
   State<_Auth102LevelGrid> createState() => _Auth102LevelGridState();

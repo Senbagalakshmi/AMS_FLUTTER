@@ -937,6 +937,7 @@ class AmsIdentityHeader extends StatelessWidget {
   final List<HeaderBreadcrumb>? breadcrumbs;
   final VoidCallback onBack;
   final List<Widget>? actions;
+  final bool showBack;
 
   const AmsIdentityHeader({
     super.key,
@@ -950,6 +951,7 @@ class AmsIdentityHeader extends StatelessWidget {
     this.breadcrumbs,
     required this.onBack,
     this.actions,
+    this.showBack = true,
   });
 
   @override
@@ -1046,33 +1048,34 @@ class AmsIdentityHeader extends StatelessWidget {
             ...actions!,
             const SizedBox(width: 8),
           ],
-          MouseRegion(
-            cursor: SystemMouseCursors.click,
-            child: GestureDetector(
-              onTap: onBack,
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                decoration: BoxDecoration(
-                  color: AppColors.red,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.arrow_back_ios_new_rounded,
-                        size: 13, color: Colors.white),
-                    const SizedBox(width: 8),
-                    Text('Back',
-                        style: bodyStyle(
-                            size: 13,
-                            weight: FontWeight.w700,
-                            color: Colors.white)),
-                  ],
+          if (showBack)
+            MouseRegion(
+              cursor: SystemMouseCursors.click,
+              child: GestureDetector(
+                onTap: onBack,
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: AppColors.red,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.arrow_back_ios_new_rounded,
+                          size: 13, color: Colors.white),
+                      const SizedBox(width: 8),
+                      Text('Back',
+                          style: bodyStyle(
+                              size: 13,
+                              weight: FontWeight.w700,
+                              color: Colors.white)),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
         ],
       ),
     );

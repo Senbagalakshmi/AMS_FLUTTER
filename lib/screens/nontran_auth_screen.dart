@@ -75,8 +75,7 @@ class _NonTranAuthScreenState extends State<NonTranAuthScreen> {
                           const SizedBox(height: 4),
                           Text(
                             'Select a record from the queue to review and authorize.',
-                            style:
-                                bodyStyle(size: 13, color: AppColors.ink3),
+                            style: bodyStyle(size: 13, color: AppColors.ink3),
                           ),
                         ],
                       ),
@@ -126,8 +125,8 @@ class _NonTranAuthScreenState extends State<NonTranAuthScreen> {
 
                   if (_selectedRecord != null) ...[
                     const SizedBox(height: 28),
-                    _AuthDetailPanel(record: _selectedRecord!,
-                        remarksCtrl: _remarksCtrl),
+                    _AuthDetailPanel(
+                        record: _selectedRecord!, remarksCtrl: _remarksCtrl),
                   ],
                 ],
               ),
@@ -170,17 +169,21 @@ class _NonTranAuthScreenState extends State<NonTranAuthScreen> {
           variant: AmsButtonVariant.outline,
           onPressed: () async {
             if (_selectedRecord == null) return;
-            
+
             final confirmed = await showDialog<bool>(
               context: context,
               builder: (ctx) => AlertDialog(
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                title: Text('Confirm Rejection', style: bodyStyle(weight: FontWeight.w700)),
-                content: Text('Are you sure you want to reject this record?', style: bodyStyle()),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+                title: Text('Confirm Rejection',
+                    style: bodyStyle(weight: FontWeight.w700)),
+                content: Text('Are you sure you want to reject this record?',
+                    style: bodyStyle()),
                 actions: [
                   TextButton(
                     onPressed: () => Navigator.pop(ctx, false),
-                    child: Text('Cancel', style: bodyStyle(color: AppColors.ink3)),
+                    child:
+                        Text('Cancel', style: bodyStyle(color: AppColors.ink3)),
                   ),
                   AmsButton(
                     label: 'Yes, Reject',
@@ -226,7 +229,8 @@ class _NonTranAuthScreenState extends State<NonTranAuthScreen> {
       body: Column(
         children: [
           AmsIdentityHeader(
-            icon: const Icon(Icons.description_rounded, color: AppColors.tBlue, size: 28),
+            icon: const Icon(Icons.description_rounded,
+                color: AppColors.tBlue, size: 28),
             title: 'Authorize - ${record.authSl}',
             subtitle: '${record.programId} Review',
             badges: [AmsBadge(label: record.primaryKey, color: AppColors.ink)],
@@ -235,7 +239,9 @@ class _NonTranAuthScreenState extends State<NonTranAuthScreen> {
             accentMd: AppColors.tBlueMd,
             breadcrumbs: [
               HeaderBreadcrumb(label: 'Home', onTap: widget.onBack),
-              HeaderBreadcrumb(label: 'Auth Queue', onTap: () => setState(() => _showForm = false)),
+              HeaderBreadcrumb(
+                  label: 'Auth Queue',
+                  onTap: () => setState(() => _showForm = false)),
               HeaderBreadcrumb(label: 'Record Details'),
             ],
             onBack: () => setState(() => _showForm = false),
@@ -256,11 +262,13 @@ class _NonTranAuthScreenState extends State<NonTranAuthScreen> {
                     padding: const EdgeInsets.all(16),
                     decoration: const BoxDecoration(
                       color: AppColors.sidebar,
-                      borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+                      borderRadius:
+                          BorderRadius.vertical(top: Radius.circular(12)),
                     ),
                     child: Text(
                       "Review Record Data (View Only)",
-                      style: bodyStyle(color: Colors.white, weight: FontWeight.w700),
+                      style: bodyStyle(
+                          color: Colors.white, weight: FontWeight.w700),
                     ),
                   ),
                   Expanded(
@@ -294,11 +302,6 @@ class _NonTranAuthScreenState extends State<NonTranAuthScreen> {
       ),
     );
   }
-
-
-
-
-
 }
 
 // ─── Auth Queue Table ──────────────────────────────────────────────────────────
@@ -326,9 +329,7 @@ class _AuthQueueTable extends StatelessWidget {
           const SizedBox(width: 8),
           Text('Authorization Queue',
               style: bodyStyle(
-                  size: 14,
-                  weight: FontWeight.w600,
-                  color: AppColors.tBlue)),
+                  size: 14, weight: FontWeight.w600, color: AppColors.tBlue)),
           const SizedBox(width: 10),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -338,9 +339,7 @@ class _AuthQueueTable extends StatelessWidget {
             ),
             child: Text('${queue.length} records',
                 style: monoStyle(
-                    size: 11,
-                    color: AppColors.tBlue,
-                    weight: FontWeight.w600)),
+                    size: 11, color: AppColors.tBlue, weight: FontWeight.w600)),
           ),
         ],
       ),
@@ -374,75 +373,70 @@ class _AuthQueueTable extends StatelessWidget {
               ),
               // Data rows
               ...currentItems.asMap().entries.map((e) {
-              final idx = e.key;
-              final record = e.value;
-              final isSelected = selectedRecord?.authSl == record.authSl;
-              final rowBg = isSelected
-                  ? AppColors.tBlueLt
-                  : (idx % 2 == 0
-                      ? const Color(0xFFF8FAFB)
-                      : Colors.white);
-              return TableRow(
-                decoration: BoxDecoration(color: rowBg),
-                children: [
-                  // Select radio
-                  _tdCenter(
-                    InkWell(
-                      onTap: () => onSelect(record),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        child: Icon(
-                          isSelected
-                              ? Icons.radio_button_checked
-                              : Icons.radio_button_unchecked,
-                          color: isSelected
-                              ? AppColors.tBlue
-                              : AppColors.ink3,
-                          size: 18,
+                final idx = e.key;
+                final record = e.value;
+                final isSelected = selectedRecord?.authSl == record.authSl;
+                final rowBg = isSelected
+                    ? AppColors.tBlueLt
+                    : (idx % 2 == 0 ? const Color(0xFFF8FAFB) : Colors.white);
+                return TableRow(
+                  decoration: BoxDecoration(color: rowBg),
+                  children: [
+                    // Select radio
+                    _tdCenter(
+                      InkWell(
+                        onTap: () => onSelect(record),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          child: Icon(
+                            isSelected
+                                ? Icons.radio_button_checked
+                                : Icons.radio_button_unchecked,
+                            color:
+                                isSelected ? AppColors.tBlue : AppColors.ink3,
+                            size: 18,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  // Program Name
-                  _td(
-                    Text(record.programId,
-                        style: monoStyle(
-                            size: 12,
-                            weight: FontWeight.w700,
-                            color: AppColors.ink)),
-                    onTap: () => onSelect(record),
-                  ),
-                  // Entry Details
-                  _td(
-                    Text(
-                      record.displayRemarks,
-                      style: bodyStyle(
-                              size: 13,
-                              color: AppColors.tBlue)
-                          .copyWith(
-                              decoration: TextDecoration.underline,
-                              decorationColor: AppColors.tBlue),
+                    // Program Name
+                    _td(
+                      Text(record.programId,
+                          style: monoStyle(
+                              size: 12,
+                              weight: FontWeight.w700,
+                              color: AppColors.ink)),
+                      onTap: () => onSelect(record),
                     ),
-                    onTap: () => onSelect(record),
-                  ),
-                  // Entered By
-                  _td(
-                    Text(record.eUser,
-                        style: bodyStyle(size: 13, color: AppColors.ink2)),
-                    onTap: () => onSelect(record),
-                  ),
-                  // Entered On
-                  _td(
-                    Text(record.eDate,
-                        style: monoStyle(size: 11, color: AppColors.ink2)),
-                    onTap: () => onSelect(record),
-                  ),
-                  // View button
-                  _tdCenter(
-                    _ViewButton(onTap: () => onView(record)),
-                  ),
-                ],
-              );
+                    // Entry Details
+                    _td(
+                      Text(
+                        record.displayRemarks,
+                        style: bodyStyle(size: 13, color: AppColors.tBlue)
+                            .copyWith(
+                                decoration: TextDecoration.underline,
+                                decorationColor: AppColors.tBlue),
+                      ),
+                      onTap: () => onSelect(record),
+                    ),
+                    // Entered By
+                    _td(
+                      Text(record.eUser,
+                          style: bodyStyle(size: 13, color: AppColors.ink2)),
+                      onTap: () => onSelect(record),
+                    ),
+                    // Entered On
+                    _td(
+                      Text(record.eDate,
+                          style: monoStyle(size: 11, color: AppColors.ink2)),
+                      onTap: () => onSelect(record),
+                    ),
+                    // View button
+                    _tdCenter(
+                      _ViewButton(onTap: () => onView(record)),
+                    ),
+                  ],
+                );
               }),
             ],
           ),
@@ -457,7 +451,8 @@ class _AuthQueueTable extends StatelessWidget {
       child: Text(
         text,
         textAlign: center ? TextAlign.center : TextAlign.left,
-        style: bodyStyle(size: 12, weight: FontWeight.w700, color: Colors.white),
+        style:
+            bodyStyle(size: 12, weight: FontWeight.w700, color: Colors.white),
       ),
     );
   }
@@ -479,7 +474,6 @@ class _AuthQueueTable extends StatelessWidget {
     );
   }
 }
-
 
 // ─── Hover View Button ────────────────────────────────────────────────────────
 
@@ -504,31 +498,23 @@ class _ViewButtonState extends State<_ViewButton> {
         onTap: widget.onTap,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 150),
-          padding:
-              const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: _hover
-                ? AppColors.tBlue
-                : AppColors.tBlue.withAlpha(20),
+            color: _hover ? AppColors.tBlue : AppColors.tBlue.withAlpha(20),
             borderRadius: BorderRadius.circular(6),
-            border: Border.all(
-                color: AppColors.tBlue.withAlpha(50),
-                width: 1),
+            border: Border.all(color: AppColors.tBlue.withAlpha(50), width: 1),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(Icons.visibility_outlined,
-                  size: 13,
-                  color: _hover ? Colors.white : AppColors.tBlue),
+                  size: 13, color: _hover ? Colors.white : AppColors.tBlue),
               const SizedBox(width: 4),
               Text('View',
                   style: bodyStyle(
                       size: 12,
                       weight: FontWeight.w700,
-                      color: _hover
-                          ? Colors.white
-                          : AppColors.tBlue)),
+                      color: _hover ? Colors.white : AppColors.tBlue)),
             ],
           ),
         ),
@@ -552,32 +538,6 @@ class _AuthDetailPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (readOnly) {
-      return AmsCard(
-        headLeft: Row(
-          children: [
-            const Icon(Icons.comment_rounded, size: 18, color: AppColors.tBlue),
-            const SizedBox(width: 8),
-            Text('Reviewer Remarks',
-                style: bodyStyle(
-                    size: 14,
-                    weight: FontWeight.w600,
-                    color: AppColors.tBlue)),
-          ],
-        ),
-        child: AmsField(
-          label: 'Remarks History',
-          labelAbove: true,
-          child: AmsTextInput(
-            controller: remarksCtrl,
-            placeholder: 'No historical remarks...',
-            keyboardType: TextInputType.multiline,
-            readOnly: true,
-          ),
-        ),
-      );
-    }
-
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -598,11 +558,14 @@ class _AuthDetailPanel extends StatelessWidget {
             ),
             child: Column(
               children: [
-                _levelRow('1st Level', record.flUser ?? '', record.flDate ?? ''),
+                _levelRow(
+                    '1st Level', record.flUser ?? '', record.flDate ?? ''),
                 const SizedBox(height: 12),
-                _levelRow('2nd Level', record.slUser ?? '', record.slDate ?? ''),
+                _levelRow(
+                    '2nd Level', record.slUser ?? '', record.slDate ?? ''),
                 const SizedBox(height: 12),
-                _levelRow('3rd Level', record.tlUser ?? '', record.tlDate ?? ''),
+                _levelRow(
+                    '3rd Level', record.tlUser ?? '', record.tlDate ?? ''),
                 const SizedBox(height: 12),
                 _levelRow('Risk Auth', record.rUser ?? '', record.rDate ?? ''),
                 const SizedBox(height: 16),
@@ -613,7 +576,6 @@ class _AuthDetailPanel extends StatelessWidget {
                     controller: remarksCtrl,
                     placeholder: 'Enter your remarks...',
                     keyboardType: TextInputType.multiline,
-                    readOnly: readOnly,
                   ),
                 ),
               ],
