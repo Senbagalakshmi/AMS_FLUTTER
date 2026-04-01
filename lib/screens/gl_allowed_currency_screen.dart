@@ -219,52 +219,16 @@ class _AllowedCurrencyScreenState extends State<AllowedCurrencyScreen> {
             variant: AmsButtonVariant.primary,
             backgroundColor: AppColors.sidebar,
             onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  backgroundColor: Colors.transparent,
-                  elevation: 0,
-                  content: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                    decoration: BoxDecoration(
-                      color: AppColors.sidebar,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.2),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        )
-                      ],
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.check_circle_rounded, color: Colors.greenAccent, size: 28),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Success!',
-                                style: bodyStyle(color: Colors.white, weight: FontWeight.w800, size: 16),
-                              ),
-                              Text(
-                                'Allowed currencies updated successfully.',
-                                style: bodyStyle(color: Colors.white.withOpacity(0.8), size: 14),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              );
-              setState(() {
-                showForm = false;
-              });
-            },
+
+            showAmsToast(
+             context,
+             '✅',
+             'Allowed currencies updated successfully.',
+            );
+            setState(() {
+              showForm = false;
+            });
+          },
           ),
           AmsButton(
             label: 'Clear',
