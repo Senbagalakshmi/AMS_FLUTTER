@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../theme.dart';
 import '../widgets/widgets.dart';
 import '../services/api_service.dart';
+import '../services/gl_api_service.dart';
 
 // ─── Entry widget ─────────────────────────────────────────────────────────────
 
@@ -45,6 +46,29 @@ class Segment {
     this.glNo,
     this.glName,
   });
+
+  /// API response → Segment
+  factory Segment.fromApi(Map<String, dynamic> map) {
+    final segType = (map['segType'] as int?) ?? 1;
+    return Segment(
+      id: (map['glNo'] as int?) ?? 0,
+      level: 'L$segType',
+      segmentId: map['segId']?.toString() ?? '',
+      segmentValue: map['segValue']?.toString() ?? '',
+      type: 'Type $segType',
+      isActive: true,
+      glNo: map['glNo'] as int?,
+      glName: map['glName']?.toString(),
+    );
+  }
+
+  /// Segment → API request body
+  Map<String, dynamic> toApiMap() => {
+        'glNo': glNo,
+        'segId': segmentId,
+        'segValue': segmentValue,
+        'segType': int.tryParse(level.replaceAll('L', '')) ?? 1,
+      };
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -100,61 +124,26 @@ class GLSegmentPage extends StatefulWidget {
 }
 
 class _GLSegmentPageState extends State<GLSegmentPage> {
+  final GLApiService _glApi = GLApiService();
+
   _ScreenState _screen = _ScreenState.list;
   Segment? _activeSegment;
 
   // ── GL Masters from API ───────────────────────────────────────────────────
   List<Map<String, dynamic>> _glMasters = [];
   bool _loadingGlMasters = false;
-  Map<String, dynamic>?
-      _selectedGlMaster; // currently selected in list dropdown
+  Map<String, dynamic>? _selectedGlMaster;
+
+  // ── GL Segments from API ──────────────────────────────────────────────────
+  List<Segment> _segments = [];
+  bool _loadingSegments = false;
+  String? _segmentsError;
 
   String _searchQuery = '';
-  int _nextId = 7;
-
-  final List<Segment> segments = [
-    Segment(
-        id: 1,
-        level: 'L1',
-        segmentId: 'DEPT',
-        segmentValue: 'Finance',
-        type: 'Type 1'),
-    Segment(
-        id: 2,
-        level: 'L2',
-        segmentId: 'COSTCTR',
-        segmentValue: 'Payroll',
-        type: 'Type 2'),
-    Segment(
-        id: 3,
-        level: 'L3',
-        segmentId: 'PROJECT',
-        segmentValue: 'SAP Rollout',
-        type: 'Type 3'),
-    Segment(
-        id: 4,
-        level: 'L2',
-        segmentId: 'COSTCTR',
-        segmentValue: 'IT Support',
-        type: 'Type 2',
-        isActive: false),
-    Segment(
-        id: 5,
-        level: 'L1',
-        segmentId: 'REGION',
-        segmentValue: 'South Asia',
-        type: 'Type 1'),
-    Segment(
-        id: 6,
-        level: 'L2',
-        segmentId: 'BRANCH',
-        segmentValue: 'Bangalore',
-        type: 'Type 2'),
-  ];
 
   List<Segment> get _filtered => _searchQuery.isEmpty
-      ? List.from(segments)
-      : segments
+      ? List.from(_segments)
+      : _segments
           .where((s) =>
               s.segmentId.toLowerCase().contains(_searchQuery.toLowerCase()) ||
               s.segmentValue.toLowerCase().contains(_searchQuery.toLowerCase()))
@@ -166,6 +155,7 @@ class _GLSegmentPageState extends State<GLSegmentPage> {
   void initState() {
     super.initState();
     _loadGlMasters();
+    _loadGlSegments();
   }
 
   Future<void> _loadGlMasters() async {
@@ -180,16 +170,34 @@ class _GLSegmentPageState extends State<GLSegmentPage> {
     });
   }
 
+  Future<void> _loadGlSegments() async {
+    setState(() {
+      _loadingSegments = true;
+      _segmentsError = null;
+    });
+    final data = await _glApi.getAllGlSegments();
+    setState(() {
+      _loadingSegments = false;
+      if (data != null) {
+        _segments = data.map((m) => Segment.fromApi(m)).toList();
+      } else {
+        _segmentsError = 'Failed to load segments. Tap refresh to retry.';
+      }
+    });
+  }
+
   // ── Navigation ────────────────────────────────────────────────────────────
 
   void _goList() => setState(() {
         _screen = _ScreenState.list;
         _activeSegment = null;
       });
+
   void _goView(Segment s) => setState(() {
         _screen = _ScreenState.view;
         _activeSegment = s;
       });
+
   void _goEdit(Segment? s) => setState(() {
         _screen = _ScreenState.edit;
         _activeSegment = s;
@@ -215,9 +223,30 @@ class _GLSegmentPageState extends State<GLSegmentPage> {
                 style: TextStyle(color: kTextMid, fontWeight: FontWeight.w600)),
           ),
           ElevatedButton(
-            onPressed: () {
-              setState(() => segments.removeWhere((s) => s.id == seg.id));
+            onPressed: () async {
               Navigator.pop(ctx);
+              if (seg.glNo == null) return;
+
+              final success = await _glApi.deleteGlSegment(seg.glNo!);
+
+              if (!mounted) return;
+              if (success) {
+                setState(() => _segments.removeWhere((s) => s.id == seg.id));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Segment deleted successfully'),
+                    backgroundColor: kValidGreen,
+                  ),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content:
+                        Text('Failed to delete segment. Please try again.'),
+                    backgroundColor: kInvalidRed,
+                  ),
+                );
+              }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: kInvalidRed,
@@ -234,42 +263,62 @@ class _GLSegmentPageState extends State<GLSegmentPage> {
     );
   }
 
-  // ── Save ──────────────────────────────────────────────────────────────────
+  // ── Save (Create / Update) ────────────────────────────────────────────────
 
-  void _onSave(
+  Future<void> _onSave(
     String level,
     String segId,
     String segValue,
     bool isActive,
     int glNo,
     String glName,
-  ) {
-    setState(() {
-      final typeNum = level.replaceAll('L', '');
-      if (_activeSegment != null) {
-        _activeSegment!
-          ..level = level
-          ..segmentId = segId
-          ..segmentValue = segValue
-          ..type = 'Type $typeNum'
-          ..isActive = isActive
-          ..glNo = glNo
-          ..glName = glName;
-      } else {
-        segments.add(Segment(
-          id: _nextId++,
-          level: level,
-          segmentId: segId,
-          segmentValue: segValue,
-          type: 'Type $typeNum',
-          isActive: isActive,
-          glNo: glNo,
-          glName: glName,
-        ));
-      }
-      _screen = _ScreenState.list;
-      _activeSegment = null;
-    });
+    int orgCode,
+  ) async {
+    final typeNum = level.replaceAll('L', '');
+    final isEditing = _activeSegment != null;
+
+    final payload = {
+      'orgCode': orgCode,
+      'glNo': glNo,
+      'segId': segId,
+      'segValue': segValue,
+      'segType': int.tryParse(typeNum) ?? 1,
+    };
+
+    bool success;
+    if (isEditing) {
+      success = await _glApi.updateGlSegment(payload);
+    } else {
+      success = await _glApi.createGlSegment(payload);
+    }
+
+    if (!mounted) return;
+
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(isEditing
+              ? 'Segment updated successfully'
+              : 'Segment created successfully'),
+          backgroundColor: kValidGreen,
+        ),
+      );
+      // Refresh list from API
+      await _loadGlSegments();
+      setState(() {
+        _screen = _ScreenState.list;
+        _activeSegment = null;
+      });
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(isEditing
+              ? 'Failed to update segment. Please try again.'
+              : 'Failed to create segment. Please try again.'),
+          backgroundColor: kInvalidRed,
+        ),
+      );
+    }
   }
 
   // ── Build ─────────────────────────────────────────────────────────────────
@@ -321,7 +370,6 @@ class _GLSegmentPageState extends State<GLSegmentPage> {
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Column(children: [
-                // Navy header
                 Container(
                   width: double.infinity,
                   padding:
@@ -343,8 +391,6 @@ class _GLSegmentPageState extends State<GLSegmentPage> {
                         color: Colors.white, size: 22),
                   ]),
                 ),
-
-                // Read-only fields
                 Expanded(
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.fromLTRB(28, 32, 28, 24),
@@ -401,8 +447,6 @@ class _GLSegmentPageState extends State<GLSegmentPage> {
                       final fields = [
                         readField('GL No.', seg.glNo?.toString() ?? '—',
                             tooltip: 'GL Account Number'),
-                        readField('GL Name', seg.glName ?? '—',
-                            tooltip: 'GL Account Name'),
                         readField('Segment ID', seg.segmentId,
                             tooltip: 'Unique attribute identifier'),
                         readField('Segment Value', seg.segmentValue,
@@ -430,8 +474,6 @@ class _GLSegmentPageState extends State<GLSegmentPage> {
                     }),
                   ),
                 ),
-
-                // Back to List button
                 Padding(
                   padding: const EdgeInsets.fromLTRB(28, 0, 28, 24),
                   child: Align(
@@ -502,7 +544,6 @@ class _GLSegmentPageState extends State<GLSegmentPage> {
             key: ValueKey(_activeSegment?.id ?? 'new'),
             editingSegment: _activeSegment,
             glMasters: _glMasters,
-            // Pre-select the GL chosen in the list screen (only for new segments)
             preselectedGlMaster:
                 _activeSegment == null ? _selectedGlMaster : null,
             onSave: _onSave,
@@ -633,7 +674,7 @@ class _GLSegmentPageState extends State<GLSegmentPage> {
 
             const SizedBox(height: 24),
 
-            // ── Search + Refresh + New GL ────────────────────────────────
+            // ── Search + Refresh ─────────────────────────────────────────
             Row(children: [
               Expanded(
                 child: Container(
@@ -664,6 +705,7 @@ class _GLSegmentPageState extends State<GLSegmentPage> {
                 ),
               ),
               const SizedBox(width: 10),
+              // Refresh button — reloads from API
               Container(
                 width: 46,
                 height: 46,
@@ -673,45 +715,85 @@ class _GLSegmentPageState extends State<GLSegmentPage> {
                   border: Border.all(color: kCardBorder, width: 1.5),
                 ),
                 child: IconButton(
-                  onPressed: () => setState(() => _searchQuery = ''),
+                  onPressed: () {
+                    setState(() => _searchQuery = '');
+                    _loadGlSegments();
+                  },
                   icon: const Icon(Icons.refresh, color: kNavy, size: 20),
                 ),
               ),
             ]),
 
             const SizedBox(height: 10),
-            Text('Showing 1–${filtered.length} of ${segments.length}',
-                style: const TextStyle(fontSize: 12, color: kTextLight)),
-            const SizedBox(height: 14),
 
-            // ── Segment rows ─────────────────────────────────────────────
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: kCardBorder, width: 1.4),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: filtered.isEmpty
-                    ? const Padding(
-                        padding: EdgeInsets.all(32),
-                        child: Center(
-                          child: Text('No segments found.',
-                              style:
-                                  TextStyle(color: kTextLight, fontSize: 14)),
-                        ),
-                      )
-                    : Column(
-                        children: filtered
-                            .asMap()
-                            .entries
-                            .map((entry) => _hierarchyRow(
-                                entry.value, entry.key == filtered.length - 1))
-                            .toList(),
+            // ── Segment count / loading / error ──────────────────────────
+            if (_loadingSegments)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 40),
+                child: Center(
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              )
+            else if (_segmentsError != null)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 32),
+                child: Center(
+                  child: Column(children: [
+                    const Icon(Icons.error_outline,
+                        color: kInvalidRed, size: 32),
+                    const SizedBox(height: 10),
+                    Text(_segmentsError!,
+                        style: const TextStyle(color: kTextMid, fontSize: 13)),
+                    const SizedBox(height: 12),
+                    ElevatedButton.icon(
+                      onPressed: _loadGlSegments,
+                      icon: const Icon(Icons.refresh, size: 16),
+                      label: const Text('Retry'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: kNavy,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8)),
                       ),
+                    ),
+                  ]),
+                ),
+              )
+            else ...[
+              Text('Showing 1–${filtered.length} of ${_segments.length}',
+                  style: const TextStyle(fontSize: 12, color: kTextLight)),
+              const SizedBox(height: 14),
+
+              // ── Segment rows ───────────────────────────────────────────
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: kCardBorder, width: 1.4),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: filtered.isEmpty
+                      ? const Padding(
+                          padding: EdgeInsets.all(32),
+                          child: Center(
+                            child: Text('No segments found.',
+                                style:
+                                    TextStyle(color: kTextLight, fontSize: 14)),
+                          ),
+                        )
+                      : Column(
+                          children: filtered
+                              .asMap()
+                              .entries
+                              .map((entry) => _hierarchyRow(entry.value,
+                                  entry.key == filtered.length - 1))
+                              .toList(),
+                        ),
+                ),
               ),
-            ),
+            ],
           ]),
         ),
       ),
@@ -741,7 +823,6 @@ class _GLSegmentPageState extends State<GLSegmentPage> {
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Row(children: [
-                // Level badge
                 Container(
                   width: 28,
                   height: 20,
@@ -758,7 +839,6 @@ class _GLSegmentPageState extends State<GLSegmentPage> {
                           letterSpacing: 0.2)),
                 ),
                 const SizedBox(width: 14),
-                // GL No badge (if available)
                 if (seg.glNo != null) ...[
                   Container(
                     padding:
@@ -775,7 +855,6 @@ class _GLSegmentPageState extends State<GLSegmentPage> {
                   ),
                   const SizedBox(width: 10),
                 ],
-                // Segment ID
                 SizedBox(
                   width: 90,
                   child: Text(seg.segmentId,
@@ -785,19 +864,16 @@ class _GLSegmentPageState extends State<GLSegmentPage> {
                           color: kTextDark,
                           letterSpacing: 0.1)),
                 ),
-                // Segment Value
                 Expanded(
                   child: Text(seg.segmentValue,
                       style: const TextStyle(fontSize: 13, color: kTextMid)),
                 ),
-                // Type
                 SizedBox(
                   width: 54,
                   child: Text(seg.type,
                       style: const TextStyle(fontSize: 12, color: kTextLight)),
                 ),
                 const SizedBox(width: 12),
-                // View
                 _iconBtn(
                   icon: Icons.visibility_outlined,
                   iconColor: const Color(0xFF16A34A),
@@ -805,7 +881,6 @@ class _GLSegmentPageState extends State<GLSegmentPage> {
                   onTap: () => _goView(seg),
                 ),
                 const SizedBox(width: 6),
-                // Edit
                 _iconBtn(
                   icon: Icons.edit_outlined,
                   iconColor: kBlueMid,
@@ -813,7 +888,6 @@ class _GLSegmentPageState extends State<GLSegmentPage> {
                   onTap: () => _goEdit(seg),
                 ),
                 const SizedBox(width: 6),
-                // Delete
                 _iconBtn(
                   icon: Icons.delete_outline,
                   iconColor: kInvalidRed,
@@ -854,17 +928,18 @@ class _AddEditForm extends StatefulWidget {
   final Segment? editingSegment;
   final List<Map<String, dynamic>> glMasters;
   final Map<String, dynamic>? preselectedGlMaster;
-  final void Function(
+  final Future<void> Function(
     String level,
     String segId,
     String segValue,
     bool isActive,
     int glNo,
     String glName,
+    int orgCode,
   ) onSave;
   final VoidCallback onCancel;
 
-  _AddEditForm({
+  const _AddEditForm({
     super.key,
     required this.editingSegment,
     required this.glMasters,
@@ -878,7 +953,8 @@ class _AddEditForm extends StatefulWidget {
 }
 
 class _AddEditFormState extends State<_AddEditForm> {
-  late TextEditingController _glNameCtrl;
+  // GL Name removed from UI — read internally from selected GL master
+  late TextEditingController _orgCodeCtrl;
   late TextEditingController _segIdCtrl;
   late TextEditingController _segValueCtrl;
 
@@ -886,12 +962,14 @@ class _AddEditFormState extends State<_AddEditForm> {
   String? _selectedLevel;
   bool? _selectedActive;
 
+  bool? _orgCodeValid;
   bool? _glNoValid;
   bool? _segIdValid;
   bool? _segValueValid;
   bool? _levelValid;
   bool? _activeValid;
   bool _submitted = false;
+  bool _saving = false;
 
   @override
   void initState() {
@@ -899,24 +977,21 @@ class _AddEditFormState extends State<_AddEditForm> {
     final seg = widget.editingSegment;
 
     if (seg != null) {
-      // Edit mode — find matching GL master
       _selectedGlMaster = widget.glMasters.firstWhere(
         (m) => m['glNo'].toString() == seg.glNo?.toString(),
         orElse: () => {},
       );
       if (_selectedGlMaster!.isEmpty) _selectedGlMaster = null;
-      _glNameCtrl = TextEditingController(text: seg.glName ?? '');
+      _orgCodeCtrl = TextEditingController();
       _segIdCtrl = TextEditingController(text: seg.segmentId);
       _segValueCtrl = TextEditingController(text: seg.segmentValue);
       _selectedLevel = seg.level;
       _selectedActive = seg.isActive;
-      _glNoValid =
+      _orgCodeValid = _glNoValid =
           _segIdValid = _segValueValid = _levelValid = _activeValid = true;
     } else {
-      // Create mode — pre-select from list screen selection
       _selectedGlMaster = widget.preselectedGlMaster;
-      _glNameCtrl = TextEditingController(
-          text: _selectedGlMaster?['glName']?.toString() ?? '');
+      _orgCodeCtrl = TextEditingController();
       _segIdCtrl = TextEditingController();
       _segValueCtrl = TextEditingController();
       _selectedLevel = null;
@@ -926,7 +1001,7 @@ class _AddEditFormState extends State<_AddEditForm> {
 
   @override
   void dispose() {
-    _glNameCtrl.dispose();
+    _orgCodeCtrl.dispose();
     _segIdCtrl.dispose();
     _segValueCtrl.dispose();
     super.dispose();
@@ -935,11 +1010,12 @@ class _AddEditFormState extends State<_AddEditForm> {
   void _onGlChanged(Map<String, dynamic>? gl) {
     setState(() {
       _selectedGlMaster = gl;
-      _glNameCtrl.text = gl?['glName']?.toString() ?? '';
       _glNoValid = gl != null;
     });
   }
 
+  void _validateOrgCode(String v) =>
+      setState(() => _orgCodeValid = v.trim().isNotEmpty);
   void _validateSegId(String v) =>
       setState(() => _segIdValid = v.trim().isNotEmpty);
   void _validateSegValue(String v) =>
@@ -956,13 +1032,15 @@ class _AddEditFormState extends State<_AddEditForm> {
   bool _validateAll() {
     setState(() {
       _submitted = true;
+      _orgCodeValid = _orgCodeCtrl.text.trim().isNotEmpty;
       _glNoValid = _selectedGlMaster != null;
       _segIdValid = _segIdCtrl.text.trim().isNotEmpty;
       _segValueValid = _segValueCtrl.text.trim().isNotEmpty;
       _levelValid = _selectedLevel != null;
       _activeValid = _selectedActive != null;
     });
-    return _glNoValid! &&
+    return _orgCodeValid! &&
+        _glNoValid! &&
         _segIdValid! &&
         _segValueValid! &&
         _levelValid! &&
@@ -970,13 +1048,13 @@ class _AddEditFormState extends State<_AddEditForm> {
   }
 
   void _clear() => setState(() {
+        _orgCodeCtrl.clear();
         _segIdCtrl.clear();
         _segValueCtrl.clear();
-        _glNameCtrl.clear();
         _selectedGlMaster = null;
         _selectedLevel = null;
         _selectedActive = null;
-        _glNoValid =
+        _orgCodeValid = _glNoValid =
             _segIdValid = _segValueValid = _levelValid = _activeValid = null;
         _submitted = false;
       });
@@ -1016,7 +1094,6 @@ class _AddEditFormState extends State<_AddEditForm> {
           borderRadius: BorderRadius.circular(8),
         ),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          // Header
           Container(
             width: double.infinity,
             padding: const EdgeInsets.fromLTRB(28, 18, 28, 18),
@@ -1034,7 +1111,6 @@ class _AddEditFormState extends State<_AddEditForm> {
                   fontSize: 17),
             ),
           ),
-
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(28, 32, 28, 32),
@@ -1056,8 +1132,21 @@ class _AddEditFormState extends State<_AddEditForm> {
                       focusedBorder: _borderFor(valid, isFocused: true),
                     );
 
+                // ── GL Name field removed — 5 fields remain ──────────────
                 final fields = [
-                  // ── 1. GL No Dropdown ──────────────────────────────────
+                  _field(
+                    'Org Code',
+                    TextField(
+                      controller: _orgCodeCtrl,
+                      onChanged: _validateOrgCode,
+                      keyboardType: TextInputType.number,
+                      style: const TextStyle(color: kTextDark, fontSize: 14),
+                      decoration: dec('e.g. 50', _orgCodeValid),
+                    ),
+                    info: 'Organization Code',
+                    errorWidget: _errorMsg('Org Code is required',
+                        _submitted ? _orgCodeValid : null),
+                  ),
                   _field(
                     'GL No.',
                     widget.glMasters.isEmpty
@@ -1109,41 +1198,6 @@ class _AddEditFormState extends State<_AddEditForm> {
                     errorWidget: _errorMsg(
                         'GL No. is required', _submitted ? _glNoValid : null),
                   ),
-
-                  // ── 2. GL Name (auto-filled, read-only) ───────────────
-                  _field(
-                    'GL Name',
-                    TextField(
-                      controller: _glNameCtrl,
-                      readOnly: true,
-                      style: const TextStyle(color: kTextLight, fontSize: 14),
-                      decoration: InputDecoration(
-                        hintText: 'Auto-filled on GL selection',
-                        hintStyle: const TextStyle(
-                            color: Color(0xFFCBD5E1), fontSize: 14),
-                        contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 14),
-                        filled: true,
-                        fillColor: const Color(0xFFF1F5FB),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(color: kCardBorder),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(color: kCardBorder),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(color: kCardBorder),
-                        ),
-                      ),
-                    ),
-                    info: 'Auto-filled from GL Master',
-                    errorWidget: const SizedBox(height: 18),
-                  ),
-
-                  // ── 3. Segment Type ────────────────────────────────────
                   _field(
                     'Segment Type',
                     DropdownButtonFormField<String>(
@@ -1172,8 +1226,6 @@ class _AddEditFormState extends State<_AddEditForm> {
                     errorWidget: _errorMsg('Segment Type is required',
                         _submitted ? _levelValid : null),
                   ),
-
-                  // ── 4. Segment ID ──────────────────────────────────────
                   _field(
                     'Segment ID',
                     TextField(
@@ -1186,8 +1238,6 @@ class _AddEditFormState extends State<_AddEditForm> {
                     errorWidget:
                         _errorMsg('Segment ID is required', _segIdValid),
                   ),
-
-                  // ── 5. Segment Value ───────────────────────────────────
                   _field(
                     'Segment Value',
                     TextField(
@@ -1200,8 +1250,6 @@ class _AddEditFormState extends State<_AddEditForm> {
                     errorWidget:
                         _errorMsg('Segment Value is required', _segValueValid),
                   ),
-
-                  // ── 6. Status ──────────────────────────────────────────
                   _field(
                     'Status',
                     DropdownButtonFormField<String>(
@@ -1248,36 +1296,43 @@ class _AddEditFormState extends State<_AddEditForm> {
                                 .toList())
                       else
                         Column(children: fields),
-
                       const Text('* Required fields',
                           style: TextStyle(
                               color: Color(0xFF94A3B8),
                               fontSize: 11,
                               fontStyle: FontStyle.italic)),
                       const SizedBox(height: 32),
-
-                      // Action buttons
                       Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-                        // Save
+                        // Save button with loading state
                         ElevatedButton(
-                          onPressed: () {
-                            if (_validateAll()) {
-                              final glNo = _selectedGlMaster!['glNo'];
-                              final glName =
-                                  _selectedGlMaster!['glName']?.toString() ??
-                                      '';
-                              widget.onSave(
-                                _selectedLevel!,
-                                _segIdCtrl.text.trim(),
-                                _segValueCtrl.text.trim(),
-                                _selectedActive ?? true,
-                                glNo is int
-                                    ? glNo
-                                    : int.tryParse(glNo.toString()) ?? 0,
-                                glName,
-                              );
-                            }
-                          },
+                          onPressed: _saving
+                              ? null
+                              : () async {
+                                  if (_validateAll()) {
+                                    setState(() => _saving = true);
+                                    final glNo = _selectedGlMaster!['glNo'];
+                                    final glName = _selectedGlMaster!['glName']
+                                            ?.toString() ??
+                                        '';
+                                    final orgCode = int.tryParse(
+                                            _orgCodeCtrl.text.trim()) ??
+                                        50;
+                                    await widget.onSave(
+                                      _selectedLevel!,
+                                      _segIdCtrl.text.trim(),
+                                      _segValueCtrl.text.trim(),
+                                      _selectedActive ?? true,
+                                      glNo is int
+                                          ? glNo
+                                          : int.tryParse(glNo.toString()) ?? 0,
+                                      glName,
+                                      orgCode,
+                                    );
+                                    if (mounted) {
+                                      setState(() => _saving = false);
+                                    }
+                                  }
+                                },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: kNavy,
                             foregroundColor: Colors.white,
@@ -1287,21 +1342,29 @@ class _AddEditFormState extends State<_AddEditForm> {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 24, vertical: 14),
                           ),
-                          child: const Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text('Save',
-                                    style: TextStyle(
-                                        fontWeight: FontWeight.w700,
-                                        fontSize: 14)),
-                                SizedBox(width: 8),
-                                Icon(Icons.arrow_forward, size: 16),
-                              ]),
+                          child: _saving
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                      Text('Save',
+                                          style: TextStyle(
+                                              fontWeight: FontWeight.w700,
+                                              fontSize: 14)),
+                                      SizedBox(width: 8),
+                                      Icon(Icons.arrow_forward, size: 16),
+                                    ]),
                         ),
                         const SizedBox(width: 10),
-                        // Clear
                         OutlinedButton(
-                          onPressed: _clear,
+                          onPressed: _saving ? null : _clear,
                           style: OutlinedButton.styleFrom(
                             foregroundColor: kTextMid,
                             backgroundColor: Colors.white,
@@ -1324,9 +1387,8 @@ class _AddEditFormState extends State<_AddEditForm> {
                               ]),
                         ),
                         const SizedBox(width: 10),
-                        // Cancel
                         ElevatedButton(
-                          onPressed: widget.onCancel,
+                          onPressed: _saving ? null : widget.onCancel,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: kRedBack,
                             foregroundColor: Colors.white,
