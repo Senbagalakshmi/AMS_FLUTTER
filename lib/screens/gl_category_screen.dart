@@ -1164,3 +1164,264 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
     );
   }
 }
+
+// ─── GLCategoryFields Widget ──────────────────────────────────────────────────
+class GLCategoryFields extends StatefulWidget {
+  final Map<String, dynamic>? initialData;
+  final bool isViewMode;
+  final void Function(String key, dynamic val) onChanged;
+
+  const GLCategoryFields({
+    super.key,
+    this.initialData,
+    this.isViewMode = false,
+    required this.onChanged,
+  });
+
+  @override
+  State<GLCategoryFields> createState() => _GLCategoryFieldsState();
+}
+
+class _GLCategoryFieldsState extends State<GLCategoryFields> {
+  final _orgCtrl = TextEditingController();
+  final _codeCtrl = TextEditingController();
+  final _nameCtrl = TextEditingController();
+  final _subTypeCtrl = TextEditingController();
+  String? _catType;
+  final Map<String, String?> _errors = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  void _loadData() {
+    if (widget.initialData == null) return;
+    final d = widget.initialData!.map((k, v) => MapEntry(k.toLowerCase(), v));
+
+    _orgCtrl.text = d['orgcode']?.toString() ?? d['org']?.toString() ?? '50';
+    _codeCtrl.text = d['glcatcd']?.toString() ?? d['code']?.toString() ?? '';
+    _nameCtrl.text = d['glcatname']?.toString() ?? d['name']?.toString() ?? '';
+    _subTypeCtrl.text = d['glcatsubtype']?.toString() ?? d['subtype']?.toString() ?? '';
+    _catType = d['glcattype']?.toString() ?? d['type']?.toString();
+  }
+
+  @override
+  void dispose() {
+    _orgCtrl.dispose();
+    _codeCtrl.dispose();
+    _nameCtrl.dispose();
+    _subTypeCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.isViewMode) return _buildViewUI();
+    return _buildFormUI();
+  }
+
+  Widget _buildFormUI() {
+    return AmsFormGrid(
+      children: [
+        AmsField(
+          label: 'Org Code',
+          required: true,
+          labelAbove: true,
+          child: AmsTextInput(
+            controller: _orgCtrl,
+            readOnly: widget.isViewMode,
+            placeholder: 'e.g. 50',
+            onChanged: (v) => widget.onChanged('orgCode', v),
+          ),
+        ),
+        AmsField(
+          label: 'Category Code',
+          required: true,
+          labelAbove: true,
+          child: AmsTextInput(
+            controller: _codeCtrl,
+            readOnly: widget.isViewMode,
+            placeholder: 'e.g. 1001',
+            keyboardType: TextInputType.number,
+            errorText: _errors['glCatCd'],
+            onChanged: (v) {
+              setState(() => _errors['glCatCd'] =
+                  v.trim().isEmpty ? 'Category Code required' : null);
+              widget.onChanged('glCatCd', int.tryParse(v) ?? 0);
+            },
+          ),
+        ),
+        AmsField(
+          label: 'Category Name',
+          required: true,
+          labelAbove: true,
+          child: AmsTextInput(
+            controller: _nameCtrl,
+            readOnly: widget.isViewMode,
+            placeholder: 'Enter name...',
+            errorText: _errors['glCatName'],
+            onChanged: (v) {
+              setState(() => _errors['glCatName'] =
+                  v.trim().isEmpty ? 'Category Name required' : null);
+              widget.onChanged('glCatName', v);
+            },
+          ),
+        ),
+        AmsField(
+          label: 'Category Type',
+          required: true,
+          labelAbove: true,
+          child: AmsDropdown(
+            initialValue: _catType,
+            items: const ['Asset', 'Liability', 'Capital', 'Income', 'Expense'],
+            errorText: _errors['glCatType'],
+            onChanged: (v) {
+              setState(() {
+                _catType = v;
+                _errors['glCatType'] = v == null ? 'Category Type required' : null;
+              });
+              widget.onChanged('glCatType', v);
+            },
+          ),
+        ),
+        AmsField(
+          label: 'Sub Type',
+          labelAbove: true,
+          child: AmsTextInput(
+            controller: _subTypeCtrl,
+            readOnly: widget.isViewMode,
+            placeholder: 'Optional sub-type',
+            onChanged: (v) => widget.onChanged('glCatSubType', v),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildViewUI() {
+    final firstLetter = _nameCtrl.text.isNotEmpty
+        ? _nameCtrl.text.substring(0, 1).toUpperCase()
+        : 'C';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: AppColors.bg,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [AppColors.tBlue, Color(0xFF6366F1)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  shape: BoxShape.circle,
+                ),
+                child: Center(
+                  child: Text(firstLetter,
+                      style: bodyStyle(
+                          size: 24, color: Colors.white, weight: FontWeight.w800)),
+                ),
+              ),
+              const SizedBox(width: 20),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _nameCtrl.text.isEmpty
+                          ? 'Unnamed Category'
+                          : _nameCtrl.text,
+                      style: bodyStyle(size: 18, weight: FontWeight.w700),
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        if (_catType != null)
+                          AmsBadge(
+                            label: _catType!,
+                            background: AppColors.tBlueLt,
+                            color: AppColors.tBlue,
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+        Text('Category Details',
+            style: bodyStyle(
+                size: 14, weight: FontWeight.w700, color: AppColors.ink2)),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+              child: _buildInfoCard('Organization', _orgCtrl.text,
+                  Icons.business_rounded),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: _buildInfoCard(
+                  'Record Code', _codeCtrl.text, Icons.tag_rounded),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        _buildInfoCard('Classification', _catType ?? '—',
+            Icons.category_rounded),
+        const SizedBox(height: 16),
+        _buildInfoCard(
+            'Sub-Classification',
+            _subTypeCtrl.text.isEmpty
+                ? 'Not Provided'
+                : _subTypeCtrl.text,
+            Icons.account_tree_outlined),
+      ],
+    );
+  }
+
+  Widget _buildInfoCard(String label, String value, IconData icon) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 14, color: AppColors.ink3),
+              const SizedBox(width: 8),
+              Text(label,
+                  style: bodyStyle(
+                      size: 11,
+                      color: AppColors.ink3,
+                      weight: FontWeight.w600)),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(value,
+              style: bodyStyle(
+                  size: 14, color: AppColors.ink, weight: FontWeight.w700)),
+        ],
+      ),
+    );
+  }
+}

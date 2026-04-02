@@ -3,6 +3,8 @@ import '../theme.dart';
 import '../widgets/widgets.dart';
 import '../models/models.dart';
 import 'nontran_entry_screen.dart';
+import 'gl_category_screen.dart';
+import 'gl_master_screen.dart';
 
 class NonTranAuthScreen extends StatefulWidget {
   final List<AuthRecord> authQueue;
@@ -14,6 +16,7 @@ class NonTranAuthScreen extends StatefulWidget {
   final VoidCallback onBack;
   final String? userName;
   final Future<void> Function()? onRefresh;
+  final Map<String, Auth101Config> authConfigs;
 
   const NonTranAuthScreen({
     super.key,
@@ -26,6 +29,7 @@ class NonTranAuthScreen extends StatefulWidget {
     this.onLock,
     this.userName,
     this.onRefresh,
+    required this.authConfigs,
   });
 
   @override
@@ -48,10 +52,27 @@ class _NonTranAuthScreenState extends State<NonTranAuthScreen> {
   @override
   void didUpdateWidget(NonTranAuthScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (_selectedRecord == null && widget.authQueue.isNotEmpty && !widget.isLoading) {
+
+    // Initial selection if none exists
+    if (_selectedRecord == null &&
+        widget.authQueue.isNotEmpty &&
+        !widget.isLoading) {
       setState(() {
         _selectedRecord = widget.authQueue.first;
       });
+    }
+
+    // Sync selected record with the new queue if it's been refreshed
+    if (_selectedRecord != null) {
+      try {
+        final updated = widget.authQueue.firstWhere(
+          (r) => r.authSl == _selectedRecord!.authSl,
+          orElse: () => _selectedRecord!,
+        );
+        if (updated != _selectedRecord) {
+          setState(() => _selectedRecord = updated);
+        }
+      } catch (_) {}
     }
   }
 
@@ -146,7 +167,10 @@ class _NonTranAuthScreenState extends State<NonTranAuthScreen> {
                   if (_selectedRecord != null && !widget.isLoading) ...[
                     const SizedBox(height: 28),
                     _AuthDetailPanel(
-                        record: _selectedRecord!, remarksCtrl: _remarksCtrl),
+                      record: _selectedRecord!,
+                      remarksCtrl: _remarksCtrl,
+                      authConfigs: widget.authConfigs,
+                    ),
                   ],
                 ],
               ),
@@ -358,6 +382,20 @@ class _NonTranAuthScreenState extends State<NonTranAuthScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           ...record.dataBlocks.map((block) {
+                            if (record.programId == 'GL-CAT') {
+                              return GLCategoryFields(
+                                initialData: block.data,
+                                isViewMode: true,
+                                onChanged: (k, v) {},
+                              );
+                            } else if (record.programId == 'GL-MST') {
+                              return GLMasterFields(
+                                initialData: block.data,
+                                isViewMode: true,
+                                onChanged: (k, v) {},
+                                categoryList: const [],
+                              );
+                            }
                             return Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -612,11 +650,13 @@ class _AuthDetailPanel extends StatelessWidget {
   final AuthRecord record;
   final TextEditingController remarksCtrl;
   final bool readOnly;
+  final Map<String, Auth101Config> authConfigs;
 
   const _AuthDetailPanel({
     required this.record,
     required this.remarksCtrl,
     this.readOnly = false,
+    required this.authConfigs,
   });
 
   @override
@@ -641,15 +681,22 @@ class _AuthDetailPanel extends StatelessWidget {
             ),
             child: Column(
               children: [
-                _levelRow(
-                    '1st Level', record.flUser ?? '', record.flDate ?? ''),
-                const SizedBox(height: 12),
-                _levelRow(
-                    '2nd Level', record.slUser ?? '', record.slDate ?? ''),
-                const SizedBox(height: 12),
-                _levelRow(
-                    '3rd Level', record.tlUser ?? '', record.tlDate ?? ''),
-                const SizedBox(height: 12),
+                if ((authConfigs[record.programId]?.levels ?? 1) >= 1 ||
+                    (authConfigs[record.programId]?.levels ?? 0) == 0) ...[
+                  _levelRow(
+                      '1st Level', record.flUser ?? '', record.flDate ?? ''),
+                  const SizedBox(height: 12),
+                ],
+                if ((authConfigs[record.programId]?.levels ?? 0) >= 2) ...[
+                  _levelRow(
+                      '2nd Level', record.slUser ?? '', record.slDate ?? ''),
+                  const SizedBox(height: 12),
+                ],
+                if ((authConfigs[record.programId]?.levels ?? 0) >= 3) ...[
+                  _levelRow(
+                      '3rd Level', record.tlUser ?? '', record.tlDate ?? ''),
+                  const SizedBox(height: 12),
+                ],
                 _levelRow('Risk Auth', record.rUser ?? '', record.rDate ?? ''),
                 const SizedBox(height: 16),
                 AmsField(

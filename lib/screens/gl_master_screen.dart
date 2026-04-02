@@ -1163,3 +1163,283 @@ class _GLMasterScreenState extends State<GLMasterScreen> {
     );
   }
 }
+
+// ─── GLMasterFields Widget ────────────────────────────────────────────────────
+class GLMasterFields extends StatefulWidget {
+  final Map<String, dynamic>? initialData;
+  final bool isViewMode;
+  final List<Map<String, dynamic>> categoryList;
+  final void Function(String key, dynamic val) onChanged;
+
+  const GLMasterFields({
+    super.key,
+    this.initialData,
+    this.isViewMode = false,
+    this.categoryList = const [],
+    required this.onChanged,
+  });
+
+  @override
+  State<GLMasterFields> createState() => _GLMasterFieldsState();
+}
+
+class _GLMasterFieldsState extends State<GLMasterFields> {
+  final _orgCtrl = TextEditingController();
+  final _glNoCtrl = TextEditingController();
+  final _glNameCtrl = TextEditingController();
+  int? _glCatCd;
+  String? _status;
+  final Map<String, String?> _errors = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  void _loadData() {
+    if (widget.initialData == null) return;
+    final d = widget.initialData!.map((k, v) => MapEntry(k.toLowerCase(), v));
+
+    _orgCtrl.text = d['orgcode']?.toString() ?? d['org']?.toString() ?? '50';
+    _glNoCtrl.text = d['glno']?.toString() ?? d['no']?.toString() ?? '';
+    _glNameCtrl.text = d['glname']?.toString() ?? d['name']?.toString() ?? '';
+    _glCatCd = int.tryParse(d['glcatcd']?.toString() ?? '');
+    _status = (d['status'] == 1 || d['status'] == '1' || d['status'] == true) 
+        ? 'Active' : 'Inactive';
+  }
+
+  @override
+  void dispose() {
+    _orgCtrl.dispose();
+    _glNoCtrl.dispose();
+    _glNameCtrl.dispose();
+    super.dispose();
+  }
+
+  String _catName(dynamic catCd) {
+    if (widget.categoryList.isEmpty) return catCd?.toString() ?? '—';
+    final match = widget.categoryList.firstWhere(
+      (c) => c['glCatCd'].toString() == catCd.toString(),
+      orElse: () => {},
+    );
+    return match['glCatName']?.toString() ?? catCd?.toString() ?? '—';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.isViewMode) return _buildViewUI();
+    return _buildFormUI();
+  }
+
+  Widget _buildFormUI() {
+    return AmsFormGrid(
+      children: [
+        AmsField(
+          label: 'Org Code',
+          required: true,
+          labelAbove: true,
+          child: AmsTextInput(
+            controller: _orgCtrl,
+            readOnly: widget.isViewMode,
+            onChanged: (v) => widget.onChanged('orgCode', v),
+          ),
+        ),
+        AmsField(
+          label: 'GL Number',
+          required: true,
+          labelAbove: true,
+          child: AmsTextInput(
+            controller: _glNoCtrl,
+            readOnly: widget.isViewMode,
+            placeholder: 'e.g. 101001',
+            keyboardType: TextInputType.number,
+            errorText: _errors['glNo'],
+            onChanged: (v) {
+              setState(() => _errors['glNo'] =
+                  v.trim().isEmpty ? 'GL Number required' : null);
+              widget.onChanged('glNo', int.tryParse(v) ?? 0);
+            },
+          ),
+        ),
+        AmsField(
+          label: 'GL Name',
+          required: true,
+          labelAbove: true,
+          child: AmsTextInput(
+            controller: _glNameCtrl,
+            readOnly: widget.isViewMode,
+            placeholder: 'Enter GL name...',
+            errorText: _errors['glName'],
+            onChanged: (v) {
+              setState(() => _errors['glName'] =
+                  v.trim().isEmpty ? 'GL Name required' : null);
+              widget.onChanged('glName', v);
+            },
+          ),
+        ),
+        AmsField(
+          label: 'Category',
+          required: true,
+          labelAbove: true,
+          child: AmsDropdown(
+            initialValue: widget.categoryList.isEmpty ? null : () {
+              if (_glCatCd == null) return null;
+              final match = widget.categoryList.firstWhere(
+                (c) => c['glCatCd'].toString() == _glCatCd.toString(),
+                orElse: () => {},
+              );
+              if (match.isEmpty) return null;
+              return '${match['glCatCd']} - ${match['glCatName']}';
+            }(),
+            items: widget.categoryList
+                .map((c) => '${c['glCatCd']} - ${c['glCatName']}')
+                .toList(),
+            errorText: _errors['glCatCd'],
+            onChanged: (v) {
+              final cd = int.tryParse(v?.split(' - ').first ?? '');
+              setState(() {
+                _glCatCd = cd;
+                _errors['glCatCd'] = cd == null ? 'Category required' : null;
+              });
+              widget.onChanged('glCatCd', cd);
+            },
+          ),
+        ),
+        AmsField(
+          label: 'Status',
+          required: true,
+          labelAbove: true,
+          child: AmsDropdown(
+            initialValue: _status,
+            items: const ['Active', 'Inactive'],
+            onChanged: (v) {
+              setState(() => _status = v);
+              widget.onChanged('status', v == 'Active' ? 1 : 0);
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildViewUI() {
+    final firstLetter = _glNameCtrl.text.isNotEmpty
+        ? _glNameCtrl.text.substring(0, 1).toUpperCase()
+        : 'G';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: AppColors.bg,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [AppColors.tBlue, Color(0xFF6366F1)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  shape: BoxShape.circle,
+                ),
+                child: Center(
+                  child: Text(firstLetter,
+                      style: bodyStyle(
+                          size: 24, color: Colors.white, weight: FontWeight.w800)),
+                ),
+              ),
+              const SizedBox(width: 20),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _glNameCtrl.text.isEmpty
+                          ? 'Unnamed GL Account'
+                          : _glNameCtrl.text,
+                      style: bodyStyle(size: 18, weight: FontWeight.w700),
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        AmsBadge(
+                          label: _status ?? 'Active',
+                          background: (_status == 'Active') ? AppColors.greenLt : AppColors.redLt,
+                          color: (_status == 'Active') ? AppColors.green : AppColors.red,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+        Text('GL Account Details',
+            style: bodyStyle(
+                size: 14, weight: FontWeight.w700, color: AppColors.ink2)),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+              child: _buildInfoCard('Organization', _orgCtrl.text,
+                  Icons.business_rounded),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: _buildInfoCard(
+                  'GL Number', _glNoCtrl.text, Icons.tag_rounded),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        _buildInfoCard('Category', _catName(_glCatCd),
+            Icons.category_rounded),
+        const SizedBox(height: 16),
+        _buildInfoCard('Account Status', _status ?? '—',
+            Icons.info_outline_rounded),
+      ],
+    );
+  }
+
+  Widget _buildInfoCard(String label, String value, IconData icon) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 14, color: AppColors.ink3),
+              const SizedBox(width: 8),
+              Text(label,
+                  style: bodyStyle(
+                      size: 11,
+                      color: AppColors.ink3,
+                      weight: FontWeight.w600)),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(value,
+              style: bodyStyle(
+                  size: 14, color: AppColors.ink, weight: FontWeight.w700)),
+        ],
+      ),
+    );
+  }
+}

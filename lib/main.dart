@@ -1,4 +1,4 @@
-﻿import 'package:ams_flutter/screens/gl_segments_screen.dart';
+import 'package:ams_flutter/screens/gl_segments_screen.dart';
 import 'package:flutter/material.dart';
 import 'screens/gl_allowed_branch_screen.dart';
 import 'screens/gl_allowed_currency_screen.dart';
@@ -458,6 +458,7 @@ class _AmsRootState extends State<AmsRoot> {
           onLock: _handleAuthLock,
           onBack: () => _navigate('list'),
           userName: _state.userName,
+          authConfigs: _state.authConfigs,
         );
         break;
 

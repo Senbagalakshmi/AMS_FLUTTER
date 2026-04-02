@@ -5,6 +5,8 @@ import '../widgets/widgets.dart';
 import '../services/api_service.dart';
 import '../data.dart';
 
+
+
 class NonTranEntryScreen extends StatefulWidget {
   final Map<String, Auth101Config> authConfigs;
   final List<String> nonTranPrograms;
@@ -917,10 +919,13 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.prog != widget.prog ||
         oldWidget.initialData != widget.initialData) {
+    if (oldWidget.prog != widget.prog) {
       _loadInitialData();
+      _notifyDefaults();
       if (widget.prog == 'USR-ROLE' || widget.prog == 'AUTHCTL') {
         _fetchDropdownData();
       }
+    }
     }
   }
 
@@ -928,9 +933,25 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
   void initState() {
     super.initState();
     _loadInitialData();
+    _notifyDefaults();
     if (widget.prog == 'USR-ROLE' || widget.prog == 'AUTHCTL') {
       _fetchDropdownData();
     }
+  }
+
+  void _notifyDefaults() {
+    // For AUTHCTL and others, notify the parent of initial switch/field states
+    // so they are included in the submission payload even if not touched.
+    final prog = widget.prog.replaceAll(' ', '-').toUpperCase();
+    if (prog == 'AUTHCTL') {
+      widget.onChanged('approvalReq', _approvalReq ? 1 : 0);
+      widget.onChanged('preApproveProc', _preApprovalReq ? 1 : 0);
+      widget.onChanged('postApproveProc', _postApprovalReq ? 1 : 0);
+      widget.onChanged('isTranPgm', _isTran ? 1 : 0);
+      widget.onChanged('authLevels', _authLevels);
+      widget.onChanged('orgCode', 50); // Default for AUTHCTL
+    }
+    // Add other defaults as needed per program
   }
 
   Future<void> _fetchDropdownData() async {
@@ -947,7 +968,16 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
   }
 
   void _loadInitialData() {
-    if (widget.initialData == null) return;
+    if (widget.initialData == null) {
+      // For new records, we might want to reset to true defaults
+      if (widget.prog == 'AUTHCTL') {
+        _approvalReq = true;
+        _preApprovalReq = false;
+        _postApprovalReq = false;
+        _isTran = false;
+      }
+      return;
+    }
     final data =
         widget.initialData!.map((k, v) => MapEntry(k.toLowerCase(), v));
     final prog = widget.prog.replaceAll(' ', '-').toUpperCase();
@@ -977,23 +1007,27 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
       _authPgmCtrl.text = data['programid']?.toString() ??
           data['pgmcd']?.toString() ??
           '';
-      _approvalReq = data['approvalreq'] == true ||
-          data['approvalreq'] == 1 ||
-          data['approvalreq'] == '1';
-      _preApprovalReq = data['preapproveproc'] == true ||
-          data['preapproveproc'] == 1 ||
-          data['preapproveproc'] == '1';
-      _postApprovalReq = data['postapproveproc'] == true ||
-          data['postapproveproc'] == 1 ||
-          data['postapproveproc'] == '1';
-      _isTran = data['istranpgm'] == true ||
-          data['istranpgm'] == 1 ||
-          data['istranpgm'] == '1' ||
-          data['istran'] == true ||
-          data['istran'] == 1 ||
-          data['istran'] == '1';
+      bool findBool(String k) {
+        final val = data[k.toLowerCase()] ?? data[k] ?? data[k.replaceAllMapped(RegExp(r'[A-Z]'), (m) => '_' + m.group(0)!.toLowerCase())];
+        return val == true || val == 1 || val == '1';
+      }
 
-      if (data['levels_grid'] is List) {
+      if (data.containsKey('approvalreq') || data.containsKey('approval_req')) {
+        _approvalReq = findBool('approvalReq');
+      }
+      if (data.containsKey('preapproveproc') || data.containsKey('pre_approve_proc')) {
+        _preApprovalReq = findBool('preApproveProc');
+      }
+      if (data.containsKey('postapproveproc') || data.containsKey('post_approve_proc')) {
+        _postApprovalReq = findBool('postApproveProc');
+      }
+      if (data.containsKey('istranpgm') || data.containsKey('istran') || data.containsKey('is_tran')) {
+        _isTran = findBool('isTranPgm') || findBool('isTran');
+      }
+
+      if (data['authLevels'] is List) {
+        _authLevels = List<Map<String, dynamic>>.from(data['authLevels']);
+      } else if (data['levels_grid'] is List) {
         _authLevels = List<Map<String, dynamic>>.from(data['levels_grid']);
       } else if (data['datablock'] is List) {
         _authLevels = List<Map<String, dynamic>>.from(data['datablock']);
@@ -1884,7 +1918,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                 loading: _loadingDropdowns,
                 onChanged: (levels) {
                   setState(() => _authLevels = levels);
-                  widget.onChanged('levels_grid', levels);
+                  widget.onChanged('authLevels', levels);
                 },
               ),
             ],
@@ -2082,7 +2116,14 @@ class _Auth102LevelGridState extends State<_Auth102LevelGrid> {
     if (widget.initialData != null && widget.initialData is List) {
       for (var item in widget.initialData) {
         if (item is Map) {
-          _levels.add(Map<String, dynamic>.from(item));
+          final mappedItem = Map<String, dynamic>.from(item);
+          // Convert backend 'R'/'U' codes to display labels
+          if (mappedItem['permissionType'] == 'R') {
+            mappedItem['permissionType'] = 'R - Role';
+          } else if (mappedItem['permissionType'] == 'U') {
+            mappedItem['permissionType'] = 'U - User';
+          }
+          _levels.add(mappedItem);
         }
       }
     }
@@ -2126,7 +2167,20 @@ class _Auth102LevelGridState extends State<_Auth102LevelGrid> {
     });
   }
 
-  void _notify() => widget.onChanged(_levels);
+  void _notify() {
+    // Map display labels back to single-character codes for the backend
+    final List<Map<String, dynamic>> mappedLevels = _levels.map((lvl) {
+      final newLvl = Map<String, dynamic>.from(lvl);
+      if (newLvl['permissionType'] == 'R - Role') {
+        newLvl['permissionType'] = 'R';
+      } else if (newLvl['permissionType'] == 'U - User') {
+        newLvl['permissionType'] = 'U';
+      }
+      return newLvl;
+    }).toList();
+
+    widget.onChanged(mappedLevels);
+  }
 
   @override
   Widget build(BuildContext context) {
