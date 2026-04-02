@@ -30,11 +30,87 @@ class GLApiService {
         final List<dynamic> data = jsonDecode(response.body);
         return data.cast<Map<String, dynamic>>();
       }
-      return null;
     } catch (e) {
-      return null;
+      print(e);
+    }
+    return null;
+  }
+
+  /// GL102 LIST
+  Future<List<Map<String, dynamic>>?> getGlList() async {
+    try {
+      final response = await http.get(
+        Uri.parse("${ApiService.baseUrl}/gl-branch/gl102/list"),
+        headers: apiService.headers,
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        return data.cast<Map<String, dynamic>>();
+      }
+
+    } catch (e) {
+      print(e);
+    }
+    return null;
+  }
+  /// GL104 - ALLOWED BRANCHES
+  Future<List<Map<String, dynamic>>?> getGl104List() async {
+    try {
+      final response = await http.get(
+        Uri.parse("${ApiService.baseUrl}/gl-branch"),
+        headers: apiService.headers,
+      );
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        return data.cast<Map<String, dynamic>>();
+      }
+    } catch (e) {
+      print(e);
+    }
+    return null;
+  }
+
+  Future<bool> saveAllowedBranch(Map<String, dynamic> payload) async {
+    try {
+      final response = await http.post(
+        Uri.parse("${ApiService.baseUrl}/gl-branch"),
+        headers: apiService.headers,
+        body: jsonEncode(payload),
+      );
+      return response.statusCode == 200 || response.statusCode == 201;
+    } catch (e) {
+      print(e);
+      return false;
     }
   }
+
+  Future<bool> updateAllowedBranch(Map<String, dynamic> payload) async {
+    try {
+      final response = await http.put(
+        Uri.parse("${ApiService.baseUrl}/gl-branch"),
+        headers: apiService.headers,
+        body: jsonEncode(payload),
+      );
+      return response.statusCode == 200 || response.statusCode == 201;
+    } catch (e) {
+      print(e);
+      return false;
+    }
+  }
+
+  Future<bool> deleteAllowedBranch(int orgCode, int glNo) async {
+  try {
+    final response = await http.delete(
+      Uri.parse("${ApiService.baseUrl}/gl-branch/$orgCode/$glNo"),
+      headers: apiService.headers,
+    );
+    return response.statusCode == 200 || response.statusCode == 204;
+  } catch (e) {
+    print(e);
+    return false;
+  }
+}
 
   Future<bool> updateGlCategory(int glAttCd, Map<String, dynamic> data) async {
     try {

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme.dart';
 import '../widgets/widgets.dart';
+import '../services/gl_api_service.dart';
 
 class AllowedBranchScreen extends StatefulWidget {
   final VoidCallback onBack;
@@ -24,19 +25,17 @@ class AllowedBranchScreen extends StatefulWidget {
 
 class _AllowedBranchScreenState extends State<AllowedBranchScreen> {
   bool showForm = false;
-  final bool _isLoading = false;
-  final bool _isEditMode = false;
-  final bool _isViewOnly = false;
-
+  bool _isLoading = false;
+  bool _isEditMode = false;
+  bool _isViewOnly = false;
+  String? selectedGL;
+  String? _originalGL;
+  String _searchQuery = '';
+  final TextEditingController orgCodeController = TextEditingController(text: "50");
+  String? _orgError;
+  List<Map<String, dynamic>> savedList = [];
   /// GL Accounts
-  List<String> glAccounts = [
-    "GL 10020 — Bank Operating A/c",
-    "GL 10021 — Cash Account",
-    "GL 10022 — Salary Account",
-    "GL 10023 — Vendor Account",
-    "GL 10024 — Customer Account",
-    "GL 10025 — Expense Account",
-  ];
+  List<String> glAccounts = [];
 
   /// Branch List
   List<Map<String, dynamic>> branches = [
@@ -47,6 +46,66 @@ class _AllowedBranchScreenState extends State<AllowedBranchScreen> {
     {"code": "DEL", "name": "Delhi", "enabled": false},
   ];
 
+  Future<void> loadGLAccounts() async {
+    final response = await GLApiService().getGlList();
+
+    if (response != null && response.isNotEmpty) {
+      setState(() {
+        glAccounts = response.map<String>((item) {
+          final glNo = item['GLNO'] ?? item['glNo'] ?? item['glno'] ?? item['gl_no'] ?? item['GlNo'] ?? '';
+          final glName = item['GLNAME'] ?? item['glName'] ?? item['glname'] ?? item['gl_name'] ?? item['GlName'] ?? '';
+          return "GL $glNo — $glName";
+        }).toSet().toList();
+      });
+    }
+  }
+
+  Future<void> loadSavedBranches() async {
+    final response = await GLApiService().getGl104List();
+    if (response != null) {
+      setState(() {
+        // Map backend format to local UI format
+        savedList = response.map<Map<String, dynamic>>((backendItem) {
+          
+          final glNo = (backendItem['glNo'] ?? backendItem['GLNO'] ?? backendItem['GlNo'] ?? backendItem['glno'])?.toString();
+          
+          // Attempt to find the full display name from glAccounts, otherwise fallback
+          String matchedGl = "GL $glNo —";
+          try {
+            matchedGl = glAccounts.firstWhere((element) => element.contains("GL $glNo "));
+          } catch(e) {}
+          
+          final rawBranches = (backendItem['allowedBrn'] ?? backendItem['ALLOWEDBRN'] ?? backendItem['AllowedBrn'] ?? backendItem['allowedbrn'])?.toString() ?? "";
+          final branchesList = rawBranches.split(",").where((s) => s.trim().isNotEmpty).toList();
+
+          final orgCode = backendItem['orgCode'] ?? backendItem['ORGCODE'] ?? backendItem['OrgCode'] ?? backendItem['orgcode'];
+
+          return {
+            "orgCode": orgCode,
+            "gl": matchedGl,
+            "branches": branchesList
+          };
+        }).toList();
+      });
+    }
+  }
+
+  Future<void> initData() async {
+    await loadGLAccounts();
+    await loadSavedBranches();
+  }
+
+  @override
+  void dispose() {
+    orgCodeController.dispose();
+    super.dispose();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    initData();
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -96,47 +155,262 @@ class _AllowedBranchScreenState extends State<AllowedBranchScreen> {
   /// ================================
   /// LIST VIEW
   /// ================================
-  Widget _buildListView() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: AppColors.border),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Expanded(
-                  child: AmsTextInput(
-                    icon: Icons.search_rounded,
-                    placeholder: 'Search branches...',
-                    onChanged: (v) {},
-                  ),
-                ),
-                const SizedBox(width: 16),
-                IconButton(
-                  icon: const Icon(Icons.refresh_rounded),
-                  onPressed: () {},
-                ),
-                const SizedBox(width: 16),
-                AmsButton(
-                  label: '+ Add New',
-                  onPressed: () {
+Widget _buildListView() {
+  final filteredList = savedList.where((item) {
+    if (_searchQuery.trim().isEmpty) return true;
+    final gl = (item["gl"] ?? "").toString().toLowerCase();
+    final branchesText = ((item["branches"] as List?) ?? []).join(", ").toLowerCase();
+    final q = _searchQuery.toLowerCase().trim();
+    return gl.contains(q) || branchesText.contains(q);
+  }).toList();
+
+  return Container(
+    decoration: BoxDecoration(
+      color: Colors.white,
+      border: Border.all(color: AppColors.border),
+      borderRadius: BorderRadius.circular(8),
+    ),
+    child: Column(
+      children: [
+
+        /// Top Search Row
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Expanded(
+                child: AmsTextInput(
+                  icon: Icons.search_rounded,
+                  placeholder: 'Search branches...',
+                  onChanged: (v) {
                     setState(() {
-                      showForm = true;
+                      _searchQuery = v?.toString() ?? '';
                     });
                   },
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(width: 16),
+              IconButton(
+                icon: const Icon(Icons.refresh_rounded),
+                onPressed: () {
+                  loadSavedBranches();
+                },
+              ),
+              const SizedBox(width: 16),
+              AmsButton(
+                label: '+ Add New',
+                onPressed: () {
+                  setState(() {
+                    showForm = true;
+                    _isEditMode = false;
+                    _isViewOnly = false;
+                    selectedGL = null;
+                    _originalGL = null;
+                    orgCodeController.text = "50";
+                    _orgError = null;
+                    for (var b in branches) {
+                      b["enabled"] = false;
+                    }
+                  });
+                },
+              ),
+            ],
           ),
-        ],
-      ),
-    );
-  }
+        ),
+
+        /// List Cards
+        Expanded(
+          child: filteredList.isEmpty
+              ? const Center(child: Text("No Records Found"))
+              : ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: filteredList.length,
+                  itemBuilder: (context, index) {
+
+                    final item = filteredList[index];
+                    final branchesText =
+                        (item["branches"] as List).join(", ");
+
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 14),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: AppColors.border,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+
+                          /// Avatar
+                          Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              color: AppColors.bg,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Center(
+                              child: Text(
+                                item["gl"]
+                                    .toString()
+                                    .substring(0, 1),
+                                style: bodyStyle(
+                                  weight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(width: 16),
+
+                          /// Details
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment:
+                                  CrossAxisAlignment.start,
+                              children: [
+
+                                Text(
+                                  item["gl"] ?? "",
+                                  style: bodyStyle(
+                                    weight: FontWeight.w600,
+                                    size: 15,
+                                  ),
+                                ),
+
+                                const SizedBox(height: 6),
+
+                                Text(
+                                  "Branches: $branchesText",
+                                  style: bodyStyle(
+                                    color: AppColors.ink3,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          /// Actions
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              _actionIcon(
+                                icon: Icons.visibility_outlined,
+                                color: AppColors.green,
+                                bg: Colors.white,
+                                onTap: () {
+                                  setState(() {
+                                    showForm = true;
+                                    _isViewOnly = true;
+                                    _isEditMode = false;
+                                    selectedGL = item["gl"];
+                                    _originalGL = item["gl"];
+                                    orgCodeController.text = item["orgCode"]?.toString() ?? "50";
+                                    final savedBranches = item["branches"] as List;
+                                    for (var b in branches) {
+                                      b["enabled"] = savedBranches.contains(b["name"]);
+                                    }
+                                  });
+                                },
+                              ),
+                              const SizedBox(width: 8),
+                              _actionIcon(
+                                icon: Icons.edit_outlined,
+                                color: AppColors.tBlue,
+                                bg: Colors.white,
+                                onTap: () {
+                                  setState(() {
+                                    showForm = true;
+                                    _isEditMode = true;
+                                    _isViewOnly = false;
+                                    selectedGL = item["gl"];
+                                    _originalGL = item["gl"];
+                                    orgCodeController.text = item["orgCode"]?.toString() ?? "50";
+                                    final savedBranches = item["branches"] as List;
+                                    for (var b in branches) {
+                                      b["enabled"] = savedBranches.contains(b["name"]);
+                                    }
+                                  });
+                                },
+                              ),
+                              const SizedBox(width: 8),
+                              _actionIcon(
+                                icon: Icons.delete_outline_rounded,
+                                color: AppColors.red,
+                                bg: AppColors.redLt,
+                                borderColor: AppColors.red.withOpacity(0.2),
+                                onTap: () {
+                                  showDialog(
+                                    context: context,
+                                    builder: (context) => AlertDialog(
+                                      title: const Text('Confirm Delete'),
+                                      content: const Text('Are you sure you want to delete?'),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () => Navigator.pop(context),
+                                          child: const Text('No'),
+                                        ),
+                                        TextButton(
+                                          onPressed: () async {
+                                            Navigator.pop(context); // Close the dialog
+                                            
+                                            // Extract GL No to delete from backend
+                                            final match = RegExp(r'GL (\d+) ').firstMatch(item["gl"] ?? '');
+                                            final int? parsedGlNo = match != null ? int.tryParse(match.group(1) ?? '') : null;
+
+                                            if (parsedGlNo != null) {
+                                              setState(() {
+                                                 _isLoading = true;
+                                              });
+                                              final orgCode = item["orgCode"] ?? 50;
+
+                                              final success = await GLApiService()
+                                              .deleteAllowedBranch(orgCode, parsedGlNo);
+
+                                              if (success) {
+                                                showAmsSnack(context, 'Deleted successfully.', type: 's');
+                                                await loadSavedBranches(); // refresh from db
+                                              } else {
+                                                showAmsSnack(context, 'Deletion failed.', type: 'e');
+                                              }
+                                              
+                                              setState(() {
+                                                 _isLoading = false;
+                                              });
+                                            } else {
+                                              // Fallback if formatting failed, just remove locally
+                                              setState(() {
+                                                savedList.remove(item);
+                                              });
+                                            }
+                                          },
+                                          child: const Text(
+                                            'Yes',
+                                            style: TextStyle(color: Colors.red),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              ),
+                            ],
+                          )
+
+                        ],
+                      ),
+                    );
+                  },
+                ),
+        ),
+
+      ],
+    ),
+  );
+}
 
   /// ================================
   /// FORM VIEW
@@ -177,7 +451,7 @@ class _AllowedBranchScreenState extends State<AllowedBranchScreen> {
               child: _buildFormContentOnly(),
             ),
           ),
-          if (!_isViewOnly) _buildFixedFooter(),
+          _buildFixedFooter(),
         ],
       ),
     );
@@ -203,34 +477,104 @@ class _AllowedBranchScreenState extends State<AllowedBranchScreen> {
             ),
           )
         else ...[
-          AmsButton(
-            label: _isEditMode ? 'Update' : 'Save',
-            variant: AmsButtonVariant.primary,
-            backgroundColor: AppColors.sidebar,
-            onPressed: () {
-              showAmsSnack(context, 'Allowed branches updated successfully.',
-                  icon: '✅');
-              setState(() {
-                showForm = false;
-              });
-            },
-          ),
-          AmsButton(
-            label: 'Clear',
-            icon: Icons.clear_all_rounded,
-            variant: AmsButtonVariant.outline,
-            onPressed: () {
-              setState(() {
-                for (var b in branches) {
-                  b["enabled"] = false;
+          if (!_isViewOnly) ...[
+            AmsButton(
+              label: _isEditMode ? 'Update' : 'Save',
+              variant: AmsButtonVariant.primary,
+              backgroundColor: AppColors.sidebar,
+              onPressed: () async {
+
+                final selectedBranches = branches
+                .where((b) => b["enabled"] == true)
+                .map((b) => b["name"])
+                .toList();
+
+                if (orgCodeController.text.trim().isEmpty) {
+                  setState(() {
+                    _orgError = "Organization Code is required.";
+                  });
+                  showAmsSnack(context, "Please enter an Organization Code.", type: 'e');
+                  return;
                 }
-              });
-            },
-          ),
+
+                if (selectedGL == null) {
+                  showAmsSnack(context, "Please select a GL Account.", type: 'e');
+                  return;
+                }
+
+                if (selectedBranches.isEmpty) {
+                  showAmsSnack(context, "Please select at least one branch.", type: 'e');
+                  return;
+                }
+
+                setState(() {
+                  _isLoading = true;
+                });
+
+                // Extract the integer 101 from "GL 101 — Cash"
+                int? parsedGlNo;
+                if (selectedGL != null) {
+                   final match = RegExp(r'GL (\d+) ').firstMatch(selectedGL!);
+                   if (match != null) {
+                      parsedGlNo = int.tryParse(match.group(1) ?? '');
+                   }
+                }
+
+                final payload = {
+                  "orgCode": int.tryParse(orgCodeController.text) ?? 50,
+                  "glNo": parsedGlNo,
+                  "allowedBrn": selectedBranches.join(",")
+                };
+
+                // Local UI payload for snappy UI response
+                final localPayload = {
+                   "gl": selectedGL,
+                   "branches": selectedBranches
+                };
+
+                final bool success;
+                if (_isEditMode) {
+                  success = await GLApiService().updateAllowedBranch(payload);
+                } else {
+                  success = await GLApiService().saveAllowedBranch(payload);
+                }
+
+                if (success) {
+                   // Pull fresh data directly from Backend DB
+                   await loadSavedBranches();
+                }
+
+                setState(() {
+                  _isLoading = false;
+
+                  if (success) {
+                     showAmsSnack(context, _isEditMode ? 'Allowed branches updated successfully.' : 'Allowed branches saved.', icon: '✅');
+                  } else {
+                     showAmsSnack(context, 'Save failed.', icon: '⚠️');
+                  }
+                  
+                  showForm = false;
+                });
+              },
+            ),
+            AmsButton(
+              label: 'Clear',
+              icon: Icons.clear_all_rounded,
+              variant: AmsButtonVariant.outline,
+              onPressed: () {
+                setState(() {
+                  _orgError = null;
+                  for (var b in branches) {
+                    b["enabled"] = false;
+                  }
+                });
+              },
+            ),
+          ],
           AmsButton(
-            label: 'Cancel',
-            icon: Icons.close_rounded,
-            variant: AmsButtonVariant.danger,
+            label: _isViewOnly ? 'Back' : 'Cancel',
+            icon: _isViewOnly ? Icons.arrow_back : Icons.close_rounded,
+            variant: _isViewOnly ? AmsButtonVariant.outline : AmsButtonVariant.danger,
             onPressed: () {
               setState(() {
                 showForm = false;
@@ -246,15 +590,49 @@ class _AllowedBranchScreenState extends State<AllowedBranchScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        /// Select GL
+        /// Org Code
         AmsField(
-          label: "Select GL Account",
+          label: "Org Code",
           labelAbove: true,
-          child: AmsDropdown(
-            items: glAccounts,
-            onChanged: (v) {},
+          child: AmsTextInput(
+            placeholder: "Enter Org Code",
+            controller: orgCodeController,
+            readOnly: _isViewOnly,
+            keyboardType: TextInputType.number,
+            errorText: _orgError,
+            onChanged: (v) {
+              if (v.trim().isNotEmpty && _orgError != null) {
+                setState(() {
+                  _orgError = null;
+                });
+              }
+            },
           ),
         ),
+        const SizedBox(height: 20),
+
+        /// Select GL
+       AmsField(
+         label: "Select GL Account",
+         labelAbove: true,
+         child: glAccounts.isEmpty
+         ? const SizedBox(
+          height: 40,
+          child: Center(
+            child: CircularProgressIndicator(),
+          ),
+        )
+      : AmsDropdown(
+          items: glAccounts,
+          initialValue: selectedGL,
+          placeholder: 'Please Select',
+          onChanged: (v) {
+            setState(() {
+              selectedGL = v;
+            });
+          },
+        ),
+     ),
         const SizedBox(height: 20),
 
         /// Branch List
@@ -353,6 +731,35 @@ class _AllowedBranchScreenState extends State<AllowedBranchScreen> {
         }),
         const SizedBox(height: 20),
       ],
+    );
+  }
+
+  Widget _actionIcon({
+    required IconData icon,
+    required Color color,
+    required Color bg,
+    Color? borderColor,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(6),
+      child: Container(
+        padding: const EdgeInsets.all(6),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(color: borderColor ?? AppColors.border, width: 1.5),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.02),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            )
+          ],
+        ),
+        child: Icon(icon, size: 16, color: color),
+      ),
     );
   }
 }

@@ -999,12 +999,21 @@ class _AmsIdentityHeaderState extends State<AmsIdentityHeader> {
 
                   return Row(
                     children: [
-                      Text(
-                        item.label,
-                        style: bodyStyle(
-                          size: 11,
-                          weight: FontWeight.w600,
-                          color: AppColors.ink4,
+                      MouseRegion(
+                        cursor: item.onTap != null ? SystemMouseCursors.click : SystemMouseCursors.basic,
+                        child: GestureDetector(
+                          onTap: item.onTap,
+                          child: Text(
+                            item.label,
+                            style: bodyStyle(
+                              size: 11,
+                              weight: FontWeight.w600,
+                              color: AppColors.ink4,
+                            ).copyWith(
+                              decoration: item.onTap != null ? TextDecoration.underline : TextDecoration.none,
+                              decorationColor: AppColors.ink4.withOpacity(0.3),
+                            ),
+                          ),
                         ),
                       ),
                       if (!isLast)
@@ -1014,6 +1023,7 @@ class _AmsIdentityHeaderState extends State<AmsIdentityHeader> {
                           child: Icon(
                             Icons.chevron_right_rounded,
                             size: 14,
+                            color: AppColors.ink4,
                           ),
                         ),
                     ],
