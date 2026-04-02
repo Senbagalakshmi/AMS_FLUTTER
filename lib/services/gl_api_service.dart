@@ -19,22 +19,7 @@ class GLApiService {
   // ─────────────────────────────────────────
   // GL ATTRIBUTE API CALLS
   // ─────────────────────────────────────────
-
-  Future<List<Map<String, dynamic>>?> getAllGlAttributes() async {
-    try {
-      final response = await http.get(
-        Uri.parse('${ApiService.baseUrl}/gl-attributes'),
-        headers: apiService.headers,
-      );
-      if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
-        return data.cast<Map<String, dynamic>>();
-      }
-    } catch (e) {
-      print(e);
-    }
-    return null;
-  }
+  static const String _baseUrl = '${ApiService.baseUrl}/gl-attributes';
 
   /// GL102 LIST
   Future<List<Map<String, dynamic>>?> getGlList() async {
@@ -203,4 +188,120 @@ class GLApiService {
       return false;
     }
   }
+   // ── GET ALL GL ATTRIBUTES ──────────────────────────────────────────────
+  static Future<List<Map<String, dynamic>>?> getAllGlAttributes() async {
+    try {
+      final response = await http.get(
+        Uri.parse(_baseUrl),
+        headers: apiService.headers,
+      );
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        return data.cast<Map<String, dynamic>>();
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // ── GET GL ATTRIBUTES BY GL NO ─────────────────────────────────────────
+  static Future<List<Map<String, dynamic>>?> getGlAttributesByGlNo(int glNo) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$_baseUrl/$glNo'),
+        headers: apiService.headers,
+      );
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        return data.cast<Map<String, dynamic>>();
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // ── CREATE GL ATTRIBUTE ────────────────────────────────────────────────
+  static Future<bool> createGlAttribute({
+    required int orgCode,
+    required int glNo,
+    required String glAttrid,
+    required String glAttrValue,
+    required String eUser,
+  }) async {
+    try {
+      final body = {
+        "orgCode": orgCode,
+        "glNo": glNo,
+        "glAttrid": glAttrid,
+        "glAttrValue": glAttrValue,
+        "eUser": eUser,
+        "eDate": DateTime.now().toIso8601String(),
+        "aUser": eUser,
+        "aDate": DateTime.now().toIso8601String(),
+        "cUser": eUser,
+        "cDate": DateTime.now().toIso8601String(),
+      };
+
+      final response = await http.post(
+        Uri.parse(_baseUrl),
+        headers: apiService.headers,
+        body: jsonEncode(body),
+      );
+
+      return response.statusCode == 200 || response.statusCode == 201;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // ── UPDATE GL ATTRIBUTE ────────────────────────────────────────────────
+  static Future<bool> updateGlAttribute({
+    required int orgCode,
+    required int glNo,
+    required String glAttrid,
+    required String glAttrValue,
+    required String eUser,
+  }) async {
+    try {
+      final body = {
+        "orgCode": orgCode,
+        "glNo": glNo,
+        "glAttrid": glAttrid,
+        "glAttrValue": glAttrValue,
+        "eUser": eUser,
+        "eDate": DateTime.now().toIso8601String(),
+        "aUser": eUser,
+        "aDate": DateTime.now().toIso8601String(),
+        "cUser": eUser,
+        "cDate": DateTime.now().toIso8601String(),
+      };
+
+      final response = await http.put(
+        Uri.parse(_baseUrl),
+        headers: apiService.headers,
+        body: jsonEncode(body),
+      );
+
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // ── DELETE GL ATTRIBUTE BY GL NO ──────────────────────────────────────
+  static Future<bool> deleteGlAttribute(int glNo) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('$_baseUrl/$glNo'),
+        headers: apiService.headers,
+      );
+      return response.statusCode == 200 || response.statusCode == 204;
+    } catch (e) {
+      return false;
+    }
+  }
 }
+
+
