@@ -47,7 +47,6 @@ class Segment {
     this.glName,
   });
 
-  /// API response → Segment
   factory Segment.fromApi(Map<String, dynamic> map) {
     final segType = (map['segType'] as int?) ?? 1;
     return Segment(
@@ -62,7 +61,6 @@ class Segment {
     );
   }
 
-  /// Segment → API request body
   Map<String, dynamic> toApiMap() => {
         'glNo': glNo,
         'segId': segmentId,
@@ -129,25 +127,33 @@ class _GLSegmentPageState extends State<GLSegmentPage> {
   _ScreenState _screen = _ScreenState.list;
   Segment? _activeSegment;
 
-  // ── GL Masters from API ───────────────────────────────────────────────────
   List<Map<String, dynamic>> _glMasters = [];
   bool _loadingGlMasters = false;
   Map<String, dynamic>? _selectedGlMaster;
 
-  // ── GL Segments from API ──────────────────────────────────────────────────
   List<Segment> _segments = [];
   bool _loadingSegments = false;
   String? _segmentsError;
 
   String _searchQuery = '';
 
-  List<Segment> get _filtered => _searchQuery.isEmpty
-      ? List.from(_segments)
-      : _segments
+  List<Segment> get _filtered {
+    var list = _selectedGlMaster != null
+        ? _segments
+            .where((s) =>
+                s.glNo?.toString() == _selectedGlMaster!['glNo']?.toString())
+            .toList()
+        : List<Segment>.from(_segments);
+
+    if (_searchQuery.isNotEmpty) {
+      list = list
           .where((s) =>
               s.segmentId.toLowerCase().contains(_searchQuery.toLowerCase()) ||
               s.segmentValue.toLowerCase().contains(_searchQuery.toLowerCase()))
           .toList();
+    }
+    return list;
+  }
 
   // ── Lifecycle ─────────────────────────────────────────────────────────────
 
@@ -164,9 +170,6 @@ class _GLSegmentPageState extends State<GLSegmentPage> {
     setState(() {
       _loadingGlMasters = false;
       _glMasters = data?.items ?? [];
-      if (_glMasters.isNotEmpty && _selectedGlMaster == null) {
-        _selectedGlMaster = _glMasters.first;
-      }
     });
   }
 
@@ -232,19 +235,16 @@ class _GLSegmentPageState extends State<GLSegmentPage> {
               if (!mounted) return;
               if (success) {
                 setState(() => _segments.removeWhere((s) => s.id == seg.id));
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Segment deleted successfully'),
-                    backgroundColor: kValidGreen,
-                  ),
+                showAmsSnack(
+                  context,
+                  'Segment deleted successfully',
+                  type: 's',
                 );
               } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content:
-                        Text('Failed to delete segment. Please try again.'),
-                    backgroundColor: kInvalidRed,
-                  ),
+                showAmsSnack(
+                  context,
+                  'Failed to delete segment. Please try again.',
+                  type: 'e',
                 );
               }
             },
@@ -295,28 +295,25 @@ class _GLSegmentPageState extends State<GLSegmentPage> {
     if (!mounted) return;
 
     if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(isEditing
-              ? 'Segment updated successfully'
-              : 'Segment created successfully'),
-          backgroundColor: kValidGreen,
-        ),
+      showAmsSnack(
+        context,
+        isEditing
+            ? 'Segment updated successfully'
+            : 'Segment created successfully',
+        type: 's',
       );
-      // Refresh list from API
       await _loadGlSegments();
       setState(() {
         _screen = _ScreenState.list;
         _activeSegment = null;
       });
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(isEditing
-              ? 'Failed to update segment. Please try again.'
-              : 'Failed to create segment. Please try again.'),
-          backgroundColor: kInvalidRed,
-        ),
+      showAmsSnack(
+        context,
+        isEditing
+            ? 'Failed to update segment. Please try again.'
+            : 'Failed to create segment. Please try again.',
+        type: 'e',
       );
     }
   }
@@ -605,7 +602,7 @@ class _GLSegmentPageState extends State<GLSegmentPage> {
           padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
           child:
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            // ── GL Account Dropdown (from API) ───────────────────────────
+            // ── GL Account Dropdown ──────────────────────────────────────
             const Text('* Select GL Account',
                 style: TextStyle(
                     fontSize: 13,
@@ -656,77 +653,38 @@ class _GLSegmentPageState extends State<GLSegmentPage> {
                   child: DropdownButton<Map<String, dynamic>>(
                     value: _selectedGlMaster,
                     isExpanded: true,
+                    hint: const Text(
+                      'Select GL Account',
+                      style: TextStyle(color: Color(0xFFCBD5E1), fontSize: 14),
+                    ),
                     style: const TextStyle(color: kTextMid, fontSize: 14),
                     icon:
                         const Icon(Icons.keyboard_arrow_down, color: kTextMid),
-                    items: _glMasters.map((gl) {
-                      final glNo = gl['glNo']?.toString() ?? '';
-                      final glName = gl['glName']?.toString() ?? '';
-                      return DropdownMenuItem<Map<String, dynamic>>(
-                        value: gl,
-                        child: Text('GL $glNo — $glName'),
-                      );
-                    }).toList(),
+                    items: [
+                      const DropdownMenuItem<Map<String, dynamic>>(
+                        value: null,
+                        child: Text(
+                          'Select GL Account',
+                          style:
+                              TextStyle(color: Color(0xFFCBD5E1), fontSize: 14),
+                        ),
+                      ),
+                      ..._glMasters.map((gl) {
+                        final glNo = gl['glNo']?.toString() ?? '';
+                        final glName = gl['glName']?.toString() ?? '';
+                        return DropdownMenuItem<Map<String, dynamic>>(
+                          value: gl,
+                          child: Text('GL $glNo — $glName'),
+                        );
+                      }),
+                    ],
                     onChanged: (v) => setState(() => _selectedGlMaster = v),
                   ),
                 ),
               ),
 
-            const SizedBox(height: 24),
-
-            // ── Search + Refresh ─────────────────────────────────────────
-            Row(children: [
-              Expanded(
-                child: Container(
-                  height: 46,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: kCardBorder, width: 1.5),
-                  ),
-                  child: Row(children: [
-                    const SizedBox(width: 14),
-                    const Icon(Icons.search, color: kTextLight, size: 20),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: TextField(
-                        onChanged: (v) => setState(() => _searchQuery = v),
-                        style: const TextStyle(fontSize: 14, color: kTextMid),
-                        decoration: const InputDecoration(
-                          hintText: 'Search segments...',
-                          hintStyle:
-                              TextStyle(color: Color(0xFFCBD5E1), fontSize: 14),
-                          border: InputBorder.none,
-                          isDense: true,
-                        ),
-                      ),
-                    ),
-                  ]),
-                ),
-              ),
-              const SizedBox(width: 10),
-              // Refresh button — reloads from API
-              Container(
-                width: 46,
-                height: 46,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: kCardBorder, width: 1.5),
-                ),
-                child: IconButton(
-                  onPressed: () {
-                    setState(() => _searchQuery = '');
-                    _loadGlSegments();
-                  },
-                  icon: const Icon(Icons.refresh, color: kNavy, size: 20),
-                ),
-              ),
-            ]),
-
             const SizedBox(height: 10),
 
-            // ── Segment count / loading / error ──────────────────────────
             if (_loadingSegments)
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 40),
@@ -761,11 +719,11 @@ class _GLSegmentPageState extends State<GLSegmentPage> {
                 ),
               )
             else ...[
-              Text('Showing 1–${filtered.length} of ${_segments.length}',
-                  style: const TextStyle(fontSize: 12, color: kTextLight)),
+              Text(
+                'Showing 1–${filtered.length} of ${filtered.length}',
+                style: const TextStyle(fontSize: 12, color: kTextLight),
+              ),
               const SizedBox(height: 14),
-
-              // ── Segment rows ───────────────────────────────────────────
               Container(
                 decoration: BoxDecoration(
                   color: Colors.white,
@@ -953,7 +911,6 @@ class _AddEditForm extends StatefulWidget {
 }
 
 class _AddEditFormState extends State<_AddEditForm> {
-  // GL Name removed from UI — read internally from selected GL master
   late TextEditingController _orgCodeCtrl;
   late TextEditingController _segIdCtrl;
   late TextEditingController _segValueCtrl;
@@ -1132,7 +1089,6 @@ class _AddEditFormState extends State<_AddEditForm> {
                       focusedBorder: _borderFor(valid, isFocused: true),
                     );
 
-                // ── GL Name field removed — 5 fields remain ──────────────
                 final fields = [
                   _field(
                     'Org Code',
@@ -1303,7 +1259,6 @@ class _AddEditFormState extends State<_AddEditForm> {
                               fontStyle: FontStyle.italic)),
                       const SizedBox(height: 32),
                       Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-                        // Save button with loading state
                         ElevatedButton(
                           onPressed: _saving
                               ? null
