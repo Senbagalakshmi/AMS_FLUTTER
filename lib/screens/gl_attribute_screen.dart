@@ -4,6 +4,7 @@ import '../theme.dart';
 import '../widgets/widgets.dart';
 import '../services/api_service.dart';
 import '../services/gl_api_service.dart';
+import 'package:flutter/services.dart';
 
 class GLAttributeScreen extends StatefulWidget {
   final VoidCallback onBack;
@@ -684,10 +685,13 @@ class _GLAttributeScreenState extends State<GLAttributeScreen> {
                                 controller: _orgController,
                                 focusNode: _orgFocus,
                                 textInputAction: TextInputAction.next,
+                                 inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                      ],
                                 onFieldSubmitted: (_) =>
                                     FocusScope.of(context)
                                         .requestFocus(_attrIdFocus),
-                                readOnly: _isViewOnly,
+                                readOnly: _isViewOnly || _isEditMode,
                                 errorText: _orgError,
                                 onChanged: (v) => setState(() {
                                   _orgError = v.isEmpty
