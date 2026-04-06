@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../theme.dart';
 import '../widgets/widgets.dart';
 import '../services/api_service.dart';
@@ -35,6 +36,7 @@ class Segment {
   bool isActive;
   int? glNo;
   String? glName;
+  int? orgCode; // ✅ ADDED
 
   Segment({
     required this.id,
@@ -45,6 +47,7 @@ class Segment {
     this.isActive = true,
     this.glNo,
     this.glName,
+    this.orgCode, // ✅ ADDED
   });
 
   factory Segment.fromApi(Map<String, dynamic> map) {
@@ -58,10 +61,12 @@ class Segment {
       isActive: true,
       glNo: map['glNo'] as int?,
       glName: map['glName']?.toString(),
+      orgCode: map['orgCode'] as int?, // ✅ ADDED
     );
   }
 
   Map<String, dynamic> toApiMap() => {
+        'orgCode': orgCode,
         'glNo': glNo,
         'segId': segmentId,
         'segValue': segmentValue,
@@ -182,7 +187,8 @@ class _GLSegmentPageState extends State<GLSegmentPage> {
     setState(() {
       _loadingSegments = false;
       if (data != null) {
-        _segments = data.map((m) => Segment.fromApi(m)).toList();
+        _segments =
+            data.map((m) => Segment.fromApi(m)).toList().reversed.toList();
       } else {
         _segmentsError = 'Failed to load segments. Tap refresh to retry.';
       }
@@ -441,7 +447,10 @@ class _GLSegmentPageState extends State<GLSegmentPage> {
                         );
                       }
 
+                      // ✅ ADDED: Org Code field in View page
                       final fields = [
+                        readField('Org Code', seg.orgCode?.toString() ?? '—',
+                            tooltip: 'Organization Code'),
                         readField('GL No.', seg.glNo?.toString() ?? '—',
                             tooltip: 'GL Account Number'),
                         readField('Segment ID', seg.segmentId,
@@ -928,6 +937,9 @@ class _AddEditFormState extends State<_AddEditForm> {
   bool _submitted = false;
   bool _saving = false;
 
+  // ✅ ADDED: track if we are in edit mode
+  bool get _isEditing => widget.editingSegment != null;
+
   @override
   void initState() {
     super.initState();
@@ -939,7 +951,9 @@ class _AddEditFormState extends State<_AddEditForm> {
         orElse: () => {},
       );
       if (_selectedGlMaster!.isEmpty) _selectedGlMaster = null;
-      _orgCodeCtrl = TextEditingController();
+
+      // ✅ FIXED: Pre-fill orgCode from the existing segment
+      _orgCodeCtrl = TextEditingController(text: seg.orgCode?.toString() ?? '');
       _segIdCtrl = TextEditingController(text: seg.segmentId);
       _segValueCtrl = TextEditingController(text: seg.segmentValue);
       _selectedLevel = seg.level;
@@ -1059,9 +1073,7 @@ class _AddEditFormState extends State<_AddEditForm> {
               borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
             ),
             child: Text(
-              widget.editingSegment != null
-                  ? 'Edit Segment'
-                  : 'Create GL Segment',
+              _isEditing ? 'Edit Segment' : 'Create GL Segment',
               style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.w700,
@@ -1075,7 +1087,8 @@ class _AddEditFormState extends State<_AddEditForm> {
                 final isWide = constraints.maxWidth > 600;
                 final halfWidth = (constraints.maxWidth - 24) / 2;
 
-                InputDecoration dec(String hint, bool? valid) =>
+                InputDecoration dec(String hint, bool? valid,
+                        {bool disabled = false}) =>
                     InputDecoration(
                       hintText: hint,
                       hintStyle: const TextStyle(
@@ -1083,21 +1096,33 @@ class _AddEditFormState extends State<_AddEditForm> {
                       contentPadding: const EdgeInsets.symmetric(
                           horizontal: 14, vertical: 14),
                       filled: true,
-                      fillColor: Colors.white,
+                      // ✅ Grey background when field is disabled
+                      fillColor:
+                          disabled ? const Color(0xFFF1F5FB) : Colors.white,
                       border: _borderFor(valid),
                       enabledBorder: _borderFor(valid),
                       focusedBorder: _borderFor(valid, isFocused: true),
                     );
 
                 final fields = [
+                  // ✅ FIXED: Org Code - readOnly in edit mode, pre-filled, greyed out
                   _field(
                     'Org Code',
                     TextField(
                       controller: _orgCodeCtrl,
-                      onChanged: _validateOrgCode,
+                      readOnly: _isEditing, // ✅ disabled when editing
+                      onChanged: _isEditing ? null : _validateOrgCode,
                       keyboardType: TextInputType.number,
-                      style: const TextStyle(color: kTextDark, fontSize: 14),
-                      decoration: dec('e.g. 50', _orgCodeValid),
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                      ],
+                      style: TextStyle(
+                        // ✅ greyed text when disabled
+                        color: _isEditing ? kTextLight : kTextDark,
+                        fontSize: 14,
+                      ),
+                      decoration:
+                          dec('e.g. 50', _orgCodeValid, disabled: _isEditing),
                     ),
                     info: 'Organization Code',
                     errorWidget: _errorMsg('Org Code is required',
