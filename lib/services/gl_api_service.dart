@@ -21,7 +21,7 @@ class GLApiService {
   // ─────────────────────────────────────────
   static const String _baseUrl = '${ApiService.baseUrl}/gl-attributes';
 
-  /// GL102 LIST
+  /// GL102 LIST //////////////////////////////////
   Future<List<Map<String, dynamic>>?> getGlList() async {
     try {
       final response = await http.get(
@@ -39,7 +39,7 @@ class GLApiService {
     }
     return null;
   }
-  /// GL104 - ALLOWED BRANCHES
+  /// GL104 - ALLOWED BRANCHES 
   Future<List<Map<String, dynamic>>?> getGl104List() async {
     try {
       final response = await http.get(
@@ -96,7 +96,7 @@ class GLApiService {
     return false;
   }
 }
-
+//////////////////////////////////////////
   Future<bool> updateGlCategory(int glAttCd, Map<String, dynamic> data) async {
     try {
       final res = await http.put(
@@ -302,6 +302,69 @@ class GLApiService {
       return false;
     }
   }
+  /// GL103 - ALLOWED CURRENCY /////////////////////////////////////
+Future<List<Map<String, dynamic>>?> getGl103List() async {
+  try {
+    final response = await http.get(
+      Uri.parse("${ApiService.baseUrl}/gl-transcation"),
+      headers: apiService.headers,
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+      return data.cast<Map<String, dynamic>>();
+    }
+  } catch (e) {
+    print(e);
+  }
+  return null;
+}
+
+  Future<bool> saveAllowedCurrency(Map<String, dynamic> payload) async {
+    try {
+      final response = await http.post(
+        Uri.parse("${ApiService.baseUrl}/gl-transcation"),
+        headers: apiService.headers,
+        body: jsonEncode(payload),
+      );
+
+      return response.statusCode == 200 || response.statusCode == 201;
+    } catch (e) {
+      print(e);
+      return false;
+    }
+  }
+
+  Future<bool> updateAllowedCurrency(Map<String, dynamic> payload) async {
+    try {
+      final response = await http.put(
+        Uri.parse("${ApiService.baseUrl}/gl-transcation"),
+        headers: apiService.headers,
+        body: jsonEncode(payload),
+      );
+
+      return response.statusCode == 200 || 
+             response.statusCode == 201 || 
+             response.statusCode == 204;
+    } catch (e) {
+      print(e);
+      return false;
+    }
+  }
+
+  Future<bool> deleteAllowedCurrency(int orgCode, int glNo) async {
+    try {
+      final response = await http.delete(
+        Uri.parse("${ApiService.baseUrl}/gl-transcation/$orgCode/$glNo"),
+        headers: apiService.headers,
+      );
+      return response.statusCode == 200 || response.statusCode == 204;
+    } catch (e) {
+      print(e);
+      return false;
+    }
+  }
+  //////////////////////////////////
 }
 
 

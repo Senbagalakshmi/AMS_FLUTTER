@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../theme.dart';
 import '../widgets/widgets.dart';
+import '../services/gl_api_service.dart';
+import 'package:flutter/services.dart';
 
 class AllowedCurrencyScreen extends StatefulWidget {
   final VoidCallback onBack;
@@ -24,20 +26,21 @@ class AllowedCurrencyScreen extends StatefulWidget {
 
 class _AllowedCurrencyScreenState extends State<AllowedCurrencyScreen> {
   bool showForm = false;
-  final bool _isLoading = false;
-  final bool _isEditMode = false;
-  final bool _isViewOnly = false;
+  bool _isLoading = false;
+  bool _isEditMode = false;
+  bool _isViewOnly = false;
+  String? _orgError;
+  String? _glError;
+  String? selectedGL;
+  String? _originalGL;
+  String _searchQuery = "";
+  final TextEditingController _orgCodeCtrl = TextEditingController(text: "50");
+  Map<String, dynamic>? _selectedRecord;
 
   /// GL Accounts List
-  List<String> glAccounts = [
-    "GL 10020 — Bank Operating A/c",
-    "GL 10021 — Cash Account",
-    "GL 10022 — Salary Account",
-    "GL 10023 — Vendor Account",
-    "GL 10024 — Customer Account",
-    "GL 10025 — Expense Account",
-  ];
+  List<String> glAccounts = [];
 
+  List<Map<String, dynamic>> savedList = [];
   final TextEditingController _currencyCtrl = TextEditingController();
 
   List<String> currencies = ["INR", "USD", "GBP", "EUR", "SGD"];
@@ -49,11 +52,46 @@ class _AllowedCurrencyScreenState extends State<AllowedCurrencyScreen> {
     Colors.purple.shade100,
     Colors.teal.shade100,
   ];
-
+  
+  Future<void> loadSavedCurrencies() async {
+    final response = await GLApiService().getGl103List();
+    if (response != null && response.isNotEmpty) {
+      setState(() {
+        savedList = response.map((item) {
+          final glNo = item["glNo"] ?? item["GLNO"] ?? item["glno"] ?? "";
+          final raw = item["allowedCurr"] ??
+              item["ALLOWEDCURR"] ??
+              item["allowedcurr"] ??
+              "";
+          final currencies = raw
+              .toString()
+              .split(",")
+              .where((e) => e.trim().isNotEmpty)
+              .toList();
+          return {
+            ...item,
+            "orgCode": item["orgCode"] ?? item["ORGCODE"] ?? 50,
+            "glNo": glNo,
+            "gl": "GL $glNo",
+            "gl_full": glAccounts.firstWhere(
+              (g) => g.startsWith("GL $glNo —"),
+              orElse: () => "GL $glNo",
+            ),
+            "currencies": currencies
+          };
+        }).toList().reversed.toList();
+      });
+    } else {
+      setState(() {
+        savedList = [];
+      });
+    }
+  }
+  
   void addCurrency() {
     if (_currencyCtrl.text.isNotEmpty) {
       setState(() {
-        currencies.add(_currencyCtrl.text.toUpperCase());
+        currencies.insert(0, _currencyCtrl.text.toUpperCase());
         _currencyCtrl.clear();
       });
     }
@@ -65,7 +103,41 @@ class _AllowedCurrencyScreenState extends State<AllowedCurrencyScreen> {
     });
   }
 
+  Future<void> loadGLAccounts() async {
+    final response = await GLApiService().getGlList();
+    if (response != null && response.isNotEmpty) {
+      setState(() {
+        glAccounts = response.map<String>((item) {
+          final glNo = item['GLNO'] ?? item['glNo'] ?? item['glno'] ?? item['gl_no'] ?? item['GlNo'] ?? '';
+          final glName = item['GLNAME'] ?? item['glName'] ?? item['glname'] ?? item['gl_name'] ?? item['GlName'] ?? '';
+          return "GL $glNo — $glName";
+        }).toSet().toList();
+        
+        // If we are in Edit/View mode, try to re-match selectedGL from the newly loaded list
+        if (showForm && _selectedRecord != null) {
+          final glNo = _selectedRecord!["glNo"]?.toString();
+          if (glNo != null) {
+            try {
+              selectedGL = glAccounts.firstWhere(
+                (g) => g.startsWith("GL $glNo —"),
+              );
+            } catch (_) {
+              // Stay null if not found
+            }
+          }
+        }
+      });
+      loadSavedCurrencies();
+    }
+  }
+  
+
   @override
+  void initState() {
+    super.initState();
+    loadGLAccounts();
+    loadSavedCurrencies();
+  }
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.bg,
@@ -110,6 +182,15 @@ class _AllowedCurrencyScreenState extends State<AllowedCurrencyScreen> {
   }
 
   Widget _buildListView() {
+    final filteredList = savedList.where((item) {
+      if (_searchQuery.trim().isEmpty) return true;
+      final gl = (item["gl"] ?? "").toString().toLowerCase();
+      final currText =
+          ((item["currencies"] as List?) ?? []).join(", ").toLowerCase();
+      final q = _searchQuery.toLowerCase().trim();
+      return gl.contains(q) || currText.contains(q);
+    }).toList();
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -118,6 +199,7 @@ class _AllowedCurrencyScreenState extends State<AllowedCurrencyScreen> {
       ),
       child: Column(
         children: [
+          /// Search + Add Button
           Padding(
             padding: const EdgeInsets.all(16),
             child: Row(
@@ -126,13 +208,19 @@ class _AllowedCurrencyScreenState extends State<AllowedCurrencyScreen> {
                   child: AmsTextInput(
                     icon: Icons.search_rounded,
                     placeholder: 'Search currencies...',
-                    onChanged: (v) {},
+                    onChanged: (v) {
+                      setState(() {
+                        _searchQuery = v?.toString() ?? "";
+                      });
+                    },
                   ),
                 ),
                 const SizedBox(width: 16),
                 IconButton(
                   icon: const Icon(Icons.refresh_rounded),
-                  onPressed: () {},
+                  onPressed: () {
+                    loadSavedCurrencies();
+                  },
                 ),
                 const SizedBox(width: 16),
                 AmsButton(
@@ -140,6 +228,15 @@ class _AllowedCurrencyScreenState extends State<AllowedCurrencyScreen> {
                   variant: AmsButtonVariant.primary,
                   onPressed: () {
                     setState(() {
+                      _isEditMode = false;
+                      _isViewOnly = false;
+                      _selectedRecord = null;
+                      _orgError = null;
+                      _glError = null;
+                      _orgCodeCtrl.text = "50";
+                      selectedGL = null;
+                      currencies = ["INR", "USD", "GBP", "EUR", "SGD"];
+                      _currencyCtrl.clear();
                       showForm = true;
                     });
                   },
@@ -147,10 +244,209 @@ class _AllowedCurrencyScreenState extends State<AllowedCurrencyScreen> {
               ],
             ),
           ),
-        ],
-      ),
-    );
-  }
+
+          /// List View
+          Expanded(
+            child: filteredList.isEmpty
+                ? const Center(child: Text("No records found"))
+                : ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: filteredList.length,
+                    itemBuilder: (context, index) {
+                      final item = filteredList[index];
+                      final currText =
+                          ((item["currencies"] ?? []) as List).join(", ");
+
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 14),
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: AppColors.border,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            /// Avatar
+                            Container(
+                              width: 44,
+                              height: 44,
+                              decoration: const BoxDecoration(
+                              color: AppColors.bg,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Center(
+                              child: Text(
+                                (item["gl"] ?? "G")
+                                    .toString()
+                                    .replaceAll("GL ", "")
+                                    .substring(0, 1),
+                                style: bodyStyle(
+                                  weight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(width: 16),
+
+                          /// Info
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  item["gl"] ?? "",
+                                  style: bodyStyle(
+                                    weight: FontWeight.w600,
+                                    size: 15,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  "Currencies: $currText",
+                                  style: bodyStyle(
+                                    color: AppColors.ink3,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          /// Actions
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              /// View
+                              _actionIcon(
+                                icon: Icons.visibility_rounded,
+                                color: Colors.green,
+                                bg: Colors.green.withOpacity(0.1),
+                                onTap: () {
+                                  setState(() {
+                                    _isEditMode = false;
+                                    _isViewOnly = true;
+                                    _selectedRecord = item;
+                                    _orgCodeCtrl.text =
+                                        item["orgCode"].toString();
+                                    try {
+                                      selectedGL = glAccounts.firstWhere(
+                                        (g) => g.startsWith("GL ${item["glNo"]} —"),
+                                      );
+                                    } catch (_) {
+                                      selectedGL = null;
+                                    }
+                                    currencies = List<String>.from(
+                                        item["currencies"]);
+                                    showForm = true;
+                                  });
+                                },
+                              ),
+
+                              const SizedBox(width: 8),
+
+                              /// Edit
+                              _actionIcon(
+                                icon: Icons.edit_rounded,
+                                color: Colors.blue,
+                                bg: Colors.blue.withOpacity(0.1),
+                                onTap: () {
+                                  setState(() {
+                                    _isEditMode = true;
+                                    _isViewOnly = false;
+                                    _selectedRecord = item;
+                                    _orgCodeCtrl.text =
+                                        item["orgCode"].toString();
+
+                                    try {
+                                      selectedGL = glAccounts.firstWhere(
+                                        (g) => g.startsWith("GL ${item["glNo"]} —"),
+                                      );
+                                    } catch (_) {
+                                      selectedGL = null;
+                                    }
+
+                                    currencies = List<String>.from(
+                                        item["currencies"]);
+
+                                    showForm = true;
+                                  });
+                                },
+                              ),
+
+                              const SizedBox(width: 8),
+
+                              /// Delete
+                              _actionIcon(
+                                icon: Icons.delete_outline_rounded,
+                                color: Colors.red,
+                                bg: Colors.red.withOpacity(0.1),
+                                onTap: () async {
+                                  final confirm =
+                                      await showDialog<bool>(
+                                    context: context,
+                                    builder: (context) =>
+                                        AlertDialog(
+                                      title:
+                                          const Text("Confirm Delete"),
+                                      content: const Text(
+                                          "Are you sure you want to delete this currency setting?"),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () =>
+                                              Navigator.pop(
+                                                  context, false),
+                                          child:
+                                              const Text("Cancel"),
+                                        ),
+                                        TextButton(
+                                          onPressed: () =>
+                                              Navigator.pop(
+                                                  context, true),
+                                          child: const Text(
+                                            "Delete",
+                                            style: TextStyle(
+                                                color: Colors.red),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+
+                                  if (confirm == true) {
+                                    final success =
+                                        await GLApiService()
+                                            .deleteAllowedCurrency(
+                                      item["orgCode"],
+                                      item["glNo"],
+                                    );
+
+                                    if (success) {
+                                      showAmsSnack(
+                                        context,
+                                        "Deleted successfully",
+                                        icon: "🗑️",
+                                      );
+
+                                      loadSavedCurrencies();
+                                    }
+                                  }
+                                },
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+        ),
+      ],
+    ),
+  );
+}
 
   Widget _buildFormView() {
     return Container(
@@ -188,7 +484,7 @@ class _AllowedCurrencyScreenState extends State<AllowedCurrencyScreen> {
               child: _buildFormContentOnly(),
             ),
           ),
-          if (!_isViewOnly) _buildFixedFooter(),
+          _buildFixedFooter(),
         ],
       ),
     );
@@ -214,36 +510,82 @@ class _AllowedCurrencyScreenState extends State<AllowedCurrencyScreen> {
             ),
           )
         else ...[
+          if (!_isViewOnly) ...[
+            AmsButton(
+              label: _isEditMode ? 'Update' : 'Save',
+              icon: _isEditMode ? Icons.edit_note_rounded : Icons.save_rounded,
+              variant: AmsButtonVariant.primary,
+              backgroundColor: AppColors.sidebar,
+              onPressed: () async {
+                if (_orgCodeCtrl.text.trim().isEmpty) {
+                  setState(() {
+                    _orgError = "Organization Code is required.";
+                  });
+                  return;
+                }
+
+                if (selectedGL == null) {
+                  setState(() {
+                    _glError = "Please select GL";
+                  });
+                  return;
+                }
+
+                final parsedGlNo =
+                    int.tryParse(selectedGL!.split(" ")[1]) ?? 0;
+
+                final payload = {
+                  "orgCode": int.parse(_orgCodeCtrl.text),
+                  "glNo": parsedGlNo,
+                  "allowedCurr": currencies.join(","),
+                  "eUser": "SYSTEM"
+                };
+
+                setState(() {
+                  _isLoading = true;
+                });
+
+                final success = _isEditMode
+                    ? await GLApiService()
+                        .updateAllowedCurrency({..._selectedRecord!, ...payload})
+                    : await GLApiService().saveAllowedCurrency(payload);
+
+                setState(() {
+                  _isLoading = false;
+                  if (success) {
+                    showAmsSnack(
+                      context,
+                      _isEditMode ? "Updated successfully" : "Saved successfully",
+                      icon: "✅",
+                    );
+                    showForm = false;
+                    loadSavedCurrencies();
+                    setState(() {});
+                  } else {
+                    showAmsSnack(context, "Save failed", icon: "⚠️");
+                  }
+                });
+              },
+            ),
+            AmsButton(
+              label: 'Clear',
+              icon: Icons.clear_all_rounded,
+              variant: AmsButtonVariant.outline,
+              onPressed: () {
+                setState(() {
+                  currencies.clear();
+                  _currencyCtrl.clear();
+                  _orgError = null;
+                  _glError = null;
+                  selectedGL = null;
+                });
+              },
+            ),
+          ],
           AmsButton(
-            label: _isEditMode ? 'Update' : 'Save',
-            variant: AmsButtonVariant.primary,
-            backgroundColor: AppColors.sidebar,
-            onPressed: () {
-              showAmsSnack(
-                context,
-                'Allowed currencies updated successfully.',
-                icon: '✅',
-              );
-              setState(() {
-                showForm = false;
-              });
-            },
-         ),
-          AmsButton(
-            label: 'Clear',
-            icon: Icons.clear_all_rounded,
-            variant: AmsButtonVariant.outline,
-            onPressed: () {
-              setState(() {
-                currencies.clear();
-                _currencyCtrl.clear();
-              });
-            },
-          ),
-          AmsButton(
-            label: 'Cancel',
-            icon: Icons.close_rounded,
-            variant: AmsButtonVariant.danger,
+            label: _isViewOnly ? 'Back' : 'Cancel',
+            icon: _isViewOnly ? Icons.arrow_back_rounded : Icons.close_rounded,
+            variant: _isViewOnly ? AmsButtonVariant.outline : AmsButtonVariant.danger,
             onPressed: () {
               setState(() {
                 showForm = false;
@@ -259,14 +601,51 @@ class _AllowedCurrencyScreenState extends State<AllowedCurrencyScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        /// Org Code
+        AmsField(
+          label: "Org Code",
+          labelAbove: true,
+          child: AmsTextInput(
+            placeholder: "Enter Org Code",
+            controller: _orgCodeCtrl,
+            readOnly: _isViewOnly || _isEditMode,
+            keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            errorText: _orgError,
+            onChanged: (v) {
+              if (v.trim().isNotEmpty && _orgError != null) {
+                setState(() {
+                  _orgError = null;
+                });
+              }
+            },
+          ),
+        ),
+        const SizedBox(height: 16),
+
         /// Select GL
         AmsField(
           label: "Select GL Account",
           labelAbove: true,
-          child: AmsDropdown(
-            items: glAccounts,
-            onChanged: (v) {},
-          ),
+          child: glAccounts.isEmpty
+              ? const SizedBox(
+                  height: 48,
+                  child: Center(
+                    child: CircularProgressIndicator(strokeWidth: 2.5),
+                  ),
+                )
+              : AmsDropdown(
+                  items: glAccounts,
+                  placeholder: "Please select",
+                  initialValue: selectedGL,
+                  errorText: _glError,
+                  onChanged: (v) {
+                    setState(() {
+                      selectedGL = v;
+                      if (v != null) _glError = null;
+                    });
+                  },
+                ),
         ),
         const SizedBox(height: 20),
         Text(
@@ -411,6 +790,27 @@ class _AllowedCurrencyScreenState extends State<AllowedCurrencyScreen> {
         ),
         const SizedBox(height: 20),
       ],
+    );
+  }
+
+  Widget _actionIcon({
+    required IconData icon,
+    required Color color,
+    required Color bg,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(6),
+      child: Container(
+        padding: const EdgeInsets.all(6),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(color: color.withOpacity(0.1)),
+        ),
+        child: Icon(icon, size: 16, color: color),
+      ),
     );
   }
 }

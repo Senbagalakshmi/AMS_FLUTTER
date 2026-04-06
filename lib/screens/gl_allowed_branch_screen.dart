@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../theme.dart';
 import '../widgets/widgets.dart';
 import '../services/gl_api_service.dart';
+import 'package:flutter/services.dart';
 
 class AllowedBranchScreen extends StatefulWidget {
   final VoidCallback onBack;
@@ -57,6 +58,7 @@ class _AllowedBranchScreenState extends State<AllowedBranchScreen> {
           return "GL $glNo — $glName";
         }).toSet().toList();
       });
+      loadSavedBranches();
     }
   }
 
@@ -70,10 +72,12 @@ class _AllowedBranchScreenState extends State<AllowedBranchScreen> {
           final glNo = (backendItem['glNo'] ?? backendItem['GLNO'] ?? backendItem['GlNo'] ?? backendItem['glno'])?.toString();
           
           // Attempt to find the full display name from glAccounts, otherwise fallback
-          String matchedGl = "GL $glNo —";
+          String? matchedGl;
           try {
-            matchedGl = glAccounts.firstWhere((element) => element.contains("GL $glNo "));
-          } catch(e) {}
+            matchedGl = glAccounts.firstWhere((element) => element.startsWith("GL $glNo —"));
+          } catch(e) {
+            matchedGl = null;
+          }
           
           final rawBranches = (backendItem['allowedBrn'] ?? backendItem['ALLOWEDBRN'] ?? backendItem['AllowedBrn'] ?? backendItem['allowedbrn'])?.toString() ?? "";
           final branchesList = rawBranches.split(",").where((s) => s.trim().isNotEmpty).toList();
@@ -85,7 +89,7 @@ class _AllowedBranchScreenState extends State<AllowedBranchScreen> {
             "gl": matchedGl,
             "branches": branchesList
           };
-        }).toList();
+        }).toList().reversed.toList();
       });
     }
   }
@@ -597,8 +601,9 @@ Widget _buildListView() {
           child: AmsTextInput(
             placeholder: "Enter Org Code",
             controller: orgCodeController,
-            readOnly: _isViewOnly,
+            readOnly: _isViewOnly || _isEditMode,
             keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             errorText: _orgError,
             onChanged: (v) {
               if (v.trim().isNotEmpty && _orgError != null) {

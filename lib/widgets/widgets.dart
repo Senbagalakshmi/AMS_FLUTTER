@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'dart:ui' as ui;
 import 'package:google_fonts/google_fonts.dart';
 import '../theme.dart';
@@ -523,6 +524,7 @@ class AmsTextInput extends StatelessWidget {
   final FocusNode? focusNode;
   final void Function(String)? onFieldSubmitted;
   final TextInputAction? textInputAction;
+  final List<TextInputFormatter>? inputFormatters;
 
   const AmsTextInput({
     super.key,
@@ -540,12 +542,14 @@ class AmsTextInput extends StatelessWidget {
     this.focusNode,
     this.onFieldSubmitted,
     this.textInputAction,
+    this.inputFormatters,
   });
 
   @override
   Widget build(BuildContext context) {
     return TextFormField(
       controller: controller,
+      inputFormatters: inputFormatters,
       focusNode: focusNode,
       initialValue: controller == null ? initialValue : null,
       readOnly: readOnly,
