@@ -138,7 +138,8 @@ class _GLAttributeScreenState extends State<GLAttributeScreen> {
         'orgCode': item['orgCode'],
       });
     }
-    return grouped.values.toList();
+    // ✅ Latest inserted group shows first
+    return grouped.values.toList().reversed.toList();
   }
 
   void _onGlMasterFormChanged(Map<String, dynamic>? gl) {
@@ -758,18 +759,6 @@ class _GLAttributeScreenState extends State<GLAttributeScreen> {
                                 placeholder: 'Enter value',
                               ),
                             ),
-                            AmsField(
-                              label: 'Description',
-                              labelAbove: true,
-                              child: AmsTextInput(
-                                controller: _descController,
-                                focusNode: _descFocus,
-                                textInputAction: TextInputAction.done,
-                                onFieldSubmitted: (_) => _saveSet(),
-                                readOnly: _isViewOnly,
-                                placeholder: 'Optional description',
-                              ),
-                            ),
                           ],
                         ),
                       ],
@@ -810,7 +799,6 @@ class _GLAttributeScreenState extends State<GLAttributeScreen> {
                         onPressed: () =>
                             setState(() => _showForm = false),
                       ),
-                      // ✅ Spacer & Back to List button removed
                     ],
                   )
                 else
