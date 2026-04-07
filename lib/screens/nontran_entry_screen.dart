@@ -128,14 +128,12 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
     final isRoleScreenList = _selProg == 'ROLE-CRT' && !_showForm;
     final isUserRoleScreenList = _selProg == 'USR-ROLE' && !_showForm;
     final isModuleScreenList = _selProg == 'MOD-CRT' && !_showForm;
-    final isMenuScreenList = _selProg == 'MENU-CRT' && !_showForm;
     final isAuthCtrlScreenList = _selProg == 'AUTHCTL' && !_showForm;
 
     final isAnyList = isUserScreenList ||
         isRoleScreenList ||
         isUserRoleScreenList ||
         isModuleScreenList ||
-        isMenuScreenList ||
         isAuthCtrlScreenList;
 
     return Scaffold(
@@ -273,9 +271,6 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
                         }
                         if (isModuleScreenList) {
                           return _ModuleListView(onView: handleView);
-                        }
-                        if (isMenuScreenList) {
-                          return _MenuListView(onView: handleView);
                         }
                         if (isAuthCtrlScreenList) {
                           return _AuthCtrlListView(onView: handleView);
@@ -700,84 +695,21 @@ class _ModuleListViewState extends State<_ModuleListView> {
                       Text(moduleName,
                           style: bodyStyle(size: 15, weight: FontWeight.w600)),
                       const SizedBox(height: 4),
-                      Text('Module Code: $moduleCd',
-                          style: bodyStyle(color: AppColors.ink3)),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
-    );
-  }
-}
-
-class _MenuListView extends StatefulWidget {
-  final void Function(Map<String, dynamic>)? onView;
-  const _MenuListView({this.onView});
-  @override
-  State<_MenuListView> createState() => _MenuListViewState();
-}
-
-class _MenuListViewState extends State<_MenuListView> {
-  List<Map<String, dynamic>>? _data;
-  int _totalItems = 0;
-  bool _loading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _load(1);
-  }
-
-  Future<void> _load(int page) async {
-    setState(() => _loading = true);
-    final result = await apiService.getMenus(page: page - 1, size: 10);
-    if (mounted) {
-      setState(() {
-        _data = result?.items ?? [];
-        _totalItems = result?.totalElements ?? 0;
-        _loading = false;
-      });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (_loading && _data == null) {
-      return const AmsListSkeleton();
-    }
-    return AmsPaginatedView<Map<String, dynamic>>(
-      items: _data ?? [],
-      totalRecords: _totalItems,
-      onPageChanged: _load,
-      builder: (ctx, currentItems) => ListView.builder(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-        itemCount: currentItems.length,
-        itemBuilder: (ctx, idx) {
-          final d = currentItems[idx];
-          return AmsCard(
-            onTap: widget.onView != null ? () => widget.onView!(d) : null,
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(d['menuName']?.toString() ?? 'Unnamed Menu',
-                          style: bodyStyle(size: 15, weight: FontWeight.w600)),
-                      const SizedBox(height: 4),
-                      Text('Type: ${d['type'] ?? d['menuType'] ?? "—"}',
+                      Text('Module Code: $moduleCd  |  ORG: ${d['orgCode'] ?? d['orgcode'] ?? 50}',
                           style: bodyStyle(color: AppColors.ink3)),
                     ],
                   ),
                 ),
                 AmsBadge(
-                    label: (d['menuId'] ?? d['menuCd'] ?? d['menu_id'] ?? '—')
-                        .toString()),
+                    label: (d['status']?.toString() == '0')
+                        ? 'Disabled'
+                        : 'Enabled',
+                    background: (d['status']?.toString() == '0')
+                        ? AppColors.grayLt
+                        : AppColors.nTealLt,
+                    color: (d['status']?.toString() == '0')
+                        ? AppColors.ink3
+                        : AppColors.nTeal),
               ],
             ),
           );
@@ -899,12 +831,15 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
 
   final _mScdCtrl = TextEditingController();
   final _mNameCtrl = TextEditingController();
+  bool _subModuleEnabled = false;
+  List<Map<String, dynamic>> _subModules = [];
 
   final _menuScdCtrl = TextEditingController();
   final _menuNameCtrl = TextEditingController();
 
   final _authModCtrl = TextEditingController();
   final _authPgmCtrl = TextEditingController();
+  int _mStatus = 1;
 
   List<Map<String, dynamic>> _userList = [];
   List<Map<String, dynamic>> _roleList = [];
@@ -950,6 +885,11 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
       widget.onChanged('isTranPgm', _isTran ? 1 : 0);
       widget.onChanged('authLevels', _authLevels);
       widget.onChanged('orgCode', 50); // Default for AUTHCTL
+    } else if (prog == 'MOD-CRT') {
+      widget.onChanged('orgCode', 50);
+      widget.onChanged('status', _mStatus);
+      widget.onChanged('subModule', _subModuleEnabled ? 1 : 0);
+      widget.onChanged('subModules', _subModules);
     }
     // Add other defaults as needed per program
   }
@@ -975,6 +915,10 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
         _preApprovalReq = false;
         _postApprovalReq = false;
         _isTran = false;
+      } else if (widget.prog == 'MOD-CRT') {
+        _subModuleEnabled = false;
+        _subModules = [];
+        _mStatus = 1;
       }
       return;
     }
@@ -997,6 +941,14 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
     } else if (prog == 'MOD-CRT') {
       _mScdCtrl.text = data['modcd']?.toString() ?? '';
       _mNameCtrl.text = data['modname']?.toString() ?? '';
+      _mStatus = int.tryParse(data['status']?.toString() ?? '1') ?? 1;
+      final sm = data['sub_module'] ?? data['submodule'];
+      _subModuleEnabled = sm == 1 || sm == true || sm == '1';
+      if (data['submodules'] is List) {
+        _subModules = List<Map<String, dynamic>>.from(data['submodules']);
+      } else {
+        _subModules = [];
+      }
     } else if (prog == 'MENU-CRT') {
       _menuScdCtrl.text = data['menucd']?.toString() ?? '';
       _menuNameCtrl.text = data['menuname']?.toString() ?? '';
@@ -1086,6 +1038,10 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
         }
         if (_mNameCtrl.text.trim().isEmpty) {
           _errors['modName'] = 'Module Name required';
+          isValid = false;
+        }
+        if (_subModuleEnabled && _subModules.isEmpty) {
+          _errors['subModules'] = 'At least one sub-module is required when enabled';
           isValid = false;
         }
       } else if (prog == 'MENU-CRT') {
@@ -1662,52 +1618,133 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
             borderRadius: BorderRadius.circular(8),
             border: Border.all(color: AppColors.border),
           ),
-          child: AmsFormGrid(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              AmsField(
-                label: 'MODCD',
-                required: true,
-                labelAbove: true,
-                tooltip: 'Unique module identifier.',
-                child: AmsTextInput(
-                  controller: _mScdCtrl,
-                  readOnly: widget.isViewMode,
-                  placeholder: 'e.g. FIN',
-                  textInputAction: TextInputAction.next,
-                  errorText: _errors['modCd'],
-                  isValid:
-                      _errors['modCd'] == null && _mScdCtrl.text.isNotEmpty,
-                  onChanged: (v) {
-                    setState(() {
-                      _errors['modCd'] =
-                          v.trim().isEmpty ? 'Module Code required' : null;
-                    });
-                    widget.onChanged('modCd', v);
+              AmsFormGrid(
+                children: [
+                  AmsField(
+                    label: 'ORGCODE',
+                    labelAbove: true,
+                    tooltip: 'Unique organization code for this module.',
+                    child: AmsTextInput(
+                      initialValue: data['orgcode']?.toString() ?? '50',
+                      readOnly: widget.isViewMode,
+                      textInputAction: TextInputAction.next,
+                      onChanged: widget.isViewMode
+                          ? null
+                          : (v) => widget.onChanged(
+                              'orgCode', int.tryParse(v) ?? 50),
+                    ),
+                  ),
+                  AmsField(
+                    label: 'MODCD',
+                    required: true,
+                    labelAbove: true,
+                    tooltip: 'Unique module identifier.',
+                    child: AmsTextInput(
+                      controller: _mScdCtrl,
+                      readOnly: widget.isViewMode,
+                      placeholder: 'e.g. FIN',
+                      textInputAction: TextInputAction.next,
+                      errorText: _errors['modCd'],
+                      isValid:
+                          _errors['modCd'] == null && _mScdCtrl.text.isNotEmpty,
+                      onChanged: (v) {
+                        setState(() {
+                          _errors['modCd'] =
+                              v.trim().isEmpty ? 'Module Code required' : null;
+                        });
+                        widget.onChanged('modCd', v);
+                      },
+                    ),
+                  ),
+                  AmsField(
+                    label: 'MODNAME',
+                    required: true,
+                    labelAbove: true,
+                    tooltip: 'Human-readable module name.',
+                    child: AmsTextInput(
+                      controller: _mNameCtrl,
+                      readOnly: widget.isViewMode,
+                      placeholder: 'e.g. Finance',
+                      textInputAction: TextInputAction.done,
+                      errorText: _errors['modName'],
+                      isValid:
+                          _errors['modName'] == null && _mNameCtrl.text.isNotEmpty,
+                      onChanged: (v) {
+                        setState(() {
+                          _errors['modName'] =
+                              v.trim().isEmpty ? 'Module Name required' : null;
+                        });
+                        widget.onChanged('modName', v);
+                      },
+                    ),
+                  ),
+                  AmsField(
+                    label: 'SUB_MODULE',
+                    labelAbove: true,
+                    tooltip: 'Whether sub-module is required or not.',
+                    child: widget.isViewMode
+                        ? AmsTextInput(
+                            initialValue:
+                                _subModuleEnabled ? '1 - Yes' : '0 - No',
+                            readOnly: true,
+                          )
+                        : AmsDropdown(
+                            initialValue: _subModuleEnabled ? '1 - Yes' : '0 - No',
+                            items: const ['0 - No', '1 - Yes'],
+                            onChanged: (v) {
+                              setState(() {
+                                _subModuleEnabled = v?.startsWith('1') == true;
+                              });
+                              widget.onChanged(
+                                  'subModule', _subModuleEnabled ? 1 : 0);
+                            },
+                          ),
+                  ),
+                  AmsField(
+                    label: 'STATUS',
+                    labelAbove: true,
+                    tooltip: 'To enable or disable the module.',
+                    child: widget.isViewMode
+                        ? AmsTextInput(
+                            initialValue:
+                                _mStatus == 0 ? '0 - Disable' : '1 - Enable',
+                            readOnly: true,
+                          )
+                        : AmsDropdown(
+                            initialValue:
+                                _mStatus == 0 ? '0 - Disable' : '1 - Enable',
+                            items: const ['1 - Enable', '0 - Disable'],
+                            onChanged: (v) {
+                              final st = v?.startsWith('1') == true ? 1 : 0;
+                              setState(() => _mStatus = st);
+                                widget.onChanged('status', st);
+                            },
+                          ),
+                  ),
+                ],
+              ),
+              if (_subModuleEnabled) ...[
+                const SizedBox(height: 24),
+                sectionTitle('SUB-MODULE LIST'),
+                const SizedBox(height: 12),
+                if (_errors['subModules'] != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8.0),
+                    child: Text(_errors['subModules']!,
+                        style: bodyStyle(color: AppColors.red, size: 12)),
+                  ),
+                _ModSubModuleGrid(
+                  subModules: _subModules,
+                  isViewMode: widget.isViewMode,
+                  onChanged: (list) {
+                    setState(() => _subModules = list);
+                    widget.onChanged('subModules', list);
                   },
                 ),
-              ),
-              AmsField(
-                label: 'MODNAME',
-                required: true,
-                labelAbove: true,
-                tooltip: 'Human-readable module name.',
-                child: AmsTextInput(
-                  controller: _mNameCtrl,
-                  readOnly: widget.isViewMode,
-                  placeholder: 'e.g. Finance',
-                  textInputAction: TextInputAction.done,
-                  errorText: _errors['modName'],
-                  isValid:
-                      _errors['modName'] == null && _mNameCtrl.text.isNotEmpty,
-                  onChanged: (v) {
-                    setState(() {
-                      _errors['modName'] =
-                          v.trim().isEmpty ? 'Module Name required' : null;
-                    });
-                    widget.onChanged('modName', v);
-                  },
-                ),
-              ),
+              ],
             ],
           ),
         );
@@ -2361,6 +2398,160 @@ class _Auth102LevelGridState extends State<_Auth102LevelGrid> {
                 label: '+ Add Level',
                 variant: AmsButtonVariant.outline,
                 onPressed: _addLevel,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _ModSubModuleGrid extends StatefulWidget {
+  final List<Map<String, dynamic>> subModules;
+  final void Function(List<Map<String, dynamic>> subModules) onChanged;
+  final bool isViewMode;
+
+  const _ModSubModuleGrid({
+    required this.subModules,
+    required this.onChanged,
+    this.isViewMode = false,
+  });
+
+  @override
+  State<_ModSubModuleGrid> createState() => _ModSubModuleGridState();
+}
+
+class _ModSubModuleGridState extends State<_ModSubModuleGrid> {
+  late List<Map<String, dynamic>> _list;
+
+  @override
+  void initState() {
+    super.initState();
+    _list = List<Map<String, dynamic>>.from(widget.subModules);
+  }
+
+  void _add() {
+    setState(() {
+      _list.add({
+        'subModuleId': _list.length + 1,
+        'subModuleName': '',
+        'status': 1,
+      });
+    });
+    widget.onChanged(_list);
+  }
+
+  void _remove(int idx) {
+    setState(() {
+      _list.removeAt(idx);
+    });
+    widget.onChanged(_list);
+  }
+
+  void _update(int idx, String key, dynamic val) {
+    setState(() {
+      _list[idx][key] = val;
+    });
+    widget.onChanged(_list);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        border: Border.all(color: AppColors.border),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (_list.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 24),
+              child: Center(
+                child: Text('No sub-modules added.',
+                    style: bodyStyle(size: 13, color: AppColors.ink3)),
+              ),
+            ),
+          for (int i = 0; i < _list.length; i++)
+            Container(
+              margin: EdgeInsets.only(bottom: i == _list.length - 1 ? 0 : 16),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.bg,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppColors.border2),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('SUB-MODULE ${i + 1}',
+                          style: monoStyle(
+                              size: 12,
+                              weight: FontWeight.w700,
+                              color: AppColors.nTeal)),
+                      if (!widget.isViewMode)
+                        IconButton(
+                          icon: const Icon(Icons.close,
+                              size: 18, color: AppColors.red),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                          onPressed: () => _remove(i),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  AmsFormGrid(
+                    cols: 3,
+                    children: [
+                      AmsField(
+                        label: 'SUB_MODULEID',
+                        child: AmsTextInput(
+                          initialValue: _list[i]['subModuleId']?.toString(),
+                          readOnly: true,
+                        ),
+                      ),
+                      AmsField(
+                        label: 'Sub Module Name',
+                        required: true,
+                        child: AmsTextInput(
+                          initialValue: _list[i]['subModuleName']?.toString(),
+                          readOnly: widget.isViewMode,
+                          onChanged: (v) => _update(i, 'subModuleName', v),
+                        ),
+                      ),
+                      AmsField(
+                        label: 'Status',
+                        child: AmsDropdown(
+                          initialValue: _list[i]['status'] == 0
+                              ? '0 - Disable'
+                              : '1 - Enable',
+                          items: const ['1 - Enable', '0 - Disable'],
+                          onChanged: widget.isViewMode
+                              ? null
+                              : (v) => _update(i, 'status',
+                                  v?.startsWith('1') == true ? 1 : 0),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          if (!widget.isViewMode) ...[
+            const SizedBox(height: 16),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: AmsButton(
+                label: '+ Add Sub-Module',
+                variant: AmsButtonVariant.outline,
+                onPressed: _add,
               ),
             ),
           ],

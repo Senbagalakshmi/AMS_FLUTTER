@@ -212,6 +212,66 @@ class ApiService {
     }
   }
 
+  Future<PaginatedResult<Map<String, dynamic>>?> getProgramMaster(
+      {int page = 0, int size = 10}) async {
+    try {
+      final response = await http.get(
+          Uri.parse('$baseUrl/menus/programs?page=$page&size=$size'),
+          headers: _headers);
+      if (response.statusCode == 200) {
+        return _parsePaginated(jsonDecode(response.body));
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  Future<PaginatedResult<Map<String, dynamic>>?> getParentMenus(
+      {int page = 0, int size = 10}) async {
+    try {
+      final response = await http.get(
+          Uri.parse('$baseUrl/menus/parent?page=$page&size=$size'),
+          headers: _headers);
+      if (response.statusCode == 200) {
+        return _parsePaginated(jsonDecode(response.body));
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  Future<PaginatedResult<Map<String, dynamic>>?> getSubMenus(
+      {int page = 0, int size = 10}) async {
+    try {
+      final response = await http.get(
+          Uri.parse('$baseUrl/menus/submenu?page=$page&size=$size'),
+          headers: _headers);
+      if (response.statusCode == 200) {
+        return _parsePaginated(jsonDecode(response.body));
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  Future<PaginatedResult<Map<String, dynamic>>?> getMenuPrograms(
+      {int page = 0, int size = 10}) async {
+    try {
+      final response = await http.get(
+          Uri.parse('$baseUrl/menus/items?page=$page&size=$size'),
+          headers: _headers);
+      if (response.statusCode == 200) {
+        return _parsePaginated(jsonDecode(response.body));
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
   Future<bool> processAuth(
       String authSl, String action, int level, String userId) async {
     try {
@@ -308,6 +368,11 @@ class ApiService {
       return false;
     }
   }
+
+  Future<bool> createProgramMaster(Map<String, dynamic> data) => createMenu('program', data);
+  Future<bool> createParentMenu(Map<String, dynamic> data) => createMenu('parent', data);
+  Future<bool> createSubMenu(Map<String, dynamic> data) => createMenu('submenu', data);
+  Future<bool> createMenuProgram(Map<String, dynamic> data) => createMenu('items', data);
 
   Future<bool> assignUserRole(Map<String, dynamic> data) async {
     try {
