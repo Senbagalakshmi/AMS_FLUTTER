@@ -30,7 +30,7 @@ class AmsApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'FMS Ã¢â‚¬â€ Finance Management System',
+      title: 'FMS - Finance Management System',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.theme,
       home: const AmsRoot(),
@@ -108,7 +108,7 @@ class _AmsRootState extends State<AmsRoot> {
           userName: userName,
         ));
     _refreshData();
-    _toast('Ã¢Å“â€¦', 'Authentication Successful Ã¢â‚¬â€ Welcome back!');
+    _toast('Ã¢Å“â€¦', 'Authentication Successful  Welcome back!');
   }
 
   void _handleProceed(String type) {
@@ -206,7 +206,7 @@ class _AmsRootState extends State<AmsRoot> {
       date: _shortDate(),
       amount: amount != null && amount.isNotEmpty
           ? 'Ã¢â€šÂ¹${_formatIndian(amount)}'
-          : 'Ã¢â‚¬â€',
+          : '',
       level: 'L1',
       risk: false,
       locked: false,
@@ -224,7 +224,7 @@ class _AmsRootState extends State<AmsRoot> {
       _modalAuthsl = null;
       _modalAmount = null;
     });
-    _toast('Ã°Å¸â€œÂ¥', '$authsl submitted Ã¢â‚¬â€ routed to L1 authorization queue!');
+    _toast('Ã°Å¸â€œÂ¥', '$authsl submitted routed to L1 authorization queue!');
   }
 
   Future<void> _handleAuthProcess(AuthRecord record, bool isApprove) async {
@@ -307,7 +307,7 @@ class _AmsRootState extends State<AmsRoot> {
       _modalAuthsl = null;
       _modalAmount = null;
     });
-    _toast('Ã¢Å“â€¦', 'Saved directly Ã¢â‚¬â€ no authorization required!');
+    _toast('Ã¢Å“â€¦', 'Saved directly  no authorization required!');
   }
 
   void _handleNewEntry() {
