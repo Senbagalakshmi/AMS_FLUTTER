@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'screens/gl_allowed_branch_screen.dart';
 import 'screens/gl_allowed_currency_screen.dart';
 import 'services/api_service.dart';
+import 'services/gl_api_service.dart';
 import 'theme.dart';
 import 'data.dart';
 import 'models/models.dart';
@@ -101,6 +102,35 @@ class _AmsRootState extends State<AmsRoot> {
     }
   }
 
+  Future<void> _fetchModuleCounts() async {
+    final glApi = GLApiService();
+    try {
+      final catsRes = await apiService.getAllGlCategories();
+      final mastsRes = await apiService.getAllGlMasters();
+      final curs = await glApi.getGl103List();
+      final brns = await glApi.getGl104List();
+      final segs = await glApi.getAllGlSegments();
+      final atts = await GLApiService.getAllGlAttributes();
+
+      final newCounts = {
+        'GL-CAT': catsRes?.totalElements ?? 0,
+        'GL-MST': mastsRes?.totalElements ?? 0,
+        'GL-CUR': curs?.length ?? 0,
+        'GL-BRN': brns?.length ?? 0,
+        'GL-SEG': segs?.length ?? 0,
+        'GL-ATT': atts?.length ?? 0,
+      };
+
+      if (mounted) {
+        setState(() {
+          _state = _state.copyWith(counts: newCounts);
+        });
+      }
+    } catch (e) {
+      print('Error fetching counts: $e');
+    }
+  }
+
   void _handleLogin(String token, String userName) {
     apiService.updateToken(token);
     setState(() => _state = _state.copyWith(
@@ -109,6 +139,7 @@ class _AmsRootState extends State<AmsRoot> {
           userName: userName,
         ));
     _refreshData();
+    _fetchModuleCounts();
     _toast('Ã¢Å“â€¦', 'Authentication Successful  Welcome back!');
   }
 
@@ -121,6 +152,7 @@ class _AmsRootState extends State<AmsRoot> {
           selectedProg: type,
         );
       });
+      _fetchModuleCounts(); // Fetch latest counts when entering dashboard
       return;
     }
     if (type == 'AUTH_CONFIG') {
@@ -485,7 +517,19 @@ class _AmsRootState extends State<AmsRoot> {
           items = mastersSubmenus;
         } else if (cat == 'GL') {
           title = 'GL Module';
-          items = glSubmenus;
+          items = glSubmenus.map((item) {
+            final count = _state.counts[item.programId] ?? 0;
+            String metric = item.metric ?? '';
+            
+            if (item.programId == 'GL-CAT') metric = '$count Cat';
+            else if (item.programId == 'GL-MST') metric = '$count Mast';
+            else if (item.programId == 'GL-CUR') metric = '$count Cur';
+            else if (item.programId == 'GL-BRN') metric = '$count Br';
+            else if (item.programId == 'GL-SEG') metric = '$count Seg';
+            else if (item.programId == 'GL-ATT') metric = '$count Attr';
+            
+            return item.copyWith(metric: metric);
+          }).toList();
         } else if (cat == 'CONFIG') {
           title = 'Configuration';
           items = configSubmenus;

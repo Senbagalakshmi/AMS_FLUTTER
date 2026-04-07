@@ -246,6 +246,7 @@ class AppState {
   final String? token;
   final String? userName;
   final bool isLoadingAuth;
+  final Map<String, int> counts;
 
   const AppState({
     required this.screen,
@@ -260,6 +261,7 @@ class AppState {
     this.token,
     this.userName,
     this.isLoadingAuth = false,
+    this.counts = const {},
   });
 
     AppState copyWith({
@@ -275,6 +277,7 @@ class AppState {
     String? token,
     String? userName,
     bool? isLoadingAuth,
+    Map<String, int>? counts,
     bool clearProg = false,
     bool clearCategory = false,
     bool clearSubmitted = false,
@@ -293,6 +296,7 @@ class AppState {
       token: token ?? this.token,
       userName: userName ?? this.userName,
       isLoadingAuth: isLoadingAuth ?? this.isLoadingAuth,
+      counts: counts ?? this.counts,
     );
   }
 }
