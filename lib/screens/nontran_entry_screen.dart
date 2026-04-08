@@ -854,13 +854,11 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.prog != widget.prog ||
         oldWidget.initialData != widget.initialData) {
-    if (oldWidget.prog != widget.prog) {
       _loadInitialData();
       _notifyDefaults();
       if (widget.prog == 'USR-ROLE' || widget.prog == 'AUTHCTL') {
         _fetchDropdownData();
       }
-    }
     }
   }
 
@@ -939,8 +937,18 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
       _rScdCtrl.text = data['rolecd']?.toString() ?? '';
       _rNameCtrl.text = data['rolename']?.toString() ?? '';
     } else if (prog == 'MOD-CRT') {
-      _mScdCtrl.text = data['modcd']?.toString() ?? '';
-      _mNameCtrl.text = data['modname']?.toString() ?? '';
+      _mScdCtrl.text = (data['modcd'] ??
+              data['module_id'] ??
+              data['moduleid'] ??
+              data['moduleId'] ??
+              '')
+          .toString();
+      _mNameCtrl.text = (data['modname'] ??
+              data['modulename'] ??
+              data['module_name'] ??
+              data['moduleName'] ??
+              '')
+          .toString();
       _mStatus = int.tryParse(data['status']?.toString() ?? '1') ?? 1;
       final sm = data['sub_module'] ?? data['submodule'];
       _subModuleEnabled = sm == 1 || sm == true || sm == '1';
@@ -2513,7 +2521,11 @@ class _ModSubModuleGridState extends State<_ModSubModuleGrid> {
                       AmsField(
                         label: 'SUB_MODULEID',
                         child: AmsTextInput(
-                          initialValue: _list[i]['subModuleId']?.toString(),
+                          initialValue: (_list[i]['subModuleId'] ??
+                                  _list[i]['sub_module_id'] ??
+                                  _list[i]['submoduleid'] ??
+                                  '')
+                              .toString(),
                           readOnly: true,
                         ),
                       ),
@@ -2521,7 +2533,12 @@ class _ModSubModuleGridState extends State<_ModSubModuleGrid> {
                         label: 'Sub Module Name',
                         required: true,
                         child: AmsTextInput(
-                          initialValue: _list[i]['subModuleName']?.toString(),
+                          initialValue: (_list[i]['subModuleName'] ??
+                                  _list[i]['sub_modulename'] ??
+                                  _list[i]['sub_module_name'] ??
+                                  _list[i]['submodulename'] ??
+                                  '')
+                              .toString(),
                           readOnly: widget.isViewMode,
                           onChanged: (v) => _update(i, 'subModuleName', v),
                         ),
@@ -2529,9 +2546,10 @@ class _ModSubModuleGridState extends State<_ModSubModuleGrid> {
                       AmsField(
                         label: 'Status',
                         child: AmsDropdown(
-                          initialValue: _list[i]['status'] == 0
-                              ? '0 - Disable'
-                              : '1 - Enable',
+                          initialValue:
+                              (_list[i]['status']?.toString() == '0')
+                                  ? '0 - Disable'
+                                  : '1 - Enable',
                           items: const ['1 - Enable', '0 - Disable'],
                           onChanged: widget.isViewMode
                               ? null

@@ -223,11 +223,26 @@ class _ProgramMasterTabState extends State<_ProgramMasterTab> {
               headLeft: Text('NEW PROGRAM MASTER', style: monoStyle(size: 13, weight: FontWeight.w800, color: AppColors.tBlue)),
               child: AmsFormGrid(
                 children: [
-                  AmsField(label: 'PGM_ID', required: true, child: AmsTextInput(onChanged: (v) => _formData['pgmId'] = v)),
-                  AmsField(label: 'DESCRIPTION', required: true, child: AmsTextInput(onChanged: (v) => _formData['descn'] = v)),
-                  AmsField(label: 'MODULE (INT)', required: true, child: AmsTextInput(keyboardType: TextInputType.number, onChanged: (v) => _formData['module'] = v)),
-                  AmsField(label: 'SUB_MODULE (INT)', child: AmsTextInput(keyboardType: TextInputType.number, onChanged: (v) => _formData['subModule'] = v)),
-                  AmsField(label: 'PGM_CLASS (INT)', child: AmsTextInput(keyboardType: TextInputType.number, onChanged: (v) => _formData['pgmClass'] = v)),
+                  AmsField(label: 'Program ID', required: true, child: AmsTextInput(onChanged: (v) => _formData['pgmId'] = v)),
+                  AmsField(label: 'Description', required: true, child: AmsTextInput(onChanged: (v) => _formData['descn'] = v)),
+                  AmsField(label: 'Module', required: true, child: AmsTextInput(keyboardType: TextInputType.number, onChanged: (v) => _formData['module'] = v)),
+                  AmsField(label: 'Sun Module', child: AmsTextInput(keyboardType: TextInputType.number, onChanged: (v) => _formData['subModule'] = v)),
+                  AmsField(
+                    label: 'Program Class',
+                    child: AmsDropdown(
+                      items: const [
+                        '1 - Entry Programs',
+                        '2 - Reports',
+                        '3 - Authorization',
+                        '4 - Configurations'
+                      ],
+                      onChanged: (v) {
+                        if (v != null) {
+                          _formData['pgmClass'] = int.tryParse(v.split(' - ')[0]);
+                        }
+                      },
+                    ),
+                  ),
                   AmsField(label: 'STATUS', child: AmsDropdown(items: const ['1 - Enable', '0 - Disable'], onChanged: (v) => _formData['status'] = v?.startsWith('1') == true ? 1 : 0)),
                   AmsField(label: 'REMARKS', child: AmsTextInput(onChanged: (v) => _formData['remarks'] = v)),
                 ],
