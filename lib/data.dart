@@ -57,6 +57,12 @@ final Map<String, Auth101Config> auth101 = {
       approvalReq: true,
       isTran: false,
       levels: 1),
+  'ORG-CRT': const Auth101Config(
+      id: 'ORG-CRT',
+      name: 'Organisation',
+      approvalReq: true,
+      isTran: false,
+      levels: 1),
   'AUTHCTL': const Auth101Config(
       id: 'AUTHCTL',
       name: 'Auth Controller',
@@ -173,6 +179,7 @@ final Map<String, String> nonTranProgPkPrefix = {
   'USR-ROLE': 'URA',
   'MOD-CRT': 'MOD',
   'MENU-CRT': 'MNU',
+  'ORG-CRT': 'ORG',
   'AUTHCTL': 'ACTL',
   'nontranauth': 'NTA',
   'GL-CAT': 'GLC',
@@ -418,6 +425,14 @@ final List<SubmenuItem> mastersSubmenus = [
     subtitle: 'Define and manage system programs and screens.',
     metric: '64 Progs',
     trend: 'Standard',
+  ),
+  SubmenuItem(
+    label: 'Organisation', 
+    icon: Icons.business_rounded, 
+    programId: 'ORG-CRT',
+    subtitle: 'Manage organizational structure and entities.',
+    metric: '3 Units',
+    trend: 'Global',
   ),
 ];
 

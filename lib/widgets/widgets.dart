@@ -1399,7 +1399,7 @@ class _AmsSidebarState extends State<AmsSidebar> {
   void initState() {
     super.initState();
     // Auto open menu based on selected page
-    if (['USR-CRT', 'USR-ROLE', 'ROLE-CRT', 'MOD-CRT', 'MENU-CRT', 'PROG-CRT', 'BRN-CRT'].contains(widget.selectedProg)) {
+    if (['USR-CRT', 'USR-ROLE', 'ROLE-CRT', 'MOD-CRT', 'MENU-CRT', 'ORG-CRT', 'PROG-CRT', 'BRN-CRT'].contains(widget.selectedProg)) {
       openMenu = 'masters';
     } else if (['GL-CAT', 'GL-MST', 'GL-CUR', 'GL-BRN', 'GL-SEG', 'GL-ATT'].contains(widget.selectedProg)) {
       openMenu = 'gl';
@@ -1504,12 +1504,22 @@ class _AmsSidebarState extends State<AmsSidebar> {
                     onTap: () => widget.onNavigate('nontran', 'MENU-CRT'),
                   ),
                   AmsSubSidebarItem(
+<<<<<<< HEAD
                     label: 'Program',
                     isCollapsed: widget.isCollapsed,
                     icon: Icons.app_settings_alt_rounded,
                     isSelected: widget.selectedProg == 'PROG-CRT',
                     onTap: () => widget.onNavigate('nontran', 'PROG-CRT'),
                   ),
+=======
+                    label: 'Organisation',
+                    isCollapsed: widget.isCollapsed,
+                    icon: Icons.business_rounded,
+                    isSelected: widget.selectedProg == 'ORG-CRT',
+                    onTap: () => widget.onNavigate('nontran', 'ORG-CRT'),
+                  ),
+
+>>>>>>> feature/organisation
                 ],
 
                 const SizedBox(height: 16),
