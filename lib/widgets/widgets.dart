@@ -1504,22 +1504,19 @@ class _AmsSidebarState extends State<AmsSidebar> {
                     onTap: () => widget.onNavigate('nontran', 'MENU-CRT'),
                   ),
                   AmsSubSidebarItem(
-<<<<<<< HEAD
                     label: 'Program',
                     isCollapsed: widget.isCollapsed,
                     icon: Icons.app_settings_alt_rounded,
                     isSelected: widget.selectedProg == 'PROG-CRT',
                     onTap: () => widget.onNavigate('nontran', 'PROG-CRT'),
                   ),
-=======
+                  AmsSubSidebarItem(
                     label: 'Organisation',
                     isCollapsed: widget.isCollapsed,
                     icon: Icons.business_rounded,
                     isSelected: widget.selectedProg == 'ORG-CRT',
                     onTap: () => widget.onNavigate('nontran', 'ORG-CRT'),
                   ),
-
->>>>>>> feature/organisation
                 ],
 
                 const SizedBox(height: 16),
