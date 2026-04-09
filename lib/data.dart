@@ -105,6 +105,18 @@ final Map<String, Auth101Config> auth101 = {
       approvalReq: true,
       isTran: false,
       levels: 1),
+  'PROG-CRT': const Auth101Config(
+      id: 'PROG-CRT',
+      name: 'Program',
+      approvalReq: true,
+      isTran: false,
+      levels: 1),
+  'BRN-CRT': const Auth101Config(
+      id: 'BRN-CRT',
+      name: 'Branch Master',
+      approvalReq: true,
+      isTran: false,
+      levels: 1),
 
 };
 
@@ -169,6 +181,8 @@ final Map<String, String> nonTranProgPkPrefix = {
   'GL-BRN': 'GLB',
   'GL-SEG': 'GLS',
   'GL-ATT': 'GLA',
+  'PROG-CRT': 'PRG',
+  'BRN-CRT': 'BRN',
 
 };
 
@@ -388,6 +402,22 @@ final List<SubmenuItem> mastersSubmenus = [
     subtitle: 'Structure dynamic navigation and UI menus.',
     metric: '42 Nodes',
     trend: 'Optimized',
+  ),
+  SubmenuItem(
+    label: 'Program Master', 
+    icon: Icons.app_settings_alt_rounded, 
+    programId: 'PROG-CRT',
+    subtitle: 'Define and manage system programs and screens.',
+    metric: '64 Progs',
+    trend: 'Standard',
+  ),
+  SubmenuItem(
+    label: 'Branch Master', 
+    icon: Icons.store_rounded, 
+    programId: 'BRN-CRT',
+    subtitle: 'Manage organizational units and branch data.',
+    metric: '12 Br',
+    trend: 'Global',
   ),
 
 ];

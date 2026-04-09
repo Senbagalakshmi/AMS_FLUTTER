@@ -525,6 +525,7 @@ class AmsTextInput extends StatelessWidget {
   final void Function(String)? onFieldSubmitted;
   final TextInputAction? textInputAction;
   final List<TextInputFormatter>? inputFormatters;
+  final int? maxLines;
 
   const AmsTextInput({
     super.key,
@@ -543,6 +544,7 @@ class AmsTextInput extends StatelessWidget {
     this.onFieldSubmitted,
     this.textInputAction,
     this.inputFormatters,
+    this.maxLines = 1,
   });
 
   @override
@@ -556,6 +558,7 @@ class AmsTextInput extends StatelessWidget {
       keyboardType: keyboardType,
       textInputAction: textInputAction,
       obscureText: obscureText,
+      maxLines: maxLines,
       onChanged: onChanged,
       onFieldSubmitted: onFieldSubmitted,
       style: bodyStyle(
@@ -1393,7 +1396,7 @@ class _AmsSidebarState extends State<AmsSidebar> {
   void initState() {
     super.initState();
     // Auto open menu based on selected page
-    if (['USR-CRT', 'USR-ROLE', 'ROLE-CRT', 'MOD-CRT', 'MENU-CRT'].contains(widget.selectedProg)) {
+    if (['USR-CRT', 'USR-ROLE', 'ROLE-CRT', 'MOD-CRT', 'MENU-CRT', 'PROG-CRT', 'BRN-CRT'].contains(widget.selectedProg)) {
       openMenu = 'masters';
     } else if (['GL-CAT', 'GL-MST', 'GL-CUR', 'GL-BRN', 'GL-SEG', 'GL-ATT'].contains(widget.selectedProg)) {
       openMenu = 'gl';
@@ -1489,6 +1492,20 @@ class _AmsSidebarState extends State<AmsSidebar> {
                     icon: Icons.menu_open_rounded,
                     isSelected: widget.selectedProg == 'MENU-CRT',
                     onTap: () => widget.onNavigate('nontran', 'MENU-CRT'),
+                  ),
+                  AmsSubSidebarItem(
+                    label: 'Program',
+                    isCollapsed: widget.isCollapsed,
+                    icon: Icons.app_settings_alt_rounded,
+                    isSelected: widget.selectedProg == 'PROG-CRT',
+                    onTap: () => widget.onNavigate('nontran', 'PROG-CRT'),
+                  ),
+                  AmsSubSidebarItem(
+                    label: 'Branch',
+                    isCollapsed: widget.isCollapsed,
+                    icon: Icons.store_rounded,
+                    isSelected: widget.selectedProg == 'BRN-CRT',
+                    onTap: () => widget.onNavigate('nontran', 'BRN-CRT'),
                   ),
 
                 ],

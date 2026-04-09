@@ -84,7 +84,9 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
             'USR-ROLE',
             'MOD-CRT',
             'MENU-CRT',
-            'AUTHCTL'
+            'AUTHCTL',
+            'PROG-CRT',
+            'BRN-CRT'
           ].contains(_selProg))
               ? 50
               : 1),
@@ -129,12 +131,16 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
     final isUserRoleScreenList = _selProg == 'USR-ROLE' && !_showForm;
     final isModuleScreenList = _selProg == 'MOD-CRT' && !_showForm;
     final isAuthCtrlScreenList = _selProg == 'AUTHCTL' && !_showForm;
+    final isProgramScreenList = _selProg == 'PROG-CRT' && !_showForm;
+    final isBranchScreenList = _selProg == 'BRN-CRT' && !_showForm;
 
     final isAnyList = isUserScreenList ||
         isRoleScreenList ||
         isUserRoleScreenList ||
         isModuleScreenList ||
-        isAuthCtrlScreenList;
+        isAuthCtrlScreenList ||
+        isProgramScreenList ||
+        isBranchScreenList;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -183,7 +189,9 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
                       'ROLE-CRT',
                       'MOD-CRT',
                       'MENU-CRT',
-                      'AUTHCTL'
+                      'AUTHCTL',
+                      'PROG-CRT',
+                      'BRN-CRT'
                     ].contains(_selProg) &&
                     _showForm
                 ? () => setState(() => _showForm = false)
@@ -275,6 +283,12 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
                         if (isAuthCtrlScreenList) {
                           return _AuthCtrlListView(onView: handleView);
                         }
+                        if (isProgramScreenList) {
+                          return _ProgramListView(onView: handleView);
+                        }
+                        if (isBranchScreenList) {
+                          return _BranchListView(onView: handleView);
+                        }
 
                         return SingleChildScrollView(
                           padding: const EdgeInsets.all(24),
@@ -345,7 +359,9 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
                                   'ROLE-CRT',
                                   'MOD-CRT',
                                   'MENU-CRT',
-                                  'AUTHCTL'
+                                  'AUTHCTL',
+                                  'PROG-CRT',
+                                  'BRN-CRT'
                                 ].contains(_selProg)) {
                                   setState(() {
                                     _showForm = false;
@@ -791,6 +807,175 @@ class _AuthCtrlListViewState extends State<_AuthCtrlListView> {
   }
 }
 
+class _ProgramListView extends StatefulWidget {
+  final void Function(Map<String, dynamic>)? onView;
+  const _ProgramListView({this.onView});
+  @override
+  State<_ProgramListView> createState() => _ProgramListViewState();
+}
+
+class _ProgramListViewState extends State<_ProgramListView> {
+  List<Map<String, dynamic>>? _data;
+  int _totalItems = 0;
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _load(1);
+  }
+
+  Future<void> _load(int page) async {
+    setState(() => _loading = true);
+    final result = await apiService.getProgramMaster(page: page - 1, size: 10);
+    if (mounted) {
+      setState(() {
+        _data = result?.items ?? [];
+        _totalItems = result?.totalElements ?? 0;
+        _loading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading && _data == null) {
+      return const AmsListSkeleton();
+    }
+    return AmsPaginatedView<Map<String, dynamic>>(
+      items: _data ?? [],
+      totalRecords: _totalItems,
+      onPageChanged: _load,
+      builder: (ctx, currentItems) => ListView.builder(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+        itemCount: currentItems.length,
+        itemBuilder: (ctx, idx) {
+          final d = currentItems[idx];
+          final String pName = d['programName'] ?? d['programname'] ?? d['program_name'] ?? 'Unknown';
+          final String pId = (d['programId'] ?? d['programid'] ?? d['program_id'] ?? '—').toString();
+
+          return AmsCard(
+            onTap: widget.onView != null ? () => widget.onView!(d) : null,
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: const BoxDecoration(
+                      color: AppColors.tBlueLt, shape: BoxShape.circle),
+                  child: const Center(
+                      child: Icon(Icons.app_settings_alt_rounded, color: AppColors.tBlue, size: 20)),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(pName,
+                          style: bodyStyle(size: 15, weight: FontWeight.w600)),
+                      const SizedBox(height: 4),
+                      Text('Program ID: $pId',
+                          style: bodyStyle(color: AppColors.ink3)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _BranchListView extends StatefulWidget {
+  final void Function(Map<String, dynamic>)? onView;
+  const _BranchListView({this.onView});
+  @override
+  State<_BranchListView> createState() => _BranchListViewState();
+}
+
+class _BranchListViewState extends State<_BranchListView> {
+  List<Map<String, dynamic>>? _data;
+  int _totalItems = 0;
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _load(1);
+  }
+
+  Future<void> _load(int page) async {
+    setState(() => _loading = true);
+    final result = await apiService.getBranches(page: page - 1, size: 10);
+    if (mounted) {
+      setState(() {
+        _data = result?.items ?? [];
+        _totalItems = result?.totalElements ?? 0;
+        _loading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading && _data == null) {
+      return const AmsListSkeleton();
+    }
+    return AmsPaginatedView<Map<String, dynamic>>(
+      items: _data ?? [],
+      totalRecords: _totalItems,
+      onPageChanged: _load,
+      builder: (ctx, currentItems) => ListView.builder(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+        itemCount: currentItems.length,
+        itemBuilder: (ctx, idx) {
+          final d = currentItems[idx];
+          final String bName = d['branchName'] ?? d['brnName'] ?? d['brnname'] ?? d['branchname'] ?? 'Unknown';
+          final String bCd = (d['branchCd'] ?? d['brnCd'] ?? d['brncd'] ?? d['branchcd'] ?? '—').toString();
+
+          return AmsCard(
+            onTap: widget.onView != null ? () => widget.onView!(d) : null,
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: const BoxDecoration(
+                      color: AppColors.nTealLt, shape: BoxShape.circle),
+                  child: const Center(
+                      child: Icon(Icons.store_rounded, color: AppColors.nTeal, size: 20)),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(bName,
+                          style: bodyStyle(size: 15, weight: FontWeight.w600)),
+                      const SizedBox(height: 4),
+                      Text('Branch Code: $bCd',
+                          style: bodyStyle(color: AppColors.ink3)),
+                    ],
+                  ),
+                ),
+                AmsBadge(
+                  label: (d['status']?.toString() == '0') ? 'Disabled' : 'Enabled',
+                  color: (d['status']?.toString() == '0') ? AppColors.red : AppColors.green,
+                  background: (d['status']?.toString() == '0') ? AppColors.redLt : AppColors.greenLt,
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
 class DynamicNTFields extends StatefulWidget {
   final String prog;
   final void Function(String key, dynamic val) onChanged;
@@ -839,10 +1024,20 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
 
   final _authModCtrl = TextEditingController();
   final _authPgmCtrl = TextEditingController();
+  final _pgmIdCtrl = TextEditingController();
+  final _pgmNameCtrl = TextEditingController();
+  final _brnCdCtrl = TextEditingController();
+  final _brnNameCtrl = TextEditingController();
   int _mStatus = 1;
 
   List<Map<String, dynamic>> _userList = [];
   List<Map<String, dynamic>> _roleList = [];
+  List<Map<String, dynamic>> _moduleList = [];
+  String? _selModule;
+  String? _selSubModule;
+  String? _pgmClass;
+  int _pgmStatus = 1;
+  final _pgmRemarksCtrl = TextEditingController();
   bool _loadingDropdowns = false;
 
   bool _isValidEmail(String email) {
@@ -854,11 +1049,13 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.prog != widget.prog ||
         oldWidget.initialData != widget.initialData) {
+    if (oldWidget.prog != widget.prog) {
       _loadInitialData();
       _notifyDefaults();
-      if (widget.prog == 'USR-ROLE' || widget.prog == 'AUTHCTL') {
+      if (widget.prog == 'USR-ROLE' || widget.prog == 'AUTHCTL' || widget.prog == 'PROG-CRT') {
         _fetchDropdownData();
       }
+    }
     }
   }
 
@@ -867,7 +1064,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
     super.initState();
     _loadInitialData();
     _notifyDefaults();
-    if (widget.prog == 'USR-ROLE' || widget.prog == 'AUTHCTL') {
+    if (widget.prog == 'USR-ROLE' || widget.prog == 'AUTHCTL' || widget.prog == 'PROG-CRT') {
       _fetchDropdownData();
     }
   }
@@ -888,6 +1085,9 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
       widget.onChanged('status', _mStatus);
       widget.onChanged('subModule', _subModuleEnabled ? 1 : 0);
       widget.onChanged('subModules', _subModules);
+    } else if (prog == 'PROG-CRT') {
+      widget.onChanged('orgCode', 50);
+      widget.onChanged('status', _pgmStatus);
     }
     // Add other defaults as needed per program
   }
@@ -896,10 +1096,12 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
     setState(() => _loadingDropdowns = true);
     final usersRaw = await apiService.getUsers(size: 100);
     final rolesRaw = await apiService.getRoles(size: 100);
+    final modulesRaw = await apiService.getModules(size: 100);
     if (mounted) {
       setState(() {
         _userList = usersRaw?.items ?? [];
         _roleList = rolesRaw?.items ?? [];
+        _moduleList = modulesRaw?.items ?? [];
         _loadingDropdowns = false;
       });
     }
@@ -960,6 +1162,21 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
     } else if (prog == 'MENU-CRT') {
       _menuScdCtrl.text = data['menucd']?.toString() ?? '';
       _menuNameCtrl.text = data['menuname']?.toString() ?? '';
+    } else if (prog == 'PROG-CRT') {
+      _pgmIdCtrl.text = data['programid']?.toString() ?? data['pgmid']?.toString() ?? '';
+      _pgmNameCtrl.text = data['programdescription']?.toString() ?? 
+                         data['description']?.toString() ?? 
+                         data['programname']?.toString() ?? '';
+      _pgmRemarksCtrl.text = data['remarks']?.toString() ?? '';
+      _selModule = data['modulecd']?.toString();
+      _selSubModule = data['submodulecd']?.toString();
+      _pgmClass = data['programclass']?.toString() ?? data['pgmclass']?.toString();
+      _pgmStatus = int.tryParse(data['status']?.toString() ?? '1') ?? 1;
+    } else if (prog == 'BRN-CRT') {
+      _brnCdCtrl.text = (data['branchcd'] ?? data['brncd'] ?? '').toString();
+      _brnNameCtrl.text = (data['branchname'] ?? data['brnname'] ?? '').toString();
+      _pgmRemarksCtrl.text = data['remarks']?.toString() ?? '';
+      _pgmStatus = int.tryParse(data['status']?.toString() ?? '1') ?? 1;
     } else if (prog == 'AUTHCTL') {
       _authModCtrl.text = data['orgcode']?.toString() ??
           data['modcd']?.toString() ??
@@ -1061,6 +1278,32 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
           _errors['menuName'] = 'Menu Name required';
           isValid = false;
         }
+      } else if (prog == 'PROG-CRT') {
+        if (_pgmIdCtrl.text.trim().isEmpty) {
+          _errors['pgmId'] = 'Program ID required';
+          isValid = false;
+        }
+        if (_pgmNameCtrl.text.trim().isEmpty) {
+          _errors['pgmName'] = 'Description required';
+          isValid = false;
+        }
+        if (_selModule == null) {
+          _errors['module'] = 'Module required';
+          isValid = false;
+        }
+        if (_pgmClass == null) {
+          _errors['pgmClass'] = 'Program Class required';
+          isValid = false;
+        }
+      } else if (prog == 'BRN-CRT') {
+        if (_brnCdCtrl.text.trim().isEmpty) {
+          _errors['brnCd'] = 'Branch Code required';
+          isValid = false;
+        }
+        if (_brnNameCtrl.text.trim().isEmpty) {
+          _errors['brnName'] = 'Branch Name required';
+          isValid = false;
+        }
       } else if (widget.prog == 'USR-ROLE') {
         if (_uScdCtrl.text.trim().isEmpty) {
           _errors['usersCd'] = 'User Code required';
@@ -1107,10 +1350,19 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
     _menuNameCtrl.clear();
     _authModCtrl.clear();
     _authPgmCtrl.clear();
+    _pgmIdCtrl.clear();
+    _pgmNameCtrl.clear();
+    _pgmRemarksCtrl.clear();
+    _brnCdCtrl.clear();
+    _brnNameCtrl.clear();
     setState(() {
       _gender = null;
       _menuType = null;
       _title = null;
+      _selModule = null;
+      _selSubModule = null;
+      _pgmClass = null;
+      _pgmStatus = 1;
       _errors.clear();
     });
   }
@@ -1130,6 +1382,11 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
     _menuNameCtrl.dispose();
     _authModCtrl.dispose();
     _authPgmCtrl.dispose();
+    _pgmIdCtrl.dispose();
+    _pgmNameCtrl.dispose();
+    _pgmRemarksCtrl.dispose();
+    _brnCdCtrl.dispose();
+    _brnNameCtrl.dispose();
     super.dispose();
   }
 
@@ -1808,6 +2065,297 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                     });
                     widget.onChanged('menuName', v);
                   },
+                ),
+              ),
+            ],
+          ),
+        );
+
+      case 'PROG-CRT':
+        return Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              AmsFormGrid(
+                children: [
+                  AmsField(
+                    label: 'PROGRAM ID',
+                    required: true,
+                    labelAbove: true,
+                    tooltip: 'Unique program identifier.',
+                    child: AmsTextInput(
+                      controller: _pgmIdCtrl,
+                      readOnly: widget.isViewMode,
+                      placeholder: 'e.g. GL101',
+                      textInputAction: TextInputAction.next,
+                      errorText: _errors['pgmId'],
+                      isValid: _errors['pgmId'] == null && _pgmIdCtrl.text.isNotEmpty,
+                      onChanged: (v) {
+                        setState(() {
+                          _errors['pgmId'] = v.trim().isEmpty ? 'Program ID required' : null;
+                        });
+                        widget.onChanged('programId', v);
+                      },
+                    ),
+                  ),
+                  AmsField(
+                    label: 'DESCRIPTION',
+                    required: true,
+                    labelAbove: true,
+                    tooltip: 'Full description of the program.',
+                    child: AmsTextInput(
+                      controller: _pgmNameCtrl,
+                      readOnly: widget.isViewMode,
+                      placeholder: 'e.g. Finance Dashboard Entry',
+                      textInputAction: TextInputAction.next,
+                      errorText: _errors['pgmName'],
+                      isValid: _errors['pgmName'] == null && _pgmNameCtrl.text.isNotEmpty,
+                      onChanged: (v) {
+                        setState(() {
+                          _errors['pgmName'] = v.trim().isEmpty ? 'Description required' : null;
+                        });
+                        widget.onChanged('programDescription', v);
+                        widget.onChanged('programName', v); // Also set programName for compatibility
+                      },
+                    ),
+                  ),
+                  AmsField(
+                    label: 'MODULE',
+                    required: true,
+                    labelAbove: true,
+                    tooltip: 'Select the module this program belongs to.',
+                    child: widget.isViewMode
+                        ? AmsTextInput(
+                            initialValue: _selModule ?? '—',
+                            readOnly: true,
+                          )
+                        : _loadingDropdowns
+                            ? const LinearProgressIndicator()
+                            : AmsDropdown(
+                                initialValue: _selModule != null
+                                    ? _moduleList.firstWhere(
+                                        (m) => (m['moduleCd'] ?? m['MODCD']) == _selModule,
+                                        orElse: () => {'moduleCd': _selModule, 'moduleName': _selModule})['moduleName']
+                                    : null,
+                                placeholder: 'Select Module',
+                                items: _moduleList.map((m) => m['moduleName']?.toString() ?? m['MODNAME']?.toString() ?? '').toList(),
+                                errorText: _errors['module'],
+                                isValid: _errors['module'] == null && _selModule != null,
+                                onChanged: (v) {
+                                  final mod = _moduleList.firstWhere(
+                                      (m) => (m['moduleName'] ?? m['MODNAME']) == v);
+                                  final modCd = (mod['moduleCd'] ?? mod['MODCD']).toString();
+                                  setState(() {
+                                    _selModule = modCd;
+                                    _selSubModule = null; // Reset sub-module
+                                    _errors['module'] = null;
+                                  });
+                                  widget.onChanged('moduleCd', modCd);
+                                },
+                              ),
+                  ),
+                  AmsField(
+                    label: 'SUB MODULE',
+                    labelAbove: true,
+                    tooltip: 'Select the sub-module if applicable.',
+                    child: widget.isViewMode
+                        ? AmsTextInput(
+                            initialValue: _selSubModule ?? '—',
+                            readOnly: true,
+                          )
+                        : _selModule == null
+                            ? AmsTextInput(
+                                placeholder: 'Select Module First',
+                                readOnly: true,
+                              )
+                            : () {
+                                final mod = _moduleList.firstWhere(
+                                    (m) => (m['moduleCd'] ?? m['MODCD']).toString() == _selModule,
+                                    orElse: () => {});
+                                final smRaw = mod['subModules'] ?? mod['submodules'] ?? [];
+                                final List<dynamic> subModules = smRaw is List ? smRaw : [];
+                                
+                                if (subModules.isEmpty) {
+                                  return AmsTextInput(
+                                    placeholder: 'No Sub Modules',
+                                    readOnly: true,
+                                  );
+                                }
+                                
+                                return AmsDropdown(
+                                  initialValue: _selSubModule != null
+                                      ? subModules.firstWhere(
+                                          (sm) => (sm['subModuleCd'] ?? sm['SUBMODCD']) == _selSubModule,
+                                          orElse: () => {'subModuleName': _selSubModule})['subModuleName']
+                                      : null,
+                                  placeholder: 'Select Sub Module',
+                                  items: subModules.map((sm) => sm['subModuleName']?.toString() ?? sm['SUBMODNAME']?.toString() ?? '').toList(),
+                                  onChanged: (v) {
+                                    final sm = subModules.firstWhere(
+                                        (sm) => (sm['subModuleName'] ?? sm['SUBMODNAME']) == v);
+                                    final smCd = (sm['subModuleCd'] ?? sm['SUBMODCD']).toString();
+                                    setState(() {
+                                      _selSubModule = smCd;
+                                    });
+                                    widget.onChanged('subModuleCd', smCd);
+                                  },
+                                );
+                              }(),
+                  ),
+                  AmsField(
+                    label: 'PROGRAM CLASS',
+                    required: true,
+                    labelAbove: true,
+                    tooltip: 'Classification of the program (e.g., Transaction, Master).',
+                    child: widget.isViewMode
+                        ? AmsTextInput(
+                            initialValue: _pgmClass ?? '—',
+                            readOnly: true,
+                          )
+                        : AmsDropdown(
+                            initialValue: _pgmClass,
+                            placeholder: 'Select Class',
+                            items: const ['N - Non Transaction / Master', 'T - Transaction'],
+                            errorText: _errors['pgmClass'],
+                            isValid: _errors['pgmClass'] == null && _pgmClass != null,
+                            onChanged: (v) {
+                              setState(() {
+                                _pgmClass = v;
+                                _errors['pgmClass'] = null;
+                              });
+                              widget.onChanged('programClass', v?.substring(0, 1));
+                            },
+                          ),
+                  ),
+                  AmsField(
+                    label: 'STATUS',
+                    labelAbove: true,
+                    tooltip: 'Enable or disable this program.',
+                    child: widget.isViewMode
+                        ? AmsTextInput(
+                            initialValue: _pgmStatus == 1 ? '1 - Enable' : '0 - Disable',
+                            readOnly: true,
+                          )
+                        : AmsDropdown(
+                            initialValue: _pgmStatus == 1 ? '1 - Enable' : '0 - Disable',
+                            items: const ['1 - Enable', '0 - Disable'],
+                            onChanged: (v) {
+                              final st = v?.startsWith('1') == true ? 1 : 0;
+                              setState(() => _pgmStatus = st);
+                                widget.onChanged('status', st);
+                            },
+                          ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              AmsField(
+                label: 'REMARKS',
+                labelAbove: true,
+                tooltip: 'Additional notes or remarks.',
+                child: AmsTextInput(
+                  controller: _pgmRemarksCtrl,
+                  readOnly: widget.isViewMode,
+                  placeholder: 'Enter any additional notes...',
+                  maxLines: 3,
+                  onChanged: (v) => widget.onChanged('remarks', v),
+                ),
+              ),
+            ],
+          ),
+        );
+
+      case 'BRN-CRT':
+        return Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              AmsFormGrid(
+                children: [
+                  AmsField(
+                    label: 'BRANCH CODE',
+                    required: true,
+                    labelAbove: true,
+                    tooltip: 'Unique branch identification code.',
+                    child: AmsTextInput(
+                      controller: _brnCdCtrl,
+                      readOnly: widget.isViewMode,
+                      placeholder: 'e.g. B001',
+                      textInputAction: TextInputAction.next,
+                      errorText: _errors['brnCd'],
+                      isValid: _errors['brnCd'] == null && _brnCdCtrl.text.isNotEmpty,
+                      onChanged: (v) {
+                        setState(() {
+                          _errors['brnCd'] = v.trim().isEmpty ? 'Branch Code required' : null;
+                        });
+                        widget.onChanged('branchCd', v);
+                      },
+                    ),
+                  ),
+                  AmsField(
+                    label: 'BRANCH NAME',
+                    required: true,
+                    labelAbove: true,
+                    tooltip: 'Full name of the branch.',
+                    child: AmsTextInput(
+                      controller: _brnNameCtrl,
+                      readOnly: widget.isViewMode,
+                      placeholder: 'e.g. Main Street Branch',
+                      textInputAction: TextInputAction.next,
+                      errorText: _errors['brnName'],
+                      isValid: _errors['brnName'] == null && _brnNameCtrl.text.isNotEmpty,
+                      onChanged: (v) {
+                        setState(() {
+                          _errors['brnName'] = v.trim().isEmpty ? 'Branch Name required' : null;
+                        });
+                        widget.onChanged('branchName', v);
+                      },
+                    ),
+                  ),
+                  AmsField(
+                    label: 'STATUS',
+                    labelAbove: true,
+                    tooltip: 'Enable or disable this branch.',
+                    child: widget.isViewMode
+                        ? AmsTextInput(
+                            initialValue: _pgmStatus == 1 ? '1 - Enable' : '0 - Disable',
+                            readOnly: true,
+                          )
+                        : AmsDropdown(
+                            initialValue: _pgmStatus == 1 ? '1 - Enable' : '0 - Disable',
+                            items: const ['1 - Enable', '0 - Disable'],
+                            onChanged: (v) {
+                              final st = v?.startsWith('1') == true ? 1 : 0;
+                              setState(() => _pgmStatus = st);
+                                widget.onChanged('status', st);
+                            },
+                          ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              AmsField(
+                label: 'REMARKS',
+                labelAbove: true,
+                tooltip: 'Additional notes regarding this branch.',
+                child: AmsTextInput(
+                  controller: _pgmRemarksCtrl,
+                  readOnly: widget.isViewMode,
+                  placeholder: 'Enter any additional notes...',
+                  maxLines: 3,
+                  onChanged: (v) => widget.onChanged('remarks', v),
                 ),
               ),
             ],
@@ -2548,8 +3096,8 @@ class _ModSubModuleGridState extends State<_ModSubModuleGrid> {
                         child: AmsDropdown(
                           initialValue:
                               (_list[i]['status']?.toString() == '0')
-                                  ? '0 - Disable'
-                                  : '1 - Enable',
+                              ? '0 - Disable'
+                              : '1 - Enable',
                           items: const ['1 - Enable', '0 - Disable'],
                           onChanged: widget.isViewMode
                               ? null

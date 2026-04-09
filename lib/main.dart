@@ -200,6 +200,10 @@ class _AmsRootState extends State<AmsRoot> {
       success = await apiService.createMenu('program', data);
     } else if (prog == 'USR-ROLE') {
       success = await apiService.assignUserRole(data);
+    } else if (prog == 'PROG-CRT') {
+      success = await apiService.createProgramMaster(data);
+    } else if (prog == 'BRN-CRT') {
+      success = await apiService.createBranch(data);
     } else if (prog == 'AUTHCTL') {
       success = await apiService.createAuthConfig(data);
     } else {
