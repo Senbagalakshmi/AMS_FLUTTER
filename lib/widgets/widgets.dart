@@ -526,6 +526,7 @@ class AmsTextInput extends StatelessWidget {
   final TextInputAction? textInputAction;
   final List<TextInputFormatter>? inputFormatters;
   final int? maxLines;
+  final VoidCallback? onTap;
 
   const AmsTextInput({
     super.key,
@@ -545,6 +546,7 @@ class AmsTextInput extends StatelessWidget {
     this.textInputAction,
     this.inputFormatters,
     this.maxLines = 1,
+    this.onTap,
   });
 
   @override
@@ -561,6 +563,7 @@ class AmsTextInput extends StatelessWidget {
       maxLines: maxLines,
       onChanged: onChanged,
       onFieldSubmitted: onFieldSubmitted,
+      onTap: onTap,
       style: bodyStyle(
           size: 13,
           color: readOnly ? AppColors.ink3 : AppColors.ink),
@@ -1459,6 +1462,13 @@ class _AmsSidebarState extends State<AmsSidebar> {
 
                 if (openMenu == 'masters') ...[
                   AmsSubSidebarItem(
+                    label: 'Branch',
+                    isCollapsed: widget.isCollapsed,
+                    icon: Icons.store_rounded,
+                    isSelected: widget.selectedProg == 'BRN-CRT',
+                    onTap: () => widget.onNavigate('nontran', 'BRN-CRT'),
+                  ),
+                  AmsSubSidebarItem(
                     label: 'User',
                     isCollapsed: widget.isCollapsed,
                     icon: Icons.person_add_rounded,
@@ -1500,14 +1510,6 @@ class _AmsSidebarState extends State<AmsSidebar> {
                     isSelected: widget.selectedProg == 'PROG-CRT',
                     onTap: () => widget.onNavigate('nontran', 'PROG-CRT'),
                   ),
-                  AmsSubSidebarItem(
-                    label: 'Branch',
-                    isCollapsed: widget.isCollapsed,
-                    icon: Icons.store_rounded,
-                    isSelected: widget.selectedProg == 'BRN-CRT',
-                    onTap: () => widget.onNavigate('nontran', 'BRN-CRT'),
-                  ),
-
                 ],
 
                 const SizedBox(height: 16),

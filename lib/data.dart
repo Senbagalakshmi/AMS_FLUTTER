@@ -364,6 +364,14 @@ List<AuthRecord> seedAuthQueue() => [
 
 final List<SubmenuItem> mastersSubmenus = [
   SubmenuItem(
+    label: 'Branch Master', 
+    icon: Icons.store_rounded, 
+    programId: 'BRN-CRT',
+    subtitle: 'Manage organizational units and branch data.',
+    metric: '12 Br',
+    trend: 'Global',
+  ),
+  SubmenuItem(
     label: 'User Management', 
     icon: Icons.person_add_alt_1_rounded, 
     programId: 'USR-CRT',
@@ -411,15 +419,6 @@ final List<SubmenuItem> mastersSubmenus = [
     metric: '64 Progs',
     trend: 'Standard',
   ),
-  SubmenuItem(
-    label: 'Branch Master', 
-    icon: Icons.store_rounded, 
-    programId: 'BRN-CRT',
-    subtitle: 'Manage organizational units and branch data.',
-    metric: '12 Br',
-    trend: 'Global',
-  ),
-
 ];
 
 final List<SubmenuItem> glSubmenus = [
