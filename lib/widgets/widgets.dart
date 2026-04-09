@@ -6,15 +6,13 @@ import '../theme.dart';
 import '../services/user_service.dart';
 import '../services/api_service.dart';
 
-
 // ─── TEXT STYLES ─────────────────────────────────────────────
 TextStyle monoStyle({
   double size = 12,
   FontWeight weight = FontWeight.w500,
   Color color = AppColors.ink2,
 }) =>
-    GoogleFonts.robotoMono(
-        fontSize: size, fontWeight: weight, color: color);
+    GoogleFonts.robotoMono(fontSize: size, fontWeight: weight, color: color);
 
 TextStyle bodyStyle({
   double size = 13,
@@ -49,7 +47,8 @@ class AmsBadge extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(label,
-          style: monoStyle(size: fontSize, weight: FontWeight.w700, color: color)),
+          style:
+              monoStyle(size: fontSize, weight: FontWeight.w700, color: color)),
     );
   }
 }
@@ -68,24 +67,16 @@ class AmsPill extends StatelessWidget {
   });
 
   factory AmsPill.auto() => const AmsPill(
-      label: 'AUTO',
-      color: AppColors.amber,
-      background: AppColors.amberLt);
+      label: 'AUTO', color: AppColors.amber, background: AppColors.amberLt);
 
   factory AmsPill.locked() => const AmsPill(
-      label: 'LOCKED',
-      color: AppColors.ink3,
-      background: AppColors.grayLt);
+      label: 'LOCKED', color: AppColors.ink3, background: AppColors.grayLt);
 
   factory AmsPill.optional() => const AmsPill(
-      label: 'OPTIONAL',
-      color: AppColors.green,
-      background: AppColors.greenLt);
+      label: 'OPTIONAL', color: AppColors.green, background: AppColors.greenLt);
 
   factory AmsPill.required_() => const AmsPill(
-      label: 'REQUIRED',
-      color: AppColors.red,
-      background: AppColors.redLt);
+      label: 'REQUIRED', color: AppColors.red, background: AppColors.redLt);
 
   @override
   Widget build(BuildContext context) {
@@ -166,13 +157,27 @@ class _AmsButtonState extends State<AmsButton> {
 
     if (widget.backgroundColor != null) bg = widget.backgroundColor!;
 
-    final double vPad = widget.small ? 6 : widget.large ? 10 : 8;
-    final double hPad = widget.small ? 12 : widget.large ? 24 : 16;
-    final double fSize = widget.small ? 11 : widget.large ? 14 : 13;
+    final double vPad = widget.small
+        ? 6
+        : widget.large
+            ? 10
+            : 8;
+    final double hPad = widget.small
+        ? 12
+        : widget.large
+            ? 24
+            : 16;
+    final double fSize = widget.small
+        ? 11
+        : widget.large
+            ? 14
+            : 13;
     final double radius = 4; // Sharp but soft corners like Zoho
 
     return MouseRegion(
-      cursor: widget.onPressed != null ? SystemMouseCursors.click : SystemMouseCursors.basic,
+      cursor: widget.onPressed != null
+          ? SystemMouseCursors.click
+          : SystemMouseCursors.basic,
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
       child: GestureDetector(
@@ -202,12 +207,10 @@ class _AmsButtonState extends State<AmsButton> {
                   ],
                   Text(widget.label,
                       style: bodyStyle(
-                          size: fSize,
-                          weight: FontWeight.w700,
-                          color: fg)),
-                  if ((widget.variant == AmsButtonVariant.primary || 
-                       widget.variant == AmsButtonVariant.teal || 
-                       widget.variant == AmsButtonVariant.green) && 
+                          size: fSize, weight: FontWeight.w700, color: fg)),
+                  if ((widget.variant == AmsButtonVariant.primary ||
+                          widget.variant == AmsButtonVariant.teal ||
+                          widget.variant == AmsButtonVariant.green) &&
                       !widget.small) ...[
                     const SizedBox(width: 8),
                     Icon(Icons.arrow_forward_rounded,
@@ -246,29 +249,28 @@ class AmsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     Widget card = Container(
       margin: const EdgeInsets.only(bottom: 16),
-      decoration: decoration ?? BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+      decoration: decoration ??
+          BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.border),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.03),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
-        ],
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (headLeft != null || headRight != null)
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
               decoration: const BoxDecoration(
                 color: AppColors.cardHead,
-                border: Border(
-                    bottom: BorderSide(color: AppColors.border)),
+                border: Border(bottom: BorderSide(color: AppColors.border)),
                 borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
               ),
               child: Row(
@@ -293,7 +295,7 @@ class AmsCard extends StatelessWidget {
         ),
       );
     }
-    
+
     return card;
   }
 }
@@ -335,7 +337,8 @@ class AmsInfoBanner extends StatelessWidget {
 }
 
 // ─── SECTION TITLE ────────────────────────────────────────────
-Widget sectionTitle(String title, {Color color = AppColors.ink2, double size = 12}) {
+Widget sectionTitle(String title,
+    {Color color = AppColors.ink2, double size = 12}) {
   return Text(title,
       style: monoStyle(size: size, weight: FontWeight.w700, color: color));
 }
@@ -431,8 +434,7 @@ class AmsField extends StatelessWidget {
                 : null,
             child: Text(
               hint!,
-              style: bodyStyle(
-                  size: 11, color: hintColor ?? AppColors.ink3),
+              style: bodyStyle(size: 11, color: hintColor ?? AppColors.ink3),
             ),
           ),
         ],
@@ -497,16 +499,14 @@ class AmsFormGrid extends StatelessWidget {
         spacing: spacing,
         runSpacing: 0, // AmsField already has vertical padding
         children: children.map((child) {
-          final w =
-              (constraints.maxWidth - (effectiveCols - 1) * spacing) /
-                  effectiveCols;
+          final w = (constraints.maxWidth - (effectiveCols - 1) * spacing) /
+              effectiveCols;
           return SizedBox(width: w.clamp(0, double.infinity), child: child);
         }).toList(),
       );
     });
   }
 }
-
 
 // ─── TEXT INPUT ───────────────────────────────────────────────
 class AmsTextInput extends StatelessWidget {
@@ -564,34 +564,33 @@ class AmsTextInput extends StatelessWidget {
       onChanged: onChanged,
       onFieldSubmitted: onFieldSubmitted,
       onTap: onTap,
-      style: bodyStyle(
-          size: 13,
-          color: readOnly ? AppColors.ink3 : AppColors.ink),
+      style:
+          bodyStyle(size: 13, color: readOnly ? AppColors.ink3 : AppColors.ink),
       decoration: InputDecoration(
         hintText: placeholder,
-        hintStyle:
-            bodyStyle(size: 13, color: AppColors.ink4),
+        hintStyle: bodyStyle(size: 13, color: AppColors.ink4),
         errorText: errorText,
         errorStyle: bodyStyle(size: 11, color: AppColors.red),
         filled: true,
-        fillColor: readOnly
-            ? const Color(0xFFF7F9FC)
-            : Colors.white,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
-        prefixIcon: icon != null
-            ? Icon(icon, size: 18, color: AppColors.ink3)
-            : null,
+        fillColor: readOnly ? const Color(0xFFF7F9FC) : Colors.white,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
+        prefixIcon:
+            icon != null ? Icon(icon, size: 18, color: AppColors.ink3) : null,
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(5),
           borderSide: BorderSide(
-              color: borderColor ?? (isValid ? AppColors.green : (readOnly ? AppColors.border : const Color(0xFFD1D5DB))),
+              color: borderColor ??
+                  (isValid
+                      ? AppColors.green
+                      : (readOnly
+                          ? AppColors.border
+                          : const Color(0xFFD1D5DB))),
               width: 1.0),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(5),
-          borderSide:
-              BorderSide(color: isValid ? AppColors.green : AppColors.tBlue, width: 1.0),
+          borderSide: BorderSide(
+              color: isValid ? AppColors.green : AppColors.tBlue, width: 1.0),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(5),
@@ -603,8 +602,7 @@ class AmsTextInput extends StatelessWidget {
         ),
         disabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(5),
-          borderSide:
-              const BorderSide(color: AppColors.border, width: 1.0),
+          borderSide: const BorderSide(color: AppColors.border, width: 1.0),
         ),
       ),
     );
@@ -638,7 +636,8 @@ class AmsDropdown extends StatelessWidget {
       focusNode: focusNode,
       initialValue: initialValue ?? (placeholder == null ? items.first : null),
       hint: placeholder != null
-          ? Text(placeholder!, style: bodyStyle(size: 13, color: AppColors.ink4))
+          ? Text(placeholder!,
+              style: bodyStyle(size: 13, color: AppColors.ink4))
           : null,
       onChanged: onChanged,
       style: bodyStyle(size: 13, color: AppColors.ink),
@@ -647,17 +646,17 @@ class AmsDropdown extends StatelessWidget {
         errorStyle: bodyStyle(size: 11, color: AppColors.red),
         filled: true,
         fillColor: Colors.white,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(5),
-          borderSide:
-              BorderSide(color: isValid ? AppColors.green : const Color(0xFFD1D5DB), width: 1.0),
+          borderSide: BorderSide(
+              color: isValid ? AppColors.green : const Color(0xFFD1D5DB),
+              width: 1.0),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(5),
-          borderSide:
-              BorderSide(color: isValid ? AppColors.green : AppColors.tBlue, width: 1.0),
+          borderSide: BorderSide(
+              color: isValid ? AppColors.green : AppColors.tBlue, width: 1.0),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(5),
@@ -670,8 +669,7 @@ class AmsDropdown extends StatelessWidget {
       ),
       items: items
           .map((e) => DropdownMenuItem(
-              value: e,
-              child: Text(e, style: bodyStyle(size: 13))))
+              value: e, child: Text(e, style: bodyStyle(size: 13))))
           .toList(),
     );
   }
@@ -718,8 +716,7 @@ class AmsTopStepper extends StatelessWidget {
               if (stepIdx + 1 == currentStep) {
                 lineColor = nonTranMode ? AppColors.nTealMd : AppColors.tBlueMd;
               }
-              return Container(
-                  width: 24, height: 2, color: lineColor);
+              return Container(width: 24, height: 2, color: lineColor);
             }
             final idx = i ~/ 2;
             final n = idx + 1;
@@ -736,7 +733,8 @@ class AmsTopStepper extends StatelessWidget {
               dotFg = Colors.white;
               shadow = [
                 BoxShadow(
-                    color: (nonTranMode ? AppColors.nTealLt : AppColors.tBlueLt),
+                    color:
+                        (nonTranMode ? AppColors.nTealLt : AppColors.tBlueLt),
                     spreadRadius: 4)
               ];
             }
@@ -755,9 +753,7 @@ class AmsTopStepper extends StatelessWidget {
                     child: Text(
                       isDone ? '✓' : '$n',
                       style: monoStyle(
-                          size: 9,
-                          weight: FontWeight.w700,
-                          color: dotFg),
+                          size: 9, weight: FontWeight.w700, color: dotFg),
                     ),
                   ),
                 ),
@@ -812,8 +808,8 @@ class AmsTopBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accent = brandColor ??
-        (nonTranMode ? AppColors.nTeal : AppColors.tBlue);
+    final accent =
+        brandColor ?? (nonTranMode ? AppColors.nTeal : AppColors.tBlue);
 
     String name = userName ?? 'Arjun Mehta';
     String initials = '';
@@ -834,13 +830,10 @@ class AmsTopBar extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 20),
       decoration: const BoxDecoration(
         color: AppColors.surface,
-        border:
-            Border(bottom: BorderSide(color: AppColors.border)),
+        border: Border(bottom: BorderSide(color: AppColors.border)),
         boxShadow: [
           BoxShadow(
-              color: Color(0x0F000000),
-              blurRadius: 8,
-              offset: Offset(0, 1))
+              color: Color(0x0F000000), blurRadius: 8, offset: Offset(0, 1))
         ],
       ),
       child: Row(
@@ -869,9 +862,7 @@ class AmsTopBar extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text('BBOTS Management',
-                      style: bodyStyle(
-                          size: 14,
-                          weight: FontWeight.w700)),
+                      style: bodyStyle(size: 14, weight: FontWeight.w700)),
                   Text(brandSub,
                       style: monoStyle(size: 9, color: AppColors.ink3)),
                 ],
@@ -911,9 +902,7 @@ class AmsTopBar extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(name,
-                        style: bodyStyle(
-                            size: 11,
-                            weight: FontWeight.w600)),
+                        style: bodyStyle(size: 11, weight: FontWeight.w600)),
                     Text('EMP00123 · Branch Mgr',
                         style: monoStyle(size: 9, color: AppColors.ink3)),
                   ],
@@ -973,127 +962,125 @@ class _AmsIdentityHeaderState extends State<AmsIdentityHeader> {
 
   @override
   Widget build(BuildContext context) {
-  return MouseRegion(
-    onEnter: (_) => setState(() => _isHover = true),
-    onExit: (_) => setState(() => _isHover = false),
-    child: AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: AppColors.border),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHover = true),
+      onExit: (_) => setState(() => _isHover = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border.all(color: AppColors.border),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            /// 🔥 Breadcrumbs (SHOW ONLY ON HOVER)
+            AnimatedCrossFade(
+              duration: const Duration(milliseconds: 200),
+              crossFadeState: _isHover
+                  ? CrossFadeState.showFirst
+                  : CrossFadeState.showSecond,
+              firstChild: Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Row(
+                  children: widget.breadcrumbs!.asMap().entries.map((entry) {
+                    final idx = entry.key;
+                    final item = entry.value;
+                    final isLast = idx == widget.breadcrumbs!.length - 1;
 
-          /// 🔥 Breadcrumbs (SHOW ONLY ON HOVER)
-          AnimatedCrossFade(
-            duration: const Duration(milliseconds: 200),
-            crossFadeState: _isHover
-                ? CrossFadeState.showFirst
-                : CrossFadeState.showSecond,
-            firstChild: Padding(
-              padding: const EdgeInsets.only(bottom: 4),
-              child: Row(
-                children: widget.breadcrumbs!
-                    .asMap()
-                    .entries
-                    .map((entry) {
-                  final idx = entry.key;
-                  final item = entry.value;
-                  final isLast =
-                      idx == widget.breadcrumbs!.length - 1;
-
-                  return Row(
-                    children: [
-                      MouseRegion(
-                        cursor: item.onTap != null ? SystemMouseCursors.click : SystemMouseCursors.basic,
-                        child: GestureDetector(
-                          onTap: item.onTap,
-                          child: Text(
-                            item.label,
-                            style: bodyStyle(
-                              size: 11,
-                              weight: FontWeight.w600,
-                              color: AppColors.ink4,
-                            ).copyWith(
-                              decoration: item.onTap != null ? TextDecoration.underline : TextDecoration.none,
-                              decorationColor: AppColors.ink4.withOpacity(0.3),
+                    return Row(
+                      children: [
+                        MouseRegion(
+                          cursor: item.onTap != null
+                              ? SystemMouseCursors.click
+                              : SystemMouseCursors.basic,
+                          child: GestureDetector(
+                            onTap: item.onTap,
+                            child: Text(
+                              item.label,
+                              style: bodyStyle(
+                                size: 11,
+                                weight: FontWeight.w600,
+                                color: AppColors.ink4,
+                              ).copyWith(
+                                decoration: item.onTap != null
+                                    ? TextDecoration.underline
+                                    : TextDecoration.none,
+                                decorationColor:
+                                    AppColors.ink4.withOpacity(0.3),
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                      if (!isLast)
-                        const Padding(
-                          padding:
-                              EdgeInsets.symmetric(horizontal: 6),
-                          child: Icon(
-                            Icons.chevron_right_rounded,
-                            size: 14,
-                            color: AppColors.ink4,
+                        if (!isLast)
+                          const Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 6),
+                            child: Icon(
+                              Icons.chevron_right_rounded,
+                              size: 14,
+                              color: AppColors.ink4,
+                            ),
                           ),
-                        ),
-                    ],
-                  );
-                }).toList(),
+                      ],
+                    );
+                  }).toList(),
+                ),
               ),
+              secondChild: const SizedBox(),
             ),
-            secondChild: const SizedBox(),
-          ),
 
-          /// Title Row
-          Row(
-            children: [
-              widget.icon,
-              const SizedBox(width: 10),
-              Text(
-                widget.title,
-                style: bodyStyle(
-                  size: 16,
-                  weight: FontWeight.w800,
-                  color: widget.accentColor,
+            /// Title Row
+            Row(
+              children: [
+                widget.icon,
+                const SizedBox(width: 10),
+                Text(
+                  widget.title,
+                  style: bodyStyle(
+                    size: 16,
+                    weight: FontWeight.w800,
+                    color: widget.accentColor,
+                  ),
                 ),
-              ),
-              const Spacer(),
+                const Spacer(),
 
-              if (widget.actions != null) ...[
-                ...widget.actions!,
-                const SizedBox(width: 12),
+                if (widget.actions != null) ...[
+                  ...widget.actions!,
+                  const SizedBox(width: 12),
+                ],
+
+                /// Back Button
+                GestureDetector(
+                  onTap: widget.onBack,
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppColors.red,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: const [
+                        Icon(Icons.arrow_back, color: Colors.white, size: 14),
+                        SizedBox(width: 6),
+                        Text(
+                          "Back",
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
               ],
-
-              /// Back Button
-              GestureDetector(
-                onTap: widget.onBack,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: AppColors.red,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    children: const [
-                      Icon(Icons.arrow_back,
-                          color: Colors.white, size: 14),
-                      SizedBox(width: 6),
-                      Text(
-                        "Back",
-                        style: TextStyle(color: Colors.white),
-                      ),
-                    ],
-                  ),
-                ),
-              )
-            ],
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 }
 
 // ─── SUBMIT BAR ───────────────────────────────────────────────
@@ -1114,8 +1101,7 @@ class AmsSubmitBar extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border(
-          top: BorderSide(
-              color: borderColor.withOpacity(0.2), width: 1.5),
+          top: BorderSide(color: borderColor.withOpacity(0.2), width: 1.5),
         ),
       ),
       child: Row(
@@ -1197,7 +1183,8 @@ void showAmsSnack(BuildContext context, String msg,
                 shape: BoxShape.circle,
               ),
               child: Center(
-                  child: Text(displayIcon, style: const TextStyle(fontSize: 14))),
+                  child:
+                      Text(displayIcon, style: const TextStyle(fontSize: 14))),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -1249,15 +1236,15 @@ class AmsSidebarItem extends StatelessWidget {
           decoration: BoxDecoration(
             color: Colors.transparent,
             border: isSelected
-                ? const Border(
-                    left: BorderSide(color: Colors.white, width: 3))
+                ? const Border(left: BorderSide(color: Colors.white, width: 3))
                 : null,
           ),
           child: isCollapsed
               ? Center(
                   child: Icon(icon,
                       size: 24,
-                      color: color ?? (isSelected ? Colors.white : Colors.white70)),
+                      color: color ??
+                          (isSelected ? Colors.white : Colors.white70)),
                 )
               : SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
@@ -1268,7 +1255,8 @@ class AmsSidebarItem extends StatelessWidget {
                     children: [
                       Icon(icon,
                           size: 24,
-                          color: color ?? (isSelected ? Colors.white : Colors.white70)),
+                          color: color ??
+                              (isSelected ? Colors.white : Colors.white70)),
                       const SizedBox(width: 14),
                       SizedBox(
                         width: 200,
@@ -1276,8 +1264,10 @@ class AmsSidebarItem extends StatelessWidget {
                           label,
                           style: bodyStyle(
                             size: 14,
-                            weight: isSelected ? FontWeight.w700 : FontWeight.w600,
-                            color: color ?? (isSelected ? Colors.white : Colors.white70),
+                            weight:
+                                isSelected ? FontWeight.w700 : FontWeight.w600,
+                            color: color ??
+                                (isSelected ? Colors.white : Colors.white70),
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -1355,7 +1345,8 @@ class AmsSubSidebarItem extends StatelessWidget {
                           label,
                           style: bodyStyle(
                             size: 12,
-                            weight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                            weight:
+                                isSelected ? FontWeight.w700 : FontWeight.w500,
                             color: isSelected ? Colors.white : Colors.white70,
                           ),
                           maxLines: 1,
@@ -1399,9 +1390,19 @@ class _AmsSidebarState extends State<AmsSidebar> {
   void initState() {
     super.initState();
     // Auto open menu based on selected page
-    if (['USR-CRT', 'USR-ROLE', 'ROLE-CRT', 'MOD-CRT', 'MENU-CRT', 'ORG-CRT', 'PROG-CRT', 'BRN-CRT'].contains(widget.selectedProg)) {
+    if ([
+      'USR-CRT',
+      'USR-ROLE',
+      'ROLE-CRT',
+      'MOD-CRT',
+      'MENU-CRT',
+      'ORG-CRT',
+      'PROG-CRT',
+      'BRN-CRT'
+    ].contains(widget.selectedProg)) {
       openMenu = 'masters';
-    } else if (['GL-CAT', 'GL-MST', 'GL-CUR', 'GL-BRN', 'GL-SEG', 'GL-ATT'].contains(widget.selectedProg)) {
+    } else if (['GL-CAT', 'GL-MST', 'GL-CUR', 'GL-BRN', 'GL-SEG', 'GL-ATT']
+        .contains(widget.selectedProg)) {
       openMenu = 'gl';
     } else if (['AUTHCTL'].contains(widget.selectedProg)) {
       openMenu = 'config';
@@ -1435,7 +1436,8 @@ class _AmsSidebarState extends State<AmsSidebar> {
                   label: widget.isCollapsed ? '' : 'Dashboard',
                   icon: Icons.dashboard_rounded,
                   isCollapsed: widget.isCollapsed,
-                  isSelected: widget.currentScreen == 'list' && widget.selectedProg == null,
+                  isSelected: widget.currentScreen == 'list' &&
+                      widget.selectedProg == null,
                   onTap: () {
                     setState(() {
                       openMenu = '';
@@ -1449,9 +1451,12 @@ class _AmsSidebarState extends State<AmsSidebar> {
                 // 🔹 MASTERS
                 AmsSidebarItem(
                   label: widget.isCollapsed ? '' : 'Masters',
-                  icon: openMenu == 'masters' ? Icons.folder_open_rounded : Icons.folder_shared_rounded,
+                  icon: openMenu == 'masters'
+                      ? Icons.folder_open_rounded
+                      : Icons.folder_shared_rounded,
                   isCollapsed: widget.isCollapsed,
-                  isSelected: (widget.currentScreen == 'submenu_dashboard' && widget.selectedProg == 'MASTERS'),
+                  isSelected: (widget.currentScreen == 'submenu_dashboard' &&
+                      widget.selectedProg == 'MASTERS'),
                   onTap: () {
                     setState(() {
                       openMenu = openMenu == 'masters' ? '' : 'masters';
@@ -1524,9 +1529,12 @@ class _AmsSidebarState extends State<AmsSidebar> {
                 // 🔹 GL MODULE
                 AmsSidebarItem(
                   label: widget.isCollapsed ? '' : 'GL Module',
-                  icon: openMenu == 'gl' ? Icons.account_balance_rounded : Icons.account_balance_outlined,
+                  icon: openMenu == 'gl'
+                      ? Icons.account_balance_rounded
+                      : Icons.account_balance_outlined,
                   isCollapsed: widget.isCollapsed,
-                  isSelected: (widget.currentScreen == 'submenu_dashboard' && widget.selectedProg == 'GL'),
+                  isSelected: (widget.currentScreen == 'submenu_dashboard' &&
+                      widget.selectedProg == 'GL'),
                   onTap: () {
                     setState(() {
                       openMenu = openMenu == 'gl' ? '' : 'gl';
@@ -1588,7 +1596,8 @@ class _AmsSidebarState extends State<AmsSidebar> {
                   label: widget.isCollapsed ? '' : 'Configuration',
                   icon: Icons.settings_suggest_rounded,
                   isCollapsed: widget.isCollapsed,
-                  isSelected: (widget.currentScreen == 'submenu_dashboard' && widget.selectedProg == 'CONFIG'),
+                  isSelected: (widget.currentScreen == 'submenu_dashboard' &&
+                      widget.selectedProg == 'CONFIG'),
                   onTap: () {
                     setState(() {
                       openMenu = openMenu == 'config' ? '' : 'config';
@@ -1614,7 +1623,8 @@ class _AmsSidebarState extends State<AmsSidebar> {
                   label: widget.isCollapsed ? '' : 'Auth Queue',
                   icon: Icons.security_rounded,
                   isCollapsed: widget.isCollapsed,
-                  isSelected: (widget.currentScreen == 'submenu_dashboard' && widget.selectedProg == 'AUTH'),
+                  isSelected: (widget.currentScreen == 'submenu_dashboard' &&
+                      widget.selectedProg == 'AUTH'),
                   onTap: () {
                     setState(() {
                       openMenu = openMenu == 'auth' ? '' : 'auth';
@@ -1660,11 +1670,13 @@ class _AmsSidebarState extends State<AmsSidebar> {
       padding: const EdgeInsets.fromLTRB(24, 8, 24, 8),
       child: Text(
         title,
-        style: monoStyle(size: 10, weight: FontWeight.w800, color: Colors.white54),
+        style:
+            monoStyle(size: 10, weight: FontWeight.w800, color: Colors.white54),
       ),
     );
   }
 }
+
 // ─────────────────────────────────────────────────────────────
 // 🔹 AMS SHELL
 // ─────────────────────────────────────────────────────────────
@@ -1701,7 +1713,6 @@ class _AmsShellState extends State<AmsShell> {
             userName: widget.userName,
             onNavigate: widget.onNavigate,
           ),
-
           Expanded(
             child: Row(
               children: [
@@ -1729,7 +1740,7 @@ class _AmsShellState extends State<AmsShell> {
       ),
     );
   }
-  
+
   /// 🔥 TOP BAR
   Widget _buildTopBar(BuildContext context) {
     return Container(
@@ -1742,63 +1753,60 @@ class _AmsShellState extends State<AmsShell> {
         ),
       ),
       child: Row(
-      children: [
+        children: [
+          /// ✅ 9 DOTS
+          _PremiumAppLauncher(),
+          const SizedBox(width: 12),
 
-    /// ✅ 9 DOTS
-    _PremiumAppLauncher(),
-    const SizedBox(width: 12),
-
-    /// 🔹 LOGO
-    Row(
-      children: [
-        Container(
-          width: 38,
-          height: 38,
-          decoration: BoxDecoration(
-            color: AppColors.tBlue,
-            borderRadius: BorderRadius.circular(10),
+          /// 🔹 LOGO
+          Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: AppColors.tBlue,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.shield_rounded,
+                    color: Colors.white, size: 22),
+              ),
+              const SizedBox(width: 10),
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text("FINANCE",
+                      style: bodyStyle(
+                          size: 18,
+                          weight: FontWeight.w800,
+                          color: Colors.white)),
+                  Text("Management System",
+                      style: bodyStyle(size: 10, color: Colors.white70)),
+                ],
+              ),
+            ],
           ),
-          child: const Icon(Icons.shield_rounded,
-              color: Colors.white, size: 22),
-        ),
-        const SizedBox(width: 10),
-        Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text("FINANCE",
-                style: bodyStyle(
-                    size: 18,
-                    weight: FontWeight.w800,
-                    color: Colors.white)),
-            Text("Management System",
-                style: bodyStyle(
-                    size: 10,
-                    color: Colors.white70)),
-          ],
-        ),
-      ],
-    ),
 
-    const Spacer(),
+          const Spacer(),
 
-    /// 🔹 ICONS
-    _topIconBox(Icons.help_outline_rounded),
-    const SizedBox(width: 8),
-    _topIconBox(Icons.notifications_none_rounded),
-    const SizedBox(width: 8),
-    _topIconBox(Icons.settings_outlined),
+          /// 🔹 ICONS
+          _topIconBox(Icons.help_outline_rounded),
+          const SizedBox(width: 8),
+          _topIconBox(Icons.notifications_none_rounded),
+          const SizedBox(width: 8),
+          _topIconBox(Icons.settings_outlined),
 
-    const SizedBox(width: 16),
+          const SizedBox(width: 16),
 
-    Container(height: 32, width: 1, color: Colors.white24),
+          Container(height: 32, width: 1, color: Colors.white24),
 
-    const SizedBox(width: 16),
+          const SizedBox(width: 16),
 
-    /// 🔹 PROFILE
-    _profileAvatar(context),
-  ],
- ),
+          /// 🔹 PROFILE
+          _profileAvatar(context),
+        ],
+      ),
     );
   }
 
@@ -1813,6 +1821,7 @@ class _AmsShellState extends State<AmsShell> {
     );
   }
 }
+
 class _HoverTopBar extends StatefulWidget {
   final String? userName;
   final void Function(String, String?) onNavigate;
@@ -1825,6 +1834,7 @@ class _HoverTopBar extends StatefulWidget {
   @override
   State<_HoverTopBar> createState() => _HoverTopBarState();
 }
+
 class _HoverTopBarState extends State<_HoverTopBar> {
   bool _hover = false;
 
@@ -1836,7 +1846,7 @@ class _HoverTopBarState extends State<_HoverTopBar> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 250),
         alignment: Alignment.center,
-        height: _hover ? 72 : 45,   //  Height collapse / expand
+        height: _hover ? 72 : 45, //  Height collapse / expand
         padding: const EdgeInsets.symmetric(horizontal: 24),
         decoration: const BoxDecoration(
           color: Color(0xFF1E2B5E),
@@ -1845,85 +1855,83 @@ class _HoverTopBarState extends State<_HoverTopBar> {
           ),
         ),
         child: SingleChildScrollView(
-        physics: const NeverScrollableScrollPhysics(),
-        child: Column(
-           mainAxisAlignment: MainAxisAlignment.center,
-           crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+          physics: const NeverScrollableScrollPhysics(),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              /// Top Row (Always visible)
+              Row(
+                children: [
+                  _PremiumAppLauncher(),
+                  const SizedBox(width: 12),
 
-            /// Top Row (Always visible)
-            Row(
-              children: [
-
-                _PremiumAppLauncher(),
-                const SizedBox(width: 12),
-
-                Container(
-                  width: 34,
-                  height: 34,
-                  decoration: BoxDecoration(
-                    color: AppColors.tBlue,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(Icons.shield_rounded,
-                      color: Colors.white, size: 20),
-                ),
-
-                const SizedBox(width: 10),
-
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "FINANCE",
-                      style: bodyStyle(
-                        size: 16,
-                        weight: FontWeight.w800,
-                        color: Colors.white,
-                      ),
+                  Container(
+                    width: 34,
+                    height: 34,
+                    decoration: BoxDecoration(
+                      color: AppColors.tBlue,
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                    if (_hover)
+                    child: const Icon(Icons.shield_rounded,
+                        color: Colors.white, size: 20),
+                  ),
+
+                  const SizedBox(width: 10),
+
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       Text(
-                        "Management System",
+                        "FINANCE",
                         style: bodyStyle(
-                          size: 10,
-                          color: Colors.white70,
+                          size: 16,
+                          weight: FontWeight.w800,
+                          color: Colors.white,
                         ),
                       ),
+                      if (_hover)
+                        Text(
+                          "Management System",
+                          style: bodyStyle(
+                            size: 10,
+                            color: Colors.white70,
+                          ),
+                        ),
+                    ],
+                  ),
+
+                  const Spacer(),
+
+                  /// Icons only when expanded
+                  if (_hover) ...[
+                    _HoverIconButton(icon: Icons.help_outline_rounded),
+                    const SizedBox(width: 8),
+                    _HoverIconButton(icon: Icons.notifications_none_rounded),
+                    const SizedBox(width: 8),
+                    _HoverIconButton(icon: Icons.settings_outlined),
+                    const SizedBox(width: 16),
+                    Container(height: 28, width: 1, color: Colors.white24),
+                    const SizedBox(width: 16),
                   ],
-                ),
-
-                const Spacer(),
-
-                /// Icons only when expanded
-                if (_hover) ...[
-                  _HoverIconButton(icon: Icons.help_outline_rounded),
-                  const SizedBox(width: 8),
-                  _HoverIconButton(icon: Icons.notifications_none_rounded),
-                  const SizedBox(width: 8),
-                  _HoverIconButton(icon: Icons.settings_outlined),
-                  const SizedBox(width: 16),
-                  Container(height: 28, width: 1, color: Colors.white24),
-                  const SizedBox(width: 16),
+                  _PremiumProfileMenu(
+                    userName: widget.userName,
+                    onNavigate: widget.onNavigate,
+                    isExpanded: _hover,
+                  ),
                 ],
-                _PremiumProfileMenu(
-                  userName: widget.userName,
-                  onNavigate: widget.onNavigate,
-                  isExpanded: _hover,
-                ),
-              ],
-            ),
-          ],
+              ),
+            ],
+          ),
         ),
-       ),
       ),
     );
   }
 }
 
 // ─────────────────────────────────────────────────────────────
-// 🔹 ANIMATED NINE DOTS 
+// 🔹 ANIMATED NINE DOTS
 // ─────────────────────────────────────────────────────────────
 class _AnimatedNineDots extends StatefulWidget {
   final bool isHovered;
@@ -1933,7 +1941,8 @@ class _AnimatedNineDots extends StatefulWidget {
   State<_AnimatedNineDots> createState() => _AnimatedNineDotsState();
 }
 
-class _AnimatedNineDotsState extends State<_AnimatedNineDots> with SingleTickerProviderStateMixin {
+class _AnimatedNineDotsState extends State<_AnimatedNineDots>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
 
   @override
@@ -2030,7 +2039,9 @@ class _PremiumAppLauncherState extends State<_PremiumAppLauncher> {
           duration: const Duration(milliseconds: 150),
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: _hover ? Colors.white.withValues(alpha: 0.1) : Colors.transparent,
+            color: _hover
+                ? Colors.white.withValues(alpha: 0.1)
+                : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
           ),
           child: _AnimatedNineDots(isHovered: _hover),
@@ -2075,8 +2086,6 @@ class _PremiumAppLauncherState extends State<_PremiumAppLauncher> {
   }
 }
 
-
-
 // ─────────────────────────────────────────────────────────────
 // 🔹 ICON HOVER
 // ─────────────────────────────────────────────────────────────
@@ -2101,7 +2110,8 @@ class _HoverIconButtonState extends State<_HoverIconButton> {
         duration: const Duration(milliseconds: 150),
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: _hover ? Colors.white.withValues(alpha: 0.1) : Colors.transparent,
+          color:
+              _hover ? Colors.white.withValues(alpha: 0.1) : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
         ),
         child: Icon(widget.icon,
@@ -2142,7 +2152,8 @@ class _PremiumProfileMenu extends StatelessWidget {
             children: [
               Text(
                 userName ?? "User@gmail.com",
-                style: bodyStyle(size: 13, weight: FontWeight.w700, color: Colors.white),
+                style: bodyStyle(
+                    size: 13, weight: FontWeight.w700, color: Colors.white),
               ),
               if (isExpanded) ...[
                 const SizedBox(height: 2),
@@ -2154,154 +2165,155 @@ class _PremiumProfileMenu extends StatelessWidget {
             ],
           ),
           const SizedBox(width: 12),
-           GestureDetector(
-                         onTap: () async {
-                         final user = await UserService.getUserProfile();
+          GestureDetector(
+            onTap: () async {
+              final user = await UserService.getUserProfile();
 
-                         print("USER DATA : $user");
+              print("USER DATA : $user");
 
-                         if (user == null) return;
+              if (user == null) return;
 
-                           showMenu(
-                          context: context,
-                          position: RelativeRect.fromLTRB(
-                          MediaQuery.of(context).size.width - 300, 60, 20, 0,
-                         ),
-                         items: [
-                       PopupMenuItem(
-  enabled: false,
-  child: Container(
-    width: 280,
-    padding: const EdgeInsets.symmetric(vertical: 10),
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
+              showMenu(
+                context: context,
+                position: RelativeRect.fromLTRB(
+                  MediaQuery.of(context).size.width - 300,
+                  60,
+                  20,
+                  0,
+                ),
+                items: [
+                  PopupMenuItem(
+                    enabled: false,
+                    child: Container(
+                      width: 280,
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          /// Avatar
+                          Container(
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.blue.withOpacity(.25),
+                                  blurRadius: 12,
+                                )
+                              ],
+                            ),
+                            child: CircleAvatar(
+                              radius: 28,
+                              backgroundColor: AppColors.tBlue,
+                              child: Text(
+                                (user['username'] ?? "A")[0],
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
 
-        /// Avatar
-        Container(
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.blue.withOpacity(.25),
-                blurRadius: 12,
-              )
-            ],
-          ),
-          child: CircleAvatar(
-            radius: 28,
-            backgroundColor: AppColors.tBlue,
-            child: Text(
-              (user['username'] ?? "A")[0],
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
+                          const SizedBox(height: 12),
+
+                          /// Username
+                          Text(
+                            user['username'] ?? "",
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 15,
+                              color: Colors.black87,
+                            ),
+                          ),
+
+                          const SizedBox(height: 4),
+
+                          /// Email
+                          Text(
+                            user['email'] ?? "",
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey,
+                            ),
+                          ),
+
+                          const SizedBox(height: 8),
+
+                          /// Role Badge
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.tBlue.withOpacity(.1),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              "ROLE: ${user['role'] ?? ""}",
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: AppColors.tBlue,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 12),
+
+                          const Divider(),
+
+                          /// Logout Button
+                          InkWell(
+                            onTap: () async {
+                              Navigator.pop(context);
+                              apiService.updateToken(null);
+                              onNavigate('login', null);
+                            },
+                            borderRadius: BorderRadius.circular(8),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 10,
+                                horizontal: 12,
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: const [
+                                  Icon(Icons.logout,
+                                      size: 18, color: Colors.red),
+                                  SizedBox(width: 6),
+                                  Text(
+                                    "Logout",
+                                    style: TextStyle(
+                                      color: Colors.red,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  )
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
+            child: CircleAvatar(
+              radius: 18,
+              backgroundColor: AppColors.tBlueLt,
+              child: Text(
+                (userName ?? 'A')[0].toUpperCase(),
+                style: bodyStyle(
+                    size: 14, weight: FontWeight.w800, color: AppColors.tBlue),
               ),
             ),
           ),
-        ),
+        ],
+      ),
 
-        const SizedBox(height: 12),
-
-        /// Username
-        Text(
-          user['username'] ?? "",
-          style: const TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 15,
-            color: Colors.black87,
-          ),
-        ),
-
-        const SizedBox(height: 4),
-
-        /// Email
-        Text(
-          user['email'] ?? "",
-          style: const TextStyle(
-            fontSize: 13,
-            color: Colors.grey,
-          ),
-        ),
-
-        const SizedBox(height: 8),
-
-        /// Role Badge
-        Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 10,
-            vertical: 4,
-          ),
-          decoration: BoxDecoration(
-            color: AppColors.tBlue.withOpacity(.1),
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Text(
-            "ROLE: ${user['role'] ?? ""}",
-            style: TextStyle(
-              fontSize: 12,
-              color: AppColors.tBlue,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-
-        const SizedBox(height: 12),
-
-        const Divider(),
-
-        /// Logout Button
-        InkWell(
-          onTap: () async {
-            Navigator.pop(context);
-            apiService.updateToken(null);
-            onNavigate('login', null);
-          },
-          borderRadius: BorderRadius.circular(8),
-          child: Container(
-            padding: const EdgeInsets.symmetric(
-              vertical: 10,
-              horizontal: 12,
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: const [
-                Icon(Icons.logout, size: 18, color: Colors.red),
-                SizedBox(width: 6),
-                Text(
-                  "Logout",
-                  style: TextStyle(
-                    color: Colors.red,
-                    fontWeight: FontWeight.w600,
-                  ),
-                )
-              ],
-            ),
-          ),
-        ),
-
-      ],
-    ),
-  ),
-),
-                              ],
-                           );
-                          },
-
-                       child: CircleAvatar(
-                        radius: 18,
-                        backgroundColor: AppColors.tBlueLt,
-                         child: Text(
-                          (userName ?? 'A')[0].toUpperCase(),
-                            style: bodyStyle(
-                                  size: 14, weight: FontWeight.w800, color: AppColors.tBlue),
-                            ),
-                          ),
-                         ),
-                        ],
-                      ),
-          
       itemBuilder: (context) => [
         PopupMenuItem(
           child: const Text("Profile"),
@@ -2314,11 +2326,6 @@ class _PremiumProfileMenu extends StatelessWidget {
     );
   }
 }
-
-
-
-
-
 
 // ─── AUTH TABLE ──────────────────────────────────────────────
 class AmsAuthTable extends StatelessWidget {
@@ -2363,7 +2370,8 @@ class AmsAuthTable extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       child: Text(
         text,
-        style: bodyStyle(size: 12, weight: FontWeight.w700, color: Colors.white),
+        style:
+            bodyStyle(size: 12, weight: FontWeight.w700, color: Colors.white),
       ),
     );
   }
@@ -2533,7 +2541,8 @@ class _AmsPaginatedViewState<T> extends State<AmsPaginatedView<T>> {
       return const Center(
         child: Padding(
           padding: EdgeInsets.all(32),
-          child: Text('No records found', style: TextStyle(color: Color(0xFF64748B), fontSize: 15)),
+          child: Text('No records found',
+              style: TextStyle(color: Color(0xFF64748B), fontSize: 15)),
         ),
       );
     }
@@ -2542,10 +2551,10 @@ class _AmsPaginatedViewState<T> extends State<AmsPaginatedView<T>> {
     if (_currentPage > totalPages && totalPages > 0) _currentPage = totalPages;
 
     final startIndex = (_currentPage - 1) * widget.itemsPerPage;
-    
+
     // If server-side, we use items directly. If client-side, we sublist.
-    final currentItems = widget.onPageChanged != null 
-        ? widget.items 
+    final currentItems = widget.onPageChanged != null
+        ? widget.items
         : widget.items.skip(startIndex).take(widget.itemsPerPage).toList();
 
     return Column(
@@ -2566,8 +2575,10 @@ class _AmsPaginatedViewState<T> extends State<AmsPaginatedView<T>> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Showing ${startIndex + 1} to ${startIndex + currentItems.length}',
-                    style: const TextStyle(fontSize: 13, color: Color(0xFF64748B))),
+                Text(
+                    'Showing ${startIndex + 1} to ${startIndex + currentItems.length}',
+                    style: const TextStyle(
+                        fontSize: 13, color: Color(0xFF64748B))),
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -2575,7 +2586,8 @@ class _AmsPaginatedViewState<T> extends State<AmsPaginatedView<T>> {
                       onTap: _currentPage > 1
                           ? () {
                               setState(() => _currentPage--);
-                              if (widget.onPageChanged != null) widget.onPageChanged!(_currentPage);
+                              if (widget.onPageChanged != null)
+                                widget.onPageChanged!(_currentPage);
                             }
                           : null,
                       borderRadius: BorderRadius.circular(6),
@@ -2583,23 +2595,33 @@ class _AmsPaginatedViewState<T> extends State<AmsPaginatedView<T>> {
                         padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(6),
-                          border: Border.all(color: _currentPage > 1 ? const Color(0xFFE2E8F0) : Colors.transparent),
+                          border: Border.all(
+                              color: _currentPage > 1
+                                  ? const Color(0xFFE2E8F0)
+                                  : Colors.transparent),
                         ),
-                        child: Icon(Icons.chevron_left_rounded, 
-                          color: _currentPage > 1 ? const Color(0xFF0F172A) : const Color(0xFFCBD5E1),
+                        child: Icon(
+                          Icons.chevron_left_rounded,
+                          color: _currentPage > 1
+                              ? const Color(0xFF0F172A)
+                              : const Color(0xFFCBD5E1),
                           size: 20,
                         ),
                       ),
                     ),
                     const SizedBox(width: 16),
                     Text('Page $_currentPage of $totalPages',
-                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF0F172A))),
+                        style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF0F172A))),
                     const SizedBox(width: 16),
                     InkWell(
                       onTap: _currentPage < totalPages
                           ? () {
                               setState(() => _currentPage++);
-                              if (widget.onPageChanged != null) widget.onPageChanged!(_currentPage);
+                              if (widget.onPageChanged != null)
+                                widget.onPageChanged!(_currentPage);
                             }
                           : null,
                       borderRadius: BorderRadius.circular(6),
@@ -2607,10 +2629,16 @@ class _AmsPaginatedViewState<T> extends State<AmsPaginatedView<T>> {
                         padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(6),
-                          border: Border.all(color: _currentPage < totalPages ? const Color(0xFFE2E8F0) : Colors.transparent),
+                          border: Border.all(
+                              color: _currentPage < totalPages
+                                  ? const Color(0xFFE2E8F0)
+                                  : Colors.transparent),
                         ),
-                        child: Icon(Icons.chevron_right_rounded, 
-                          color: _currentPage < totalPages ? const Color(0xFF0F172A) : const Color(0xFFCBD5E1),
+                        child: Icon(
+                          Icons.chevron_right_rounded,
+                          color: _currentPage < totalPages
+                              ? const Color(0xFF0F172A)
+                              : const Color(0xFFCBD5E1),
                           size: 20,
                         ),
                       ),
@@ -2724,8 +2752,10 @@ class _AmsSearchableDropdownState extends State<AmsSearchableDropdown> {
                 errorText: widget.errorText,
                 errorStyle: bodyStyle(size: 11, color: AppColors.red),
                 filled: true,
-                fillColor: widget.readOnly ? const Color(0xFFF7F9FC) : Colors.white,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
+                fillColor:
+                    widget.readOnly ? const Color(0xFFF7F9FC) : Colors.white,
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
                 suffixIcon: Icon(
                   _isOpen ? Icons.arrow_drop_up : Icons.arrow_drop_down,
                   color: AppColors.ink3,
@@ -2733,7 +2763,9 @@ class _AmsSearchableDropdownState extends State<AmsSearchableDropdown> {
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(5),
                   borderSide: BorderSide(
-                    color: widget.isValid ? AppColors.green : const Color(0xFFD1D5DB),
+                    color: widget.isValid
+                        ? AppColors.green
+                        : const Color(0xFFD1D5DB),
                     width: 1.0,
                   ),
                 ),
@@ -2746,66 +2778,69 @@ class _AmsSearchableDropdownState extends State<AmsSearchableDropdown> {
                 ),
                 errorBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(5),
-                  borderSide: const BorderSide(color: AppColors.red, width: 1.0),
+                  borderSide:
+                      const BorderSide(color: AppColors.red, width: 1.0),
                 ),
                 focusedErrorBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(5),
-                  borderSide: const BorderSide(color: AppColors.red, width: 1.0),
+                  borderSide:
+                      const BorderSide(color: AppColors.red, width: 1.0),
                 ),
                 disabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(5),
-                  borderSide: const BorderSide(color: AppColors.border, width: 1.0),
+                  borderSide:
+                      const BorderSide(color: AppColors.border, width: 1.0),
                 ),
               ),
             ),
-          if (_isOpen && !widget.readOnly && _filteredItems.isNotEmpty)
-            Container(
-              margin: const EdgeInsets.only(top: 4),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                border: Border.all(color: AppColors.border),
-                borderRadius: BorderRadius.circular(5),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.08),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
+            if (_isOpen && !widget.readOnly && _filteredItems.isNotEmpty)
+              Container(
+                margin: const EdgeInsets.only(top: 4),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  border: Border.all(color: AppColors.border),
+                  borderRadius: BorderRadius.circular(5),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.08),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxHeight: 200),
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: _filteredItems.length,
+                    itemBuilder: (context, index) {
+                      final item = _filteredItems[index];
+                      return InkWell(
+                        onTap: () {
+                          _controller.text = item;
+                          setState(() => _isOpen = false);
+                          widget.onChanged?.call(item);
+                          _focusNode.unfocus();
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 10,
+                          ),
+                          child: Text(
+                            item,
+                            style: bodyStyle(size: 13, color: AppColors.ink),
+                          ),
+                        ),
+                      );
+                    },
                   ),
-                ],
-              ),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxHeight: 200),
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: _filteredItems.length,
-                  itemBuilder: (context, index) {
-                    final item = _filteredItems[index];
-                    return InkWell(
-                      onTap: () {
-                        _controller.text = item;
-                        setState(() => _isOpen = false);
-                        widget.onChanged?.call(item);
-                        _focusNode.unfocus();
-                      },
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 10,
-                        ),
-                        child: Text(
-                          item,
-                          style: bodyStyle(size: 13, color: AppColors.ink),
-                        ),
-                      ),
-                    );
-                  },
                 ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
-    ),
-  );
+    );
   }
 }
 
@@ -2828,7 +2863,8 @@ class AmsSkeleton extends StatefulWidget {
   State<AmsSkeleton> createState() => _AmsSkeletonState();
 }
 
-class _AmsSkeletonState extends State<AmsSkeleton> with SingleTickerProviderStateMixin {
+class _AmsSkeletonState extends State<AmsSkeleton>
+    with SingleTickerProviderStateMixin {
   late AnimationController _ctrl;
   late Animation<double> _gradientPosition;
 
@@ -2836,9 +2872,10 @@ class _AmsSkeletonState extends State<AmsSkeleton> with SingleTickerProviderStat
   void initState() {
     super.initState();
     _ctrl = AnimationController(
-        duration: const Duration(milliseconds: 1500), vsync: this)..repeat();
-    _gradientPosition = Tween<double>(begin: -1.0, end: 2.0).animate(
-        CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
+        duration: const Duration(milliseconds: 1500), vsync: this)
+      ..repeat();
+    _gradientPosition = Tween<double>(begin: -1.0, end: 2.0)
+        .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
   }
 
   @override
@@ -2912,7 +2949,8 @@ class AmsTableSkeleton extends StatelessWidget {
           Expanded(
             child: ListView.builder(
               itemCount: rows,
-              physics: const NeverScrollableScrollPhysics(), // Match table behavior
+              physics:
+                  const NeverScrollableScrollPhysics(), // Match table behavior
               itemBuilder: (context, index) => _buildRow(),
             ),
           ),
@@ -2942,6 +2980,7 @@ class AmsTableSkeleton extends StatelessWidget {
     );
   }
 }
+
 class AmsListSkeleton extends StatelessWidget {
   final int count;
 
@@ -2982,4 +3021,3 @@ class AmsListSkeleton extends StatelessWidget {
     );
   }
 }
-
