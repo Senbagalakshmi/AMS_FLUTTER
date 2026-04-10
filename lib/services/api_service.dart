@@ -227,34 +227,6 @@ class ApiService {
     }
   }
 
-  Future<PaginatedResult<Map<String, dynamic>>?> getBranches(
-      {int page = 0, int size = 10}) async {
-    try {
-      final response = await http.get(
-          Uri.parse('$baseUrl/branches?page=$page&size=$size'),
-          headers: _headers);
-      if (response.statusCode == 200) {
-        return _parsePaginated(jsonDecode(response.body));
-      }
-      return null;
-    } catch (e) {
-      return null;
-    }
-  }
-
-  Future<bool> createBranch(Map<String, dynamic> data) async {
-    try {
-      final res = await http.post(
-        Uri.parse('$baseUrl/branches'),
-        headers: _headers,
-        body: jsonEncode(data),
-      );
-      return res.statusCode == 200;
-    } catch (e) {
-      return false;
-    }
-  }
-
   Future<PaginatedResult<Map<String, dynamic>>?> getParentMenus(
       {int page = 0, int size = 10}) async {
     try {

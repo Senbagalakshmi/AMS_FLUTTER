@@ -2,6 +2,412 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../theme.dart';
 import '../widgets/widgets.dart';
+import '../services/branch_api_service.dart';
+import '../services/api_service.dart';
+import 'package:intl/intl.dart';
+class BranchScreen extends StatefulWidget {
+  final VoidCallback onBack;
+  final VoidCallback onBackToModule;
+  final String? userName;
+
+  const BranchScreen({
+    super.key,
+    required this.onBack,
+    required this.onBackToModule,
+    this.userName,
+  });
+
+  @override
+  State<BranchScreen> createState() => _BranchScreenState();
+}
+
+class _BranchScreenState extends State<BranchScreen> {
+  bool _showForm = false;
+  bool _isViewOnly = false;
+  bool _isEditMode = false;
+  Map<String, dynamic>? _selectedRecord;
+  List<Map<String, dynamic>> _branches = [];
+  bool _isLoading = true;
+  int _totalItems = 0;
+  String _searchQuery = '';
+  int _pgmStatus = 1;
+  bool _isSaving = false;
+  final Map<String, dynamic> _formData = {};
+  final GlobalKey<BranchScreenFieldsState> _fieldsKey = GlobalKey<BranchScreenFieldsState>();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBranches(1);
+  }
+
+  Future<void> _loadBranches(int page) async {
+    setState(() => _isLoading = true);
+    final result = await branchApiService.getBranches(page: page - 1, size: 10);
+    if (mounted) {
+      setState(() {
+        _branches = result?.items ?? [];
+        _totalItems = result?.totalElements ?? 0;
+        _isLoading = false;
+      });
+    }
+  }
+
+  void _enterViewMode(Map<String, dynamic> record, {bool viewOnly = true}) {
+    setState(() {
+      _selectedRecord = record;
+      _formData.clear();
+      _formData['orgCode'] = record['orgCode'] ?? record['orgcode'] ?? 50;
+      _formData['brnCd'] = record['brnCd'] ?? record['brncd'] ?? 0;
+      _formData['brnName'] = record['brnName'] ?? record['brnname'] ?? '';
+      _formData['openDate'] = record['openDate'] ?? record['opendate'] ?? '';
+      _formData['status'] = record['status'] ?? 1;
+      _formData['address'] = record['address'] ?? '';
+      _formData['country'] = record['country'] ?? '';
+      _formData['divisionName'] = record['divisionName'] ?? record['divisionname'] ?? '';
+      _formData['pincode'] = record['pincode'] ?? '';
+      _formData['addrline1'] = record['addrline1'] ?? '';
+      _formData['addrline2'] = record['addrline2'] ?? '';
+      _formData['addrline3'] = record['addrline3'] ?? '';
+      _formData['addrline4'] = record['addrline4'] ?? '';
+      _formData['addrline5'] = record['addrline5'] ?? '';
+      _formData['telephone'] = record['telephone'] ?? '';
+      _formData['email'] = record['email'] ?? '';
+      _formData['eUser'] = record['eUser'] ?? record['euser'] ?? 'ADMIN';
+      _formData['eDate'] = record['eDate'] ?? record['edate'] ?? DateFormat('yyyy-MM-dd').format(DateTime.now());
+      _formData['headBrn'] = record['headBrn'] ?? record['headbrn'] ?? 1;
+      _formData['telephone'] = record['telephone'] ?? record['TELEPHONE'] ?? '';
+      _formData['email'] = record['email'] ?? record['EMAIL'] ?? '';
+      
+      _pgmStatus = int.tryParse(_formData['status'].toString()) ?? 1;
+      _showForm = true;
+      _isViewOnly = viewOnly;
+      _isEditMode = !viewOnly;
+    });
+  }
+
+  void _createNew() {
+    setState(() {
+      _selectedRecord = null;
+      _formData.clear();
+      // EXACT MIRROR of working Postman JSON
+      _formData['orgCode'] = 50;
+      _formData['brnCd'] = 0;
+      _formData['brnName'] = '';
+      _formData['openDate'] = '';
+      _formData['address'] = '';
+      _formData['country'] = '';
+      _formData['divisionName'] = '';
+      _formData['pincode'] = '';
+      _formData['addrline1'] = '';
+      _formData['addrline2'] = '';
+      _formData['addrline3'] = '';
+      _formData['addrline4'] = '';
+      _formData['addrline5'] = '';
+      _formData['telephone'] = '';
+      _formData['email'] = '';
+      _formData['status'] = 1;
+      _formData['eUser'] = widget.userName ?? 'ADMIN';
+      _formData['eDate'] = DateFormat('yyyy-MM-dd').format(DateTime.now());
+      _formData['headBrn'] = 1;
+      
+      _pgmStatus = 1;
+      _showForm = true;
+      _isViewOnly = false;
+      _isEditMode = false;
+    });
+  }
+
+  Future<void> _handleSave() async {
+    if (_isSaving) return;
+    if (_fieldsKey.currentState?.validate() == false) return;
+
+    setState(() => _isSaving = true);
+    try {
+      // Final key safety check
+      if (_formData['brnCd'] == null || _formData['brnCd'] == 0) {
+        final val = _fieldsKey.currentState?.getBranchCode();
+        if (val != null) {
+          _formData['brnCd'] = val;
+        }
+      }
+      
+      // Ensure eUser is set
+      _formData['eUser'] = widget.userName ?? 'ADMIN';
+      _formData['eDate'] = DateFormat('yyyy-MM-dd').format(DateTime.now());
+      _formData['headBrn'] = 1;
+      _formData['orgCode'] = 50;
+
+      final success = _isEditMode 
+        ? await branchApiService.updateBranch(_formData)
+        : await branchApiService.createBranch(_formData);
+
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Branch ${_isEditMode ? 'updated' : 'created'} successfully')),
+        );
+        setState(() => _showForm = false);
+        _loadBranches(1);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Operation failed. Please check field values.')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.bg,
+      body: Column(
+        children: [
+          _buildIdentityHeader(),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              child: _showForm ? _buildEntryView() : _buildFullListView(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildIdentityHeader() {
+    return AmsIdentityHeader(
+      icon: const Icon(Icons.store_rounded, size: 28, color: AppColors.tBlue),
+      title: 'Branch Management',
+      subtitle: '',
+      badges: [],
+      accentColor: AppColors.tBlue,
+      accentLt: AppColors.tBlueLt,
+      accentMd: AppColors.tBlueMd,
+      breadcrumbs: [
+        HeaderBreadcrumb(label: 'Home', onTap: widget.onBack),
+        HeaderBreadcrumb(label: 'Masters', onTap: widget.onBackToModule),
+        HeaderBreadcrumb(label: 'Branch'),
+      ],
+      onBack: _showForm ? () => setState(() => _showForm = false) : widget.onBackToModule,
+    );
+  }
+
+  Widget _buildFullListView() {
+    final filtered = _branches.where((b) {
+      final q = _searchQuery.toLowerCase();
+      return (b['branchname'] ?? b['brnName'] ?? '').toString().toLowerCase().contains(q) ||
+             (b['branchcd'] ?? b['brnCd'] ?? '').toString().contains(q);
+    }).toList();
+
+    return Container(
+      decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border.all(color: AppColors.border),
+          borderRadius: BorderRadius.circular(8)),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Row(
+              children: [
+                Expanded(
+                    child: AmsTextInput(
+                        icon: Icons.search_rounded,
+                        placeholder: 'Search Branch...',
+                        borderColor: AppColors.tBlue,
+                        onChanged: (v) => setState(() => _searchQuery = v))),
+                const SizedBox(width: 16),
+                IconButton(
+                    icon: const Icon(Icons.refresh_rounded),
+                    onPressed: () => _loadBranches(1)),
+                const SizedBox(width: 16),
+                AmsButton(
+                    label: '+ Add New',
+                    variant: AmsButtonVariant.primary,
+                    onPressed: _createNew),
+              ],
+            ),
+          ),
+          Expanded(
+            child: _isLoading 
+              ? const AmsListSkeleton() 
+              : _buildListTable(filtered),
+          ),
+          _buildPaginationFooter(filtered.length),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildListTable(List<Map<String, dynamic>> items) {
+    return ListView.separated(
+      padding: const EdgeInsets.all(16),
+      itemCount: items.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 12),
+      itemBuilder: (ctx, idx) {
+        final b = items[idx];
+        final bName = b['branchname'] ?? b['brnName'] ?? b['BRNNAME'] ?? 'Unknown';
+        final bCd = b['branchcd'] ?? b['brnCd'] ?? b['BRNCD'] ?? '—';
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.border)),
+          child: Row(
+            children: [
+              CircleAvatar(
+                  backgroundColor: AppColors.nTealLt,
+                  child: Text(bName.isNotEmpty ? bName[0] : 'B',
+                      style: const TextStyle(color: AppColors.nTeal, fontWeight: FontWeight.bold))),
+              const SizedBox(width: 16),
+              Expanded(
+                  child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                    Text(bName, style: bodyStyle(weight: FontWeight.bold)),
+                    Text('Code: $bCd', style: bodyStyle(color: AppColors.ink3, size: 12)),
+                  ])),
+              AmsBadge(
+                label: (b['status']?.toString() == '0') ? 'Disabled' : 'Enabled',
+                color: (b['status']?.toString() == '0') ? AppColors.red : AppColors.green,
+                background: (b['status']?.toString() == '0') ? AppColors.redLt : AppColors.greenLt,
+              ),
+              const SizedBox(width: 24),
+              Row(children: [
+                _actionIcon(
+                    icon: Icons.visibility_outlined,
+                    color: AppColors.green,
+                    bg: Colors.white,
+                    onTap: () => _enterViewMode(b)),
+                const SizedBox(width: 8),
+                _actionIcon(
+                    icon: Icons.edit_outlined,
+                    color: AppColors.tBlue,
+                    bg: Colors.white,
+                    onTap: () => _enterViewMode(b, viewOnly: false)),
+              ]),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildEntryView() {
+    return Container(
+      decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border.all(color: AppColors.border),
+          borderRadius: BorderRadius.circular(8)),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            decoration: const BoxDecoration(
+                color: AppColors.sidebar,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(8))),
+            child: Row(children: [
+              Icon(_isViewOnly ? Icons.visibility : Icons.add_circle, color: Colors.white, size: 20),
+              const SizedBox(width: 12),
+              Text(
+                  _isViewOnly
+                      ? 'Branch Details'
+                      : (_isEditMode ? 'Edit Branch' : 'Create Branch'),
+                  style: bodyStyle(color: Colors.white, weight: FontWeight.w700)),
+              const Spacer(),
+              IconButton(
+                  icon: const Icon(Icons.keyboard_arrow_up_rounded, color: Colors.white),
+                  onPressed: () => setState(() => _showForm = false)),
+            ]),
+          ),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(0),
+              child: BranchScreenFields(
+                key: _fieldsKey,
+                isViewMode: _isViewOnly,
+                initialData: _selectedRecord,
+                pgmStatus: _pgmStatus,
+                onChanged: (k, v) => _formData[k] = v,
+                onStatusChanged: (s) => setState(() => _pgmStatus = s),
+                parentContext: context,
+              ),
+            ),
+          ),
+          _buildEntryFooter(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEntryFooter() {
+    return AmsSubmitBar(borderColor: AppColors.border, actions: [
+      if (!_isViewOnly) ...[
+        AmsButton(
+          label: _isEditMode ? 'Update' : 'Submit',
+          variant: AmsButtonVariant.primary,
+          backgroundColor: _isSaving ? Colors.grey : AppColors.sidebar,
+          onPressed: _isSaving ? null : _handleSave,
+        ),
+        const SizedBox(width: 12),
+        AmsButton(
+          label: 'Clear',
+          variant: AmsButtonVariant.outline,
+          icon: Icons.clear_all_rounded,
+          onPressed: () => _fieldsKey.currentState?.clear(),
+        ),
+        const SizedBox(width: 12),
+        AmsButton(
+          label: 'Cancel',
+          variant: AmsButtonVariant.danger,
+          icon: Icons.close_rounded,
+          onPressed: () => setState(() => _showForm = false),
+        ),
+      ] else ...[
+        AmsButton(
+          label: 'Back to List',
+          variant: AmsButtonVariant.outline,
+          icon: Icons.arrow_back_rounded,
+          onPressed: () => setState(() => _showForm = false),
+        ),
+      ]
+    ]);
+  }
+
+  Widget _actionIcon({required IconData icon, required Color color, required Color bg, VoidCallback? onTap}) {
+    return InkWell(
+        onTap: onTap,
+        child: Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+                color: bg,
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: AppColors.border)),
+            child: Icon(icon, size: 16, color: color)));
+  }
+
+  Widget _buildPaginationFooter(int total) {
+    return Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+          Text('Showing 1–$total of $total', style: bodyStyle(size: 13, color: AppColors.ink3)),
+          Row(children: [
+            IconButton(icon: const Icon(Icons.chevron_left_rounded), onPressed: null),
+            IconButton(icon: const Icon(Icons.chevron_right_rounded), onPressed: null)
+          ]),
+        ]));
+  }
+}
+
 
 class BranchScreenFields extends StatefulWidget {
   final bool isViewMode;
@@ -45,14 +451,22 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
   final _brnDistrictCtrl = TextEditingController();
 
   static const Map<String, Map<String, String>> _countryInfo = {
-    'India': {'flag': '🇮🇳', 'code': '+91'},
-    'USA': {'flag': '🇺🇸', 'code': '+1'},
-    'UK': {'flag': '🇬🇧', 'code': '+44'},
-    'Singapore': {'flag': '🇸🇬', 'code': '+65'},
-    'Germany': {'flag': '🇩🇪', 'code': '+49'},
-    'Japan': {'flag': '🇯🇵', 'code': '+81'},
-    'Canada': {'flag': '🇨🇦', 'code': '+1'},
-    'Australia': {'flag': '🇦🇺', 'code': '+61'},
+    'India': {'flag': '🇮🇳', 'code': '+91', 'iso': 'IN'},
+    'USA': {'flag': '🇺🇸', 'code': '+1', 'iso': 'US'},
+    'UK': {'flag': '🇬🇧', 'code': '+44', 'iso': 'UK'},
+    'Singapore': {'flag': '🇸🇬', 'code': '+65', 'iso': 'SG'},
+    'Germany': {'flag': '🇩🇪', 'code': '+49', 'iso': 'DE'},
+    'Japan': {'flag': '🇯🇵', 'code': '+81', 'iso': 'JP'},
+    'Canada': {'flag': '🇨🇦', 'code': '+1', 'iso': 'CA'},
+    'Australia': {'flag': '🇦🇺', 'code': '+61', 'iso': 'AU'},
+  };
+
+  static const Map<String, String> _stateCodes = {
+    'Tamil Nadu': 'TN',
+    'Karnataka': 'KA',
+    'Maharashtra': 'MH',
+    'Kerala': 'KL',
+    'New York': 'NY',
   };
 
   final Map<String, List<String>> _stateDistricts = {
@@ -113,7 +527,14 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
     _brnNameCtrl.text = (data['branchname'] ?? data['brnname'] ?? data['BRNNAME'] ?? '').toString();
     _brnOpenDateCtrl.text = (data['opendate'] ?? data['OPENDATE'] ?? '').toString();
     _brnAddressCtrl.text = (data['address'] ?? data['ADDRESS'] ?? '').toString();
-    _brnCountryCtrl.text = (data['country'] ?? data['COUNTRY'] ?? '').toString();
+    String countryVal = (data['country'] ?? data['COUNTRY'] ?? '').toString();
+    if (_countryInfo.values.any((e) => e['iso'] == countryVal)) {
+      final entry = _countryInfo.entries.firstWhere((e) => e.value['iso'] == countryVal);
+      _brnCountryCtrl.text = "${entry.value['flag']} ${entry.key}";
+    } else {
+      _brnCountryCtrl.text = countryVal;
+    }
+
     _brnDivCtrl.text = (data['divisionname'] ?? data['DIVISIONNAME'] ?? '').toString();
     _brnPinCtrl.text = (data['pincode'] ?? data['PINCODE'] ?? '').toString();
     _brnAddr1Ctrl.text = (data['addrline1'] ?? data['ADDRLINE1'] ?? '').toString();
@@ -123,7 +544,13 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
     _brnAddr5Ctrl.text = (data['addrline5'] ?? data['ADDRLINE5'] ?? '').toString();
     _brnTelCtrl.text = (data['telephone'] ?? data['TELEPHONE'] ?? '').toString();
     _brnEmailCtrl.text = (data['email'] ?? data['EMAIL'] ?? '').toString();
-    _brnStateCtrl.text = (data['statecode'] ?? data['STATECODE'] ?? '').toString();
+
+    String stateVal = (data['statecode'] ?? data['STATECODE'] ?? '').toString();
+    if (_stateCodes.values.contains(stateVal)) {
+      _brnStateCtrl.text = _stateCodes.entries.firstWhere((e) => e.value == stateVal).key;
+    } else {
+      _brnStateCtrl.text = stateVal;
+    }
     _brnDistrictCtrl.text = (data['districtcode'] ?? data['DISTRICTCODE'] ?? '').toString();
     
     _errors.clear();
@@ -150,6 +577,10 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
     _errors.clear();
   }
 
+  int? getBranchCode() {
+    return int.tryParse(_brnCdCtrl.text);
+  }
+
   bool validate() {
     bool isValid = true;
     setState(() {
@@ -165,6 +596,13 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
         isValid = false;
       } else {
         _errors['brnName'] = null;
+      }
+
+      if (_brnOpenDateCtrl.text.trim().isEmpty) {
+        _errors['openDate'] = 'Open Date required';
+        isValid = false;
+      } else {
+        _errors['openDate'] = null;
       }
     });
     return isValid;
@@ -208,7 +646,7 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
         _brnDistrictCtrl.clear();
         _brnPinCtrl.clear();
       });
-      widget.onChanged('country', s);
+      widget.onChanged('country', _countryInfo[s]!['iso']);
       widget.onChanged('telephone', _brnTelCtrl.text);
     }
   }
@@ -225,7 +663,8 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
         _brnDistrictCtrl.clear();
         _brnPinCtrl.clear();
       });
-      widget.onChanged('statecode', s);
+      final stateISO = _stateCodes[s] ?? s;
+      widget.onChanged('divisionName', stateISO);
     }
   }
 
@@ -247,7 +686,8 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
         _brnDistrictCtrl.text = s;
         _brnPinCtrl.text = _pincodeMap[s] ?? '';
       });
-      widget.onChanged('districtcode', s);
+      final stateISO = _stateCodes[_brnStateCtrl.text] ?? _brnStateCtrl.text;
+      widget.onChanged('divisionName', "$stateISO, $s");
       widget.onChanged('pincode', _brnPinCtrl.text);
     }
   }
@@ -284,7 +724,7 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
                     setState(() {
                       _errors['orgCode'] = v.trim().isEmpty ? 'Org Code required' : null;
                     });
-                    widget.onChanged('orgcode', int.tryParse(v) ?? 1);
+                    widget.onChanged('orgCode', int.tryParse(v) ?? 50);
                   },
                 ),
               ),
@@ -306,8 +746,7 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
                     setState(() {
                       _errors['brnCd'] = v.trim().isEmpty ? 'Branch Code required' : null;
                     });
-                    widget.onChanged('brncd', int.tryParse(v) ?? 0);
-                    widget.onChanged('BRNCD', int.tryParse(v) ?? 0);
+                    widget.onChanged('brnCd', int.tryParse(v) ?? 0);
                   },
                 ),
               ),
@@ -327,8 +766,9 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
                     setState(() {
                       _errors['brnName'] = v.trim().isEmpty ? 'Branch Name required' : null;
                     });
+                    widget.onChanged('brnName', v);
                     widget.onChanged('brnname', v);
-                    widget.onChanged('BRNNAME', v);
+                    widget.onChanged('branchname', v);
                   },
                 ),
               ),
@@ -367,19 +807,21 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
                       },
                     );
                     if (picked != null) {
+                      final formattedDataDate = "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
                       const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-                      final formattedDate = '${picked.day.toString().padLeft(2, '0')}-${monthNames[picked.month - 1]}-${picked.year}';
+                      final displayDate = '${picked.day.toString().padLeft(2, '0')}-${monthNames[picked.month - 1]}-${picked.year}';
                       setState(() {
-                        _brnOpenDateCtrl.text = formattedDate;
+                        _brnOpenDateCtrl.text = displayDate;
                         _errors['openDate'] = null;
                       });
-                      widget.onChanged('opendate', formattedDate);
+                      widget.onChanged('openDate', formattedDataDate);
                     }
                   },
                   onChanged: (v) {
                     setState(() {
                       _errors['openDate'] = v.trim().isEmpty ? 'Open Date required' : null;
                     });
+                    widget.onChanged('openDate', v);
                     widget.onChanged('opendate', v);
                   },
                 ),

@@ -5,7 +5,9 @@ import '../theme.dart';
 import '../models/models.dart';
 import '../widgets/widgets.dart';
 import '../services/api_service.dart';
+import '../services/branch_api_service.dart';
 import '../data.dart';
+
 import 'branch_screen.dart';
 
 class NonTranEntryScreen extends StatefulWidget {
@@ -910,8 +912,9 @@ class _BranchListViewState extends State<_BranchListView> {
 
   Future<void> _load(int page) async {
     setState(() => _loading = true);
-    final result = await apiService.getBranches(page: page - 1, size: 10);
+    final result = await branchApiService.getBranches(page: page - 1, size: 10);
     if (mounted) {
+
       setState(() {
         _data = result?.items ?? [];
         _totalItems = result?.totalElements ?? 0;
@@ -2283,7 +2286,9 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
           ),
         );
 
+      case 'BRN-CRT':
         return BranchScreenFields(
+
           key: _branchKey,
           isViewMode: widget.isViewMode,
           initialData: widget.initialData,
