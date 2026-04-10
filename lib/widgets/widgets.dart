@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:ui' as ui;
 import 'package:google_fonts/google_fonts.dart';
+import '../services/picker.dart';
 import '../theme.dart';
 import '../services/user_service.dart';
 import '../services/api_service.dart';
@@ -564,8 +565,8 @@ class AmsTextInput extends StatelessWidget {
       onChanged: onChanged,
       onFieldSubmitted: onFieldSubmitted,
       onTap: onTap,
-      style:
-          bodyStyle(size: 13, color: readOnly ? AppColors.ink3 : AppColors.ink),
+      style: bodyStyle(
+          size: 13, color: readOnly ? AppColors.ink3 : AppColors.ink),
       decoration: InputDecoration(
         hintText: placeholder,
         hintStyle: bodyStyle(size: 13, color: AppColors.ink4),
@@ -579,18 +580,13 @@ class AmsTextInput extends StatelessWidget {
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(5),
           borderSide: BorderSide(
-              color: borderColor ??
-                  (isValid
-                      ? AppColors.green
-                      : (readOnly
-                          ? AppColors.border
-                          : const Color(0xFFD1D5DB))),
+              color: borderColor ?? (readOnly ? AppColors.border : const Color(0xFFD1D5DB)),
               width: 1.0),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(5),
-          borderSide: BorderSide(
-              color: isValid ? AppColors.green : AppColors.tBlue, width: 1.0),
+          borderSide:
+              const BorderSide(color: AppColors.tBlue, width: 1.0),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(5),
@@ -605,6 +601,127 @@ class AmsTextInput extends StatelessWidget {
           borderSide: const BorderSide(color: AppColors.border, width: 1.0),
         ),
       ),
+    );
+  }
+}
+
+// ─── FILE PICKER ──────────────────────────────────────────────
+class AmsFilePicker extends StatefulWidget {
+  final String? placeholder;
+  final String? initialValue;
+  final void Function(String fileName, Uint8List? bytes)? onFileSelected;
+  final String? errorText;
+
+  const AmsFilePicker({
+    super.key,
+    this.placeholder = 'No file chosen',
+    this.initialValue,
+    this.onFileSelected,
+    this.errorText,
+  });
+
+  @override
+  State<AmsFilePicker> createState() => _AmsFilePickerState();
+}
+
+class _AmsFilePickerState extends State<AmsFilePicker> {
+  String? _fileName;
+
+  @override
+  void initState() {
+    super.initState();
+    _fileName = widget.initialValue;
+  }
+
+  Future<void> _pickFile() async {
+    await pickNativeFile(
+      onSelected: (name, bytes) {
+        setState(() {
+          _fileName = name;
+        });
+        if (widget.onFileSelected != null) {
+          widget.onFileSelected!(name, bytes);
+        }
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(5),
+            border: Border.all(color: widget.errorText != null ? AppColors.red : const Color(0xFFD1D5DB)),
+          ),
+          child: Row(
+            children: [
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: _pickFile,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(5),
+                    bottomLeft: Radius.circular(5),
+                  ),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFF1F5F9),
+                      border: Border(right: BorderSide(color: Color(0xFFD1D5DB))),
+                    ),
+                    child: Text(
+                      'Choose File',
+                      style: bodyStyle(size: 13, weight: FontWeight.w500, color: AppColors.ink),
+                    ),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: Text(
+                    _fileName ?? widget.placeholder ?? 'No file chosen',
+                    style: bodyStyle(size: 13, color: _fileName != null ? AppColors.ink : AppColors.ink4),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ),
+              if (_fileName != null)
+                Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(20),
+                      onTap: () {
+                        setState(() {
+                          _fileName = null;
+                        });
+                        if (widget.onFileSelected != null) {
+                          widget.onFileSelected!('', null);
+                        }
+                      },
+                      child: const Padding(
+                        padding: EdgeInsets.all(4.0),
+                        child: Icon(Icons.close_rounded, size: 18, color: AppColors.red),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        if (widget.errorText != null) ...[
+          const SizedBox(height: 4),
+          Text(
+            widget.errorText!,
+            style: bodyStyle(size: 11, color: AppColors.red),
+          ),
+        ],
+      ],
     );
   }
 }
@@ -649,14 +766,13 @@ class AmsDropdown extends StatelessWidget {
         contentPadding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(5),
-          borderSide: BorderSide(
-              color: isValid ? AppColors.green : const Color(0xFFD1D5DB),
-              width: 1.0),
+          borderSide:
+              const BorderSide(color: Color(0xFFD1D5DB), width: 1.0),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(5),
-          borderSide: BorderSide(
-              color: isValid ? AppColors.green : AppColors.tBlue, width: 1.0),
+          borderSide:
+              const BorderSide(color: AppColors.tBlue, width: 1.0),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(5),

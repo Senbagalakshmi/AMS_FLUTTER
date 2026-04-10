@@ -83,7 +83,7 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
 
   Widget _buildWelcomeHeader() {
     final now = DateTime.now();
-    final dateStr = DateFormat('d MMM yyyy').format(now);
+    final dateStr = DateFormat('dd-MMM-yyyy').format(now);
     final dayStr = DateFormat('EEEE').format(now);
 
     String displayName = widget.userName ?? 'Administrator';
