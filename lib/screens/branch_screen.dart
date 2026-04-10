@@ -212,6 +212,47 @@ class _BranchScreenState extends State<BranchScreen> {
     }
   }
 
+  void _confirmDelete(Map<String, dynamic> b) async {
+    final name = b['branchname'] ?? b['brnName'] ?? b['BRNNAME'] ?? 'this branch';
+    final cd = int.tryParse((b['branchcd'] ?? b['brnCd'] ?? b['BRNCD'] ?? '0').toString()) ?? 0;
+    
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Delete Branch', style: bodyStyle(weight: FontWeight.bold)),
+        content: Text('Are you sure you want to delete "$name"?'),
+        actions: [
+          AmsButton(
+            label: 'Cancel',
+            variant: AmsButtonVariant.ghost,
+            onPressed: () => Navigator.pop(ctx, false),
+          ),
+          AmsButton(
+            label: 'Delete',
+            variant: AmsButtonVariant.danger,
+            onPressed: () => Navigator.pop(ctx, true),
+          ),
+        ],
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+
+    if (ok == true) {
+      final success = await branchApiService.deleteBranch(cd);
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Branch deleted successfully')),
+        );
+        _loadBranches(1);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Delete operation failed.')),
+        );
+      }
+    }
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -356,7 +397,14 @@ class _BranchScreenState extends State<BranchScreen> {
                     color: AppColors.tBlue,
                     bg: Colors.white,
                     onTap: () => _enterViewMode(b, viewOnly: false)),
+                const SizedBox(width: 8),
+                _actionIcon(
+                    icon: Icons.delete_outline_rounded,
+                    color: AppColors.red,
+                    bg: AppColors.redLt,
+                    onTap: () => _confirmDelete(b)),
               ]),
+
             ],
           ),
         );
