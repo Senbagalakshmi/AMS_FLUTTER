@@ -41,6 +41,49 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
   final _brnAddr5Ctrl = TextEditingController();
   final _brnTelCtrl = TextEditingController();
   final _brnEmailCtrl = TextEditingController();
+  final _brnStateCtrl = TextEditingController();
+  final _brnDistrictCtrl = TextEditingController();
+
+  static const Map<String, Map<String, String>> _countryInfo = {
+    'India': {'flag': '🇮🇳', 'code': '+91'},
+    'USA': {'flag': '🇺🇸', 'code': '+1'},
+    'UK': {'flag': '🇬🇧', 'code': '+44'},
+    'Singapore': {'flag': '🇸🇬', 'code': '+65'},
+    'Germany': {'flag': '🇩🇪', 'code': '+49'},
+    'Japan': {'flag': '🇯🇵', 'code': '+81'},
+    'Canada': {'flag': '🇨🇦', 'code': '+1'},
+    'Australia': {'flag': '🇦🇺', 'code': '+61'},
+  };
+
+  final Map<String, List<String>> _stateDistricts = {
+    'Tamil Nadu': ['Chennai', 'Coimbatore', 'Madurai', 'Salem', 'Trichy'],
+    'Karnataka': ['Bangalore', 'Mysore', 'Hubli', 'Mangalore'],
+    'Maharashtra': ['Mumbai', 'Pune', 'Nagpur', 'Nashik'],
+    'Kerala': ['Kochi', 'Thiruvananthapuram', 'Kozhikode'],
+    'New York': ['Manhattan', 'Brooklyn', 'Queens'],
+  };
+
+  final Map<String, String> _pincodeMap = {
+    'Chennai': '600001',
+    'Coimbatore': '641001',
+    'Madurai': '625001',
+    'Salem': '636001',
+    'Trichy': '620001',
+    'Bangalore': '560001',
+    'Mysore': '570001',
+    'Hubli': '580001',
+    'Mangalore': '575001',
+    'Mumbai': '400001',
+    'Pune': '411001',
+    'Nagpur': '440001',
+    'Nashik': '422001',
+    'Kochi': '682001',
+    'Thiruvananthapuram': '695001',
+    'Kozhikode': '673001',
+    'Manhattan': '10001',
+    'Brooklyn': '11201',
+    'Queens': '11101',
+  };
 
   final Map<String, String?> _errors = {};
 
@@ -80,6 +123,8 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
     _brnAddr5Ctrl.text = (data['addrline5'] ?? data['ADDRLINE5'] ?? '').toString();
     _brnTelCtrl.text = (data['telephone'] ?? data['TELEPHONE'] ?? '').toString();
     _brnEmailCtrl.text = (data['email'] ?? data['EMAIL'] ?? '').toString();
+    _brnStateCtrl.text = (data['statecode'] ?? data['STATECODE'] ?? '').toString();
+    _brnDistrictCtrl.text = (data['districtcode'] ?? data['DISTRICTCODE'] ?? '').toString();
     
     _errors.clear();
   }
@@ -100,6 +145,8 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
     _brnAddr5Ctrl.clear();
     _brnTelCtrl.clear();
     _brnEmailCtrl.clear();
+    _brnStateCtrl.clear();
+    _brnDistrictCtrl.clear();
     _errors.clear();
   }
 
@@ -140,7 +187,69 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
     _brnAddr5Ctrl.dispose();
     _brnTelCtrl.dispose();
     _brnEmailCtrl.dispose();
+    _brnStateCtrl.dispose();
+    _brnDistrictCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _selectCountry() async {
+    if (widget.isViewMode) return;
+    final countries = _countryInfo.keys.toList();
+    final s = await showDialog<String>(
+        context: context,
+        builder: (ctx) =>
+            _SearchPicker(title: 'Select Country', items: countries));
+    if (s != null) {
+      setState(() {
+        final info = _countryInfo[s]!;
+        _brnCountryCtrl.text = "${info['flag']} $s";
+        _brnTelCtrl.text = "${info['flag']} ${info['code']} ";
+        _brnStateCtrl.clear();
+        _brnDistrictCtrl.clear();
+        _brnPinCtrl.clear();
+      });
+      widget.onChanged('country', s);
+      widget.onChanged('telephone', _brnTelCtrl.text);
+    }
+  }
+
+  Future<void> _selectState() async {
+    if (widget.isViewMode) return;
+    final s = await showDialog<String>(
+        context: context,
+        builder: (ctx) => _SearchPicker(
+            title: 'Select State', items: _stateDistricts.keys.toList()));
+    if (s != null) {
+      setState(() {
+        _brnStateCtrl.text = s;
+        _brnDistrictCtrl.clear();
+        _brnPinCtrl.clear();
+      });
+      widget.onChanged('statecode', s);
+    }
+  }
+
+  Future<void> _selectDistrict() async {
+    if (widget.isViewMode) return;
+    if (_brnStateCtrl.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a State first')),
+      );
+      return;
+    }
+    final s = await showDialog<String>(
+        context: context,
+        builder: (ctx) => _SearchPicker(
+            title: 'Select District',
+            items: _stateDistricts[_brnStateCtrl.text] ?? []));
+    if (s != null) {
+      setState(() {
+        _brnDistrictCtrl.text = s;
+        _brnPinCtrl.text = _pincodeMap[s] ?? '';
+      });
+      widget.onChanged('districtcode', s);
+      widget.onChanged('pincode', _brnPinCtrl.text);
+    }
   }
 
   @override
@@ -316,34 +425,47 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
               AmsField(
                 label: 'COUNTRY',
                 labelAbove: true,
-                tooltip: 'Country code.',
+                tooltip: 'Select country.',
                 child: AmsTextInput(
                   controller: _brnCountryCtrl,
-                  readOnly: widget.isViewMode,
-                  placeholder: 'e.g. IN',
-                  inputFormatters: [LengthLimitingTextInputFormatter(2)],
-                  onChanged: (v) => widget.onChanged('country', v),
+                  readOnly: true,
+                  placeholder: 'Select Country',
+                  icon: Icons.public_rounded,
+                  onTap: _selectCountry,
                 ),
               ),
               AmsField(
-                label: 'DIVISION NAME',
+                label: 'STATE CODE',
                 labelAbove: true,
+                tooltip: 'Select state.',
                 child: AmsTextInput(
-                  controller: _brnDivCtrl,
-                  readOnly: widget.isViewMode,
-                  placeholder: 'Division Name',
-                  onChanged: (v) => widget.onChanged('divisionname', v),
+                  controller: _brnStateCtrl,
+                  readOnly: true,
+                  placeholder: 'Select State',
+                  icon: Icons.map_rounded,
+                  onTap: _selectState,
                 ),
               ),
+              AmsField(
+                label: 'DISTRICT CODE',
+                labelAbove: true,
+                tooltip: 'Select district.',
+                child: AmsTextInput(
+                  controller: _brnDistrictCtrl,
+                  readOnly: true,
+                  placeholder: 'Select District',
+                  icon: Icons.location_city_rounded,
+                  onTap: _selectDistrict,
+                ),
+              ),
+             
               AmsField(
                 label: 'PINCODE',
                 labelAbove: true,
                 child: AmsTextInput(
                   controller: _brnPinCtrl,
-                  readOnly: widget.isViewMode,
-                  keyboardType: TextInputType.number,
-                  placeholder: 'e.g. 600001',
-                  onChanged: (v) => widget.onChanged('pincode', v),
+                  readOnly: true,
+                  placeholder: 'Auto-populated',
                 ),
               ),
               AmsField(
@@ -424,6 +546,56 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _SearchPicker extends StatefulWidget {
+  final String title;
+  final List<String> items;
+  const _SearchPicker({required this.title, required this.items});
+  @override
+  State<_SearchPicker> createState() => _SearchPickerState();
+}
+
+class _SearchPickerState extends State<_SearchPicker> {
+  String _query = '';
+  @override
+  Widget build(BuildContext context) {
+    final filtered = widget.items
+        .where((i) => i.toLowerCase().contains(_query.toLowerCase()))
+        .toList();
+    return AlertDialog(
+      title: Text(widget.title, style: bodyStyle(weight: FontWeight.bold)),
+      content: SizedBox(
+          width: 400,
+          height: 500,
+          child: Column(children: [
+            AmsTextInput(
+                placeholder: 'Search...',
+                icon: Icons.search,
+                borderColor: AppColors.tBlue,
+                onChanged: (v) => setState(() => _query = v)),
+            const SizedBox(height: 16),
+            Expanded(
+                child: filtered.isEmpty
+                    ? Center(
+                        child: Text('No results',
+                            style: bodyStyle(color: AppColors.ink4)))
+                    : ListView.builder(
+                        itemCount: filtered.length,
+                        itemBuilder: (ctx, idx) => ListTile(
+                            title: Text(filtered[idx], style: bodyStyle()),
+                            onTap: () =>
+                                Navigator.pop(context, filtered[idx])))),
+          ])),
+      actions: [
+        AmsButton(
+            label: 'Close',
+            variant: AmsButtonVariant.ghost,
+            onPressed: () => Navigator.pop(context))
+      ],
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     );
   }
 }
