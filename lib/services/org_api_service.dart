@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'api_service.dart';
 
 class OrgApiService {
-  static const String _path = '/organisation';
+  static const String _path = '/organisations';
 
   Future<PaginatedResult<Map<String, dynamic>>?> getAllOrganisations(
       {int page = 0, int size = 10}) async {
