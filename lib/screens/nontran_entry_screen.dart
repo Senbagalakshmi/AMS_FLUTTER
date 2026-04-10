@@ -2282,7 +2282,8 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
             ],
           ),
         );
-        return BranchScreenFields(
+
+        return BranchScreenFields(
           key: _branchKey,
           isViewMode: widget.isViewMode,
           initialData: widget.initialData,
@@ -2291,8 +2292,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
           onStatusChanged: (v) => setState(() => _pgmStatus = v),
           parentContext: context,
         );
->>>>>>> Stashed changes
-        );
+
 
       case 'AUTHCTL':
         return Container(

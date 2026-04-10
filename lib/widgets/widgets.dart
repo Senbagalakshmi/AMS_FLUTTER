@@ -104,6 +104,7 @@ class AmsButton extends StatefulWidget {
   final bool small;
   final IconData? icon;
   final Color? backgroundColor;
+  final bool loading;
 
   const AmsButton({
     super.key,
@@ -114,6 +115,7 @@ class AmsButton extends StatefulWidget {
     this.small = false,
     this.icon,
     this.backgroundColor,
+    this.loading = false,
   });
 
   @override
@@ -182,7 +184,7 @@ class _AmsButtonState extends State<AmsButton> {
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
       child: GestureDetector(
-        onTap: widget.onPressed,
+        onTap: widget.loading ? null : widget.onPressed,
         child: AnimatedScale(
           scale: _isHovered ? 1.02 : 1.0,
           duration: const Duration(milliseconds: 150),
@@ -212,10 +214,21 @@ class _AmsButtonState extends State<AmsButton> {
                   if ((widget.variant == AmsButtonVariant.primary ||
                           widget.variant == AmsButtonVariant.teal ||
                           widget.variant == AmsButtonVariant.green) &&
-                      !widget.small) ...[
+                      !widget.small && !widget.loading) ...[
                     const SizedBox(width: 8),
                     Icon(Icons.arrow_forward_rounded,
                         size: fSize + 2, color: fg),
+                  ],
+                  if (widget.loading) ...[
+                    const SizedBox(width: 8),
+                    SizedBox(
+                      width: fSize + 2,
+                      height: fSize + 2,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(fg),
+                      ),
+                    ),
                   ],
                 ],
               ),
