@@ -5,6 +5,7 @@ import '../widgets/widgets.dart';
 import '../services/branch_api_service.dart';
 import '../services/api_service.dart';
 import 'package:intl/intl.dart';
+
 class BranchScreen extends StatefulWidget {
   final VoidCallback onBack;
   final VoidCallback onBackToModule;
@@ -33,7 +34,8 @@ class _BranchScreenState extends State<BranchScreen> {
   int _pgmStatus = 1;
   bool _isSaving = false;
   final Map<String, dynamic> _formData = {};
-  final GlobalKey<BranchScreenFieldsState> _fieldsKey = GlobalKey<BranchScreenFieldsState>();
+  final GlobalKey<BranchScreenFieldsState> _fieldsKey =
+      GlobalKey<BranchScreenFieldsState>();
 
   @override
   void initState() {
@@ -64,7 +66,8 @@ class _BranchScreenState extends State<BranchScreen> {
       _formData['status'] = record['status'] ?? 1;
       _formData['address'] = record['address'] ?? '';
       _formData['country'] = record['country'] ?? '';
-      _formData['divisionName'] = record['divisionName'] ?? record['divisionname'] ?? '';
+      _formData['divisionName'] =
+          record['divisionName'] ?? record['divisionname'] ?? '';
       _formData['pincode'] = record['pincode'] ?? '';
       _formData['addrline1'] = record['addrline1'] ?? '';
       _formData['addrline2'] = record['addrline2'] ?? '';
@@ -74,11 +77,13 @@ class _BranchScreenState extends State<BranchScreen> {
       _formData['telephone'] = record['telephone'] ?? '';
       _formData['email'] = record['email'] ?? '';
       _formData['eUser'] = record['eUser'] ?? record['euser'] ?? 'ADMIN';
-      _formData['eDate'] = record['eDate'] ?? record['edate'] ?? DateFormat('yyyy-MM-dd').format(DateTime.now());
+      _formData['eDate'] = record['eDate'] ??
+          record['edate'] ??
+          DateFormat('yyyy-MM-dd').format(DateTime.now());
       _formData['headBrn'] = record['headBrn'] ?? record['headbrn'] ?? 1;
       _formData['telephone'] = record['telephone'] ?? record['TELEPHONE'] ?? '';
       _formData['email'] = record['email'] ?? record['EMAIL'] ?? '';
-      
+
       _pgmStatus = int.tryParse(_formData['status'].toString()) ?? 1;
       _showForm = true;
       _isViewOnly = viewOnly;
@@ -90,7 +95,6 @@ class _BranchScreenState extends State<BranchScreen> {
     setState(() {
       _selectedRecord = null;
       _formData.clear();
-      // EXACT MIRROR of working Postman JSON
       _formData['orgCode'] = 50;
       _formData['brnCd'] = 0;
       _formData['brnName'] = '';
@@ -110,7 +114,7 @@ class _BranchScreenState extends State<BranchScreen> {
       _formData['eUser'] = widget.userName ?? 'ADMIN';
       _formData['eDate'] = DateFormat('yyyy-MM-dd').format(DateTime.now());
       _formData['headBrn'] = 1;
-      
+
       _pgmStatus = 1;
       _showForm = true;
       _isViewOnly = false;
@@ -124,33 +128,77 @@ class _BranchScreenState extends State<BranchScreen> {
 
     setState(() => _isSaving = true);
     try {
-      // Final key safety check
       if (_formData['brnCd'] == null || _formData['brnCd'] == 0) {
         final val = _fieldsKey.currentState?.getBranchCode();
         if (val != null) {
           _formData['brnCd'] = val;
         }
       }
-      
-      // Ensure eUser is set
+
       _formData['eUser'] = widget.userName ?? 'ADMIN';
       _formData['eDate'] = DateFormat('yyyy-MM-dd').format(DateTime.now());
       _formData['headBrn'] = 1;
       _formData['orgCode'] = 50;
 
-      final success = _isEditMode 
-        ? await branchApiService.updateBranch(_formData)
-        : await branchApiService.createBranch(_formData);
+      final success = _isEditMode
+          ? await branchApiService.updateBranch(_formData)
+          : await branchApiService.createBranch(_formData);
 
       if (success) {
+        final savedRecord = {
+          'brnCd': _formData['brnCd'],
+          'branchcd': _formData['brnCd'],
+          'brnName': _formData['brnName'],
+          'branchname': _formData['brnName'],
+          'brnname': _formData['brnName'],
+          'status': _formData['status'],
+          'orgCode': _formData['orgCode'],
+          'orgcode': _formData['orgCode'],
+          'openDate': _formData['openDate'],
+          'opendate': _formData['openDate'],
+          'address': _formData['address'],
+          'country': _formData['country'],
+          'divisionName': _formData['divisionName'],
+          'divisionname': _formData['divisionName'],
+          'pincode': _formData['pincode'],
+          'addrline1': _formData['addrline1'],
+          'addrline2': _formData['addrline2'],
+          'addrline3': _formData['addrline3'],
+          'addrline4': _formData['addrline4'],
+          'addrline5': _formData['addrline5'],
+          'telephone': _formData['telephone'],
+          'TELEPHONE': _formData['telephone'],
+          'email': _formData['email'],
+          'EMAIL': _formData['email'],
+          'eUser': _formData['eUser'],
+          'euser': _formData['eUser'],
+          'eDate': _formData['eDate'],
+          'edate': _formData['eDate'],
+          'headBrn': _formData['headBrn'],
+          'headbrn': _formData['headBrn'],
+        };
+
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Branch ${_isEditMode ? 'updated' : 'created'} successfully')),
+          SnackBar(
+              content: Text(
+                  'Branch ${_isEditMode ? 'updated' : 'created'} successfully')),
         );
-        setState(() => _showForm = false);
-        _loadBranches(1);
+
+        await _loadBranches(1);
+
+        if (mounted) {
+          setState(() {
+            final exists = _branches.any((b) =>
+                (b['brnCd'] ?? b['brncd'] ?? b['branchcd'])?.toString() ==
+                savedRecord['brnCd']?.toString());
+            if (!exists) _branches.insert(0, savedRecord);
+            _showForm = false;
+          });
+        }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Operation failed. Please check field values.')),
+          const SnackBar(
+              content: Text('Operation failed. Please check field values.')),
         );
       }
     } catch (e) {
@@ -196,15 +244,20 @@ class _BranchScreenState extends State<BranchScreen> {
         HeaderBreadcrumb(label: 'Masters', onTap: widget.onBackToModule),
         HeaderBreadcrumb(label: 'Branch'),
       ],
-      onBack: _showForm ? () => setState(() => _showForm = false) : widget.onBackToModule,
+      onBack: _showForm
+          ? () => setState(() => _showForm = false)
+          : widget.onBackToModule,
     );
   }
 
   Widget _buildFullListView() {
     final filtered = _branches.where((b) {
       final q = _searchQuery.toLowerCase();
-      return (b['branchname'] ?? b['brnName'] ?? '').toString().toLowerCase().contains(q) ||
-             (b['branchcd'] ?? b['brnCd'] ?? '').toString().contains(q);
+      return (b['branchname'] ?? b['brnName'] ?? '')
+              .toString()
+              .toLowerCase()
+              .contains(q) ||
+          (b['branchcd'] ?? b['brnCd'] ?? '').toString().contains(q);
     }).toList();
 
     return Container(
@@ -237,9 +290,9 @@ class _BranchScreenState extends State<BranchScreen> {
             ),
           ),
           Expanded(
-            child: _isLoading 
-              ? const AmsListSkeleton() 
-              : _buildListTable(filtered),
+            child: _isLoading
+                ? const AmsListSkeleton()
+                : _buildListTable(filtered),
           ),
           _buildPaginationFooter(filtered.length),
         ],
@@ -254,7 +307,8 @@ class _BranchScreenState extends State<BranchScreen> {
       separatorBuilder: (_, __) => const SizedBox(height: 12),
       itemBuilder: (ctx, idx) {
         final b = items[idx];
-        final bName = b['branchname'] ?? b['brnName'] ?? b['BRNNAME'] ?? 'Unknown';
+        final bName =
+            b['branchname'] ?? b['brnName'] ?? b['BRNNAME'] ?? 'Unknown';
         final bCd = b['branchcd'] ?? b['brnCd'] ?? b['BRNCD'] ?? '—';
         return Container(
           padding: const EdgeInsets.all(16),
@@ -267,19 +321,27 @@ class _BranchScreenState extends State<BranchScreen> {
               CircleAvatar(
                   backgroundColor: AppColors.nTealLt,
                   child: Text(bName.isNotEmpty ? bName[0] : 'B',
-                      style: const TextStyle(color: AppColors.nTeal, fontWeight: FontWeight.bold))),
+                      style: const TextStyle(
+                          color: AppColors.nTeal,
+                          fontWeight: FontWeight.bold))),
               const SizedBox(width: 16),
               Expanded(
                   child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                     Text(bName, style: bodyStyle(weight: FontWeight.bold)),
-                    Text('Code: $bCd', style: bodyStyle(color: AppColors.ink3, size: 12)),
+                    Text('Code: $bCd',
+                        style: bodyStyle(color: AppColors.ink3, size: 12)),
                   ])),
               AmsBadge(
-                label: (b['status']?.toString() == '0') ? 'Disabled' : 'Enabled',
-                color: (b['status']?.toString() == '0') ? AppColors.red : AppColors.green,
-                background: (b['status']?.toString() == '0') ? AppColors.redLt : AppColors.greenLt,
+                label:
+                    (b['status']?.toString() == '0') ? 'Disabled' : 'Enabled',
+                color: (b['status']?.toString() == '0')
+                    ? AppColors.red
+                    : AppColors.green,
+                background: (b['status']?.toString() == '0')
+                    ? AppColors.redLt
+                    : AppColors.greenLt,
               ),
               const SizedBox(width: 24),
               Row(children: [
@@ -316,16 +378,19 @@ class _BranchScreenState extends State<BranchScreen> {
                 color: AppColors.sidebar,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(8))),
             child: Row(children: [
-              Icon(_isViewOnly ? Icons.visibility : Icons.add_circle, color: Colors.white, size: 20),
+              Icon(_isViewOnly ? Icons.visibility : Icons.add_circle,
+                  color: Colors.white, size: 20),
               const SizedBox(width: 12),
               Text(
                   _isViewOnly
                       ? 'Branch Details'
                       : (_isEditMode ? 'Edit Branch' : 'Create Branch'),
-                  style: bodyStyle(color: Colors.white, weight: FontWeight.w700)),
+                  style:
+                      bodyStyle(color: Colors.white, weight: FontWeight.w700)),
               const Spacer(),
               IconButton(
-                  icon: const Icon(Icons.keyboard_arrow_up_rounded, color: Colors.white),
+                  icon: const Icon(Icons.keyboard_arrow_up_rounded,
+                      color: Colors.white),
                   onPressed: () => setState(() => _showForm = false)),
             ]),
           ),
@@ -383,7 +448,11 @@ class _BranchScreenState extends State<BranchScreen> {
     ]);
   }
 
-  Widget _actionIcon({required IconData icon, required Color color, required Color bg, VoidCallback? onTap}) {
+  Widget _actionIcon(
+      {required IconData icon,
+      required Color color,
+      required Color bg,
+      VoidCallback? onTap}) {
     return InkWell(
         onTap: onTap,
         child: Container(
@@ -398,16 +467,19 @@ class _BranchScreenState extends State<BranchScreen> {
   Widget _buildPaginationFooter(int total) {
     return Padding(
         padding: const EdgeInsets.all(16),
-        child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          Text('Showing 1–$total of $total', style: bodyStyle(size: 13, color: AppColors.ink3)),
+        child:
+            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+          Text('Showing 1–$total of $total',
+              style: bodyStyle(size: 13, color: AppColors.ink3)),
           Row(children: [
-            IconButton(icon: const Icon(Icons.chevron_left_rounded), onPressed: null),
-            IconButton(icon: const Icon(Icons.chevron_right_rounded), onPressed: null)
+            IconButton(
+                icon: const Icon(Icons.chevron_left_rounded), onPressed: null),
+            IconButton(
+                icon: const Icon(Icons.chevron_right_rounded), onPressed: null)
           ]),
         ]));
   }
 }
-
 
 class BranchScreenFields extends StatefulWidget {
   final bool isViewMode;
@@ -521,38 +593,67 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
       clear();
       return;
     }
-    
-    _brnOrgCtrl.text = (data['orgcode'] ?? data['ORGCODE'] ?? '1').toString();
-    _brnCdCtrl.text = (data['branchcd'] ?? data['brncd'] ?? data['BRNCD'] ?? '').toString();
-    _brnNameCtrl.text = (data['branchname'] ?? data['brnname'] ?? data['BRNNAME'] ?? '').toString();
-    _brnOpenDateCtrl.text = (data['opendate'] ?? data['OPENDATE'] ?? '').toString();
-    _brnAddressCtrl.text = (data['address'] ?? data['ADDRESS'] ?? '').toString();
+
+    _brnOrgCtrl.text =
+        (data['orgcode'] ?? data['ORGCODE'] ?? data['orgCode'] ?? '1')
+            .toString();
+    _brnCdCtrl.text = (data['branchcd'] ??
+            data['brncd'] ??
+            data['BRNCD'] ??
+            data['brnCd'] ??
+            '')
+        .toString();
+    _brnNameCtrl.text = (data['branchname'] ??
+            data['brnname'] ??
+            data['BRNNAME'] ??
+            data['brnName'] ??
+            '')
+        .toString();
+    _brnOpenDateCtrl.text =
+        (data['opendate'] ?? data['OPENDATE'] ?? data['openDate'] ?? '')
+            .toString();
+    _brnAddressCtrl.text =
+        (data['address'] ?? data['ADDRESS'] ?? '').toString();
+
     String countryVal = (data['country'] ?? data['COUNTRY'] ?? '').toString();
     if (_countryInfo.values.any((e) => e['iso'] == countryVal)) {
-      final entry = _countryInfo.entries.firstWhere((e) => e.value['iso'] == countryVal);
+      final entry =
+          _countryInfo.entries.firstWhere((e) => e.value['iso'] == countryVal);
       _brnCountryCtrl.text = "${entry.value['flag']} ${entry.key}";
     } else {
       _brnCountryCtrl.text = countryVal;
     }
 
-    _brnDivCtrl.text = (data['divisionname'] ?? data['DIVISIONNAME'] ?? '').toString();
+    _brnDivCtrl.text = (data['divisionname'] ??
+            data['DIVISIONNAME'] ??
+            data['divisionName'] ??
+            '')
+        .toString();
     _brnPinCtrl.text = (data['pincode'] ?? data['PINCODE'] ?? '').toString();
-    _brnAddr1Ctrl.text = (data['addrline1'] ?? data['ADDRLINE1'] ?? '').toString();
-    _brnAddr2Ctrl.text = (data['addrline2'] ?? data['ADDRLINE2'] ?? '').toString();
-    _brnAddr3Ctrl.text = (data['addrline3'] ?? data['ADDRLINE3'] ?? '').toString();
-    _brnAddr4Ctrl.text = (data['addrline4'] ?? data['ADDRLINE4'] ?? '').toString();
-    _brnAddr5Ctrl.text = (data['addrline5'] ?? data['ADDRLINE5'] ?? '').toString();
-    _brnTelCtrl.text = (data['telephone'] ?? data['TELEPHONE'] ?? '').toString();
+    _brnAddr1Ctrl.text =
+        (data['addrline1'] ?? data['ADDRLINE1'] ?? '').toString();
+    _brnAddr2Ctrl.text =
+        (data['addrline2'] ?? data['ADDRLINE2'] ?? '').toString();
+    _brnAddr3Ctrl.text =
+        (data['addrline3'] ?? data['ADDRLINE3'] ?? '').toString();
+    _brnAddr4Ctrl.text =
+        (data['addrline4'] ?? data['ADDRLINE4'] ?? '').toString();
+    _brnAddr5Ctrl.text =
+        (data['addrline5'] ?? data['ADDRLINE5'] ?? '').toString();
+    _brnTelCtrl.text =
+        (data['telephone'] ?? data['TELEPHONE'] ?? '').toString();
     _brnEmailCtrl.text = (data['email'] ?? data['EMAIL'] ?? '').toString();
 
     String stateVal = (data['statecode'] ?? data['STATECODE'] ?? '').toString();
     if (_stateCodes.values.contains(stateVal)) {
-      _brnStateCtrl.text = _stateCodes.entries.firstWhere((e) => e.value == stateVal).key;
+      _brnStateCtrl.text =
+          _stateCodes.entries.firstWhere((e) => e.value == stateVal).key;
     } else {
       _brnStateCtrl.text = stateVal;
     }
-    _brnDistrictCtrl.text = (data['districtcode'] ?? data['DISTRICTCODE'] ?? '').toString();
-    
+    _brnDistrictCtrl.text =
+        (data['districtcode'] ?? data['DISTRICTCODE'] ?? '').toString();
+
     _errors.clear();
   }
 
@@ -706,7 +807,7 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
         children: [
           AmsFormGrid(
             children: [
-               AmsField(
+              AmsField(
                 label: 'ORG CODE',
                 required: true,
                 labelAbove: true,
@@ -719,10 +820,12 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   textInputAction: TextInputAction.next,
                   errorText: _errors['orgCode'],
-                  isValid: _errors['orgCode'] == null && _brnOrgCtrl.text.isNotEmpty,
+                  isValid:
+                      _errors['orgCode'] == null && _brnOrgCtrl.text.isNotEmpty,
                   onChanged: (v) {
                     setState(() {
-                      _errors['orgCode'] = v.trim().isEmpty ? 'Org Code required' : null;
+                      _errors['orgCode'] =
+                          v.trim().isEmpty ? 'Org Code required' : null;
                     });
                     widget.onChanged('orgCode', int.tryParse(v) ?? 50);
                   },
@@ -741,10 +844,12 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
                   placeholder: 'e.g. 101',
                   textInputAction: TextInputAction.next,
                   errorText: _errors['brnCd'],
-                  isValid: _errors['brnCd'] == null && _brnCdCtrl.text.isNotEmpty,
+                  isValid:
+                      _errors['brnCd'] == null && _brnCdCtrl.text.isNotEmpty,
                   onChanged: (v) {
                     setState(() {
-                      _errors['brnCd'] = v.trim().isEmpty ? 'Branch Code required' : null;
+                      _errors['brnCd'] =
+                          v.trim().isEmpty ? 'Branch Code required' : null;
                     });
                     widget.onChanged('brnCd', int.tryParse(v) ?? 0);
                   },
@@ -761,10 +866,12 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
                   placeholder: 'e.g. Main Street Branch',
                   textInputAction: TextInputAction.next,
                   errorText: _errors['brnName'],
-                  isValid: _errors['brnName'] == null && _brnNameCtrl.text.isNotEmpty,
+                  isValid: _errors['brnName'] == null &&
+                      _brnNameCtrl.text.isNotEmpty,
                   onChanged: (v) {
                     setState(() {
-                      _errors['brnName'] = v.trim().isEmpty ? 'Branch Name required' : null;
+                      _errors['brnName'] =
+                          v.trim().isEmpty ? 'Branch Name required' : null;
                     });
                     widget.onChanged('brnName', v);
                     widget.onChanged('brnname', v);
@@ -783,7 +890,8 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
                   icon: Icons.calendar_today_outlined,
                   placeholder: 'e.g. 01-Jan-2026',
                   errorText: _errors['openDate'],
-                  isValid: _errors['openDate'] == null && _brnOpenDateCtrl.text.isNotEmpty,
+                  isValid: _errors['openDate'] == null &&
+                      _brnOpenDateCtrl.text.isNotEmpty,
                   onTap: () async {
                     if (widget.isViewMode) return;
                     final picked = await showDatePicker(
@@ -807,9 +915,24 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
                       },
                     );
                     if (picked != null) {
-                      final formattedDataDate = "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
-                      const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-                      final displayDate = '${picked.day.toString().padLeft(2, '0')}-${monthNames[picked.month - 1]}-${picked.year}';
+                      final formattedDataDate =
+                          "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
+                      const monthNames = [
+                        "Jan",
+                        "Feb",
+                        "Mar",
+                        "Apr",
+                        "May",
+                        "Jun",
+                        "Jul",
+                        "Aug",
+                        "Sep",
+                        "Oct",
+                        "Nov",
+                        "Dec"
+                      ];
+                      final displayDate =
+                          '${picked.day.toString().padLeft(2, '0')}-${monthNames[picked.month - 1]}-${picked.year}';
                       setState(() {
                         _brnOpenDateCtrl.text = displayDate;
                         _errors['openDate'] = null;
@@ -819,7 +942,8 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
                   },
                   onChanged: (v) {
                     setState(() {
-                      _errors['openDate'] = v.trim().isEmpty ? 'Open Date required' : null;
+                      _errors['openDate'] =
+                          v.trim().isEmpty ? 'Open Date required' : null;
                     });
                     widget.onChanged('openDate', v);
                     widget.onChanged('opendate', v);
@@ -833,11 +957,15 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
                 tooltip: 'Enable or disable this branch.',
                 child: widget.isViewMode
                     ? AmsTextInput(
-                        initialValue: widget.pgmStatus == 1 ? '1 - Enable' : '0 - Disable',
+                        initialValue: widget.pgmStatus == 1
+                            ? '1 - Enable'
+                            : '0 - Disable',
                         readOnly: true,
                       )
                     : AmsDropdown(
-                        initialValue: widget.pgmStatus == 1 ? '1 - Enable' : '0 - Disable',
+                        initialValue: widget.pgmStatus == 1
+                            ? '1 - Enable'
+                            : '0 - Disable',
                         items: const ['1 - Enable', '0 - Disable'],
                         onChanged: (v) {
                           final st = v?.startsWith('1') == true ? 1 : 0;
@@ -853,7 +981,7 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
           const SizedBox(height: 16),
           AmsFormGrid(
             children: [
-               AmsField(
+              AmsField(
                 label: 'ADDRESS',
                 labelAbove: true,
                 tooltip: 'Full address block.',
@@ -900,7 +1028,6 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
                   onTap: _selectDistrict,
                 ),
               ),
-             
               AmsField(
                 label: 'PINCODE',
                 labelAbove: true,
