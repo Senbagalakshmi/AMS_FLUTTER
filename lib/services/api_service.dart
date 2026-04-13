@@ -154,7 +154,7 @@ class ApiService {
       {int page = 0, int size = 10}) async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/roles?page=$page&size=$size'),
+        Uri.parse('$baseUrl/access?page=$page&size=$size'),
         headers: _headers,
       );
 
@@ -332,7 +332,7 @@ class ApiService {
   Future<bool> createRole(Map<String, dynamic> data) async {
     try {
       final res = await http.post(
-        Uri.parse('$baseUrl/roles'),
+        Uri.parse('$baseUrl/access'),
         headers: _headers,
         body: jsonEncode(data),
       );
@@ -550,6 +550,18 @@ class ApiService {
       return res.statusCode == 200;
     } catch (e) {
       print("deleteGlMaster error: $e");
+      return false;
+    }
+  }
+
+  Future<bool> deleteAccess(int orgCode, int accessCd) async {
+    try {
+      final res = await http.delete(
+        Uri.parse('$baseUrl/access/$orgCode/$accessCd'),
+        headers: _headers,
+      );
+      return res.statusCode == 200;
+    } catch (e) {
       return false;
     }
   }
