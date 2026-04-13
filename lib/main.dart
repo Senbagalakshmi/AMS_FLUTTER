@@ -4,6 +4,7 @@ import 'screens/gl_allowed_branch_screen.dart';
 import 'screens/gl_allowed_currency_screen.dart';
 import 'services/api_service.dart';
 import 'services/gl_api_service.dart';
+import 'services/branch_api_service.dart';
 import 'theme.dart';
 import 'data.dart';
 import 'models/models.dart';
@@ -22,6 +23,7 @@ import 'screens/auth_config_screen.dart';
 import 'screens/modal_queue_direct.dart';
 import 'screens/menu_screen.dart';
 import 'screens/organisation_screen.dart';
+import 'screens/branch_screen.dart';
 
 void main() {
   runApp(const AmsApp());
@@ -204,7 +206,7 @@ class _AmsRootState extends State<AmsRoot> {
     } else if (prog == 'PROG-CRT') {
       success = await apiService.createProgramMaster(data);
     } else if (prog == 'BRN-CRT') {
-      success = await apiService.createBranch(data);
+      success = await branchApiService.createBranch(data);
     } else if (prog == 'AUTHCTL') {
       success = await apiService.createAuthConfig(data);
     } else {
@@ -458,6 +460,12 @@ class _AmsRootState extends State<AmsRoot> {
           );
         } else if (_state.selectedProg == 'ORG-CRT') {
           body = OrganisationScreen(
+            onBack: () => _navigate('list'),
+            onBackToModule: () => _handleProceed('MASTERS'),
+            userName: _state.userName,
+          );
+        } else if (_state.selectedProg == 'BRN-CRT') {
+          body = BranchScreen(
             onBack: () => _navigate('list'),
             onBackToModule: () => _handleProceed('MASTERS'),
             userName: _state.userName,

@@ -5,7 +5,9 @@ import '../theme.dart';
 import '../models/models.dart';
 import '../widgets/widgets.dart';
 import '../services/api_service.dart';
+import '../services/branch_api_service.dart';
 import '../data.dart';
+
 import 'branch_screen.dart';
 
 class NonTranEntryScreen extends StatefulWidget {
@@ -62,7 +64,40 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
   final GlobalKey<DynamicNTFieldsState> _fieldsKey =
       GlobalKey<DynamicNTFieldsState>();
 
-  void _doSubmit() {
+  Future<void> _handleDeleteAccess(BuildContext context, Map<String, dynamic> record) async {
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Delete Access', style: bodyStyle(weight: FontWeight.bold)),
+        content: Text('Are you sure you want to delete this record? This action cannot be undone.', style: bodyStyle()),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('Cancel', style: bodyStyle(color: AppColors.ink3))),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true), 
+            child: Text('Delete', style: bodyStyle(color: AppColors.red, weight: FontWeight.bold))
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      final orgCode = record['orgCode'] ?? record['orgcode'] ?? 50;
+      final accessCd = record['accessCd'] ?? record['accesscd'] ?? 0;
+      final success = await apiService.deleteAccess(orgCode is int ? orgCode : 50, accessCd is int ? accessCd : 0);
+      
+      if (success) {
+        showAmsSnack(context, 'Record deleted successfully', icon: '✅');
+        // We need to refresh the list. Since _RoleListView has its own state, 
+        // the easiest way is a small setState to trigger rebuild of the whole screen 
+        // which resets the list view or use a key.
+        setState(() {}); 
+      } else {
+        showAmsSnack(context, 'Failed to delete record', icon: '❌');
+      }
+    }
+  }
+
+  void _doSubmit() async {
     if (_selProg == null) {
       showAmsSnack(context, 'Please select a program first.',
           icon: '⚠', type: 'w');
@@ -93,6 +128,7 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
               : 1),
       // For ROLE-CRT: default all access fields to 0 if user never touched the toggle
       if (_selProg == 'ROLE-CRT') ...{
+        'orgCode': 50,
         'viewAccess': 0,
         'authAccess': 0,
         'makerAccess': 0,
@@ -273,7 +309,12 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
                           return _UserListView(onView: handleView);
                         }
                         if (isRoleScreenList) {
-                          return _RoleListView(onView: handleView);
+                          // return _RoleListView(onView: handleView);
+                          return _RoleListView(
+                            onView: handleView,
+                            onEdit: handleView, // Edit uses the same form logic
+                            onDelete: (rec) => _handleDeleteAccess(context, rec),
+                          );
                         }
                         if (isUserRoleScreenList) {
                           return _UserRoleListView(onView: handleView);
@@ -489,7 +530,10 @@ class _UserListViewState extends State<_UserListView> {
 
 class _RoleListView extends StatefulWidget {
   final void Function(Map<String, dynamic>)? onView;
-  const _RoleListView({this.onView});
+  // const _RoleListView({this.onView});
+  final void Function(Map<String, dynamic>)? onEdit;
+  final void Function(Map<String, dynamic>)? onDelete;
+  const _RoleListView({this.onView, this.onEdit, this.onDelete});
 
   @override
   State<_RoleListView> createState() => _RoleListViewState();
@@ -505,6 +549,8 @@ class _RoleListViewState extends State<_RoleListView> {
     super.initState();
     _loadRoles(1);
   }
+
+  String _searchQuery = '';
 
   Future<void> _loadRoles(int page) async {
     setState(() => _loading = true);
@@ -524,53 +570,150 @@ class _RoleListViewState extends State<_RoleListView> {
       return const AmsListSkeleton();
     }
 
-    return AmsPaginatedView<Map<String, dynamic>>(
-      items: _roles ?? [],
-      totalRecords: _totalItems,
-      onPageChanged: _loadRoles,
-      builder: (ctx, currentItems) => ListView.builder(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-        itemCount: currentItems.length,
-        itemBuilder: (ctx, idx) {
-          final r = currentItems[idx];
-          return AmsCard(
-            onTap: widget.onView != null ? () => widget.onView!(r) : null,
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: const BoxDecoration(
-                      color: AppColors.tBlueLt, shape: BoxShape.circle),
-                  child: Center(
-                      child: Text(
-                          (r['roleName']?.toString() ?? 'R').isEmpty
-                              ? 'R'
-                              : r['roleName'][0].toString().toUpperCase(),
-                          style: bodyStyle(
-                              weight: FontWeight.bold,
-                              color: AppColors.tBlue))),
+    final filteredItems = (_roles ?? []).where((r) {
+      if (_searchQuery.isEmpty) return true;
+      final name = (r['accessName'] ?? r['accessname'] ?? '').toString().toLowerCase();
+      final cd = (r['accessCd'] ?? r['accesscd'] ?? '').toString().toLowerCase();
+      return name.contains(_searchQuery.toLowerCase()) || cd.contains(_searchQuery.toLowerCase());
+    }).toList();
+
+    return Column(
+      children: [
+        // Premium Search Bar
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+          child: Row(
+            children: [
+              Expanded(
+                child: AmsTextInput(
+                  placeholder: 'Search Access Name or Code...',
+                  icon: Icons.search_rounded,
+                  onChanged: (v) => setState(() => _searchQuery = v),
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(r['roleName']?.toString() ?? 'Unnamed Role',
-                          style: bodyStyle(size: 15, weight: FontWeight.w600)),
-                      const SizedBox(height: 4),
-                      Text(
-                          'Type: ${r['roleType'] ?? "—"}  |  Subtype: ${r['roleSubtype'] ?? "—"}',
-                          style: bodyStyle(color: AppColors.ink3)),
-                    ],
+              ),
+              const SizedBox(width: 12),
+              Material(
+                color: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  side: const BorderSide(color: AppColors.border),
+                ),
+                child: InkWell(
+                  onTap: () => _loadRoles(1),
+                  borderRadius: BorderRadius.circular(8),
+                  child: const Padding(
+                    padding: EdgeInsets.all(10),
+                    child: Icon(Icons.refresh_rounded, size: 20, color: AppColors.ink2),
                   ),
                 ),
-                AmsBadge(label: 'Role ${r['roleCd'] ?? "—"}'),
-              ],
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: AmsPaginatedView<Map<String, dynamic>>(
+            items: filteredItems,
+            totalRecords: _totalItems,
+            onPageChanged: _loadRoles,
+            builder: (ctx, currentItems) => ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              itemCount: currentItems.length,
+              itemBuilder: (ctx, idx) {
+                final r = currentItems[idx];
+                final accessName = r['accessName'] ?? r['accessname'] ?? 'Unnamed Access';
+                final accessCd = r['accessCd'] ?? r['accesscd'] ?? '—';
+                
+                return AmsCard(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  child: Row(
+                    children: [
+                      // Avatar
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: AppColors.tBlueLt,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Center(
+                          child: Text(
+                            accessName.toString().isNotEmpty ? accessName.toString()[0].toUpperCase() : 'R',
+                            style: bodyStyle(weight: FontWeight.bold, color: AppColors.tBlue, size: 16),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      // Info
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(accessName.toString(), style: bodyStyle(size: 15, weight: FontWeight.w600)),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Type: ${r['accessType'] ?? r['accesstype'] ?? "—"}  |  Subtype: ${r['accessSubType'] ?? r['accesssubtype'] ?? "—"}',
+                              style: bodyStyle(color: AppColors.ink3, size: 12),
+                            ),
+                          ],
+                        ),
+                      ),
+                      // Stats
+                      AmsBadge(label: accessCd.toString(), background: AppColors.grayLt, color: AppColors.ink2),
+                      const SizedBox(width: 16),
+                      // Actions
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _ActionButton(
+                            icon: Icons.visibility_outlined,
+                            color: Colors.green,
+                            onTap: () => widget.onView?.call(r),
+                          ),
+                          const SizedBox(width: 8),
+                          _ActionButton(
+                            icon: Icons.edit_outlined,
+                            color: AppColors.tBlue,
+                            onTap: () => widget.onEdit?.call(r),
+                          ),
+                          const SizedBox(width: 8),
+                          _ActionButton(
+                            icon: Icons.delete_outline_rounded,
+                            color: Colors.red,
+                            onTap: () => widget.onDelete?.call(r),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
-          );
-        },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ActionButton extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _ActionButton({required this.icon, required this.color, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: color.withValues(alpha: 0.1),
+      borderRadius: BorderRadius.circular(8),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Icon(icon, size: 18, color: color),
+        ),
       ),
     );
   }
@@ -910,8 +1053,9 @@ class _BranchListViewState extends State<_BranchListView> {
 
   Future<void> _load(int page) async {
     setState(() => _loading = true);
-    final result = await apiService.getBranches(page: page - 1, size: 10);
+    final result = await branchApiService.getBranches(page: page - 1, size: 10);
     if (mounted) {
+
       setState(() {
         _data = result?.items ?? [];
         _totalItems = result?.totalElements ?? 0;
@@ -1032,6 +1176,8 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
 
   final _rScdCtrl = TextEditingController();
   final _rNameCtrl = TextEditingController();
+  final _rTypeCtrl = TextEditingController();
+  final _rSubtypeCtrl = TextEditingController();
 
   final _mScdCtrl = TextEditingController();
   final _mNameCtrl = TextEditingController();
@@ -1166,6 +1312,15 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
     } else if (prog == 'ROLE-CRT') {
       _rScdCtrl.text = data['rolecd']?.toString() ?? '';
       _rNameCtrl.text = data['rolename']?.toString() ?? '';
+      _uBranchCdCtrl.text = data['branchcd']?.toString() ?? '';
+      _uPictureCtrl.text = data['picture']?.toString() ?? '';
+      _gender = data['gender']?.toString();
+      _title = data['title']?.toString();
+    } else if (prog == 'ROLE-CRT') {
+      _rScdCtrl.text = data['accesscd']?.toString() ?? '';
+      _rNameCtrl.text = data['accessname']?.toString() ?? '';
+      _rTypeCtrl.text = data['accesstype']?.toString() ?? '';
+      _rSubtypeCtrl.text = data['accesssubtype']?.toString() ?? '';
     } else if (prog == 'MOD-CRT') {
       _mScdCtrl.text = (data['modcd'] ??
               data['module_id'] ??
@@ -1276,11 +1431,11 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
         }
       } else if (prog == 'ROLE-CRT') {
         if (_rScdCtrl.text.trim().isEmpty) {
-          _errors['roleCd'] = 'Role Code required';
+          _errors['accessCd'] = 'Access Code required';
           isValid = false;
         }
         if (_rNameCtrl.text.trim().isEmpty) {
-          _errors['roleName'] = 'Role Name required';
+          _errors['accessName'] = 'Access Name required';
           isValid = false;
         }
       } else if (prog == 'MOD-CRT') {
@@ -1473,32 +1628,80 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                 child: widget.isViewMode
                     ? AmsTextInput(
                         initialValue: _gender ??
-                            (data['gender']?.toString().toLowerCase().startsWith('f') == true
+                            (data['gender']
+                                        ?.toString()
+                                        .toLowerCase()
+                                        .startsWith('f') ==
+                                    true
                                 ? 'Female'
-                                : (data['gender']?.toString().toLowerCase().startsWith('o') == true
+                                : (data['gender']
+                                            ?.toString()
+                                            .toLowerCase()
+                                            .startsWith('o') ==
+                                        true
                                     ? 'Other'
                                     : 'Male')),
                         readOnly: true,
                       )
                     : AmsDropdown(
-                        initialValue: () {
-                          final g = _gender ?? data['gender']?.toString();
-                          if (g == null) return 'Male'; // Default
-                          if (g.toLowerCase().startsWith('f')) return 'Female';
-                          if (g.toLowerCase().startsWith('o')) return 'Other';
-                          return 'Male';
-                        }(),
+                        initialValue: _gender ??
+                            (data['gender']
+                                        ?.toString()
+                                        .toLowerCase()
+                                        .startsWith('f') ==
+                                    true
+                                ? 'Female'
+                                : (data['gender']
+                                            ?.toString()
+                                            .toLowerCase()
+                                            .startsWith('o') ==
+                                        true
+                                    ? 'Other'
+                                    : (data['gender'] != null
+                                        ? 'Male'
+                                        : null))),
                         items: const ['Male', 'Female', 'Other'],
                         errorText: _errors['gender'],
                         onChanged: (v) {
                           setState(() {
                             _gender = v;
-                            _errors['gender'] = v == null ? 'Gender required' : null;
+                            _errors['gender'] =
+                                v == null ? 'Gender required' : null;
                           });
-                          final code = v?.startsWith('F') == true ? 'F' : (v?.startsWith('O') == true ? 'O' : 'M');
-                          widget.onChanged('gender', code);
+                          widget.onChanged('gender', v);
                         },
                       ),
+              ),
+              AmsField(
+                label: 'Registration Date',
+                required: true,
+                labelAbove: true,
+                tooltip: 'Date when the user was registered in the system.',
+                child: AmsTextInput(
+                  controller: _uRegDateCtrl,
+                  readOnly: true,
+                  icon: Icons.calendar_today_rounded,
+                  placeholder: 'Select Date',
+                  errorText: _errors['regdate'],
+                  onTap: () async {
+                    if (widget.isViewMode) return;
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: DateTime.now(),
+                      firstDate: DateTime(1900),
+                      lastDate: DateTime(2100),
+                    );
+                    if (picked != null) {
+                      final displayFmt = DateFormat('dd-MMM-yyyy').format(picked);
+                      final isoFmt = DateFormat('yyyy-MM-dd').format(picked);
+                      setState(() {
+                        _uRegDateCtrl.text = displayFmt;
+                        _errors['regdate'] = null;
+                      });
+                      widget.onChanged('regdate', isoFmt);
+                    }
+                  },
+                ),
               ),
               AmsField(
                 label: 'Date of Birth',
@@ -1536,6 +1739,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                 required: true,
                 labelAbove: true,
                 tooltip: 'Salutation and full name of the primary contact person.',
+
                 child: Row(
                   children: [
                     Expanded(
@@ -1726,6 +1930,18 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                 ),
               ),
               AmsField(
+                label: 'Branch Code',
+                labelAbove: true,
+                tooltip: 'Associated branch code for the user.',
+                child: AmsTextInput(
+                  controller: _uBranchCdCtrl,
+                  readOnly: widget.isViewMode,
+                  placeholder: 'Branch CD',
+                  textInputAction: TextInputAction.next,
+                  onChanged: (v) => widget.onChanged('branchcd', v),
+                ),
+              ),
+              AmsField(
                 label: 'PICTURE',
                 labelAbove: true,
                 tooltip: 'User profile picture reference or URL.',
@@ -1871,47 +2087,85 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
           child: AmsFormGrid(
             children: [
               AmsField(
-                label: 'ROLECD',
+                label: 'Organization Code',
+                labelAbove: true,
+                tooltip: 'Unique organization code for this access role.',
+                child: AmsTextInput(
+                  initialValue: data['orgcode']?.toString() ?? '50',
+                  readOnly: widget.isViewMode,
+                  textInputAction: TextInputAction.next,
+                  onChanged: widget.isViewMode
+                      ? null
+                      : (v) =>
+                          widget.onChanged('orgCode', int.tryParse(v) ?? 50),
+                ),
+              ),
+              AmsField(
+                label: 'Access Code',
                 required: true,
                 labelAbove: true,
-                tooltip: 'Unique code for the new role.',
+                tooltip: 'Unique code for the new access role.',
                 child: AmsTextInput(
                   controller: _rScdCtrl,
                   readOnly: widget.isViewMode,
-                  placeholder: 'e.g. ADM',
+                  placeholder: 'e.g. 101',
                   textInputAction: TextInputAction.next,
-                  errorText: _errors['roleCd'],
+                  errorText: _errors['accessCd'],
                   isValid:
-                      _errors['roleCd'] == null && _rScdCtrl.text.isNotEmpty,
+                      _errors['accessCd'] == null && _rScdCtrl.text.isNotEmpty,
                   onChanged: (v) {
                     setState(() {
-                      _errors['roleCd'] =
-                          v.trim().isEmpty ? 'Role Code required' : null;
+                      _errors['accessCd'] =
+                          v.trim().isEmpty ? 'Access Code required' : null;
                     });
-                    widget.onChanged('roleCd', v);
+                    widget.onChanged('accessCd', int.tryParse(v) ?? 0);
                   },
                 ),
               ),
               AmsField(
-                label: 'ROLENAME',
+                label: 'Access Name',
                 required: true,
                 labelAbove: true,
-                tooltip: 'Descriptive name for the role.',
+                tooltip: 'Descriptive name for the access role.',
                 child: AmsTextInput(
                   controller: _rNameCtrl,
                   readOnly: widget.isViewMode,
                   placeholder: 'e.g. Administrator',
                   textInputAction: TextInputAction.next,
-                  errorText: _errors['roleName'],
+                  errorText: _errors['accessName'],
                   isValid:
-                      _errors['roleName'] == null && _rNameCtrl.text.isNotEmpty,
+                      _errors['accessName'] == null && _rNameCtrl.text.isNotEmpty,
                   onChanged: (v) {
                     setState(() {
-                      _errors['roleName'] =
-                          v.trim().isEmpty ? 'Role Name required' : null;
+                      _errors['accessName'] =
+                          v.trim().isEmpty ? 'Access Name required' : null;
                     });
-                    widget.onChanged('roleName', v);
+                    widget.onChanged('accessName', v);
                   },
+                ),
+              ),
+              AmsField(
+                label: 'Access Type',
+                labelAbove: true,
+                tooltip: 'Classification type for this access role.',
+                child: AmsTextInput(
+                  controller: _rTypeCtrl,
+                  readOnly: widget.isViewMode,
+                  placeholder: 'e.g. SYSTEM',
+                  textInputAction: TextInputAction.next,
+                  onChanged: (v) => widget.onChanged('accessType', v),
+                ),
+              ),
+              AmsField(
+                label: 'Access Sub Type',
+                labelAbove: true,
+                tooltip: 'Further classification for this access role.',
+                child: AmsTextInput(
+                  controller: _rSubtypeCtrl,
+                  readOnly: widget.isViewMode,
+                  placeholder: 'e.g. MODULE-AUTH',
+                  textInputAction: TextInputAction.next,
+                  onChanged: (v) => widget.onChanged('accessSubType', v),
                 ),
               ),
               _AccessToggleGroup(
@@ -2329,6 +2583,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
 
       case 'BRN-CRT':
         return BranchScreenFields(
+
           key: _branchKey,
           isViewMode: widget.isViewMode,
           initialData: widget.initialData,
@@ -2337,6 +2592,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
           onStatusChanged: (v) => setState(() => _pgmStatus = v),
           parentContext: context,
         );
+
 
       case 'AUTHCTL':
         return Container(
