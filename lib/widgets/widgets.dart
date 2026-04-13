@@ -104,6 +104,7 @@ class AmsButton extends StatefulWidget {
   final bool small;
   final IconData? icon;
   final Color? backgroundColor;
+  final bool loading;
 
   const AmsButton({
     super.key,
@@ -114,6 +115,7 @@ class AmsButton extends StatefulWidget {
     this.small = false,
     this.icon,
     this.backgroundColor,
+    this.loading = false,
   });
 
   @override
@@ -176,19 +178,19 @@ class _AmsButtonState extends State<AmsButton> {
     final double radius = 4; // Sharp but soft corners like Zoho
 
     return MouseRegion(
-      cursor: widget.onPressed != null
+      cursor: (widget.onPressed != null && !widget.loading)
           ? SystemMouseCursors.click
           : SystemMouseCursors.basic,
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
       child: GestureDetector(
-        onTap: widget.onPressed,
+        onTap: widget.loading ? null : widget.onPressed,
         child: AnimatedScale(
           scale: _isHovered ? 1.02 : 1.0,
           duration: const Duration(milliseconds: 150),
           curve: Curves.easeOutCubic,
           child: AnimatedOpacity(
-            opacity: widget.onPressed == null ? 0.5 : 1.0,
+            opacity: (widget.onPressed == null || widget.loading) ? 0.5 : 1.0,
             duration: const Duration(milliseconds: 150),
             child: Container(
               padding: EdgeInsets.symmetric(horizontal: hPad, vertical: vPad),
@@ -201,23 +203,42 @@ class _AmsButtonState extends State<AmsButton> {
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (widget.icon != null) ...[
-                    Icon(widget.icon, size: fSize + 2, color: fg),
-                    const SizedBox(width: 7),
-                  ],
-                  Text(widget.label,
-                      style: bodyStyle(
-                          size: fSize, weight: FontWeight.w700, color: fg)),
-                  if ((widget.variant == AmsButtonVariant.primary ||
-                          widget.variant == AmsButtonVariant.teal ||
-                          widget.variant == AmsButtonVariant.green) &&
-                      !widget.small) ...[
-                    const SizedBox(width: 8),
-                    Icon(Icons.arrow_forward_rounded,
-                        size: fSize + 2, color: fg),
-                  ],
-                ],
+                children: widget.loading
+                    ? [
+                        SizedBox(
+                          width: fSize + 2,
+                          height: fSize + 2,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(fg),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text('Processing...',
+                            style: bodyStyle(
+                                size: fSize,
+                                weight: FontWeight.w700,
+                                color: fg)),
+                      ]
+                    : [
+                        if (widget.icon != null) ...[
+                          Icon(widget.icon, size: fSize + 2, color: fg),
+                          const SizedBox(width: 7),
+                        ],
+                        Text(widget.label,
+                            style: bodyStyle(
+                                size: fSize,
+                                weight: FontWeight.w700,
+                                color: fg)),
+                        if ((widget.variant == AmsButtonVariant.primary ||
+                                widget.variant == AmsButtonVariant.teal ||
+                                widget.variant == AmsButtonVariant.green) &&
+                            !widget.small) ...[
+                          const SizedBox(width: 8),
+                          Icon(Icons.arrow_forward_rounded,
+                              size: fSize + 2, color: fg),
+                        ],
+                      ],
               ),
             ),
           ),
