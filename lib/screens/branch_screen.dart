@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import '../theme.dart';
 import '../widgets/widgets.dart';
 import '../services/branch_api_service.dart';
@@ -140,17 +142,46 @@ class _BranchScreenState extends State<BranchScreen> {
       _formData['headBrn'] = 1;
       _formData['orgCode'] = 50;
 
+      // ── Helper: truncate string to max DB column length ──────────────────
+      String trunc(String? v, int max) =>
+          (v ?? '').length > max ? (v ?? '').substring(0, max) : (v ?? '');
+
+      // Build a clean payload — only DB columns, values truncated to column size.
+      // Sizes inferred from working payload & error (country VARCHAR(2) confirmed).
+      final cleanPayload = {
+        'orgCode': _formData['orgCode'], // BIGINT
+        'brnCd': _formData['brnCd'], // BIGINT
+        'brnName': trunc(_formData['brnName']?.toString(), 100),
+        'openDate': trunc(_formData['openDate']?.toString(), 10), // yyyy-MM-dd
+        'address': trunc(_formData['address']?.toString(), 200),
+        'country':
+            trunc(_formData['country']?.toString(), 2), // ISO2 VARCHAR(2)
+        'divisionName': trunc(_formData['divisionName']?.toString(), 50),
+        'pincode': trunc(_formData['pincode']?.toString(), 10),
+        'addrline1': trunc(_formData['addrline1']?.toString(), 100),
+        'addrline2': trunc(_formData['addrline2']?.toString(), 100),
+        'addrline3': trunc(_formData['addrline3']?.toString(), 100),
+        'addrline4': trunc(_formData['addrline4']?.toString(), 100),
+        'addrline5': trunc(_formData['addrline5']?.toString(), 100),
+        'telephone': trunc(_formData['telephone']?.toString(), 20),
+        'email': trunc(_formData['email']?.toString(), 100),
+        'status': _formData['status'], // INT
+        'eUser': trunc(_formData['eUser']?.toString(), 5), // e.g. "ADMIN"
+        'eDate': trunc(_formData['eDate']?.toString(), 10), // yyyy-MM-dd
+        'headBrn': _formData['headBrn'], // BIGINT
+      };
+
       final success = _isEditMode
-          ? await branchApiService.updateBranch(_formData)
-          : await branchApiService.createBranch(_formData);
+          ? await branchApiService.updateBranch(cleanPayload)
+          : await branchApiService.createBranch(cleanPayload);
 
       if (success) {
         final savedRecord = {
           'brnCd': _formData['brnCd'],
           'branchcd': _formData['brnCd'],
           'brnName': _formData['brnName'],
-          'branchname': _formData['brnName'],
-          'brnname': _formData['brnName'],
+          'branchname': _formData['brnName'], // UI display only
+          'brnname': _formData['brnName'], // UI display only
           'status': _formData['status'],
           'orgCode': _formData['orgCode'],
           'orgcode': _formData['orgCode'],
@@ -213,9 +244,12 @@ class _BranchScreenState extends State<BranchScreen> {
   }
 
   void _confirmDelete(Map<String, dynamic> b) async {
-    final name = b['branchname'] ?? b['brnName'] ?? b['BRNNAME'] ?? 'this branch';
-    final cd = int.tryParse((b['branchcd'] ?? b['brnCd'] ?? b['BRNCD'] ?? '0').toString()) ?? 0;
-    
+    final name =
+        b['branchname'] ?? b['brnName'] ?? b['BRNNAME'] ?? 'this branch';
+    final cd = int.tryParse(
+            (b['branchcd'] ?? b['brnCd'] ?? b['BRNCD'] ?? '0').toString()) ??
+        0;
+
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -251,7 +285,6 @@ class _BranchScreenState extends State<BranchScreen> {
       }
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -404,7 +437,6 @@ class _BranchScreenState extends State<BranchScreen> {
                     bg: AppColors.redLt,
                     onTap: () => _confirmDelete(b)),
               ]),
-
             ],
           ),
         );
@@ -529,6 +561,10 @@ class _BranchScreenState extends State<BranchScreen> {
   }
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// BranchScreenFields
+// ═══════════════════════════════════════════════════════════════════════════════
+
 class BranchScreenFields extends StatefulWidget {
   final bool isViewMode;
   final Map<String, dynamic>? initialData;
@@ -552,6 +588,7 @@ class BranchScreenFields extends StatefulWidget {
 }
 
 class BranchScreenFieldsState extends State<BranchScreenFields> {
+  // ── Text Controllers ────────────────────────────────────────────────────────
   final _brnOrgCtrl = TextEditingController(text: '1');
   final _brnCdCtrl = TextEditingController();
   final _brnNameCtrl = TextEditingController();
@@ -570,60 +607,43 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
   final _brnStateCtrl = TextEditingController();
   final _brnDistrictCtrl = TextEditingController();
 
-  static const Map<String, Map<String, String>> _countryInfo = {
-    'India': {'flag': '🇮🇳', 'code': '+91', 'iso': 'IN'},
-    'USA': {'flag': '🇺🇸', 'code': '+1', 'iso': 'US'},
-    'UK': {'flag': '🇬🇧', 'code': '+44', 'iso': 'UK'},
-    'Singapore': {'flag': '🇸🇬', 'code': '+65', 'iso': 'SG'},
-    'Germany': {'flag': '🇩🇪', 'code': '+49', 'iso': 'DE'},
-    'Japan': {'flag': '🇯🇵', 'code': '+81', 'iso': 'JP'},
-    'Canada': {'flag': '🇨🇦', 'code': '+1', 'iso': 'CA'},
-    'Australia': {'flag': '🇦🇺', 'code': '+61', 'iso': 'AU'},
-  };
+  // ── Overlay search controllers ──────────────────────────────────────────────
+  final _countrySearchCtrl = TextEditingController();
+  final _stateSearchCtrl = TextEditingController();
+  final _districtSearchCtrl = TextEditingController();
 
-  static const Map<String, String> _stateCodes = {
-    'Tamil Nadu': 'TN',
-    'Karnataka': 'KA',
-    'Maharashtra': 'MH',
-    'Kerala': 'KL',
-    'New York': 'NY',
-  };
+  // ── LayerLinks for overlay positioning ─────────────────────────────────────
+  final _countryLayerLink = LayerLink();
+  final _stateLayerLink = LayerLink();
+  final _districtLayerLink = LayerLink();
 
-  final Map<String, List<String>> _stateDistricts = {
-    'Tamil Nadu': ['Chennai', 'Coimbatore', 'Madurai', 'Salem', 'Trichy'],
-    'Karnataka': ['Bangalore', 'Mysore', 'Hubli', 'Mangalore'],
-    'Maharashtra': ['Mumbai', 'Pune', 'Nagpur', 'Nashik'],
-    'Kerala': ['Kochi', 'Thiruvananthapuram', 'Kozhikode'],
-    'New York': ['Manhattan', 'Brooklyn', 'Queens'],
-  };
+  // ── Overlay entries ─────────────────────────────────────────────────────────
+  OverlayEntry? _countryOverlay;
+  OverlayEntry? _stateOverlay;
+  OverlayEntry? _districtOverlay;
 
-  final Map<String, String> _pincodeMap = {
-    'Chennai': '600001',
-    'Coimbatore': '641001',
-    'Madurai': '625001',
-    'Salem': '636001',
-    'Trichy': '620001',
-    'Bangalore': '560001',
-    'Mysore': '570001',
-    'Hubli': '580001',
-    'Mangalore': '575001',
-    'Mumbai': '400001',
-    'Pune': '411001',
-    'Nagpur': '440001',
-    'Nashik': '422001',
-    'Kochi': '682001',
-    'Thiruvananthapuram': '695001',
-    'Kozhikode': '673001',
-    'Manhattan': '10001',
-    'Brooklyn': '11201',
-    'Queens': '11101',
-  };
+  // ── API-driven dropdown data ────────────────────────────────────────────────
+  List<String> _countries = [];
+  List<String> _states = [];
+  List<String> _districts = [];
+  // country display name → ISO2 code  e.g. "India" → "IN"
+  final Map<String, String> _countryIsoMap = {};
+  bool _countriesLoading = false;
+  bool _statesLoading = false;
+  bool _districtsLoading = false;
+  bool _pincodeLoading = false;
+  String? _selectedCountryName;
+  String? _selectedCountryIso; // 2-char code sent to DB (VARCHAR(2))
+  String? _selectedStateName;
+  String? _selectedStateAbbr; // e.g. "TN" for "Tamil Nadu"
 
   final Map<String, String?> _errors = {};
 
+  // ── Lifecycle ───────────────────────────────────────────────────────────────
   @override
   void initState() {
     super.initState();
+    _loadCountries();
     _populateFields();
   }
 
@@ -635,6 +655,439 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
     }
   }
 
+  @override
+  void dispose() {
+    _removeAllOverlays();
+    _brnOrgCtrl.dispose();
+    _brnCdCtrl.dispose();
+    _brnNameCtrl.dispose();
+    _brnOpenDateCtrl.dispose();
+    _brnAddressCtrl.dispose();
+    _brnCountryCtrl.dispose();
+    _brnDivCtrl.dispose();
+    _brnPinCtrl.dispose();
+    _brnAddr1Ctrl.dispose();
+    _brnAddr2Ctrl.dispose();
+    _brnAddr3Ctrl.dispose();
+    _brnAddr4Ctrl.dispose();
+    _brnAddr5Ctrl.dispose();
+    _brnTelCtrl.dispose();
+    _brnEmailCtrl.dispose();
+    _brnStateCtrl.dispose();
+    _brnDistrictCtrl.dispose();
+    _countrySearchCtrl.dispose();
+    _stateSearchCtrl.dispose();
+    _districtSearchCtrl.dispose();
+    super.dispose();
+  }
+
+  // ── Overlay helpers ─────────────────────────────────────────────────────────
+  void _removeAllOverlays() {
+    _countryOverlay?.remove();
+    _countryOverlay = null;
+    _stateOverlay?.remove();
+    _stateOverlay = null;
+    _districtOverlay?.remove();
+    _districtOverlay = null;
+  }
+
+  OverlayEntry _buildDropdownOverlay({
+    required LayerLink link,
+    required List<String> items,
+    required bool isLoading,
+    required TextEditingController searchCtrl,
+    required void Function(String) onSelect,
+    required VoidCallback onClose,
+  }) {
+    return OverlayEntry(
+      builder: (ctx) {
+        return GestureDetector(
+          behavior: HitTestBehavior.translucent,
+          onTap: onClose,
+          child: Stack(
+            children: [
+              CompositedTransformFollower(
+                link: link,
+                showWhenUnlinked: false,
+                offset: const Offset(0, 50),
+                child: GestureDetector(
+                  onTap: () {}, // prevent tap-through to background dismiss
+                  child: Material(
+                    elevation: 8,
+                    borderRadius: BorderRadius.circular(10),
+                    shadowColor: Colors.black26,
+                    child: StatefulBuilder(
+                      builder: (ctx2, setInner) {
+                        final query = searchCtrl.text.toLowerCase();
+                        final filtered = items
+                            .where((i) => i.toLowerCase().contains(query))
+                            .toList();
+
+                        return Container(
+                          width: 300,
+                          constraints: const BoxConstraints(maxHeight: 300),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: AppColors.border),
+                          ),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // Search bar inside dropdown
+                              Padding(
+                                padding: const EdgeInsets.all(10),
+                                child: TextField(
+                                  controller: searchCtrl,
+                                  autofocus: true,
+                                  decoration: InputDecoration(
+                                    hintText: 'Search...',
+                                    hintStyle: TextStyle(
+                                        color: AppColors.ink4, fontSize: 13),
+                                    prefixIcon: const Icon(Icons.search,
+                                        size: 18, color: AppColors.ink3),
+                                    isDense: true,
+                                    contentPadding: const EdgeInsets.symmetric(
+                                        vertical: 10, horizontal: 12),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                      borderSide: const BorderSide(
+                                          color: AppColors.border),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                      borderSide: const BorderSide(
+                                          color: AppColors.tBlue, width: 1.5),
+                                    ),
+                                    filled: true,
+                                    fillColor: AppColors.bg,
+                                  ),
+                                  onChanged: (_) => setInner(() {}),
+                                ),
+                              ),
+                              const Divider(height: 1, color: AppColors.border),
+                              // List
+                              Flexible(
+                                child: isLoading
+                                    ? const Padding(
+                                        padding: EdgeInsets.all(24),
+                                        child: Center(
+                                          child: Column(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              CircularProgressIndicator(
+                                                  strokeWidth: 2,
+                                                  color: AppColors.tBlue),
+                                              SizedBox(height: 10),
+                                              Text('Loading...',
+                                                  style: TextStyle(
+                                                      fontSize: 13,
+                                                      color: AppColors.ink3)),
+                                            ],
+                                          ),
+                                        ),
+                                      )
+                                    : filtered.isEmpty
+                                        ? Padding(
+                                            padding: const EdgeInsets.all(24),
+                                            child: Text(
+                                              'No results found',
+                                              style: bodyStyle(
+                                                  color: AppColors.ink4),
+                                            ),
+                                          )
+                                        : ListView.builder(
+                                            shrinkWrap: true,
+                                            itemCount: filtered.length,
+                                            itemBuilder: (_, idx) => InkWell(
+                                              onTap: () {
+                                                onSelect(filtered[idx]);
+                                                searchCtrl.clear();
+                                                onClose();
+                                              },
+                                              child: Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                        horizontal: 16,
+                                                        vertical: 11),
+                                                decoration: BoxDecoration(
+                                                  border: idx <
+                                                          filtered.length - 1
+                                                      ? const Border(
+                                                          bottom: BorderSide(
+                                                              color: AppColors
+                                                                  .border,
+                                                              width: 0.5))
+                                                      : null,
+                                                ),
+                                                child: Text(filtered[idx],
+                                                    style: bodyStyle(size: 13)),
+                                              ),
+                                            ),
+                                          ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // ── Open Country Dropdown ───────────────────────────────────────────────────
+  Future<void> _openCountryDropdown() async {
+    if (widget.isViewMode) return;
+    _removeAllOverlays();
+    if (_countries.isEmpty) await _loadCountries();
+
+    _countryOverlay = _buildDropdownOverlay(
+      link: _countryLayerLink,
+      items: _countries,
+      isLoading: _countriesLoading,
+      searchCtrl: _countrySearchCtrl,
+      onSelect: (selected) {
+        final iso = _countryIsoMap[selected] ??
+            selected
+                .substring(0, selected.length >= 2 ? 2 : selected.length)
+                .toUpperCase();
+        setState(() {
+          _selectedCountryName = selected;
+          _selectedCountryIso = iso;
+          _brnCountryCtrl.text = selected; // show full name in UI
+          // Reset dependent fields
+          _selectedStateName = null;
+          _brnStateCtrl.clear();
+          _brnDistrictCtrl.clear();
+          _brnPinCtrl.clear();
+          _states = [];
+          _districts = [];
+        });
+        widget.onChanged('country', iso); // send ISO2 to DB (VARCHAR 2)
+        _loadStates(selected);
+      },
+      onClose: () {
+        _countryOverlay?.remove();
+        _countryOverlay = null;
+      },
+    );
+    Overlay.of(context).insert(_countryOverlay!);
+  }
+
+  // ── Open State Dropdown ─────────────────────────────────────────────────────
+  Future<void> _openStateDropdown() async {
+    if (widget.isViewMode) return;
+    if (_selectedCountryName == null || _selectedCountryName!.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a Country first')),
+      );
+      return;
+    }
+    _removeAllOverlays();
+    if (_states.isEmpty) await _loadStates(_selectedCountryName!);
+
+    _stateOverlay = _buildDropdownOverlay(
+      link: _stateLayerLink,
+      items: _states,
+      isLoading: _statesLoading,
+      searchCtrl: _stateSearchCtrl,
+      onSelect: (selected) {
+        // Build abbreviation: first letter of each word, max 5 chars
+        // e.g. "Tamil Nadu" → "TN", "Andhra Pradesh" → "AP"
+        final abbr = selected
+            .split(RegExp(r'\s+'))
+            .where((w) => w.isNotEmpty)
+            .map((w) => w[0].toUpperCase())
+            .join();
+        setState(() {
+          _selectedStateName = selected;
+          _selectedStateAbbr = abbr;
+          _brnStateCtrl.text = selected;
+          // Reset dependent fields
+          _brnDistrictCtrl.clear();
+          _brnPinCtrl.clear();
+          _districts = [];
+        });
+        // divisionName not finalized until district is picked
+        widget.onChanged('divisionName', abbr);
+        _loadDistricts(_selectedCountryName!, selected);
+      },
+      onClose: () {
+        _stateOverlay?.remove();
+        _stateOverlay = null;
+      },
+    );
+    Overlay.of(context).insert(_stateOverlay!);
+  }
+
+  // ── Open District Dropdown ──────────────────────────────────────────────────
+  Future<void> _openDistrictDropdown() async {
+    if (widget.isViewMode) return;
+    if (_selectedStateName == null || _selectedStateName!.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a State first')),
+      );
+      return;
+    }
+    _removeAllOverlays();
+    if (_districts.isEmpty) {
+      await _loadDistricts(_selectedCountryName!, _selectedStateName!);
+    }
+
+    _districtOverlay = _buildDropdownOverlay(
+      link: _districtLayerLink,
+      items: _districts,
+      isLoading: _districtsLoading,
+      searchCtrl: _districtSearchCtrl,
+      onSelect: (selected) {
+        setState(() {
+          _brnDistrictCtrl.text = selected;
+          _brnPinCtrl.clear(); // clear while fetching
+        });
+        // Format: "TN, Madurai"  (state abbr + district name)
+        final divVal = _selectedStateAbbr != null
+            ? '$_selectedStateAbbr, $selected'
+            : selected;
+        widget.onChanged('divisionName', divVal);
+        // Auto-populate pincode
+        _loadPincode(selected);
+      },
+      onClose: () {
+        _districtOverlay?.remove();
+        _districtOverlay = null;
+      },
+    );
+    Overlay.of(context).insert(_districtOverlay!);
+  }
+
+  // ── API: Countries ──────────────────────────────────────────────────────────
+  Future<void> _loadCountries() async {
+    if (_countriesLoading || _countries.isNotEmpty) return;
+    setState(() => _countriesLoading = true);
+    try {
+      final res = await http
+          .get(Uri.parse('https://countriesnow.space/api/v0.1/countries'))
+          .timeout(const Duration(seconds: 10));
+      if (res.statusCode == 200) {
+        final decoded = jsonDecode(res.body);
+        final List data = decoded['data'] ?? [];
+        final names = data.map<String>((e) => e['country'] as String).toList()
+          ..sort();
+        // Build name→ISO2 map for DB payload
+        final isoMap = <String, String>{};
+        for (final entry in data) {
+          final name = entry['country'] as String? ?? '';
+          final iso = entry['iso2'] as String? ?? '';
+          if (name.isNotEmpty && iso.isNotEmpty)
+            isoMap[name] = iso.toUpperCase();
+        }
+        if (mounted)
+          setState(() {
+            _countries = names;
+            _countryIsoMap.addAll(isoMap);
+          });
+      }
+    } catch (_) {
+      // silent
+    } finally {
+      if (mounted) setState(() => _countriesLoading = false);
+    }
+  }
+
+  // ── API: States ─────────────────────────────────────────────────────────────
+  Future<void> _loadStates(String countryName) async {
+    setState(() {
+      _statesLoading = true;
+      _states = [];
+      _districts = [];
+    });
+    try {
+      final res = await http
+          .post(
+            Uri.parse('https://countriesnow.space/api/v0.1/countries/states'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'country': countryName}),
+          )
+          .timeout(const Duration(seconds: 10));
+      if (res.statusCode == 200) {
+        final decoded = jsonDecode(res.body);
+        final List stateList = decoded['data']?['states'] ?? [];
+        final names = stateList.map<String>((s) => s['name'] as String).toList()
+          ..sort();
+        if (mounted) setState(() => _states = names);
+      }
+    } catch (_) {
+    } finally {
+      if (mounted) setState(() => _statesLoading = false);
+    }
+  }
+
+  // ── API: Districts / Cities ─────────────────────────────────────────────────
+  Future<void> _loadDistricts(String countryName, String stateName) async {
+    setState(() {
+      _districtsLoading = true;
+      _districts = [];
+    });
+    try {
+      final res = await http
+          .post(
+            Uri.parse(
+                'https://countriesnow.space/api/v0.1/countries/state/cities'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'country': countryName, 'state': stateName}),
+          )
+          .timeout(const Duration(seconds: 10));
+      if (res.statusCode == 200) {
+        final decoded = jsonDecode(res.body);
+        final List cities = decoded['data'] ?? [];
+        final names = cities.cast<String>()..sort();
+        if (mounted) setState(() => _districts = names);
+      }
+    } catch (_) {
+    } finally {
+      if (mounted) setState(() => _districtsLoading = false);
+    }
+  }
+
+  // ── API: Pincode auto-populate ──────────────────────────────────────────────
+  // Uses postalpincode.in for India; falls back gracefully for other countries.
+  Future<void> _loadPincode(String cityName) async {
+    if (!mounted) return;
+    setState(() => _pincodeLoading = true);
+    try {
+      final res = await http
+          .get(
+            Uri.parse(
+                'https://api.postalpincode.in/postoffice/${Uri.encodeComponent(cityName)}'),
+          )
+          .timeout(const Duration(seconds: 8));
+      if (res.statusCode == 200) {
+        final List data = jsonDecode(res.body);
+        if (data.isNotEmpty && data[0]['Status'] == 'Success') {
+          final postOffices = data[0]['PostOffice'] as List;
+          if (postOffices.isNotEmpty) {
+            final pincode = postOffices[0]['Pincode']?.toString() ?? '';
+            if (pincode.isNotEmpty && mounted) {
+              setState(() => _brnPinCtrl.text = pincode);
+              widget.onChanged('pincode', pincode);
+            }
+          }
+        }
+      }
+    } catch (_) {
+      // Pincode lookup not available for this country – user enters manually
+    } finally {
+      if (mounted) setState(() => _pincodeLoading = false);
+    }
+  }
+
+  // ── Populate / Clear ────────────────────────────────────────────────────────
   void _populateFields() {
     final data = widget.initialData;
     if (data == null || data.isEmpty) {
@@ -663,20 +1116,43 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
     _brnAddressCtrl.text =
         (data['address'] ?? data['ADDRESS'] ?? '').toString();
 
-    String countryVal = (data['country'] ?? data['COUNTRY'] ?? '').toString();
-    if (_countryInfo.values.any((e) => e['iso'] == countryVal)) {
-      final entry =
-          _countryInfo.entries.firstWhere((e) => e.value['iso'] == countryVal);
-      _brnCountryCtrl.text = "${entry.value['flag']} ${entry.key}";
-    } else {
-      _brnCountryCtrl.text = countryVal;
-    }
+    final countryVal = (data['country'] ?? data['COUNTRY'] ?? '').toString();
+    _brnCountryCtrl.text = countryVal;
+    _selectedCountryName = countryVal.isNotEmpty ? countryVal : null;
+    _selectedCountryIso = countryVal.isNotEmpty ? countryVal : null;
 
-    _brnDivCtrl.text = (data['divisionname'] ??
+    // ── FIX: Read state & district from divisionName ──────────────────────
+    // divisionName is saved as "TN, Madurai" (stateAbbr, district)
+    // or just "TN" if only state was selected.
+    final divVal = (data['divisionName'] ??
+            data['divisionname'] ??
             data['DIVISIONNAME'] ??
-            data['divisionName'] ??
             '')
-        .toString();
+        .toString()
+        .trim();
+
+    if (divVal.contains(',')) {
+      final commaIdx = divVal.indexOf(',');
+      final stateAbbr = divVal.substring(0, commaIdx).trim();
+      final districtName = divVal.substring(commaIdx + 1).trim();
+      _brnStateCtrl.text = stateAbbr;
+      _selectedStateName = stateAbbr;
+      _selectedStateAbbr = stateAbbr;
+      _brnDistrictCtrl.text = districtName;
+    } else if (divVal.isNotEmpty) {
+      // Only state abbr stored — no district chosen
+      _brnStateCtrl.text = divVal;
+      _selectedStateName = divVal;
+      _selectedStateAbbr = divVal;
+      _brnDistrictCtrl.clear();
+    } else {
+      _brnStateCtrl.clear();
+      _brnDistrictCtrl.clear();
+      _selectedStateName = null;
+      _selectedStateAbbr = null;
+    }
+    // ── END FIX ───────────────────────────────────────────────────────────
+
     _brnPinCtrl.text = (data['pincode'] ?? data['PINCODE'] ?? '').toString();
     _brnAddr1Ctrl.text =
         (data['addrline1'] ?? data['ADDRLINE1'] ?? '').toString();
@@ -691,16 +1167,6 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
     _brnTelCtrl.text =
         (data['telephone'] ?? data['TELEPHONE'] ?? '').toString();
     _brnEmailCtrl.text = (data['email'] ?? data['EMAIL'] ?? '').toString();
-
-    String stateVal = (data['statecode'] ?? data['STATECODE'] ?? '').toString();
-    if (_stateCodes.values.contains(stateVal)) {
-      _brnStateCtrl.text =
-          _stateCodes.entries.firstWhere((e) => e.value == stateVal).key;
-    } else {
-      _brnStateCtrl.text = stateVal;
-    }
-    _brnDistrictCtrl.text =
-        (data['districtcode'] ?? data['DISTRICTCODE'] ?? '').toString();
 
     _errors.clear();
   }
@@ -723,12 +1189,17 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
     _brnEmailCtrl.clear();
     _brnStateCtrl.clear();
     _brnDistrictCtrl.clear();
+    _selectedCountryName = null;
+    _selectedCountryIso = null;
+    _selectedStateName = null;
+    _selectedStateAbbr = null;
+    _states = [];
+    _districts = [];
     _errors.clear();
+    if (mounted) setState(() {});
   }
 
-  int? getBranchCode() {
-    return int.tryParse(_brnCdCtrl.text);
-  }
+  int? getBranchCode() => int.tryParse(_brnCdCtrl.text);
 
   bool validate() {
     bool isValid = true;
@@ -757,90 +1228,7 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
     return isValid;
   }
 
-  @override
-  void dispose() {
-    _brnOrgCtrl.dispose();
-    _brnCdCtrl.dispose();
-    _brnNameCtrl.dispose();
-    _brnOpenDateCtrl.dispose();
-    _brnAddressCtrl.dispose();
-    _brnCountryCtrl.dispose();
-    _brnDivCtrl.dispose();
-    _brnPinCtrl.dispose();
-    _brnAddr1Ctrl.dispose();
-    _brnAddr2Ctrl.dispose();
-    _brnAddr3Ctrl.dispose();
-    _brnAddr4Ctrl.dispose();
-    _brnAddr5Ctrl.dispose();
-    _brnTelCtrl.dispose();
-    _brnEmailCtrl.dispose();
-    _brnStateCtrl.dispose();
-    _brnDistrictCtrl.dispose();
-    super.dispose();
-  }
-
-  Future<void> _selectCountry() async {
-    if (widget.isViewMode) return;
-    final countries = _countryInfo.keys.toList();
-    final s = await showDialog<String>(
-        context: context,
-        builder: (ctx) =>
-            _SearchPicker(title: 'Select Country', items: countries));
-    if (s != null) {
-      setState(() {
-        final info = _countryInfo[s]!;
-        _brnCountryCtrl.text = "${info['flag']} $s";
-        _brnTelCtrl.text = "${info['flag']} ${info['code']} ";
-        _brnStateCtrl.clear();
-        _brnDistrictCtrl.clear();
-        _brnPinCtrl.clear();
-      });
-      widget.onChanged('country', _countryInfo[s]!['iso']);
-      widget.onChanged('telephone', _brnTelCtrl.text);
-    }
-  }
-
-  Future<void> _selectState() async {
-    if (widget.isViewMode) return;
-    final s = await showDialog<String>(
-        context: context,
-        builder: (ctx) => _SearchPicker(
-            title: 'Select State', items: _stateDistricts.keys.toList()));
-    if (s != null) {
-      setState(() {
-        _brnStateCtrl.text = s;
-        _brnDistrictCtrl.clear();
-        _brnPinCtrl.clear();
-      });
-      final stateISO = _stateCodes[s] ?? s;
-      widget.onChanged('divisionName', stateISO);
-    }
-  }
-
-  Future<void> _selectDistrict() async {
-    if (widget.isViewMode) return;
-    if (_brnStateCtrl.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a State first')),
-      );
-      return;
-    }
-    final s = await showDialog<String>(
-        context: context,
-        builder: (ctx) => _SearchPicker(
-            title: 'Select District',
-            items: _stateDistricts[_brnStateCtrl.text] ?? []));
-    if (s != null) {
-      setState(() {
-        _brnDistrictCtrl.text = s;
-        _brnPinCtrl.text = _pincodeMap[s] ?? '';
-      });
-      final stateISO = _stateCodes[_brnStateCtrl.text] ?? _brnStateCtrl.text;
-      widget.onChanged('divisionName', "$stateISO, $s");
-      widget.onChanged('pincode', _brnPinCtrl.text);
-    }
-  }
-
+  // ── Build ───────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -853,10 +1241,11 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // ── Basic Info Section ──────────────────────────────────────────────
           AmsFormGrid(
             children: [
               AmsField(
-                label: 'ORG CODE',
+                label: 'Org Code',
                 required: true,
                 labelAbove: true,
                 tooltip: 'Organization code.',
@@ -880,7 +1269,7 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
                 ),
               ),
               AmsField(
-                label: 'BRANCH CODE',
+                label: 'Branch Code',
                 required: true,
                 labelAbove: true,
                 tooltip: 'Unique branch identification code.',
@@ -904,7 +1293,7 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
                 ),
               ),
               AmsField(
-                label: 'BRANCH NAME',
+                label: 'Branch name',
                 required: true,
                 labelAbove: true,
                 tooltip: 'Full name of the branch.',
@@ -922,13 +1311,11 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
                           v.trim().isEmpty ? 'Branch Name required' : null;
                     });
                     widget.onChanged('brnName', v);
-                    widget.onChanged('brnname', v);
-                    widget.onChanged('branchname', v);
                   },
                 ),
               ),
               AmsField(
-                label: 'OPEN_DATE',
+                label: 'Open date',
                 required: true,
                 labelAbove: true,
                 tooltip: 'Opening date of the branch.',
@@ -999,7 +1386,7 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
                 ),
               ),
               AmsField(
-                label: 'STATUS',
+                label: 'Status',
                 required: true,
                 labelAbove: true,
                 tooltip: 'Enable or disable this branch.',
@@ -1024,13 +1411,16 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
               ),
             ],
           ),
+
           const SizedBox(height: 24),
           sectionTitle('Address & Contact', color: AppColors.tBlue),
           const SizedBox(height: 16),
+
+          // ── Address & Contact Section ───────────────────────────────────────
           AmsFormGrid(
             children: [
               AmsField(
-                label: 'ADDRESS',
+                label: 'Address',
                 labelAbove: true,
                 tooltip: 'Full address block.',
                 child: AmsTextInput(
@@ -1040,53 +1430,118 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
                   onChanged: (v) => widget.onChanged('address', v),
                 ),
               ),
+
+              // ── COUNTRY (overlay dropdown) ────────────────────────────────
               AmsField(
-                label: 'COUNTRY',
+                label: 'Country',
                 labelAbove: true,
                 tooltip: 'Select country.',
-                child: AmsTextInput(
-                  controller: _brnCountryCtrl,
-                  readOnly: true,
-                  placeholder: 'Select Country',
-                  icon: Icons.public_rounded,
-                  onTap: _selectCountry,
+                child: CompositedTransformTarget(
+                  link: _countryLayerLink,
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: _openCountryDropdown,
+                    child: AbsorbPointer(
+                      child: AmsTextInput(
+                        controller: _brnCountryCtrl,
+                        readOnly: true,
+                        placeholder: _countriesLoading
+                            ? 'Loading countries...'
+                            : 'Select Country',
+                        icon: _countriesLoading
+                            ? Icons.hourglass_empty_rounded
+                            : Icons.public_rounded,
+                      ),
+                    ),
+                  ),
                 ),
               ),
+
+              // ── STATE (overlay dropdown – depends on Country) ─────────────
               AmsField(
-                label: 'STATE CODE',
+                label: 'State code',
                 labelAbove: true,
                 tooltip: 'Select state.',
-                child: AmsTextInput(
-                  controller: _brnStateCtrl,
-                  readOnly: true,
-                  placeholder: 'Select State',
-                  icon: Icons.map_rounded,
-                  onTap: _selectState,
+                child: CompositedTransformTarget(
+                  link: _stateLayerLink,
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: _openStateDropdown,
+                    child: AbsorbPointer(
+                      child: AmsTextInput(
+                        controller: _brnStateCtrl,
+                        readOnly: true,
+                        placeholder: _statesLoading
+                            ? 'Loading states...'
+                            : 'Select State',
+                        icon: _statesLoading
+                            ? Icons.hourglass_empty_rounded
+                            : Icons.map_rounded,
+                      ),
+                    ),
+                  ),
                 ),
               ),
+
+              // ── DISTRICT (overlay dropdown – depends on State) ────────────
               AmsField(
-                label: 'DISTRICT CODE',
+                label: 'Distric code',
                 labelAbove: true,
                 tooltip: 'Select district.',
-                child: AmsTextInput(
-                  controller: _brnDistrictCtrl,
-                  readOnly: true,
-                  placeholder: 'Select District',
-                  icon: Icons.location_city_rounded,
-                  onTap: _selectDistrict,
+                child: CompositedTransformTarget(
+                  link: _districtLayerLink,
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: _openDistrictDropdown,
+                    child: AbsorbPointer(
+                      child: AmsTextInput(
+                        controller: _brnDistrictCtrl,
+                        readOnly: true,
+                        placeholder: _districtsLoading
+                            ? 'Loading districts...'
+                            : 'Select District',
+                        icon: _districtsLoading
+                            ? Icons.hourglass_empty_rounded
+                            : Icons.location_city_rounded,
+                      ),
+                    ),
+                  ),
                 ),
               ),
+
+              // ── PINCODE (auto-populated + manual) ────────────────────────
               AmsField(
-                label: 'PINCODE',
+                label: 'Pincode',
                 labelAbove: true,
-                child: AmsTextInput(
-                  controller: _brnPinCtrl,
-                  readOnly: true,
-                  placeholder: 'Auto-populated',
+                child: Stack(
+                  alignment: Alignment.centerRight,
+                  children: [
+                    AmsTextInput(
+                      controller: _brnPinCtrl,
+                      readOnly: widget.isViewMode,
+                      placeholder: _pincodeLoading
+                          ? 'Fetching pincode...'
+                          : 'Enter Pincode',
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      onChanged: (v) => widget.onChanged('pincode', v),
+                    ),
+                    if (_pincodeLoading)
+                      const Padding(
+                        padding: EdgeInsets.only(right: 12),
+                        child: SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: AppColors.tBlue),
+                        ),
+                      ),
+                  ],
                 ),
               ),
+
               AmsField(
-                label: 'ADDRESS LINE 1',
+                label: 'Address line',
                 labelAbove: true,
                 child: AmsTextInput(
                   controller: _brnAddr1Ctrl,
@@ -1096,7 +1551,7 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
                 ),
               ),
               AmsField(
-                label: 'ADDRESS LINE 2',
+                label: 'Address line 2',
                 labelAbove: true,
                 child: AmsTextInput(
                   controller: _brnAddr2Ctrl,
@@ -1106,7 +1561,7 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
                 ),
               ),
               AmsField(
-                label: 'ADDRESS LINE 3',
+                label: 'Address line 3',
                 labelAbove: true,
                 child: AmsTextInput(
                   controller: _brnAddr3Ctrl,
@@ -1116,7 +1571,7 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
                 ),
               ),
               AmsField(
-                label: 'ADDRESS LINE 4',
+                label: 'Address line 4',
                 labelAbove: true,
                 child: AmsTextInput(
                   controller: _brnAddr4Ctrl,
@@ -1126,7 +1581,7 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
                 ),
               ),
               AmsField(
-                label: 'ADDRESS LINE 5',
+                label: 'Address line 5',
                 labelAbove: true,
                 child: AmsTextInput(
                   controller: _brnAddr5Ctrl,
@@ -1136,7 +1591,7 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
                 ),
               ),
               AmsField(
-                label: 'TELEPHONE',
+                label: 'Telephone',
                 labelAbove: true,
                 child: AmsTextInput(
                   controller: _brnTelCtrl,
@@ -1148,7 +1603,7 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
                 ),
               ),
               AmsField(
-                label: 'EMAIL',
+                label: 'Email',
                 labelAbove: true,
                 child: AmsTextInput(
                   controller: _brnEmailCtrl,
@@ -1163,56 +1618,6 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _SearchPicker extends StatefulWidget {
-  final String title;
-  final List<String> items;
-  const _SearchPicker({required this.title, required this.items});
-  @override
-  State<_SearchPicker> createState() => _SearchPickerState();
-}
-
-class _SearchPickerState extends State<_SearchPicker> {
-  String _query = '';
-  @override
-  Widget build(BuildContext context) {
-    final filtered = widget.items
-        .where((i) => i.toLowerCase().contains(_query.toLowerCase()))
-        .toList();
-    return AlertDialog(
-      title: Text(widget.title, style: bodyStyle(weight: FontWeight.bold)),
-      content: SizedBox(
-          width: 400,
-          height: 500,
-          child: Column(children: [
-            AmsTextInput(
-                placeholder: 'Search...',
-                icon: Icons.search,
-                borderColor: AppColors.tBlue,
-                onChanged: (v) => setState(() => _query = v)),
-            const SizedBox(height: 16),
-            Expanded(
-                child: filtered.isEmpty
-                    ? Center(
-                        child: Text('No results',
-                            style: bodyStyle(color: AppColors.ink4)))
-                    : ListView.builder(
-                        itemCount: filtered.length,
-                        itemBuilder: (ctx, idx) => ListTile(
-                            title: Text(filtered[idx], style: bodyStyle()),
-                            onTap: () =>
-                                Navigator.pop(context, filtered[idx])))),
-          ])),
-      actions: [
-        AmsButton(
-            label: 'Close',
-            variant: AmsButtonVariant.ghost,
-            onPressed: () => Navigator.pop(context))
-      ],
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     );
   }
 }
