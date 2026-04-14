@@ -1614,6 +1614,13 @@ class _AmsSidebarState extends State<AmsSidebar> {
 
                 if (openMenu == 'masters') ...[
                   AmsSubSidebarItem(
+                    label: 'Organisation',
+                    isCollapsed: widget.isCollapsed,
+                    icon: Icons.business_rounded,
+                    isSelected: widget.selectedProg == 'ORG-CRT',
+                    onTap: () => widget.onNavigate('nontran', 'ORG-CRT'),
+                  ),
+                  AmsSubSidebarItem(
                     label: 'Branch',
                     isCollapsed: widget.isCollapsed,
                     icon: Icons.store_rounded,
@@ -1661,13 +1668,6 @@ class _AmsSidebarState extends State<AmsSidebar> {
                     icon: Icons.app_settings_alt_rounded,
                     isSelected: widget.selectedProg == 'PROG-CRT',
                     onTap: () => widget.onNavigate('nontran', 'PROG-CRT'),
-                  ),
-                  AmsSubSidebarItem(
-                    label: 'Organisation',
-                    isCollapsed: widget.isCollapsed,
-                    icon: Icons.business_rounded,
-                    isSelected: widget.selectedProg == 'ORG-CRT',
-                    onTap: () => widget.onNavigate('nontran', 'ORG-CRT'),
                   ),
                 ],
 

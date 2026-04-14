@@ -371,6 +371,14 @@ List<AuthRecord> seedAuthQueue() => [
 
 final List<SubmenuItem> mastersSubmenus = [
   SubmenuItem(
+    label: 'Organisation', 
+    icon: Icons.business_rounded, 
+    programId: 'ORG-CRT',
+    subtitle: 'Manage organizational structure and entities.',
+    metric: '3 Units',
+    trend: 'Global',
+  ),
+  SubmenuItem(
     label: 'Branch Master', 
     icon: Icons.store_rounded, 
     programId: 'BRN-CRT',
@@ -425,14 +433,6 @@ final List<SubmenuItem> mastersSubmenus = [
     subtitle: 'Define and manage system programs and screens.',
     metric: '64 Progs',
     trend: 'Standard',
-  ),
-  SubmenuItem(
-    label: 'Organisation', 
-    icon: Icons.business_rounded, 
-    programId: 'ORG-CRT',
-    subtitle: 'Manage organizational structure and entities.',
-    metric: '3 Units',
-    trend: 'Global',
   ),
 ];
 
