@@ -37,6 +37,7 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
   String? _selProg;
   final Map<String, dynamic> _dynamicData = {};
   bool _showForm = false;
+  bool _isEditMode = false;
   Map<String, dynamic>? _viewRecord;
 
   @override
@@ -52,6 +53,7 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
       setState(() {
         _selProg = widget.initialProg;
         _dynamicData.clear();
+        _isEditMode = false;
         _showForm = false;
         _viewRecord = null;
       });
@@ -124,6 +126,36 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
     }
   }
 
+  Future<void> _handleDeleteUser(BuildContext context, Map<String, dynamic> record) async {
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Delete User', style: bodyStyle(weight: FontWeight.bold)),
+        content: Text('Are you sure you want to delete this user? This action cannot be undone.', style: bodyStyle()),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('Cancel', style: bodyStyle(color: AppColors.ink3))),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true), 
+            child: Text('Delete', style: bodyStyle(color: AppColors.red, weight: FontWeight.bold))
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      final orgCode = record['orgCode'] ?? record['orgcode'] ?? 50;
+      final usersCd = (record['usersCd'] ?? record['userScd'] ?? record['USERSCD'] ?? '').toString();
+      final success = await apiService.deleteUser(orgCode is int ? orgCode : 50, usersCd);
+      
+      if (success) {
+        showAmsSnack(context, 'User deleted successfully', icon: '✅');
+        setState(() {}); 
+      } else {
+        showAmsSnack(context, 'Failed to delete user', icon: '❌');
+      }
+    }
+  }
+
   void _doSubmit() async {
     if (_selProg == null) {
       showAmsSnack(context, 'Please select a program first.',
@@ -160,6 +192,7 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
         'adminAccess': 0,
         'sysAdminAccess': 0,
       },
+      ...(_viewRecord ?? {}),
       ..._dynamicData,
     };
 
@@ -278,8 +311,8 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
                 ),
                 child: Column(
                   children: [
-                    // Navy Header Bar (Hidden for MOD-CRT List as per request)
-                    if (!isModuleScreenList)
+                    // Navy Header Bar (Hidden for MOD-CRT List and USR-CRT List as per request)
+                    if (!isModuleScreenList && !isUserScreenList)
                       Container(
                         width: double.infinity,
                         padding: const EdgeInsets.symmetric(
@@ -295,7 +328,7 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
                             Text(
                               isAnyList
                                   ? '${_cfg?.name ?? _selProg!} List'
-                                  : '${_viewRecord != null ? 'View' : 'New'} ${_cfg?.name ?? _selProg!}',
+                                  : '${_viewRecord != null ? (_isEditMode ? 'Edit' : 'View') : 'New'} ${_cfg?.name ?? _selProg!}',
                               style: bodyStyle(
                                 size: 14,
                                 color: Colors.white,
@@ -321,18 +354,31 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
                         void handleView(Map<String, dynamic> record) {
                           setState(() {
                             _viewRecord = record;
+                            _isEditMode = false;
+                            _showForm = true;
+                          });
+                        }
+
+                        void handleEdit(Map<String, dynamic> record) {
+                          setState(() {
+                            _viewRecord = record;
+                            _isEditMode = true;
                             _showForm = true;
                           });
                         }
 
                         if (isUserScreenList) {
-                          return _UserListView(onView: handleView);
+                          return _UserListView(
+                            onView: handleView,
+                            onEdit: handleEdit,
+                            onDelete: (rec) => _handleDeleteUser(context, rec),
+                          );
                         }
                         if (isRoleScreenList) {
                           // return _RoleListView(onView: handleView);
                           return _RoleListView(
                             onView: handleView,
-                            onEdit: handleView, // Edit uses the same form logic
+                            onEdit: handleEdit, // Edit uses the same form logic
                             onDelete: (rec) => _handleDeleteAccess(context, rec),
                           );
                         }
@@ -342,7 +388,7 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
                         if (isModuleScreenList) {
                           return _ModuleListView(
                             onView: handleView,
-                            onEdit: handleView,
+                            onEdit: handleEdit,
                             onDelete: (rec) => _handleDeleteModule(context, rec),
                           );
                         }
@@ -360,7 +406,7 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
                                   key: _fieldsKey,
                                   prog: _selProg!,
                                   initialData: _viewRecord,
-                                  isViewMode: _viewRecord != null,
+                                  isViewMode: _viewRecord != null && !_isEditMode,
                                   onChanged: (key, val) =>
                                       _dynamicData[key] = val,
                                 ),
@@ -376,7 +422,7 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
                       AmsSubmitBar(
                         borderColor: AppColors.border,
                         actions: [
-                          if (_viewRecord != null)
+                          if (_viewRecord != null && !_isEditMode)
                             AmsButton(
                               label: 'Back to List',
                               icon: Icons.arrow_back_rounded,
@@ -424,6 +470,7 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
                                   setState(() {
                                     _showForm = false;
                                     _viewRecord = null;
+                                    _isEditMode = false;
                                   });
                                 } else {
                                   widget.onBack();
@@ -446,7 +493,9 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
 
 class _UserListView extends StatefulWidget {
   final void Function(Map<String, dynamic>)? onView;
-  const _UserListView({this.onView});
+  final void Function(Map<String, dynamic>)? onEdit;
+  final void Function(Map<String, dynamic>)? onDelete;
+  const _UserListView({this.onView, this.onEdit, this.onDelete});
 
   @override
   State<_UserListView> createState() => _UserListViewState();
@@ -456,6 +505,7 @@ class _UserListViewState extends State<_UserListView> {
   List<Map<String, dynamic>>? _users;
   int _totalItems = 0;
   bool _loading = true;
+  String _searchQuery = '';
 
   @override
   void initState() {
@@ -481,65 +531,145 @@ class _UserListViewState extends State<_UserListView> {
       return const AmsListSkeleton();
     }
 
-    return AmsPaginatedView<Map<String, dynamic>>(
-      items: _users ?? [],
-      totalRecords: _totalItems,
-      onPageChanged: _loadUsers,
-      builder: (ctx, currentItems) => ListView.builder(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-        itemCount: currentItems.length,
-        itemBuilder: (ctx, idx) {
-          final u = currentItems[idx];
-          final String fName = u['fName'] ?? u['fname'] ?? u['FNAME'] ?? '';
-          final String lName = u['lName'] ?? u['lname'] ?? u['LNAME'] ?? '';
-          final String email = u['email'] ?? u['EMAIL'] ?? 'No Email';
-          final String mobile = u['mobile'] ?? u['MOBILE'] ?? 'No Mobile';
-          final String userCd =
-              u['userScd'] ?? u['usersCd'] ?? u['USERSCD'] ?? 'Unknown';
-          final String initial = fName.isNotEmpty
-              ? fName[0].toUpperCase()
-              : (userCd.isNotEmpty && userCd != 'Unknown'
-                  ? userCd[0].toUpperCase()
-                  : 'U');
+    final filteredItems = (_users ?? []).where((u) {
+      if (_searchQuery.isEmpty) return true;
+      final fName = (u['fName'] ?? u['fname'] ?? u['FNAME'] ?? '').toString().toLowerCase();
+      final lName = (u['lName'] ?? u['lname'] ?? u['LNAME'] ?? '').toString().toLowerCase();
+      final email = (u['email'] ?? u['EMAIL'] ?? '').toString().toLowerCase();
+      final mobile = (u['mobile'] ?? u['MOBILE'] ?? '').toString().toLowerCase();
+      final userCd = (u['userScd'] ?? u['usersCd'] ?? u['USERSCD'] ?? '').toString().toLowerCase();
+      final query = _searchQuery.toLowerCase();
+      return fName.contains(query) || lName.contains(query) || email.contains(query) || mobile.contains(query) || userCd.contains(query);
+    }).toList();
 
-          return AmsCard(
-            onTap: widget.onView != null ? () => widget.onView!(u) : null,
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: const BoxDecoration(
-                      color: AppColors.tBlueLt, shape: BoxShape.circle),
-                  child: Center(
-                      child: Text(initial,
-                          style: bodyStyle(
-                              weight: FontWeight.bold,
-                              color: AppColors.tBlue))),
+    return Column(
+      children: [
+        // Premium Search Bar
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+          child: Row(
+            children: [
+              Expanded(
+                child: AmsTextInput(
+                  placeholder: 'Search Users by Name, Email, or Mobile...',
+                  icon: Icons.search_rounded,
+                  onChanged: (v) => setState(() => _searchQuery = v),
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                          ('$fName $lName').trim().isNotEmpty
-                              ? '$fName $lName'.trim()
-                              : 'Unnamed User',
-                          style: bodyStyle(size: 15, weight: FontWeight.w600)),
-                      const SizedBox(height: 4),
-                      Text('$email  |  $mobile',
-                          style: bodyStyle(color: AppColors.ink3)),
-                    ],
+              ),
+              const SizedBox(width: 12),
+              Material(
+                color: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  side: const BorderSide(color: AppColors.border),
+                ),
+                child: InkWell(
+                  onTap: () => _loadUsers(1),
+                  borderRadius: BorderRadius.circular(8),
+                  child: const Padding(
+                    padding: EdgeInsets.all(10),
+                    child: Icon(Icons.refresh_rounded, size: 20, color: AppColors.ink2),
                   ),
                 ),
-                AmsBadge(label: userCd),
-              ],
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: AmsPaginatedView<Map<String, dynamic>>(
+            items: filteredItems,
+            totalRecords: _totalItems,
+            onPageChanged: _loadUsers,
+            builder: (ctx, currentItems) => ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              itemCount: currentItems.length,
+              itemBuilder: (ctx, idx) {
+                final u = currentItems[idx];
+                final String fName = u['fName'] ?? u['fname'] ?? u['FNAME'] ?? '';
+                final String lName = u['lName'] ?? u['lname'] ?? u['LNAME'] ?? '';
+                final String email = u['email'] ?? u['EMAIL'] ?? u['emailid'] ?? 'No Email';
+                final String mobile = u['mobile'] ?? u['MOBILE'] ?? 'No Mobile';
+                final String userCd = u['userScd'] ?? u['usersCd'] ?? u['USERSCD'] ?? 'Unknown';
+                final String initial = fName.isNotEmpty
+                    ? fName[0].toUpperCase()
+                    : (userCd.isNotEmpty && userCd != 'Unknown' ? userCd[0].toUpperCase() : 'U');
+
+                return AmsCard(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: AppColors.tBlueLt,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Center(
+                            child: Text(initial,
+                                style: bodyStyle(
+                                    weight: FontWeight.bold,
+                                    color: AppColors.tBlue,
+                                    size: 16))),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                                ('$fName $lName').trim().isNotEmpty
+                                    ? '$fName $lName'.trim()
+                                    : 'Unnamed User',
+                                style: bodyStyle(size: 15, weight: FontWeight.w600)),
+                            const SizedBox(height: 4),
+                            Text('$email  |  $mobile',
+                                style: bodyStyle(color: AppColors.ink3, size: 12)),
+                          ],
+                        ),
+                      ),
+                      // Actions
+                      if (u['status']?.toString() == '0' || u['status']?.toString() == '2' || u['status']?.toString() == '3')
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.orange.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: Colors.orange.withOpacity(0.5)),
+                          ),
+                          child: Text('Raised for Edit', style: bodyStyle(color: Colors.orange[800]!, size: 12, weight: FontWeight.w600)),
+                        )
+                      else  
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            _ActionButton(
+                              icon: Icons.visibility_outlined,
+                              color: Colors.green,
+                              onTap: () => widget.onView?.call(u),
+                            ),
+                            const SizedBox(width: 8),
+                            _ActionButton(
+                              icon: Icons.edit_outlined,
+                              color: AppColors.tBlue,
+                              onTap: () => widget.onEdit?.call(u),
+                            ),
+                            const SizedBox(width: 8),
+                            _ActionButton(
+                              icon: Icons.delete_outline_rounded,
+                              color: Colors.red,
+                              onTap: () => widget.onDelete?.call(u),
+                            ),
+                          ],
+                        ),
+                    ],
+                  ),
+                );
+              },
             ),
-          );
-        },
-      ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -636,7 +766,7 @@ class _RoleListViewState extends State<_RoleListView> {
               itemCount: currentItems.length,
               itemBuilder: (ctx, idx) {
                 final r = currentItems[idx];
-                final accessName = r['accessName'] ?? r['accessname'] ?? 'Unnamed Access';
+                final accessName = r['accessName'] ?? r['access_name'] ?? 'Unnamed Access';
                 final accessCd = r['accessCd'] ?? r['accesscd'] ?? '—';
                 
                 return AmsCard(
@@ -1220,15 +1350,13 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
   @override
   void didUpdateWidget(DynamicNTFields oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.prog != widget.prog ||
+    if (oldWidget.prog != widget.prog || 
         oldWidget.initialData != widget.initialData) {
-    if (oldWidget.prog != widget.prog) {
       _loadInitialData();
       _notifyDefaults();
       if (widget.prog == 'USR-ROLE' || widget.prog == 'AUTHCTL') {
         _fetchDropdownData();
       }
-    }
     }
   }
 
@@ -1243,6 +1371,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
   }
 
   void _notifyDefaults() {
+    if (widget.initialData != null) return; // Only notify defaults for new records!
     // For AUTHCTL and others, notify the parent of initial switch/field states
     // so they are included in the submission payload even if not touched.
     final prog = widget.prog.replaceAll(' ', '-').toUpperCase();
@@ -1261,7 +1390,6 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
     } else if (prog == 'USR-CRT') {
       widget.onChanged('orgCode', 50);
       widget.onChanged('status', 1);
-      widget.onChanged('gender', 'M');
     }
     // Add other defaults as needed per program
   }
@@ -1313,14 +1441,16 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
       _countryCtrl.text = data['country']?.toString() ?? '';
       _mobileCtrl.text = data['mobile']?.toString() ?? '';
       _callCodeCtrl.text = data['callCode']?.toString() ?? data['callcode']?.toString() ?? '';
-      _gender = data['gender']?.toString();
+      final g1 = data['gender']?.toString().toUpperCase();
+      _gender = g1 == 'F' || g1 == 'FEMALE' ? 'Female' : (g1 == 'O' || g1 == 'OTHER' ? 'Other' : (g1 != null ? 'Male' : null));
       _title = data['title']?.toString();
     } else if (prog == 'ROLE-CRT') {
       _rScdCtrl.text = data['rolecd']?.toString() ?? '';
       _rNameCtrl.text = data['rolename']?.toString() ?? '';
       _uBranchCdCtrl.text = data['branchcd']?.toString() ?? '';
       _uPictureCtrl.text = data['picture']?.toString() ?? '';
-      _gender = data['gender']?.toString();
+      final g2 = data['gender']?.toString().toUpperCase();
+      _gender = g2 == 'F' || g2 == 'FEMALE' ? 'Female' : (g2 == 'O' || g2 == 'OTHER' ? 'Other' : (g2 != null ? 'Male' : null));
       _title = data['title']?.toString();
     } else if (prog == 'ROLE-CRT') {
       _rScdCtrl.text = data['accesscd']?.toString() ?? '';
@@ -1565,6 +1695,18 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                 ),
               ),
               AmsField(
+                label: 'BRANCH CODE',
+                labelAbove: true,
+                tooltip: 'Associated branch code for the user.',
+                child: AmsTextInput(
+                  controller: _uBranchCdCtrl,
+                  readOnly: widget.isViewMode,
+                  placeholder: 'Branch CD',
+                  textInputAction: TextInputAction.next,
+                  onChanged: (v) => widget.onChanged('branchCd', v),
+                ),
+              ),
+              AmsField(
                 label: 'USERSCD',
                 required: true,
                 labelAbove: true,
@@ -1584,125 +1726,10 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                 ),
               ),
               AmsField(
-                label: 'GENDER',
-                required: true,
-                labelAbove: true,
-                tooltip: 'The user\'s gender for profile identification.',
-                child: widget.isViewMode
-                    ? AmsTextInput(
-                        initialValue: _gender ??
-                            (data['gender']
-                                        ?.toString()
-                                        .toLowerCase()
-                                        .startsWith('f') ==
-                                    true
-                                ? 'Female'
-                                : (data['gender']
-                                            ?.toString()
-                                            .toLowerCase()
-                                            .startsWith('o') ==
-                                        true
-                                    ? 'Other'
-                                    : 'Male')),
-                        readOnly: true,
-                      )
-                    : AmsDropdown(
-                        initialValue: _gender ??
-                            (data['gender']
-                                        ?.toString()
-                                        .toLowerCase()
-                                        .startsWith('f') ==
-                                    true
-                                ? 'Female'
-                                : (data['gender']
-                                            ?.toString()
-                                            .toLowerCase()
-                                            .startsWith('o') ==
-                                        true
-                                    ? 'Other'
-                                    : (data['gender'] != null
-                                        ? 'Male'
-                                        : null))),
-                        items: const ['Male', 'Female', 'Other'],
-                        errorText: _errors['gender'],
-                        onChanged: (v) {
-                          setState(() {
-                            _gender = v;
-                            _errors['gender'] =
-                                v == null ? 'Gender required' : null;
-                          });
-                          widget.onChanged('gender', v);
-                        },
-                      ),
-              ),
-              AmsField(
-                label: 'Registration Date',
-                required: true,
-                labelAbove: true,
-                tooltip: 'Date when the user was registered in the system.',
-                child: AmsTextInput(
-                  controller: _uRegDateCtrl,
-                  readOnly: true,
-                  icon: Icons.calendar_today_rounded,
-                  placeholder: 'Select Date',
-                  errorText: _errors['regdate'],
-                  onTap: () async {
-                    if (widget.isViewMode) return;
-                    final picked = await showDatePicker(
-                      context: context,
-                      initialDate: DateTime.now(),
-                      firstDate: DateTime(1900),
-                      lastDate: DateTime(2100),
-                    );
-                    if (picked != null) {
-                      final displayFmt = DateFormat('dd-MMM-yyyy').format(picked);
-                      final isoFmt = DateFormat('yyyy-MM-dd').format(picked);
-                      setState(() {
-                        _uRegDateCtrl.text = displayFmt;
-                        _errors['regdate'] = null;
-                      });
-                      widget.onChanged('regdate', isoFmt);
-                    }
-                  },
-                ),
-              ),
-              AmsField(
-                label: 'Date of Birth',
-                required: true,
-                labelAbove: true,
-                tooltip: 'The user\'s date of birth.',
-                child: AmsTextInput(
-                  controller: _uDobCtrl,
-                  readOnly: true,
-                  icon: Icons.cake_rounded,
-                  placeholder: 'Select Date',
-                  errorText: _errors['dob'],
-                  onTap: () async {
-                    if (widget.isViewMode) return;
-                    final picked = await showDatePicker(
-                      context: context,
-                      initialDate: DateTime.now().subtract(const Duration(days: 6570)),
-                      firstDate: DateTime(1900),
-                      lastDate: DateTime.now(),
-                    );
-                    if (picked != null) {
-                      final displayFmt = DateFormat('dd-MMM-yyyy').format(picked);
-                      final isoFmt = DateFormat('yyyy-MM-dd').format(picked);
-                      setState(() {
-                        _uDobCtrl.text = displayFmt;
-                        _errors['dob'] = null;
-                      });
-                      widget.onChanged('dob', isoFmt);
-                    }
-                  },
-                ),
-              ),
-              AmsField(
                 label: 'FULL NAME',
                 required: true,
                 labelAbove: true,
                 tooltip: 'Salutation and full name of the primary contact person.',
-
                 child: Row(
                   children: [
                     Expanded(
@@ -1781,17 +1808,89 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                   placeholder: 'e.g. john@example.com',
                   keyboardType: TextInputType.emailAddress,
                   textInputAction: TextInputAction.next,
-                  errorText: _errors['email'],
+                  errorText: _errors['emailid'],
                   onChanged: (v) {
                     setState(() {
                       if (v.isNotEmpty && !_isValidEmail(v)) {
-                        _errors['email'] = 'Invalid email format';
+                        _errors['emailid'] = 'Invalid email format';
                       } else {
-                        _errors['email'] = null;
+                        _errors['emailid'] = null;
                       }
                     });
                     widget.onChanged('emailid', v);
                   },
+                ),
+              ),
+              AmsField(
+                label: 'GENDER',
+                required: true,
+                labelAbove: true,
+                tooltip: 'The user\'s gender for profile identification.',
+                child: widget.isViewMode
+                    ? AmsTextInput(
+                        initialValue: _gender,
+                        readOnly: true,
+                      )
+                    : AmsDropdown(
+                        initialValue: _gender,
+                        placeholder: 'Select Gender',
+                        items: const ['Male', 'Female', 'Other'],
+                        errorText: _errors['gender'],
+                        onChanged: (v) {
+                          setState(() {
+                            _gender = v;
+                            _errors['gender'] = null;
+                          });
+                          String mapped = 'M';
+                          if (v == 'Female') mapped = 'F';
+                          else if (v == 'Other') mapped = 'O';
+                          widget.onChanged('gender', mapped);
+                        },
+                      ),
+              ),
+              AmsField(
+                label: 'DATE OF BIRTH',
+                required: true,
+                labelAbove: true,
+                tooltip: 'The user\'s date of birth.',
+                child: AmsTextInput(
+                  controller: _uDobCtrl,
+                  readOnly: true,
+                  icon: Icons.cake_rounded,
+                  placeholder: 'Select Date',
+                  errorText: _errors['dob'],
+                  onTap: () async {
+                    if (widget.isViewMode) return;
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: DateTime.now().subtract(const Duration(days: 6570)),
+                      firstDate: DateTime(1900),
+                      lastDate: DateTime.now(),
+                    );
+                    if (picked != null) {
+                      final displayFmt = DateFormat('dd-MMM-yyyy').format(picked);
+                      final isoFmt = DateFormat('yyyy-MM-dd').format(picked);
+                      setState(() {
+                        _uDobCtrl.text = displayFmt;
+                        _errors['dob'] = null;
+                      });
+                      widget.onChanged('dob', isoFmt);
+                    }
+                  },
+                ),
+              ),
+              AmsField(
+                label: 'COUNTRY',
+                labelAbove: true,
+                tooltip: 'Country code or identifier.',
+                child: AmsTextInput(
+                  controller: _countryCtrl,
+                  readOnly: widget.isViewMode,
+                  placeholder: 'e.g. 91',
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  textInputAction: TextInputAction.next,
+                  onChanged: (v) => widget.onChanged('country', int.tryParse(v) ?? 0),
                 ),
               ),
               AmsField(
@@ -1805,6 +1904,37 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                   keyboardType: TextInputType.phone,
                   textInputAction: TextInputAction.next,
                   onChanged: (v) => widget.onChanged('mobile', v),
+                ),
+              ),
+              AmsField(
+                label: 'REGISTRATION DATE',
+                required: true,
+                labelAbove: true,
+                tooltip: 'Date when the user was registered.',
+                child: AmsTextInput(
+                  controller: _uRegDateCtrl,
+                  readOnly: true,
+                  icon: Icons.calendar_today_rounded,
+                  placeholder: 'Select Date',
+                  errorText: _errors['regdate'],
+                  onTap: () async {
+                    if (widget.isViewMode) return;
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: DateTime.now(),
+                      firstDate: DateTime(1900),
+                      lastDate: DateTime(2100),
+                    );
+                    if (picked != null) {
+                      final displayFmt = DateFormat('dd-MMM-yyyy').format(picked);
+                      final isoFmt = DateFormat('yyyy-MM-dd').format(picked);
+                      setState(() {
+                        _uRegDateCtrl.text = displayFmt;
+                        _errors['regdate'] = null;
+                      });
+                      widget.onChanged('regDate', isoFmt);
+                    }
+                  },
                 ),
               ),
               AmsField(
@@ -1822,63 +1952,6 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                 ),
               ),
               AmsField(
-                label: 'COUNTRY',
-                labelAbove: true,
-                tooltip: 'Country code or identifier.',
-                child: AmsTextInput(
-                  controller: _countryCtrl,
-                  readOnly: widget.isViewMode,
-                  placeholder: 'e.g. 1',
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  textInputAction: TextInputAction.next,
-                  onChanged: (v) => widget.onChanged('country', int.tryParse(v) ?? 0),
-                ),
-              ),
-              AmsField(
-                label: 'BRANCH CODE',
-                labelAbove: true,
-                tooltip: 'Associated branch code for the user.',
-                child: AmsTextInput(
-                  controller: _uBranchCdCtrl,
-                  readOnly: widget.isViewMode,
-                  placeholder: 'Branch CD',
-                  textInputAction: TextInputAction.next,
-                  onChanged: (v) => widget.onChanged('branchCd', v),
-                ),
-              ),
-              AmsField(
-                label: 'REGISTRATION DATE',
-                required: true,
-                labelAbove: true,
-                tooltip: 'Date when the user was registered.',
-                child: AmsTextInput(
-                  controller: _uRegDateCtrl,
-                  readOnly: true,
-                  icon: Icons.calendar_today_rounded,
-                  placeholder: 'Select Date',
-                  errorText: _errors['regDate'],
-                  onTap: () async {
-                    if (widget.isViewMode) return;
-                    final picked = await showDatePicker(
-                      context: context,
-                      initialDate: DateTime.now(),
-                      firstDate: DateTime(1900),
-                      lastDate: DateTime(2100),
-                    );
-                    if (picked != null) {
-                      final displayFmt = DateFormat('dd-MMM-yyyy').format(picked);
-                      final isoFmt = DateFormat('yyyy-MM-dd').format(picked);
-                      setState(() {
-                        _uRegDateCtrl.text = displayFmt;
-                        _errors['regDate'] = null;
-                      });
-                      widget.onChanged('regDate', isoFmt);
-                    }
-                  },
-                ),
-              ),
-              AmsField(
                 label: 'STATUS',
                 labelAbove: true,
                 tooltip: 'Current status (1: Active, 0: Inactive).',
@@ -1890,18 +1963,6 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   textInputAction: TextInputAction.next,
                   onChanged: (v) => widget.onChanged('status', int.tryParse(v) ?? 1),
-                ),
-              ),
-              AmsField(
-                label: 'Branch Code',
-                labelAbove: true,
-                tooltip: 'Associated branch code for the user.',
-                child: AmsTextInput(
-                  controller: _uBranchCdCtrl,
-                  readOnly: widget.isViewMode,
-                  placeholder: 'Branch CD',
-                  textInputAction: TextInputAction.next,
-                  onChanged: (v) => widget.onChanged('branchcd', v),
                 ),
               ),
               AmsField(

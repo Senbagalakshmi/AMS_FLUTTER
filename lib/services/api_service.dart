@@ -566,6 +566,18 @@ class ApiService {
     }
   }
 
+  Future<bool> deleteUser(int orgCode, String usersCd) async {
+    try {
+      final res = await http.delete(
+        Uri.parse('$baseUrl/users/$orgCode/$usersCd'),
+        headers: _headers,
+      );
+      return res.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
+
   Future<bool> deleteModule(int orgCode, String moduleCd) async {
     try {
       final res = await http.delete(
