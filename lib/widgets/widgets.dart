@@ -1385,9 +1385,9 @@ class _AmsSidebarItemState extends State<AmsSidebarItem> {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           margin: EdgeInsets.only(
-              left: widget.isCollapsed ? 6 : 12, right: 12, top: 4, bottom: 4),
+              left: widget.isCollapsed ? 6 : 8, right: 8, top: 4, bottom: 4),
           padding: EdgeInsets.symmetric(
-              horizontal: widget.isCollapsed ? 0 : 16, vertical: 8),
+              horizontal: widget.isCollapsed ? 0 : 12, vertical: 8),
           decoration: BoxDecoration(
             color: widget.isSelected 
                 ? Colors.white.withValues(alpha: 0.1) 
@@ -1404,9 +1404,8 @@ class _AmsSidebarItemState extends State<AmsSidebarItem> {
                       color: widget.color ??
                           (widget.isSelected ? Colors.white : Colors.white70)),
                 )
-              : Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
+                : Row(
+                    children: [
                     Icon(widget.icon,
                         size: 20,
                         color: widget.color ??
@@ -1469,9 +1468,9 @@ class _AmsSubSidebarItemState extends State<AmsSubSidebarItem> {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           margin: EdgeInsets.only(
-              left: widget.isCollapsed ? 6 : 30, right: 12, top: 2, bottom: 2),
+              left: widget.isCollapsed ? 6 : 24, right: 8, top: 2, bottom: 2),
           padding: EdgeInsets.symmetric(
-              horizontal: widget.isCollapsed ? 8 : 16, vertical: 6),
+              horizontal: widget.isCollapsed ? 0 : 4, vertical: 4),
           decoration: BoxDecoration(
             color: widget.isSelected 
                 ? Colors.white.withValues(alpha: 0.1) 
@@ -1492,11 +1491,9 @@ class _AmsSubSidebarItemState extends State<AmsSubSidebarItem> {
                       size: 16,
                       color: widget.isSelected ? Colors.white : Colors.white70),
                 )
-              : Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
+              : Row(
+                  children: [
+                    const SizedBox(width: 12),
                       Icon(widget.icon ?? Icons.circle,
                           size: 6,
                           color: widget.isSelected ? Colors.white : ( _hover ? Colors.white : Colors.white70)),
@@ -1516,7 +1513,6 @@ class _AmsSubSidebarItemState extends State<AmsSubSidebarItem> {
                       ),
                     ],
                   ),
-                ),
         ),
       ),
     );
@@ -2304,10 +2300,14 @@ class _PremiumProfileMenu extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(
-                userName ?? "User@gmail.com",
-                style: bodyStyle(
-                    size: 13, weight: FontWeight.w700, color: Colors.white),
+              Flexible(
+                child: Text(
+                  userName ?? "User@gmail.com",
+                  style: bodyStyle(
+                      size: 13, weight: FontWeight.w700, color: Colors.white),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                ),
               ),
               if (isExpanded) ...[
                 const SizedBox(height: 2),

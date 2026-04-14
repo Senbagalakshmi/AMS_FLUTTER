@@ -25,6 +25,7 @@ import 'screens/menu_screen.dart';
 import 'screens/organisation_screen.dart';
 import 'screens/branch_screen.dart';
 import 'screens/gl_dashboard_screen.dart';
+import 'screens/program_master_screen.dart';
 
 void main() {
   runApp(const AmsApp());
@@ -213,8 +214,6 @@ class _AmsRootState extends State<AmsRoot> {
       success = await apiService.createMenu('program', data);
     } else if (prog == 'USR-ROLE') {
       success = await apiService.assignUserRole(data);
-    } else if (prog == 'PROG-CRT') {
-      success = await apiService.createProgramMaster(data);
     } else if (prog == 'BRN-CRT') {
       success = await branchApiService.createBranch(data);
     } else if (prog == 'AUTHCTL') {
@@ -476,6 +475,15 @@ class _AmsRootState extends State<AmsRoot> {
           );
         } else if (_state.selectedProg == 'BRN-CRT') {
           body = BranchScreen(
+            onBack: () => _navigate('list'),
+            onBackToModule: () => _handleProceed('MASTERS'),
+            userName: _state.userName,
+          );
+        } else if (_state.selectedProg == 'PROG-CRT') {
+          body = ProgramMasterScreen(
+            authConfigs: _state.authConfigs,
+            initialProg: _state.selectedProg,
+            onSubmit: _handleNonTranSubmit,
             onBack: () => _navigate('list'),
             onBackToModule: () => _handleProceed('MASTERS'),
             userName: _state.userName,

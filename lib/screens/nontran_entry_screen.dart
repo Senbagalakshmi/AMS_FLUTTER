@@ -120,9 +120,7 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
             'USR-ROLE',
             'MOD-CRT',
             'MENU-CRT',
-            'AUTHCTL',
-            'PROG-CRT',
-            'BRN-CRT'
+            'AUTHCTL'
           ].contains(_selProg))
               ? 50
               : 1),
@@ -168,16 +166,12 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
     final isUserRoleScreenList = _selProg == 'USR-ROLE' && !_showForm;
     final isModuleScreenList = _selProg == 'MOD-CRT' && !_showForm;
     final isAuthCtrlScreenList = _selProg == 'AUTHCTL' && !_showForm;
-    final isProgramScreenList = _selProg == 'PROG-CRT' && !_showForm;
-    final isBranchScreenList = _selProg == 'BRN-CRT' && !_showForm;
 
     final isAnyList = isUserScreenList ||
         isRoleScreenList ||
         isUserRoleScreenList ||
         isModuleScreenList ||
-        isAuthCtrlScreenList ||
-        isProgramScreenList ||
-        isBranchScreenList;
+        isAuthCtrlScreenList;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -226,9 +220,7 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
                       'ROLE-CRT',
                       'MOD-CRT',
                       'MENU-CRT',
-                      'AUTHCTL',
-                      'PROG-CRT',
-                      'BRN-CRT'
+                      'AUTHCTL'
                     ].contains(_selProg) &&
                     _showForm
                 ? () => setState(() => _showForm = false)
@@ -325,12 +317,6 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
                         if (isAuthCtrlScreenList) {
                           return _AuthCtrlListView(onView: handleView);
                         }
-                        if (isProgramScreenList) {
-                          return _ProgramListView(onView: handleView);
-                        }
-                        if (isBranchScreenList) {
-                          return _BranchListView(onView: handleView);
-                        }
 
                         return SingleChildScrollView(
                           padding: const EdgeInsets.all(24),
@@ -401,9 +387,7 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
                                   'ROLE-CRT',
                                   'MOD-CRT',
                                   'MENU-CRT',
-                                  'AUTHCTL',
-                                  'PROG-CRT',
-                                  'BRN-CRT'
+                                  'AUTHCTL'
                                 ].contains(_selProg)) {
                                   setState(() {
                                     _showForm = false;
@@ -620,7 +604,7 @@ class _RoleListViewState extends State<_RoleListView> {
               itemCount: currentItems.length,
               itemBuilder: (ctx, idx) {
                 final r = currentItems[idx];
-                final accessName = r['access_name'] ?? r['access_name'] ?? 'Unnamed Access';
+                final accessName = r['accessName'] ?? r['accessname'] ?? 'Unnamed Access';
                 final accessCd = r['accessCd'] ?? r['accesscd'] ?? '—';
                 
                 return AmsCard(
@@ -951,87 +935,6 @@ class _AuthCtrlListViewState extends State<_AuthCtrlListView> {
   }
 }
 
-class _ProgramListView extends StatefulWidget {
-  final void Function(Map<String, dynamic>)? onView;
-  const _ProgramListView({this.onView});
-  @override
-  State<_ProgramListView> createState() => _ProgramListViewState();
-}
-
-class _ProgramListViewState extends State<_ProgramListView> {
-  List<Map<String, dynamic>>? _data;
-  int _totalItems = 0;
-  bool _loading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _load(1);
-  }
-
-  Future<void> _load(int page) async {
-    setState(() => _loading = true);
-    final result = await apiService.getProgramMaster(page: page - 1, size: 10);
-    if (mounted) {
-      setState(() {
-        _data = result?.items ?? [];
-        _totalItems = result?.totalElements ?? 0;
-        _loading = false;
-      });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (_loading && _data == null) {
-      return const AmsListSkeleton();
-    }
-    return AmsPaginatedView<Map<String, dynamic>>(
-      items: _data ?? [],
-      totalRecords: _totalItems,
-      onPageChanged: _load,
-      builder: (ctx, currentItems) => ListView.builder(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-        itemCount: currentItems.length,
-        itemBuilder: (ctx, idx) {
-          final d = currentItems[idx];
-          final String pName = d['programName'] ?? d['programname'] ?? d['program_name'] ?? 'Unknown';
-          final String pId = (d['programId'] ?? d['programid'] ?? d['program_id'] ?? '—').toString();
-
-          return AmsCard(
-            onTap: widget.onView != null ? () => widget.onView!(d) : null,
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: const BoxDecoration(
-                      color: AppColors.tBlueLt, shape: BoxShape.circle),
-                  child: const Center(
-                      child: Icon(Icons.app_settings_alt_rounded, color: AppColors.tBlue, size: 20)),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(pName,
-                          style: bodyStyle(size: 15, weight: FontWeight.w600)),
-                      const SizedBox(height: 4),
-                      Text('Program ID: $pId',
-                          style: bodyStyle(color: AppColors.ink3)),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
-    );
-  }
-}
 
 class _BranchListView extends StatefulWidget {
   final void Function(Map<String, dynamic>)? onView;
@@ -1189,19 +1092,13 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
 
   final _authModCtrl = TextEditingController();
   final _authPgmCtrl = TextEditingController();
-  final _pgmIdCtrl = TextEditingController();
-  final _pgmNameCtrl = TextEditingController();
   int _mStatus = 1;
-  final _branchKey = GlobalKey<BranchScreenFieldsState>();
 
   List<Map<String, dynamic>> _userList = [];
   List<Map<String, dynamic>> _roleList = [];
   List<Map<String, dynamic>> _moduleList = [];
   String? _selModule;
   String? _selSubModule;
-  String? _pgmClass;
-  int _pgmStatus = 1;
-  final _pgmRemarksCtrl = TextEditingController();
   bool _loadingDropdowns = false;
 
   bool _isValidEmail(String email) {
@@ -1216,7 +1113,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
     if (oldWidget.prog != widget.prog) {
       _loadInitialData();
       _notifyDefaults();
-      if (widget.prog == 'USR-ROLE' || widget.prog == 'AUTHCTL' || widget.prog == 'PROG-CRT') {
+      if (widget.prog == 'USR-ROLE' || widget.prog == 'AUTHCTL') {
         _fetchDropdownData();
       }
     }
@@ -1228,7 +1125,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
     super.initState();
     _loadInitialData();
     _notifyDefaults();
-    if (widget.prog == 'USR-ROLE' || widget.prog == 'AUTHCTL' || widget.prog == 'PROG-CRT') {
+    if (widget.prog == 'USR-ROLE' || widget.prog == 'AUTHCTL') {
       _fetchDropdownData();
     }
   }
@@ -1249,9 +1146,6 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
       widget.onChanged('status', _mStatus);
       widget.onChanged('subModule', _subModuleEnabled ? 1 : 0);
       widget.onChanged('subModules', _subModules);
-    } else if (prog == 'PROG-CRT') {
-      widget.onChanged('orgCode', 50);
-      widget.onChanged('status', _pgmStatus);
     } else if (prog == 'USR-CRT') {
       widget.onChanged('orgCode', 50);
       widget.onChanged('status', 1);
@@ -1345,19 +1239,6 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
     } else if (prog == 'MENU-CRT') {
       _menuScdCtrl.text = data['menucd']?.toString() ?? '';
       _menuNameCtrl.text = data['menuname']?.toString() ?? '';
-    } else if (prog == 'PROG-CRT') {
-      _pgmIdCtrl.text = data['programid']?.toString() ?? data['pgmid']?.toString() ?? '';
-      _pgmNameCtrl.text = data['programdescription']?.toString() ?? 
-                         data['description']?.toString() ?? 
-                         data['programname']?.toString() ?? '';
-      _pgmRemarksCtrl.text = data['remarks']?.toString() ?? '';
-      _selModule = data['modulecd']?.toString();
-      _selSubModule = data['submodulecd']?.toString();
-      _pgmClass = data['programclass']?.toString() ?? data['pgmclass']?.toString();
-      _pgmStatus = int.tryParse(data['status']?.toString() ?? '1') ?? 1;
-    } else if (prog == 'BRN-CRT') {
-      _pgmRemarksCtrl.text = data['remarks']?.toString() ?? '';
-      _pgmStatus = int.tryParse(data['status']?.toString() ?? '1') ?? 1;
     } else if (prog == 'AUTHCTL') {
       _authModCtrl.text = data['orgcode']?.toString() ??
           data['modcd']?.toString() ??
@@ -1418,7 +1299,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
           isValid = false;
         }
         if (_uRegDateCtrl.text.trim().isEmpty) {
-          _errors['regDate'] = 'Registration Date required';
+          _errors['regdate'] = 'Registration Date required';
           isValid = false;
         }
         if (_uDobCtrl.text.trim().isEmpty) {
@@ -1426,12 +1307,8 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
           isValid = false;
         }
         if (_gender == null) {
-          final dynamic g = widget.initialData?['gender'] ?? widget.initialData?['GENDER'];
-          final String initG = g?.toString().toLowerCase() ?? '';
-          String mapped = 'M';
-          if (initG.startsWith('f')) mapped = 'F';
-          else if (initG.startsWith('o')) mapped = 'O';
-          widget.onChanged('gender', mapped);
+          _errors['gender'] = 'Gender required';
+          isValid = false;
         }
       } else if (prog == 'ROLE-CRT') {
         if (_rScdCtrl.text.trim().isEmpty) {
@@ -1462,27 +1339,6 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
         }
         if (_menuNameCtrl.text.trim().isEmpty) {
           _errors['menuName'] = 'Menu Name required';
-          isValid = false;
-        }
-      } else if (prog == 'PROG-CRT') {
-        if (_pgmIdCtrl.text.trim().isEmpty) {
-          _errors['pgmId'] = 'Program ID required';
-          isValid = false;
-        }
-        if (_pgmNameCtrl.text.trim().isEmpty) {
-          _errors['pgmName'] = 'Description required';
-          isValid = false;
-        }
-        if (_selModule == null) {
-          _errors['module'] = 'Module required';
-          isValid = false;
-        }
-        if (_pgmClass == null) {
-          _errors['pgmClass'] = 'Program Class required';
-          isValid = false;
-        }
-      } else if (prog == 'BRN-CRT') {
-        if (!(_branchKey.currentState?.validate() ?? true)) {
           isValid = false;
         }
       } else if (widget.prog == 'USR-ROLE') {
@@ -1534,18 +1390,12 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
     _menuNameCtrl.clear();
     _authModCtrl.clear();
     _authPgmCtrl.clear();
-    _pgmIdCtrl.clear();
-    _pgmNameCtrl.clear();
-    _pgmRemarksCtrl.clear();
-    _branchKey.currentState?.clear();
     setState(() {
       _gender = null;
       _menuType = null;
       _title = null;
       _selModule = null;
       _selSubModule = null;
-      _pgmClass = null;
-      _pgmStatus = 1;
       _errors.clear();
     });
   }
@@ -1570,9 +1420,6 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
     _menuNameCtrl.dispose();
     _authModCtrl.dispose();
     _authPgmCtrl.dispose();
-    _pgmIdCtrl.dispose();
-    _pgmNameCtrl.dispose();
-    _pgmRemarksCtrl.dispose();
     super.dispose();
   }
 
@@ -1625,10 +1472,125 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                 ),
               ),
               AmsField(
+                label: 'GENDER',
+                required: true,
+                labelAbove: true,
+                tooltip: 'The user\'s gender for profile identification.',
+                child: widget.isViewMode
+                    ? AmsTextInput(
+                        initialValue: _gender ??
+                            (data['gender']
+                                        ?.toString()
+                                        .toLowerCase()
+                                        .startsWith('f') ==
+                                    true
+                                ? 'Female'
+                                : (data['gender']
+                                            ?.toString()
+                                            .toLowerCase()
+                                            .startsWith('o') ==
+                                        true
+                                    ? 'Other'
+                                    : 'Male')),
+                        readOnly: true,
+                      )
+                    : AmsDropdown(
+                        initialValue: _gender ??
+                            (data['gender']
+                                        ?.toString()
+                                        .toLowerCase()
+                                        .startsWith('f') ==
+                                    true
+                                ? 'Female'
+                                : (data['gender']
+                                            ?.toString()
+                                            .toLowerCase()
+                                            .startsWith('o') ==
+                                        true
+                                    ? 'Other'
+                                    : (data['gender'] != null
+                                        ? 'Male'
+                                        : null))),
+                        items: const ['Male', 'Female', 'Other'],
+                        errorText: _errors['gender'],
+                        onChanged: (v) {
+                          setState(() {
+                            _gender = v;
+                            _errors['gender'] =
+                                v == null ? 'Gender required' : null;
+                          });
+                          widget.onChanged('gender', v);
+                        },
+                      ),
+              ),
+              AmsField(
+                label: 'Registration Date',
+                required: true,
+                labelAbove: true,
+                tooltip: 'Date when the user was registered in the system.',
+                child: AmsTextInput(
+                  controller: _uRegDateCtrl,
+                  readOnly: true,
+                  icon: Icons.calendar_today_rounded,
+                  placeholder: 'Select Date',
+                  errorText: _errors['regdate'],
+                  onTap: () async {
+                    if (widget.isViewMode) return;
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: DateTime.now(),
+                      firstDate: DateTime(1900),
+                      lastDate: DateTime(2100),
+                    );
+                    if (picked != null) {
+                      final displayFmt = DateFormat('dd-MMM-yyyy').format(picked);
+                      final isoFmt = DateFormat('yyyy-MM-dd').format(picked);
+                      setState(() {
+                        _uRegDateCtrl.text = displayFmt;
+                        _errors['regdate'] = null;
+                      });
+                      widget.onChanged('regdate', isoFmt);
+                    }
+                  },
+                ),
+              ),
+              AmsField(
+                label: 'Date of Birth',
+                required: true,
+                labelAbove: true,
+                tooltip: 'The user\'s date of birth.',
+                child: AmsTextInput(
+                  controller: _uDobCtrl,
+                  readOnly: true,
+                  icon: Icons.cake_rounded,
+                  placeholder: 'Select Date',
+                  errorText: _errors['dob'],
+                  onTap: () async {
+                    if (widget.isViewMode) return;
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: DateTime.now().subtract(const Duration(days: 6570)),
+                      firstDate: DateTime(1900),
+                      lastDate: DateTime.now(),
+                    );
+                    if (picked != null) {
+                      final displayFmt = DateFormat('dd-MMM-yyyy').format(picked);
+                      final isoFmt = DateFormat('yyyy-MM-dd').format(picked);
+                      setState(() {
+                        _uDobCtrl.text = displayFmt;
+                        _errors['dob'] = null;
+                      });
+                      widget.onChanged('dob', isoFmt);
+                    }
+                  },
+                ),
+              ),
+              AmsField(
                 label: 'FULL NAME',
                 required: true,
                 labelAbove: true,
                 tooltip: 'Salutation and full name of the primary contact person.',
+
                 child: Row(
                   children: [
                     Expanded(
@@ -1698,6 +1660,82 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                 ),
               ),
               AmsField(
+                label: 'EMAIL ID',
+                labelAbove: true,
+                tooltip: 'Official email address for communication.',
+                child: AmsTextInput(
+                  controller: _emailCtrl,
+                  readOnly: widget.isViewMode,
+                  placeholder: 'e.g. john@example.com',
+                  keyboardType: TextInputType.emailAddress,
+                  textInputAction: TextInputAction.next,
+                  errorText: _errors['email'],
+                  onChanged: (v) {
+                    setState(() {
+                      if (v.isNotEmpty && !_isValidEmail(v)) {
+                        _errors['email'] = 'Invalid email format';
+                      } else {
+                        _errors['email'] = null;
+                      }
+                    });
+                    widget.onChanged('emailid', v);
+                  },
+                ),
+              ),
+              AmsField(
+                label: 'MOBILE NUMBER',
+                labelAbove: true,
+                tooltip: 'Primary mobile number for contact.',
+                child: AmsTextInput(
+                  controller: _mobileCtrl,
+                  readOnly: widget.isViewMode,
+                  placeholder: 'e.g. 9876543210',
+                  keyboardType: TextInputType.phone,
+                  textInputAction: TextInputAction.next,
+                  onChanged: (v) => widget.onChanged('mobile', v),
+                ),
+              ),
+              AmsField(
+                label: 'CALL CODE',
+                labelAbove: true,
+                tooltip: 'International calling code (e.g. 91).',
+                child: AmsTextInput(
+                  controller: _callCodeCtrl,
+                  readOnly: widget.isViewMode,
+                  placeholder: 'e.g. 91',
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  textInputAction: TextInputAction.next,
+                  onChanged: (v) => widget.onChanged('callCode', int.tryParse(v) ?? 0),
+                ),
+              ),
+              AmsField(
+                label: 'COUNTRY',
+                labelAbove: true,
+                tooltip: 'Country code or identifier.',
+                child: AmsTextInput(
+                  controller: _countryCtrl,
+                  readOnly: widget.isViewMode,
+                  placeholder: 'e.g. 1',
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  textInputAction: TextInputAction.next,
+                  onChanged: (v) => widget.onChanged('country', int.tryParse(v) ?? 0),
+                ),
+              ),
+              AmsField(
+                label: 'BRANCH CODE',
+                labelAbove: true,
+                tooltip: 'Associated branch code for the user.',
+                child: AmsTextInput(
+                  controller: _uBranchCdCtrl,
+                  readOnly: widget.isViewMode,
+                  placeholder: 'Branch CD',
+                  textInputAction: TextInputAction.next,
+                  onChanged: (v) => widget.onChanged('branchCd', v),
+                ),
+              ),
+              AmsField(
                 label: 'REGISTRATION DATE',
                 required: true,
                 labelAbove: true,
@@ -1743,7 +1781,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                 ),
               ),
               AmsField(
-                label: 'BRANCH CODE',
+                label: 'Branch Code',
                 labelAbove: true,
                 tooltip: 'Associated branch code for the user.',
                 child: AmsTextInput(
@@ -1751,7 +1789,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                   readOnly: widget.isViewMode,
                   placeholder: 'Branch CD',
                   textInputAction: TextInputAction.next,
-                  onChanged: (v) => widget.onChanged('branchCd', v),
+                  onChanged: (v) => widget.onChanged('branchcd', v),
                 ),
               ),
               AmsField(
@@ -1766,153 +1804,6 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                     });
                     widget.onChanged('picture', name);
                   },
-                ),
-              ),
-              AmsField(
-                label: 'GENDER',
-                required: false,
-                labelAbove: true,
-                tooltip: 'The user\'s gender for profile identification.',
-                child: widget.isViewMode
-                    ? AmsTextInput(
-                        initialValue: _gender ??
-                            (data['gender']
-                                        ?.toString()
-                                        .toLowerCase()
-                                        .startsWith('f') ==
-                                    true
-                                ? 'Female'
-                                : (data['gender']
-                                            ?.toString()
-                                            .toLowerCase()
-                                            .startsWith('o') ==
-                                        true
-                                    ? 'Other'
-                                    : 'Male')),
-                        readOnly: true,
-                      )
-                    : AmsDropdown(
-                        initialValue: _gender ??
-                            (data['gender']
-                                        ?.toString()
-                                        .toLowerCase()
-                                        .startsWith('f') ==
-                                    true
-                                ? 'Female'
-                                : (data['gender']
-                                            ?.toString()
-                                            .toLowerCase()
-                                            .startsWith('o') ==
-                                        true
-                                    ? 'Other'
-                                    : 'Male')),
-                        items: const ['Male', 'Female', 'Other'],
-                        errorText: _errors['gender'],
-                        onChanged: (v) {
-                          setState(() {
-                            _gender = v;
-                            _errors['gender'] = null;
-                          });
-                          String mapped = 'M';
-                          if (v == 'Female') mapped = 'F';
-                          else if (v == 'Other') mapped = 'O';
-                          widget.onChanged('gender', mapped);
-                        },
-                      ),
-              ),
-              AmsField(
-                label: 'Date of Birth',
-                required: true,
-                labelAbove: true,
-                tooltip: 'The user\'s date of birth.',
-                child: AmsTextInput(
-                  controller: _uDobCtrl,
-                  readOnly: true,
-                  icon: Icons.cake_rounded,
-                  placeholder: 'Select Date',
-                  errorText: _errors['dob'],
-                  onTap: () async {
-                    if (widget.isViewMode) return;
-                    final picked = await showDatePicker(
-                      context: context,
-                      initialDate: DateTime.now().subtract(const Duration(days: 6570)),
-                      firstDate: DateTime(1900),
-                      lastDate: DateTime.now(),
-                    );
-                    if (picked != null) {
-                      final displayFmt = DateFormat('dd-MMM-yyyy').format(picked);
-                      final isoFmt = DateFormat('yyyy-MM-dd').format(picked);
-                      setState(() {
-                        _uDobCtrl.text = displayFmt;
-                        _errors['dob'] = null;
-                      });
-                      widget.onChanged('dob', isoFmt);
-                    }
-                  },
-                ),
-              ),
-              AmsField(
-                label: 'EMAIL ID',
-                labelAbove: true,
-                tooltip: 'Official email address for communication.',
-                child: AmsTextInput(
-                  controller: _emailCtrl,
-                  readOnly: widget.isViewMode,
-                  placeholder: 'e.g. john@example.com',
-                  keyboardType: TextInputType.emailAddress,
-                  textInputAction: TextInputAction.next,
-                  errorText: _errors['email'],
-                  onChanged: (v) {
-                    setState(() {
-                      if (v.isNotEmpty && !_isValidEmail(v)) {
-                        _errors['email'] = 'Invalid email format';
-                      } else {
-                        _errors['email'] = null;
-                      }
-                    });
-                    widget.onChanged('emailid', v);
-                  },
-                ),
-              ),
-              AmsField(
-                label: 'CALL CODE',
-                labelAbove: true,
-                tooltip: 'International calling code (e.g. 91).',
-                child: AmsTextInput(
-                  controller: _callCodeCtrl,
-                  readOnly: widget.isViewMode,
-                  placeholder: 'e.g. 91',
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  textInputAction: TextInputAction.next,
-                  onChanged: (v) => widget.onChanged('callCode', int.tryParse(v) ?? 0),
-                ),
-              ),
-              AmsField(
-                label: 'COUNTRY',
-                labelAbove: true,
-                tooltip: 'Country code or identifier.',
-                child: AmsTextInput(
-                  controller: _countryCtrl,
-                  readOnly: widget.isViewMode,
-                  placeholder: 'e.g. 1',
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  textInputAction: TextInputAction.next,
-                  onChanged: (v) => widget.onChanged('country', int.tryParse(v) ?? 0),
-                ),
-              ),
-              AmsField(
-                label: 'MOBILE NUMBER',
-                labelAbove: true,
-                tooltip: 'Primary mobile number for contact.',
-                child: AmsTextInput(
-                  controller: _mobileCtrl,
-                  readOnly: widget.isViewMode,
-                  placeholder: 'e.g. 9876543210',
-                  keyboardType: TextInputType.phone,
-                  textInputAction: TextInputAction.next,
-                  onChanged: (v) => widget.onChanged('mobile', v),
                 ),
               ),
             ],
@@ -2339,218 +2230,6 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
               ),
             ],
           ),
-        );
-
-      case 'PROG-CRT':
-        return Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              AmsFormGrid(
-                children: [
-                  AmsField(
-                    label: 'PROGRAM ID',
-                    required: true,
-                    labelAbove: true,
-                    tooltip: 'Unique program identifier.',
-                    child: AmsTextInput(
-                      controller: _pgmIdCtrl,
-                      readOnly: widget.isViewMode,
-                      placeholder: 'e.g. GL101',
-                      textInputAction: TextInputAction.next,
-                      errorText: _errors['pgmId'],
-                      isValid: _errors['pgmId'] == null && _pgmIdCtrl.text.isNotEmpty,
-                      onChanged: (v) {
-                        setState(() {
-                          _errors['pgmId'] = v.trim().isEmpty ? 'Program ID required' : null;
-                        });
-                        widget.onChanged('programId', v);
-                      },
-                    ),
-                  ),
-                  AmsField(
-                    label: 'DESCRIPTION',
-                    required: true,
-                    labelAbove: true,
-                    tooltip: 'Full description of the program.',
-                    child: AmsTextInput(
-                      controller: _pgmNameCtrl,
-                      readOnly: widget.isViewMode,
-                      placeholder: 'e.g. Finance Dashboard Entry',
-                      textInputAction: TextInputAction.next,
-                      errorText: _errors['pgmName'],
-                      isValid: _errors['pgmName'] == null && _pgmNameCtrl.text.isNotEmpty,
-                      onChanged: (v) {
-                        setState(() {
-                          _errors['pgmName'] = v.trim().isEmpty ? 'Description required' : null;
-                        });
-                        widget.onChanged('programDescription', v);
-                        widget.onChanged('programName', v); // Also set programName for compatibility
-                      },
-                    ),
-                  ),
-                  AmsField(
-                    label: 'MODULE',
-                    required: true,
-                    labelAbove: true,
-                    tooltip: 'Select the module this program belongs to.',
-                    child: widget.isViewMode
-                        ? AmsTextInput(
-                            initialValue: _selModule ?? '—',
-                            readOnly: true,
-                          )
-                        : _loadingDropdowns
-                            ? const LinearProgressIndicator()
-                            : AmsDropdown(
-                                initialValue: _selModule != null
-                                    ? _moduleList.firstWhere(
-                                        (m) => (m['moduleCd'] ?? m['MODCD']) == _selModule,
-                                        orElse: () => {'moduleCd': _selModule, 'moduleName': _selModule})['moduleName']
-                                    : null,
-                                placeholder: 'Select Module',
-                                items: _moduleList.map((m) => m['moduleName']?.toString() ?? m['MODNAME']?.toString() ?? '').toList(),
-                                errorText: _errors['module'],
-                                isValid: _errors['module'] == null && _selModule != null,
-                                onChanged: (v) {
-                                  final mod = _moduleList.firstWhere(
-                                      (m) => (m['moduleName'] ?? m['MODNAME']) == v);
-                                  final modCd = (mod['moduleCd'] ?? mod['MODCD']).toString();
-                                  setState(() {
-                                    _selModule = modCd;
-                                    _selSubModule = null; // Reset sub-module
-                                    _errors['module'] = null;
-                                  });
-                                  widget.onChanged('moduleCd', modCd);
-                                },
-                              ),
-                  ),
-                  AmsField(
-                    label: 'SUB MODULE',
-                    labelAbove: true,
-                    tooltip: 'Select the sub-module if applicable.',
-                    child: widget.isViewMode
-                        ? AmsTextInput(
-                            initialValue: _selSubModule ?? '—',
-                            readOnly: true,
-                          )
-                        : _selModule == null
-                            ? AmsTextInput(
-                                placeholder: 'Select Module First',
-                                readOnly: true,
-                              )
-                            : () {
-                                final mod = _moduleList.firstWhere(
-                                    (m) => (m['moduleCd'] ?? m['MODCD']).toString() == _selModule,
-                                    orElse: () => {});
-                                final smRaw = mod['subModules'] ?? mod['submodules'] ?? [];
-                                final List<dynamic> subModules = smRaw is List ? smRaw : [];
-                                
-                                if (subModules.isEmpty) {
-                                  return AmsTextInput(
-                                    placeholder: 'No Sub Modules',
-                                    readOnly: true,
-                                  );
-                                }
-                                
-                                return AmsDropdown(
-                                  initialValue: _selSubModule != null
-                                      ? subModules.firstWhere(
-                                          (sm) => (sm['subModuleCd'] ?? sm['SUBMODCD']) == _selSubModule,
-                                          orElse: () => {'subModuleName': _selSubModule})['subModuleName']
-                                      : null,
-                                  placeholder: 'Select Sub Module',
-                                  items: subModules.map((sm) => sm['subModuleName']?.toString() ?? sm['SUBMODNAME']?.toString() ?? '').toList(),
-                                  onChanged: (v) {
-                                    final sm = subModules.firstWhere(
-                                        (sm) => (sm['subModuleName'] ?? sm['SUBMODNAME']) == v);
-                                    final smCd = (sm['subModuleCd'] ?? sm['SUBMODCD']).toString();
-                                    setState(() {
-                                      _selSubModule = smCd;
-                                    });
-                                    widget.onChanged('subModuleCd', smCd);
-                                  },
-                                );
-                              }(),
-                  ),
-                  AmsField(
-                    label: 'PROGRAM CLASS',
-                    required: true,
-                    labelAbove: true,
-                    tooltip: 'Classification of the program (e.g., Transaction, Master).',
-                    child: widget.isViewMode
-                        ? AmsTextInput(
-                            initialValue: _pgmClass ?? '—',
-                            readOnly: true,
-                          )
-                        : AmsDropdown(
-                            initialValue: _pgmClass,
-                            placeholder: 'Select Class',
-                            items: const ['N - Non Transaction / Master', 'T - Transaction'],
-                            errorText: _errors['pgmClass'],
-                            isValid: _errors['pgmClass'] == null && _pgmClass != null,
-                            onChanged: (v) {
-                              setState(() {
-                                _pgmClass = v;
-                                _errors['pgmClass'] = null;
-                              });
-                              widget.onChanged('programClass', v?.substring(0, 1));
-                            },
-                          ),
-                  ),
-                  AmsField(
-                    label: 'STATUS',
-                    labelAbove: true,
-                    tooltip: 'Enable or disable this program.',
-                    child: widget.isViewMode
-                        ? AmsTextInput(
-                            initialValue: _pgmStatus == 1 ? '1 - Enable' : '0 - Disable',
-                            readOnly: true,
-                          )
-                        : AmsDropdown(
-                            initialValue: _pgmStatus == 1 ? '1 - Enable' : '0 - Disable',
-                            items: const ['1 - Enable', '0 - Disable'],
-                            onChanged: (v) {
-                              final st = v?.startsWith('1') == true ? 1 : 0;
-                              setState(() => _pgmStatus = st);
-                                widget.onChanged('status', st);
-                            },
-                          ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              AmsField(
-                label: 'REMARKS',
-                labelAbove: true,
-                tooltip: 'Additional notes or remarks.',
-                child: AmsTextInput(
-                  controller: _pgmRemarksCtrl,
-                  readOnly: widget.isViewMode,
-                  placeholder: 'Enter any additional notes...',
-                  maxLines: 3,
-                  onChanged: (v) => widget.onChanged('remarks', v),
-                ),
-              ),
-            ],
-          ),
-        );
-
-      case 'BRN-CRT':
-        return BranchScreenFields(
-
-          key: _branchKey,
-          isViewMode: widget.isViewMode,
-          initialData: widget.initialData,
-          pgmStatus: _pgmStatus,
-          onChanged: widget.onChanged,
-          onStatusChanged: (v) => setState(() => _pgmStatus = v),
-          parentContext: context,
         );
 
 

@@ -7,11 +7,13 @@ import '../theme.dart';
 
 class MenuScreen extends StatefulWidget {
   final VoidCallback onBack;
+  final VoidCallback? onBackToModule;
   final String? userName;
 
   const MenuScreen({
     super.key,
     required this.onBack,
+    this.onBackToModule,
     this.userName,
   });
 
@@ -50,7 +52,7 @@ class _MenuScreenState extends State<MenuScreen> with SingleTickerProviderStateM
             accentMd: AppColors.tBlueMd,
             breadcrumbs: [
               HeaderBreadcrumb(label: 'Home', onTap: widget.onBack),
-              HeaderBreadcrumb(label: 'Masters', onTap: widget.onBack),
+              HeaderBreadcrumb(label: 'Masters', onTap: widget.onBackToModule ?? widget.onBack),
               HeaderBreadcrumb(label: 'Menu Designer'),
             ],
             onBack: widget.onBack,
