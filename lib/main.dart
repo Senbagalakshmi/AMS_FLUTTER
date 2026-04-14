@@ -24,6 +24,7 @@ import 'screens/modal_queue_direct.dart';
 import 'screens/menu_screen.dart';
 import 'screens/organisation_screen.dart';
 import 'screens/branch_screen.dart';
+import 'screens/gl_dashboard_screen.dart';
 
 void main() {
   runApp(const AmsApp());
@@ -108,12 +109,21 @@ class _AmsRootState extends State<AmsRoot> {
   Future<void> _fetchModuleCounts() async {
     final glApi = GLApiService();
     try {
-      final catsRes = await apiService.getAllGlCategories();
-      final mastsRes = await apiService.getAllGlMasters();
-      final curs = await glApi.getGl103List();
-      final brns = await glApi.getGl104List();
-      final segs = await glApi.getAllGlSegments();
-      final atts = await GLApiService.getAllGlAttributes();
+      final results = await Future.wait([
+        apiService.getAllGlCategories(),
+        apiService.getAllGlMasters(),
+        glApi.getGl103List(),
+        glApi.getGl104List(),
+        glApi.getAllGlSegments(),
+        GLApiService.getAllGlAttributes(),
+      ]);
+
+      final catsRes = results[0] as PaginatedResult<Map<String, dynamic>>?;
+      final mastsRes = results[1] as PaginatedResult<Map<String, dynamic>>?;
+      final curs = results[2] as List<dynamic>?;
+      final brns = results[3] as List<dynamic>?;
+      final segs = results[4] as List<dynamic>?;
+      final atts = results[5] as List<dynamic>?;
 
       final newCounts = {
         'GL-CAT': catsRes?.totalElements ?? 0,
@@ -562,23 +572,55 @@ class _AmsRootState extends State<AmsRoot> {
           }).toList();
         }
 
-        body = SubmenuDashboardScreen(
-          title: title,
-          items: items,
-          onBack: () => _navigate('list'),
-          onNavigate: (s, p) {
-            setState(() {
-              _state = _state.copyWith(
-                screen: s,
-                selectedProg: p,
-                selectedType: p != null
-                    ? (tranPrograms.contains(p) ? 'T' : 'N')
-                    : _state.selectedType,
-                clearCategory: true,
-              );
-            });
-          },
-        );
+        if (cat == 'GL') {
+          body = GlDashboardScreen(
+            items: glSubmenus.map((item) {
+              final count = _state.counts[item.programId] ?? 0;
+              String metric = item.metric ?? '';
+              
+              if (item.programId == 'GL-CAT') metric = '$count Cat';
+              else if (item.programId == 'GL-MST') metric = '$count Mast';
+              else if (item.programId == 'GL-CUR') metric = '$count Cur';
+              else if (item.programId == 'GL-BRN') metric = '$count Br';
+              else if (item.programId == 'GL-SEG') metric = '$count Seg';
+              else if (item.programId == 'GL-ATT') metric = '$count Attr';
+              
+              return item.copyWith(metric: metric);
+            }).toList(),
+            userName: _state.userName,
+            onBack: () => _navigate('list'),
+            onNavigate: (s, p) {
+              setState(() {
+                _state = _state.copyWith(
+                  screen: s,
+                  selectedProg: p,
+                  selectedType: p != null
+                      ? (tranPrograms.contains(p) ? 'T' : 'N')
+                      : _state.selectedType,
+                  clearCategory: true,
+                );
+              });
+            },
+          );
+        } else {
+          body = SubmenuDashboardScreen(
+            title: title,
+            items: items,
+            onBack: () => _navigate('list'),
+            onNavigate: (s, p) {
+              setState(() {
+                _state = _state.copyWith(
+                  screen: s,
+                  selectedProg: p,
+                  selectedType: p != null
+                      ? (tranPrograms.contains(p) ? 'T' : 'N')
+                      : _state.selectedType,
+                  clearCategory: true,
+                );
+              });
+            },
+          );
+        }
       default:
         body = LoginScreen(onLogin: _handleLogin);
     }
