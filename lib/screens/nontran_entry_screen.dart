@@ -87,39 +87,12 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
       
       if (success) {
         showAmsSnack(context, 'Record deleted successfully', icon: '✅');
+        // We need to refresh the list. Since _RoleListView has its own state, 
+        // the easiest way is a small setState to trigger rebuild of the whole screen 
+        // which resets the list view or use a key.
         setState(() {}); 
       } else {
         showAmsSnack(context, 'Failed to delete record', icon: '❌');
-      }
-    }
-  }
-
-  Future<void> _handleDeleteModule(BuildContext context, Map<String, dynamic> record) async {
-    final bool? confirm = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('Delete Module', style: bodyStyle(weight: FontWeight.bold)),
-        content: Text('Are you sure you want to delete this module? This action cannot be undone.', style: bodyStyle()),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('Cancel', style: bodyStyle(color: AppColors.ink3))),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true), 
-            child: Text('Delete', style: bodyStyle(color: AppColors.red, weight: FontWeight.bold))
-          ),
-        ],
-      ),
-    );
-
-    if (confirm == true) {
-      final orgCode = record['orgCode'] ?? record['orgcode'] ?? 50;
-      final moduleCd = (record['moduleCd'] ?? record['moduleid'] ?? record['modcd'] ?? '').toString();
-      final success = await apiService.deleteModule(orgCode is int ? orgCode : 50, moduleCd);
-      
-      if (success) {
-        showAmsSnack(context, 'Module deleted successfully', icon: '✅');
-        setState(() {}); 
-      } else {
-        showAmsSnack(context, 'Failed to delete module', icon: '❌');
       }
     }
   }
@@ -278,42 +251,41 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
                 ),
                 child: Column(
                   children: [
-                    // Navy Header Bar (Hidden for MOD-CRT List as per request)
-                    if (!isModuleScreenList)
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 12),
-                        decoration: const BoxDecoration(
-                          color: AppColors.sidebar,
-                          borderRadius:
-                              BorderRadius.vertical(top: Radius.circular(8)),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              isAnyList
-                                  ? '${_cfg?.name ?? _selProg!} List'
-                                  : '${_viewRecord != null ? 'View' : 'New'} ${_cfg?.name ?? _selProg!}',
-                              style: bodyStyle(
-                                size: 14,
-                                color: Colors.white,
-                                weight: FontWeight.w700,
-                              ),
-                            ),
-                            if (_showForm)
-                              IconButton(
-                                icon: const Icon(Icons.keyboard_arrow_up_rounded,
-                                    color: Colors.white),
-                                onPressed: () => setState(() {
-                                  _showForm = false;
-                                  _viewRecord = null;
-                                }),
-                              ),
-                          ],
-                        ),
+                    // Navy Header Bar
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
+                      decoration: const BoxDecoration(
+                        color: AppColors.sidebar,
+                        borderRadius:
+                            BorderRadius.vertical(top: Radius.circular(8)),
                       ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            isAnyList
+                                ? '${_cfg?.name ?? _selProg!} List'
+                                : '${_viewRecord != null ? 'View' : 'New'} ${_cfg?.name ?? _selProg!}',
+                            style: bodyStyle(
+                              size: 14,
+                              color: Colors.white,
+                              weight: FontWeight.w700,
+                            ),
+                          ),
+                          if (_showForm)
+                            IconButton(
+                              icon: const Icon(Icons.keyboard_arrow_up_rounded,
+                                  color: Colors.white),
+                              onPressed: () => setState(() {
+                                _showForm = false;
+                                _viewRecord = null;
+                              }),
+                            ),
+                        ],
+                      ),
+                    ),
 
                     // Body
                     Expanded(
@@ -340,11 +312,7 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
                           return _UserRoleListView(onView: handleView);
                         }
                         if (isModuleScreenList) {
-                          return _ModuleListView(
-                            onView: handleView,
-                            onEdit: handleView,
-                            onDelete: (rec) => _handleDeleteModule(context, rec),
-                          );
+                          return _ModuleListView(onView: handleView);
                         }
                         if (isAuthCtrlScreenList) {
                           return _AuthCtrlListView(onView: handleView);
@@ -809,10 +777,7 @@ class _UserRoleListViewState extends State<_UserRoleListView> {
 
 class _ModuleListView extends StatefulWidget {
   final void Function(Map<String, dynamic>)? onView;
-  final void Function(Map<String, dynamic>)? onEdit;
-  final void Function(Map<String, dynamic>)? onDelete;
-  const _ModuleListView({this.onView, this.onEdit, this.onDelete});
-
+  const _ModuleListView({this.onView});
   @override
   State<_ModuleListView> createState() => _ModuleListViewState();
 }
@@ -821,7 +786,6 @@ class _ModuleListViewState extends State<_ModuleListView> {
   List<Map<String, dynamic>>? _data;
   int _totalItems = 0;
   bool _loading = true;
-  String _searchQuery = '';
 
   @override
   void initState() {
@@ -846,131 +810,55 @@ class _ModuleListViewState extends State<_ModuleListView> {
     if (_loading && _data == null) {
       return const AmsListSkeleton();
     }
+    return AmsPaginatedView<Map<String, dynamic>>(
+      items: _data ?? [],
+      totalRecords: _totalItems,
+      onPageChanged: _load,
+      builder: (ctx, currentItems) => ListView.builder(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+        itemCount: currentItems.length,
+        itemBuilder: (ctx, idx) {
+          final d = currentItems[idx];
+          final String moduleName = d['moduleName'] ??
+              d['modulename'] ??
+              d['module_name'] ??
+              'Unknown';
+          final String moduleCd =
+              (d['moduleCd'] ?? d['module_id'] ?? d['moduleid'] ?? '—')
+                  .toString();
 
-    final filteredItems = (_data ?? []).where((d) {
-      if (_searchQuery.isEmpty) return true;
-      final name = (d['moduleName'] ?? d['modulename'] ?? '').toString().toLowerCase();
-      final cd = (d['moduleCd'] ?? d['moduleid'] ?? '').toString().toLowerCase();
-      return name.contains(_searchQuery.toLowerCase()) || cd.contains(_searchQuery.toLowerCase());
-    }).toList();
-
-    return Column(
-      children: [
-        // Search Box like Organization screen
-        Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Row(
-            children: [
-              Expanded(
-                child: AmsTextInput(
-                  placeholder: 'Search modules...',
-                  icon: Icons.search_rounded,
-                  borderColor: AppColors.tBlue,
-                  onChanged: (v) => setState(() => _searchQuery = v),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Material(
-                color: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  side: const BorderSide(color: AppColors.border),
-                ),
-                child: InkWell(
-                  onTap: () => _load(1),
-                  borderRadius: BorderRadius.circular(8),
-                  child: const Padding(
-                    padding: EdgeInsets.all(10),
-                    child: Icon(Icons.refresh_rounded, size: 20, color: AppColors.ink2),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        Expanded(
-          child: AmsPaginatedView<Map<String, dynamic>>(
-            items: filteredItems,
-            totalRecords: _totalItems,
-            onPageChanged: _load,
-            builder: (ctx, currentItems) => ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              itemCount: currentItems.length,
-              itemBuilder: (ctx, idx) {
-                final d = currentItems[idx];
-                final String moduleName = d['moduleName'] ?? d['modulename'] ?? d['module_name'] ?? 'Unknown';
-                final String moduleCd = (d['moduleCd'] ?? d['module_id'] ?? d['moduleid'] ?? '—').toString();
-
-                return AmsCard(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  child: Row(
+          return AmsCard(
+            onTap: widget.onView != null ? () => widget.onView!(d) : null,
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Avatar/Icon
-                      Container(
-                        width: 44,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          color: AppColors.tBlueLt,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Center(
-                          child: Text(
-                            moduleName.isNotEmpty ? moduleName[0].toUpperCase() : 'M',
-                            style: bodyStyle(weight: FontWeight.bold, color: AppColors.tBlue, size: 16),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      // Labels
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(moduleName, style: bodyStyle(size: 15, weight: FontWeight.w600)),
-                            const SizedBox(height: 4),
-                            Text('Module Code: $moduleCd  |  ORG: ${d['orgCode'] ?? d['orgcode'] ?? 50}',
-                                style: bodyStyle(color: AppColors.ink3, size: 12)),
-                          ],
-                        ),
-                      ),
-                      // Status Badge
-                      AmsBadge(
-                        label: (d['status']?.toString() == '0') ? 'Disabled' : 'Enabled',
-                        background: (d['status']?.toString() == '0') ? AppColors.grayLt : AppColors.nTealLt,
-                        color: (d['status']?.toString() == '0') ? AppColors.ink3 : AppColors.nTeal,
-                      ),
-                      const SizedBox(width: 16),
-                      // Actions
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          _ActionButton(
-                            icon: Icons.visibility_outlined,
-                            color: Colors.green,
-                            onTap: () => widget.onView?.call(d),
-                          ),
-                          const SizedBox(width: 8),
-                          _ActionButton(
-                            icon: Icons.edit_outlined,
-                            color: AppColors.tBlue,
-                            onTap: () => widget.onEdit?.call(d),
-                          ),
-                          const SizedBox(width: 8),
-                          _ActionButton(
-                            icon: Icons.delete_outline_rounded,
-                            color: Colors.red,
-                            onTap: () => widget.onDelete?.call(d),
-                          ),
-                        ],
-                      ),
+                      Text(moduleName,
+                          style: bodyStyle(size: 15, weight: FontWeight.w600)),
+                      const SizedBox(height: 4),
+                      Text('Module Code: $moduleCd  |  ORG: ${d['orgCode'] ?? d['orgcode'] ?? 50}',
+                          style: bodyStyle(color: AppColors.ink3)),
                     ],
                   ),
-                );
-              },
+                ),
+                AmsBadge(
+                    label: (d['status']?.toString() == '0')
+                        ? 'Disabled'
+                        : 'Enabled',
+                    background: (d['status']?.toString() == '0')
+                        ? AppColors.grayLt
+                        : AppColors.nTealLt,
+                    color: (d['status']?.toString() == '0')
+                        ? AppColors.ink3
+                        : AppColors.nTeal),
+              ],
             ),
-          ),
-        ),
-      ],
+          );
+        },
+      ),
     );
   }
 }
