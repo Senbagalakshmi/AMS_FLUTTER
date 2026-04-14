@@ -565,6 +565,31 @@ class ApiService {
       return false;
     }
   }
+
+  Future<bool> deleteModule(int orgCode, String moduleCd) async {
+    try {
+      final res = await http.delete(
+        Uri.parse('$baseUrl/modules/$orgCode/$moduleCd'),
+        headers: _headers,
+      );
+      return res.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<bool> updateModule(Map<String, dynamic> data) async {
+    try {
+      final res = await http.put(
+        Uri.parse('$baseUrl/modules'),
+        headers: _headers,
+        body: jsonEncode(data),
+      );
+      return res.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
 }
 
 final apiService = ApiService();
