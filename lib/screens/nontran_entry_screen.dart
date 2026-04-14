@@ -620,7 +620,7 @@ class _RoleListViewState extends State<_RoleListView> {
               itemCount: currentItems.length,
               itemBuilder: (ctx, idx) {
                 final r = currentItems[idx];
-                final accessName = r['accessName'] ?? r['accessname'] ?? 'Unnamed Access';
+                final accessName = r['access_name'] ?? r['access_name'] ?? 'Unnamed Access';
                 final accessCd = r['accessCd'] ?? r['accesscd'] ?? '—';
                 
                 return AmsCard(
