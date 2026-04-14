@@ -1349,7 +1349,8 @@ void showAmsSnack(BuildContext context, String msg,
 }
 
 // ─── SIDEBAR ITEM ─────────────────────────────────────────────
-class AmsSidebarItem extends StatefulWidget {
+// ─── SIDEBAR ITEM ─────────────────────────────────────────────
+class AmsSidebarItem extends StatelessWidget {
   final String label;
   final IconData icon;
   final bool isSelected;
@@ -1368,64 +1369,59 @@ class AmsSidebarItem extends StatefulWidget {
   });
 
   @override
-  State<AmsSidebarItem> createState() => _AmsSidebarItemState();
-}
-
-class _AmsSidebarItemState extends State<AmsSidebarItem> {
-  bool _hover = false;
-
-  @override
   Widget build(BuildContext context) {
     return MouseRegion(
       cursor: SystemMouseCursors.click,
-      onEnter: (_) => setState(() => _hover = true),
-      onExit: (_) => setState(() => _hover = false),
       child: GestureDetector(
-        onTap: widget.onTap,
+        onTap: onTap,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           margin: EdgeInsets.only(
-              left: widget.isCollapsed ? 6 : 8, right: 8, top: 4, bottom: 4),
+              left: isCollapsed ? 6 : 12, right: 0, top: 2, bottom: 2),
           padding: EdgeInsets.symmetric(
-              horizontal: widget.isCollapsed ? 0 : 12, vertical: 8),
+              horizontal: isCollapsed ? 0 : 16, vertical: 12),
           decoration: BoxDecoration(
-            color: widget.isSelected 
-                ? Colors.white.withValues(alpha: 0.1) 
-                : (_hover ? Colors.white.withValues(alpha: 0.05) : Colors.transparent),
-            borderRadius: BorderRadius.circular(10),
-            border: widget.isSelected
-                ? const Border(left: BorderSide(color: AppColors.tBlue, width: 3))
+            color: Colors.transparent,
+            border: isSelected
+                ? const Border(left: BorderSide(color: Colors.white, width: 3))
                 : null,
           ),
-          child: widget.isCollapsed
+          child: isCollapsed
               ? Center(
-                  child: Icon(widget.icon,
-                      size: 22,
-                      color: widget.color ??
-                          (widget.isSelected ? Colors.white : Colors.white70)),
+                  child: Icon(icon,
+                      size: 24,
+                      color: color ??
+                          (isSelected ? Colors.white : Colors.white70)),
                 )
-                : Row(
+              : SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  physics: const NeverScrollableScrollPhysics(),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.start,
                     children: [
-                    Icon(widget.icon,
-                        size: 20,
-                        color: widget.color ??
-                            (widget.isSelected ? Colors.white : ( _hover ? Colors.white : Colors.white70))),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Text(
-                        widget.label,
-                        style: bodyStyle(
-                          size: 13,
-                          weight:
-                              widget.isSelected ? FontWeight.w700 : FontWeight.w600,
-                          color: widget.color ??
-                              (widget.isSelected ? Colors.white : (_hover ? Colors.white : Colors.white70)),
+                      Icon(icon,
+                          size: 24,
+                          color: color ??
+                              (isSelected ? Colors.white : Colors.white70)),
+                      const SizedBox(width: 14),
+                      SizedBox(
+                        width: 200,
+                        child: Text(
+                          label,
+                          style: bodyStyle(
+                            size: 14,
+                            weight:
+                                isSelected ? FontWeight.w700 : FontWeight.w600,
+                            color: color ??
+                                (isSelected ? Colors.white : Colors.white70),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
         ),
       ),
@@ -1434,7 +1430,7 @@ class _AmsSidebarItemState extends State<AmsSidebarItem> {
 }
 
 // ─── SUB SIDEBAR ITEM ─────────────────────────────────────────
-class AmsSubSidebarItem extends StatefulWidget {
+class AmsSubSidebarItem extends StatelessWidget {
   final String label;
   final bool isSelected;
   final VoidCallback onTap;
@@ -1451,32 +1447,20 @@ class AmsSubSidebarItem extends StatefulWidget {
   });
 
   @override
-  State<AmsSubSidebarItem> createState() => _AmsSubSidebarItemState();
-}
-
-class _AmsSubSidebarItemState extends State<AmsSubSidebarItem> {
-  bool _hover = false;
-
-  @override
   Widget build(BuildContext context) {
     return MouseRegion(
       cursor: SystemMouseCursors.click,
-      onEnter: (_) => setState(() => _hover = true),
-      onExit: (_) => setState(() => _hover = false),
       child: GestureDetector(
-        onTap: widget.onTap,
+        onTap: onTap,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           margin: EdgeInsets.only(
-              left: widget.isCollapsed ? 6 : 24, right: 8, top: 2, bottom: 2),
+              left: isCollapsed ? 6 : 30, right: 0, top: 1, bottom: 1),
           padding: EdgeInsets.symmetric(
-              horizontal: widget.isCollapsed ? 0 : 4, vertical: 4),
+              horizontal: isCollapsed ? 8 : 16, vertical: 10),
           decoration: BoxDecoration(
-            color: widget.isSelected 
-                ? Colors.white.withValues(alpha: 0.1) 
-                : (_hover ? Colors.white.withValues(alpha: 0.05) : Colors.transparent),
-            borderRadius: BorderRadius.circular(8),
-            border: widget.isSelected
+            color: Colors.transparent,
+            border: isSelected
                 ? const Border(
                     left: BorderSide(
                       color: Colors.white,
@@ -1485,27 +1469,32 @@ class _AmsSubSidebarItemState extends State<AmsSubSidebarItem> {
                   )
                 : null,
           ),
-          child: widget.isCollapsed
+          child: isCollapsed
               ? Center(
-                  child: Icon(widget.icon ?? Icons.adjust_rounded,
-                      size: 16,
-                      color: widget.isSelected ? Colors.white : Colors.white70),
+                  child: Icon(icon ?? Icons.adjust_rounded,
+                      size: 18,
+                      color: isSelected ? Colors.white : Colors.white70),
                 )
-              : Row(
-                  children: [
-                    const SizedBox(width: 12),
-                      Icon(widget.icon ?? Icons.circle,
-                          size: 6,
-                          color: widget.isSelected ? Colors.white : ( _hover ? Colors.white : Colors.white70)),
+              : SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  physics: const NeverScrollableScrollPhysics(),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      Icon(icon ?? Icons.circle,
+                          size: 8,
+                          color: isSelected ? Colors.white : Colors.white70),
                       const SizedBox(width: 12),
-                      Expanded(
+                      SizedBox(
+                        width: 185,
                         child: Text(
-                          widget.label,
+                          label,
                           style: bodyStyle(
                             size: 12,
                             weight:
-                                widget.isSelected ? FontWeight.w700 : FontWeight.w500,
-                            color: widget.isSelected ? Colors.white : (_hover ? Colors.white : Colors.white70),
+                                isSelected ? FontWeight.w700 : FontWeight.w500,
+                            color: isSelected ? Colors.white : Colors.white70,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -1513,6 +1502,7 @@ class _AmsSubSidebarItemState extends State<AmsSubSidebarItem> {
                       ),
                     ],
                   ),
+                ),
         ),
       ),
     );
@@ -1584,7 +1574,7 @@ class _AmsSidebarState extends State<AmsSidebar> {
           // 🔹 MENU LIST
           Expanded(
             child: ListView(
-              padding: const EdgeInsets.only(top: 16, bottom: 16),
+              padding: const EdgeInsets.only(top: 24, bottom: 24),
               children: [
                 if (!widget.isCollapsed) _sectionHeader('GENERAL'),
 
@@ -1603,7 +1593,7 @@ class _AmsSidebarState extends State<AmsSidebar> {
                   },
                 ),
 
-                const SizedBox(height: 8),
+                const SizedBox(height: 16),
 
                 // 🔹 MASTERS
                 AmsSidebarItem(
@@ -1681,7 +1671,7 @@ class _AmsSidebarState extends State<AmsSidebar> {
                   ),
                 ],
 
-                const SizedBox(height: 8),
+                const SizedBox(height: 16),
 
                 // 🔹 GL MODULE
                 AmsSidebarItem(
@@ -1745,7 +1735,7 @@ class _AmsSidebarState extends State<AmsSidebar> {
                   ),
                 ],
 
-                const SizedBox(height: 8),
+                const SizedBox(height: 16),
                 if (!widget.isCollapsed) _sectionHeader('SYSTEM'),
 
                 // 🔹 CONFIGURATION
@@ -1773,7 +1763,7 @@ class _AmsSidebarState extends State<AmsSidebar> {
                   ),
                 ],
 
-                const SizedBox(height: 8),
+                const SizedBox(height: 16),
 
                 // 🔹 AUTH
                 AmsSidebarItem(
@@ -1866,21 +1856,30 @@ class _AmsShellState extends State<AmsShell> {
       backgroundColor: AppColors.bg,
       body: Column(
         children: [
-          _RepaintBoundaryWrapper(
-            child: _HoverTopBar(
-              userName: widget.userName,
-              onNavigate: widget.onNavigate,
-            ),
+          _HoverTopBar(
+            userName: widget.userName,
+            onNavigate: widget.onNavigate,
           ),
           Expanded(
             child: Row(
               children: [
-                _SidebarHoverWrapper(
-                  currentScreen: widget.currentScreen,
-                  selectedProg: widget.selectedProg,
-                  onNavigate: widget.onNavigate,
+                MouseRegion(
+                  onEnter: (_) => setState(() => _isCollapsed = false),
+                  onExit: (_) => setState(() => _isCollapsed = true),
+                  child: AnimatedSize(
+                    duration: const Duration(milliseconds: 250),
+                    curve: Curves.easeInOut,
+                    child: AmsSidebar(
+                      currentScreen: widget.currentScreen,
+                      selectedProg: widget.selectedProg,
+                      onNavigate: widget.onNavigate,
+                      isCollapsed: _isCollapsed,
+                      onToggle: () =>
+                          setState(() => _isCollapsed = !_isCollapsed),
+                    ),
+                  ),
                 ),
-                Expanded(child: _RepaintBoundaryWrapper(child: widget.child)),
+                Expanded(child: widget.child),
               ],
             ),
           ),
@@ -1988,91 +1987,89 @@ class _HoverTopBarState extends State<_HoverTopBar> {
 
   @override
   Widget build(BuildContext context) {
-    return RepaintBoundary(
-      child: MouseRegion(
-        onEnter: (_) => setState(() => _hover = true),
-        onExit: (_) => setState(() => _hover = false),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 250),
-          alignment: Alignment.center,
-          height: _hover ? 72 : 45, //  Height collapse / expand
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          decoration: const BoxDecoration(
-            color: Color(0xFF1E2B5E),
-            border: Border(
-              bottom: BorderSide(color: Colors.white12),
-            ),
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        alignment: Alignment.center,
+        height: _hover ? 72 : 45, //  Height collapse / expand
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        decoration: const BoxDecoration(
+          color: Color(0xFF1E2B5E),
+          border: Border(
+            bottom: BorderSide(color: Colors.white12),
           ),
-          child: SingleChildScrollView(
-            physics: const NeverScrollableScrollPhysics(),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                /// Top Row (Always visible)
-                Row(
-                  children: [
-                    _PremiumAppLauncher(),
-                    const SizedBox(width: 12),
-  
-                    Container(
-                      width: 34,
-                      height: 34,
-                      decoration: BoxDecoration(
-                        color: AppColors.tBlue,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Icon(Icons.shield_rounded,
-                          color: Colors.white, size: 20),
+        ),
+        child: SingleChildScrollView(
+          physics: const NeverScrollableScrollPhysics(),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              /// Top Row (Always visible)
+              Row(
+                children: [
+                  _PremiumAppLauncher(),
+                  const SizedBox(width: 12),
+
+                  Container(
+                    width: 34,
+                    height: 34,
+                    decoration: BoxDecoration(
+                      color: AppColors.tBlue,
+                      borderRadius: BorderRadius.circular(8),
                     ),
-  
-                    const SizedBox(width: 10),
-  
-                    Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
+                    child: const Icon(Icons.shield_rounded,
+                        color: Colors.white, size: 20),
+                  ),
+
+                  const SizedBox(width: 10),
+
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "FINANCE",
+                        style: bodyStyle(
+                          size: 16,
+                          weight: FontWeight.w800,
+                          color: Colors.white,
+                        ),
+                      ),
+                      if (_hover)
                         Text(
-                          "FINANCE",
+                          "Management System",
                           style: bodyStyle(
-                            size: 16,
-                            weight: FontWeight.w800,
-                            color: Colors.white,
+                            size: 10,
+                            color: Colors.white70,
                           ),
                         ),
-                        if (_hover)
-                          Text(
-                            "Management System",
-                            style: bodyStyle(
-                              size: 10,
-                              color: Colors.white70,
-                            ),
-                          ),
-                      ],
-                    ),
-  
-                    const Spacer(),
-  
-                    /// Icons only when expanded
-                    if (_hover) ...[
-                      _HoverIconButton(icon: Icons.help_outline_rounded),
-                      const SizedBox(width: 8),
-                      _HoverIconButton(icon: Icons.notifications_none_rounded),
-                      const SizedBox(width: 8),
-                      _HoverIconButton(icon: Icons.settings_outlined),
-                      const SizedBox(width: 16),
-                      Container(height: 28, width: 1, color: Colors.white24),
-                      const SizedBox(width: 16),
                     ],
-                    _PremiumProfileMenu(
-                      userName: widget.userName,
-                      onNavigate: widget.onNavigate,
-                      isExpanded: _hover,
-                    ),
+                  ),
+
+                  const Spacer(),
+
+                  /// Icons only when expanded
+                  if (_hover) ...[
+                    _HoverIconButton(icon: Icons.help_outline_rounded),
+                    const SizedBox(width: 8),
+                    _HoverIconButton(icon: Icons.notifications_none_rounded),
+                    const SizedBox(width: 8),
+                    _HoverIconButton(icon: Icons.settings_outlined),
+                    const SizedBox(width: 16),
+                    Container(height: 28, width: 1, color: Colors.white24),
+                    const SizedBox(width: 16),
                   ],
-                ),
-              ],
-            ),
+                  _PremiumProfileMenu(
+                    userName: widget.userName,
+                    onNavigate: widget.onNavigate,
+                    isExpanded: _hover,
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
       ),
@@ -2300,14 +2297,10 @@ class _PremiumProfileMenu extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Flexible(
-                child: Text(
-                  userName ?? "User@gmail.com",
-                  style: bodyStyle(
-                      size: 13, weight: FontWeight.w700, color: Colors.white),
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 1,
-                ),
+              Text(
+                userName ?? "User@gmail.com",
+                style: bodyStyle(
+                    size: 13, weight: FontWeight.w700, color: Colors.white),
               ),
               if (isExpanded) ...[
                 const SizedBox(height: 2),
@@ -2381,7 +2374,7 @@ class _PremiumProfileMenu extends StatelessWidget {
                             ),
                           ),
 
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 4),
 
                           /// Email
                           Text(
@@ -3170,59 +3163,6 @@ class AmsListSkeleton extends StatelessWidget {
             const SizedBox(width: 16),
             const AmsSkeleton(width: 60, height: 20, radius: 4),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-// -------------------------------------------------------------
-// ?? OPTIMIZATION HELPERS
-// -------------------------------------------------------------
-
-class _RepaintBoundaryWrapper extends StatelessWidget {
-  final Widget child;
-  const _RepaintBoundaryWrapper({required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    return RepaintBoundary(child: child);
-  }
-}
-
-class _SidebarHoverWrapper extends StatefulWidget {
-  final String currentScreen;
-  final String? selectedProg;
-  final void Function(String, String?) onNavigate;
-
-  const _SidebarHoverWrapper({
-    required this.currentScreen,
-    this.selectedProg,
-    required this.onNavigate,
-  });
-
-  @override
-  State<_SidebarHoverWrapper> createState() => _SidebarHoverWrapperState();
-}
-
-class _SidebarHoverWrapperState extends State<_SidebarHoverWrapper> {
-  bool _isCollapsed = true;
-
-  @override
-  Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (_) => setState(() => _isCollapsed = false),
-      onExit: (_) => setState(() => _isCollapsed = true),
-      child: AnimatedSize(
-        duration: const Duration(milliseconds: 250),
-        curve: Curves.easeInOut,
-        alignment: Alignment.centerLeft,
-        child: AmsSidebar(
-          currentScreen: widget.currentScreen,
-          selectedProg: widget.selectedProg,
-          onNavigate: widget.onNavigate,
-          isCollapsed: _isCollapsed,
-          onToggle: () => setState(() => _isCollapsed = !_isCollapsed),
         ),
       ),
     );
