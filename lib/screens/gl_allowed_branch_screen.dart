@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../theme.dart';
 import '../widgets/widgets.dart';
 import '../services/gl_api_service.dart';
+import '../services/api_service.dart';
 import 'package:flutter/services.dart';
 
 class AllowedBranchScreen extends StatefulWidget {
@@ -29,14 +30,15 @@ class _AllowedBranchScreenState extends State<AllowedBranchScreen> {
   bool _isLoading = false;
   bool _isEditMode = false;
   bool _isViewOnly = false;
-  String? selectedGL;
-  String? _originalGL;
   String _searchQuery = '';
   final TextEditingController orgCodeController = TextEditingController(text: "50");
   String? _orgError;
   List<Map<String, dynamic>> savedList = [];
-  /// GL Accounts
-  List<String> glAccounts = [];
+
+  /// GL Masters (same pattern as GL Segments)
+  List<Map<String, dynamic>> _glMasters = [];
+  bool _loadingGlMasters = false;
+  Map<String, dynamic>? _selectedGlMaster;
 
   /// Branch List
   List<Map<String, dynamic>> branches = [
@@ -47,19 +49,13 @@ class _AllowedBranchScreenState extends State<AllowedBranchScreen> {
     {"code": "DEL", "name": "Delhi", "enabled": false},
   ];
 
-  Future<void> loadGLAccounts() async {
-    final response = await GLApiService().getGlList();
-
-    if (response != null && response.isNotEmpty) {
-      setState(() {
-        glAccounts = response.map<String>((item) {
-          final glNo = item['GLNO'] ?? item['glNo'] ?? item['glno'] ?? item['gl_no'] ?? item['GlNo'] ?? '';
-          final glName = item['GLNAME'] ?? item['glName'] ?? item['glname'] ?? item['gl_name'] ?? item['GlName'] ?? '';
-          return "GL $glNo — $glName";
-        }).toSet().toList();
-      });
-      loadSavedBranches();
-    }
+  Future<void> _loadGlMasters() async {
+    setState(() => _loadingGlMasters = true);
+    final data = await apiService.getAllGlMasters();
+    setState(() {
+      _loadingGlMasters = false;
+      _glMasters = data?.items ?? [];
+    });
   }
 
   Future<void> loadSavedBranches() async {
@@ -69,14 +65,16 @@ class _AllowedBranchScreenState extends State<AllowedBranchScreen> {
         // Map backend format to local UI format
         savedList = response.map<Map<String, dynamic>>((backendItem) {
           
-          final glNo = (backendItem['glNo'] ?? backendItem['GLNO'] ?? backendItem['GlNo'] ?? backendItem['glno'])?.toString();
+          final glNo = (backendItem['glNo'] ?? backendItem['GLNO'] ?? backendItem['GlNo'] ?? backendItem['glno'])?.toString() ?? '';
           
-          // Attempt to find the full display name from glAccounts, otherwise fallback
-          String? matchedGl;
+          // Attempt to find the matching GL master
+          String glDisplay = "GL $glNo";
           try {
-            matchedGl = glAccounts.firstWhere((element) => element.startsWith("GL $glNo —"));
+            final matched = _glMasters.firstWhere((m) => m['glNo']?.toString() == glNo);
+            final glName = matched['glName']?.toString() ?? '';
+            glDisplay = "GL $glNo — $glName";
           } catch(e) {
-            matchedGl = null;
+            // keep default
           }
           
           final rawBranches = (backendItem['allowedBrn'] ?? backendItem['ALLOWEDBRN'] ?? backendItem['AllowedBrn'] ?? backendItem['allowedbrn'])?.toString() ?? "";
@@ -85,8 +83,11 @@ class _AllowedBranchScreenState extends State<AllowedBranchScreen> {
           final orgCode = backendItem['orgCode'] ?? backendItem['ORGCODE'] ?? backendItem['OrgCode'] ?? backendItem['orgcode'];
 
           return {
+            ...backendItem,
             "orgCode": orgCode,
-            "gl": matchedGl,
+            "glNo": glNo,
+            "gl": "GL $glNo",
+            "gl_full": glDisplay,
             "branches": branchesList
           };
         }).toList().reversed.toList();
@@ -95,7 +96,7 @@ class _AllowedBranchScreenState extends State<AllowedBranchScreen> {
   }
 
   Future<void> initData() async {
-    await loadGLAccounts();
+    await _loadGlMasters();
     await loadSavedBranches();
   }
 
@@ -208,8 +209,7 @@ Widget _buildListView() {
                     showForm = true;
                     _isEditMode = false;
                     _isViewOnly = false;
-                    selectedGL = null;
-                    _originalGL = null;
+                    _selectedGlMaster = null;
                     orgCodeController.text = "50";
                     _orgError = null;
                     for (var b in branches) {
@@ -258,8 +258,9 @@ Widget _buildListView() {
                             ),
                             child: Center(
                               child: Text(
-                                item["gl"]
+                                (item["gl"] ?? "G")
                                     .toString()
+                                    .replaceAll("GL ", "")
                                     .substring(0, 1),
                                 style: bodyStyle(
                                   weight: FontWeight.bold,
@@ -310,8 +311,13 @@ Widget _buildListView() {
                                     showForm = true;
                                     _isViewOnly = true;
                                     _isEditMode = false;
-                                    selectedGL = item["gl"];
-                                    _originalGL = item["gl"];
+                                    // Match the GL master from the list
+                                    final glNo = item["glNo"]?.toString();
+                                    try {
+                                      _selectedGlMaster = _glMasters.firstWhere((m) => m['glNo']?.toString() == glNo);
+                                    } catch (_) {
+                                      _selectedGlMaster = null;
+                                    }
                                     orgCodeController.text = item["orgCode"]?.toString() ?? "50";
                                     final savedBranches = item["branches"] as List;
                                     for (var b in branches) {
@@ -330,8 +336,13 @@ Widget _buildListView() {
                                     showForm = true;
                                     _isEditMode = true;
                                     _isViewOnly = false;
-                                    selectedGL = item["gl"];
-                                    _originalGL = item["gl"];
+                                    // Match the GL master from the list
+                                    final glNo = item["glNo"]?.toString();
+                                    try {
+                                      _selectedGlMaster = _glMasters.firstWhere((m) => m['glNo']?.toString() == glNo);
+                                    } catch (_) {
+                                      _selectedGlMaster = null;
+                                    }
                                     orgCodeController.text = item["orgCode"]?.toString() ?? "50";
                                     final savedBranches = item["branches"] as List;
                                     for (var b in branches) {
@@ -361,15 +372,18 @@ Widget _buildListView() {
                                           onPressed: () async {
                                             Navigator.pop(context); // Close the dialog
                                             
-                                            // Extract GL No to delete from backend
-                                            final match = RegExp(r'GL (\d+) ').firstMatch(item["gl"] ?? '');
-                                            final int? parsedGlNo = match != null ? int.tryParse(match.group(1) ?? '') : null;
+                                            // Use glNo directly
+                                            final int? parsedGlNo = int.tryParse(item["glNo"]?.toString() ?? '');
+
+                                            print("DELETE ITEM: $item");
+                                            print("DELETE parsedGlNo: $parsedGlNo");
 
                                             if (parsedGlNo != null) {
                                               setState(() {
                                                  _isLoading = true;
                                               });
                                               final orgCode = item["orgCode"] ?? 50;
+                                              print("DELETE orgCode: $orgCode (${orgCode.runtimeType})");
 
                                               final success = await GLApiService()
                                               .deleteAllowedBranch(orgCode, parsedGlNo);
@@ -501,7 +515,7 @@ Widget _buildListView() {
                   return;
                 }
 
-                if (selectedGL == null) {
+                if (_selectedGlMaster == null) {
                   showAmsSnack(context, "Please select a GL Account.", type: 'e');
                   return;
                 }
@@ -515,25 +529,12 @@ Widget _buildListView() {
                   _isLoading = true;
                 });
 
-                // Extract the integer 101 from "GL 101 — Cash"
-                int? parsedGlNo;
-                if (selectedGL != null) {
-                   final match = RegExp(r'GL (\d+) ').firstMatch(selectedGL!);
-                   if (match != null) {
-                      parsedGlNo = int.tryParse(match.group(1) ?? '');
-                   }
-                }
+                final parsedGlNo = _selectedGlMaster!['glNo'] as int?;
 
                 final payload = {
                   "orgCode": int.tryParse(orgCodeController.text) ?? 50,
                   "glNo": parsedGlNo,
                   "allowedBrn": selectedBranches.join(",")
-                };
-
-                // Local UI payload for snappy UI response
-                final localPayload = {
-                   "gl": selectedGL,
-                   "branches": selectedBranches
                 };
 
                 final bool success;
@@ -617,27 +618,82 @@ Widget _buildListView() {
         const SizedBox(height: 20),
 
         /// Select GL
-       AmsField(
-         label: "Select GL Account",
-         labelAbove: true,
-         child: glAccounts.isEmpty
-         ? const SizedBox(
-          height: 40,
-          child: Center(
-            child: CircularProgressIndicator(),
-          ),
-        )
-      : AmsDropdown(
-          items: glAccounts,
-          initialValue: selectedGL,
-          placeholder: 'Please Select',
-          onChanged: (v) {
-            setState(() {
-              selectedGL = v;
-            });
-          },
-        ),
-     ),
+       /// Select GL Account (same pattern as GL Segments)
+       const Text('* Select GL Account',
+           style: TextStyle(
+               fontSize: 13,
+               fontWeight: FontWeight.w600,
+               color: Color(0xFF475569))),
+       const SizedBox(height: 8),
+       if (_loadingGlMasters)
+         const Padding(
+           padding: EdgeInsets.symmetric(vertical: 14),
+           child: SizedBox(
+             width: 22,
+             height: 22,
+             child: CircularProgressIndicator(strokeWidth: 2),
+           ),
+         )
+       else if (_glMasters.isEmpty)
+         Container(
+           width: double.infinity,
+           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+           decoration: BoxDecoration(
+             color: const Color(0xFFF1F5FB),
+             borderRadius: BorderRadius.circular(8),
+             border: Border.all(color: const Color(0xFFE2E8F0), width: 1.5),
+           ),
+           child: Row(children: [
+             const Icon(Icons.info_outline, size: 16, color: Color(0xFF94A3B8)),
+             const SizedBox(width: 8),
+             const Text('No GL Accounts found.',
+                 style: TextStyle(color: Color(0xFF94A3B8), fontSize: 13)),
+             const Spacer(),
+             GestureDetector(
+               onTap: _loadGlMasters,
+               child: const Icon(Icons.refresh, size: 16, color: AppColors.sidebar),
+             ),
+           ]),
+         )
+       else
+         Container(
+           decoration: BoxDecoration(
+             color: Colors.white,
+             borderRadius: BorderRadius.circular(8),
+             border: Border.all(color: const Color(0xFFE2E8F0), width: 1.5),
+           ),
+           padding: const EdgeInsets.symmetric(horizontal: 14),
+           child: DropdownButtonHideUnderline(
+             child: DropdownButton<Map<String, dynamic>>(
+               value: _selectedGlMaster,
+               isExpanded: true,
+               hint: const Text(
+                 'Select GL Account',
+                 style: TextStyle(color: Color(0xFFCBD5E1), fontSize: 14),
+               ),
+               style: const TextStyle(color: Color(0xFF475569), fontSize: 14),
+               icon: const Icon(Icons.keyboard_arrow_down, color: Color(0xFF475569)),
+               items: [
+                 const DropdownMenuItem<Map<String, dynamic>>(
+                   value: null,
+                   child: Text(
+                     'Select GL Account',
+                     style: TextStyle(color: Color(0xFFCBD5E1), fontSize: 14),
+                   ),
+                 ),
+                 ..._glMasters.map((gl) {
+                   final glNo = gl['glNo']?.toString() ?? '';
+                   final glName = gl['glName']?.toString() ?? '';
+                   return DropdownMenuItem<Map<String, dynamic>>(
+                     value: gl,
+                     child: Text('GL $glNo — $glName'),
+                   );
+                 }),
+               ],
+               onChanged: (_isViewOnly || _isEditMode) ? null : (v) => setState(() => _selectedGlMaster = v),
+             ),
+           ),
+         ),
         const SizedBox(height: 20),
 
         /// Branch List

@@ -87,7 +87,7 @@ class GLApiService {
   Future<bool> deleteAllowedBranch(int orgCode, int glNo) async {
   try {
     final response = await http.delete(
-      Uri.parse("${ApiService.baseUrl}/gl-branch/$orgCode/$glNo"),
+      Uri.parse("${ApiService.baseUrl}/gl-branch/$glNo"),
       headers: apiService.headers,
     );
     return response.statusCode == 200 || response.statusCode == 204;
