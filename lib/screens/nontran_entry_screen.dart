@@ -1418,7 +1418,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
           isValid = false;
         }
         if (_uRegDateCtrl.text.trim().isEmpty) {
-          _errors['regdate'] = 'Registration Date required';
+          _errors['regDate'] = 'Registration Date required';
           isValid = false;
         }
         if (_uDobCtrl.text.trim().isEmpty) {
@@ -1426,8 +1426,12 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
           isValid = false;
         }
         if (_gender == null) {
-          _errors['gender'] = 'Gender required';
-          isValid = false;
+          final dynamic g = widget.initialData?['gender'] ?? widget.initialData?['GENDER'];
+          final String initG = g?.toString().toLowerCase() ?? '';
+          String mapped = 'M';
+          if (initG.startsWith('f')) mapped = 'F';
+          else if (initG.startsWith('o')) mapped = 'O';
+          widget.onChanged('gender', mapped);
         }
       } else if (prog == 'ROLE-CRT') {
         if (_rScdCtrl.text.trim().isEmpty) {
@@ -1621,125 +1625,10 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                 ),
               ),
               AmsField(
-                label: 'GENDER',
-                required: true,
-                labelAbove: true,
-                tooltip: 'The user\'s gender for profile identification.',
-                child: widget.isViewMode
-                    ? AmsTextInput(
-                        initialValue: _gender ??
-                            (data['gender']
-                                        ?.toString()
-                                        .toLowerCase()
-                                        .startsWith('f') ==
-                                    true
-                                ? 'Female'
-                                : (data['gender']
-                                            ?.toString()
-                                            .toLowerCase()
-                                            .startsWith('o') ==
-                                        true
-                                    ? 'Other'
-                                    : 'Male')),
-                        readOnly: true,
-                      )
-                    : AmsDropdown(
-                        initialValue: _gender ??
-                            (data['gender']
-                                        ?.toString()
-                                        .toLowerCase()
-                                        .startsWith('f') ==
-                                    true
-                                ? 'Female'
-                                : (data['gender']
-                                            ?.toString()
-                                            .toLowerCase()
-                                            .startsWith('o') ==
-                                        true
-                                    ? 'Other'
-                                    : (data['gender'] != null
-                                        ? 'Male'
-                                        : null))),
-                        items: const ['Male', 'Female', 'Other'],
-                        errorText: _errors['gender'],
-                        onChanged: (v) {
-                          setState(() {
-                            _gender = v;
-                            _errors['gender'] =
-                                v == null ? 'Gender required' : null;
-                          });
-                          widget.onChanged('gender', v);
-                        },
-                      ),
-              ),
-              AmsField(
-                label: 'Registration Date',
-                required: true,
-                labelAbove: true,
-                tooltip: 'Date when the user was registered in the system.',
-                child: AmsTextInput(
-                  controller: _uRegDateCtrl,
-                  readOnly: true,
-                  icon: Icons.calendar_today_rounded,
-                  placeholder: 'Select Date',
-                  errorText: _errors['regdate'],
-                  onTap: () async {
-                    if (widget.isViewMode) return;
-                    final picked = await showDatePicker(
-                      context: context,
-                      initialDate: DateTime.now(),
-                      firstDate: DateTime(1900),
-                      lastDate: DateTime(2100),
-                    );
-                    if (picked != null) {
-                      final displayFmt = DateFormat('dd-MMM-yyyy').format(picked);
-                      final isoFmt = DateFormat('yyyy-MM-dd').format(picked);
-                      setState(() {
-                        _uRegDateCtrl.text = displayFmt;
-                        _errors['regdate'] = null;
-                      });
-                      widget.onChanged('regdate', isoFmt);
-                    }
-                  },
-                ),
-              ),
-              AmsField(
-                label: 'Date of Birth',
-                required: true,
-                labelAbove: true,
-                tooltip: 'The user\'s date of birth.',
-                child: AmsTextInput(
-                  controller: _uDobCtrl,
-                  readOnly: true,
-                  icon: Icons.cake_rounded,
-                  placeholder: 'Select Date',
-                  errorText: _errors['dob'],
-                  onTap: () async {
-                    if (widget.isViewMode) return;
-                    final picked = await showDatePicker(
-                      context: context,
-                      initialDate: DateTime.now().subtract(const Duration(days: 6570)),
-                      firstDate: DateTime(1900),
-                      lastDate: DateTime.now(),
-                    );
-                    if (picked != null) {
-                      final displayFmt = DateFormat('dd-MMM-yyyy').format(picked);
-                      final isoFmt = DateFormat('yyyy-MM-dd').format(picked);
-                      setState(() {
-                        _uDobCtrl.text = displayFmt;
-                        _errors['dob'] = null;
-                      });
-                      widget.onChanged('dob', isoFmt);
-                    }
-                  },
-                ),
-              ),
-              AmsField(
                 label: 'FULL NAME',
                 required: true,
                 labelAbove: true,
                 tooltip: 'Salutation and full name of the primary contact person.',
-
                 child: Row(
                   children: [
                     Expanded(
@@ -1809,82 +1698,6 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                 ),
               ),
               AmsField(
-                label: 'EMAIL ID',
-                labelAbove: true,
-                tooltip: 'Official email address for communication.',
-                child: AmsTextInput(
-                  controller: _emailCtrl,
-                  readOnly: widget.isViewMode,
-                  placeholder: 'e.g. john@example.com',
-                  keyboardType: TextInputType.emailAddress,
-                  textInputAction: TextInputAction.next,
-                  errorText: _errors['email'],
-                  onChanged: (v) {
-                    setState(() {
-                      if (v.isNotEmpty && !_isValidEmail(v)) {
-                        _errors['email'] = 'Invalid email format';
-                      } else {
-                        _errors['email'] = null;
-                      }
-                    });
-                    widget.onChanged('emailid', v);
-                  },
-                ),
-              ),
-              AmsField(
-                label: 'MOBILE NUMBER',
-                labelAbove: true,
-                tooltip: 'Primary mobile number for contact.',
-                child: AmsTextInput(
-                  controller: _mobileCtrl,
-                  readOnly: widget.isViewMode,
-                  placeholder: 'e.g. 9876543210',
-                  keyboardType: TextInputType.phone,
-                  textInputAction: TextInputAction.next,
-                  onChanged: (v) => widget.onChanged('mobile', v),
-                ),
-              ),
-              AmsField(
-                label: 'CALL CODE',
-                labelAbove: true,
-                tooltip: 'International calling code (e.g. 91).',
-                child: AmsTextInput(
-                  controller: _callCodeCtrl,
-                  readOnly: widget.isViewMode,
-                  placeholder: 'e.g. 91',
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  textInputAction: TextInputAction.next,
-                  onChanged: (v) => widget.onChanged('callCode', int.tryParse(v) ?? 0),
-                ),
-              ),
-              AmsField(
-                label: 'COUNTRY',
-                labelAbove: true,
-                tooltip: 'Country code or identifier.',
-                child: AmsTextInput(
-                  controller: _countryCtrl,
-                  readOnly: widget.isViewMode,
-                  placeholder: 'e.g. 1',
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  textInputAction: TextInputAction.next,
-                  onChanged: (v) => widget.onChanged('country', int.tryParse(v) ?? 0),
-                ),
-              ),
-              AmsField(
-                label: 'BRANCH CODE',
-                labelAbove: true,
-                tooltip: 'Associated branch code for the user.',
-                child: AmsTextInput(
-                  controller: _uBranchCdCtrl,
-                  readOnly: widget.isViewMode,
-                  placeholder: 'Branch CD',
-                  textInputAction: TextInputAction.next,
-                  onChanged: (v) => widget.onChanged('branchCd', v),
-                ),
-              ),
-              AmsField(
                 label: 'REGISTRATION DATE',
                 required: true,
                 labelAbove: true,
@@ -1930,7 +1743,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                 ),
               ),
               AmsField(
-                label: 'Branch Code',
+                label: 'BRANCH CODE',
                 labelAbove: true,
                 tooltip: 'Associated branch code for the user.',
                 child: AmsTextInput(
@@ -1938,7 +1751,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                   readOnly: widget.isViewMode,
                   placeholder: 'Branch CD',
                   textInputAction: TextInputAction.next,
-                  onChanged: (v) => widget.onChanged('branchcd', v),
+                  onChanged: (v) => widget.onChanged('branchCd', v),
                 ),
               ),
               AmsField(
@@ -1953,6 +1766,153 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                     });
                     widget.onChanged('picture', name);
                   },
+                ),
+              ),
+              AmsField(
+                label: 'GENDER',
+                required: false,
+                labelAbove: true,
+                tooltip: 'The user\'s gender for profile identification.',
+                child: widget.isViewMode
+                    ? AmsTextInput(
+                        initialValue: _gender ??
+                            (data['gender']
+                                        ?.toString()
+                                        .toLowerCase()
+                                        .startsWith('f') ==
+                                    true
+                                ? 'Female'
+                                : (data['gender']
+                                            ?.toString()
+                                            .toLowerCase()
+                                            .startsWith('o') ==
+                                        true
+                                    ? 'Other'
+                                    : 'Male')),
+                        readOnly: true,
+                      )
+                    : AmsDropdown(
+                        initialValue: _gender ??
+                            (data['gender']
+                                        ?.toString()
+                                        .toLowerCase()
+                                        .startsWith('f') ==
+                                    true
+                                ? 'Female'
+                                : (data['gender']
+                                            ?.toString()
+                                            .toLowerCase()
+                                            .startsWith('o') ==
+                                        true
+                                    ? 'Other'
+                                    : 'Male')),
+                        items: const ['Male', 'Female', 'Other'],
+                        errorText: _errors['gender'],
+                        onChanged: (v) {
+                          setState(() {
+                            _gender = v;
+                            _errors['gender'] = null;
+                          });
+                          String mapped = 'M';
+                          if (v == 'Female') mapped = 'F';
+                          else if (v == 'Other') mapped = 'O';
+                          widget.onChanged('gender', mapped);
+                        },
+                      ),
+              ),
+              AmsField(
+                label: 'Date of Birth',
+                required: true,
+                labelAbove: true,
+                tooltip: 'The user\'s date of birth.',
+                child: AmsTextInput(
+                  controller: _uDobCtrl,
+                  readOnly: true,
+                  icon: Icons.cake_rounded,
+                  placeholder: 'Select Date',
+                  errorText: _errors['dob'],
+                  onTap: () async {
+                    if (widget.isViewMode) return;
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: DateTime.now().subtract(const Duration(days: 6570)),
+                      firstDate: DateTime(1900),
+                      lastDate: DateTime.now(),
+                    );
+                    if (picked != null) {
+                      final displayFmt = DateFormat('dd-MMM-yyyy').format(picked);
+                      final isoFmt = DateFormat('yyyy-MM-dd').format(picked);
+                      setState(() {
+                        _uDobCtrl.text = displayFmt;
+                        _errors['dob'] = null;
+                      });
+                      widget.onChanged('dob', isoFmt);
+                    }
+                  },
+                ),
+              ),
+              AmsField(
+                label: 'EMAIL ID',
+                labelAbove: true,
+                tooltip: 'Official email address for communication.',
+                child: AmsTextInput(
+                  controller: _emailCtrl,
+                  readOnly: widget.isViewMode,
+                  placeholder: 'e.g. john@example.com',
+                  keyboardType: TextInputType.emailAddress,
+                  textInputAction: TextInputAction.next,
+                  errorText: _errors['email'],
+                  onChanged: (v) {
+                    setState(() {
+                      if (v.isNotEmpty && !_isValidEmail(v)) {
+                        _errors['email'] = 'Invalid email format';
+                      } else {
+                        _errors['email'] = null;
+                      }
+                    });
+                    widget.onChanged('emailid', v);
+                  },
+                ),
+              ),
+              AmsField(
+                label: 'CALL CODE',
+                labelAbove: true,
+                tooltip: 'International calling code (e.g. 91).',
+                child: AmsTextInput(
+                  controller: _callCodeCtrl,
+                  readOnly: widget.isViewMode,
+                  placeholder: 'e.g. 91',
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  textInputAction: TextInputAction.next,
+                  onChanged: (v) => widget.onChanged('callCode', int.tryParse(v) ?? 0),
+                ),
+              ),
+              AmsField(
+                label: 'COUNTRY',
+                labelAbove: true,
+                tooltip: 'Country code or identifier.',
+                child: AmsTextInput(
+                  controller: _countryCtrl,
+                  readOnly: widget.isViewMode,
+                  placeholder: 'e.g. 1',
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  textInputAction: TextInputAction.next,
+                  onChanged: (v) => widget.onChanged('country', int.tryParse(v) ?? 0),
+                ),
+              ),
+              AmsField(
+                label: 'MOBILE NUMBER',
+                labelAbove: true,
+                tooltip: 'Primary mobile number for contact.',
+                child: AmsTextInput(
+                  controller: _mobileCtrl,
+                  readOnly: widget.isViewMode,
+                  placeholder: 'e.g. 9876543210',
+                  keyboardType: TextInputType.phone,
+                  textInputAction: TextInputAction.next,
+                  onChanged: (v) => widget.onChanged('mobile', v),
                 ),
               ),
             ],
