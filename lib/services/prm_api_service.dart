@@ -34,7 +34,7 @@ class ApiService {
   }) async {
     try {
       final response = await http.get(
-       Uri.parse("$baseUrl/programs/modules"),
+        Uri.parse("$baseUrl/programs?page=$page&size=$size"),
         headers: _headers,
       );
 
@@ -121,18 +121,16 @@ class ApiService {
       }
 
        final bodyData = {
-          "orgcode": data['orgcode'] ?? 50,
-          "pgmId": truncate15(data['programId']),
-          "descn": truncate15(data['programDescription']),
-          "module": int.tryParse(data['moduleCd']?.toString() ?? '0'),
-          "subModule": int.tryParse(data['subModuleCd']?.toString() ?? '0') ?? 0,          "pgmClass": data['programClass'] == 'T' ? 2 : 1,
-          "status": data['status'],
-          "remarks": truncate15(data['remarks']),
-          
-          "edate": DateFormat('yyyy-MM-dd').format(DateTime.now()),
-          "primaryKey": truncate15(data['programId']),
-          "cuser": truncate15(user)
-        };
+        "pgmId": truncate15(data['programId']),   
+        "orgcode": data['orgcode'],               
+        "descn": truncate15(data['programDescription']) ,
+        "module": int.tryParse(data['moduleCd']?.toString() ?? '0'),
+        "subModule": int.tryParse(data['subModuleCd']?.toString() ?? '0') ?? 0,
+        "pgmClass": data['programClass'] == 'T' ? 2 : 1,
+        "status": data['status'],
+        "remarks": truncate15(data['remarks']),
+        "cuser": truncate15(user)
+      };
         final body = jsonEncode(bodyData);
 
       print("UPDATE PUT Body: $body");
@@ -143,9 +141,6 @@ class ApiService {
         body: body,
       );
 
-      print("UPDATE Status Code: ${response.statusCode}");
-      print("UPDATE Response: ${response.body}");
-
       return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {
       print("UPDATE ERROR: $e");
@@ -154,10 +149,10 @@ class ApiService {
   }
 
   // ================= DELETE =================
-  Future<bool> deleteProgram(String id, String user) async {
+  Future<bool> deleteProgram(String id, String orgcode, String user) async {
     try {
       final response = await http.delete(
-        Uri.parse("$baseUrl/programs/$id?user=$user"),
+        Uri.parse("$baseUrl/programs/$id?orgcode=$orgcode&user=$user"),
         headers: _headers,
       );
 
@@ -188,9 +183,57 @@ class ApiService {
 
   Future<List<Map<String, dynamic>>> getSubModules(String moduleId) async {
     try {
-      final response = await http.get(Uri.parse("$baseUrl/modules/$moduleId/submodules"), headers: _headers);
+      // Try first endpoint: /submodules
+      String url = "$baseUrl/modules/$moduleId/submodules";
+      print("Trying submodules endpoint: $url");
+      var response = await http.get(Uri.parse(url), headers: _headers);
+      
+      // Fallback if 404 or empty
+      if (response.statusCode != 200 || response.body == "[]") {
+         url = "$baseUrl/modules/$moduleId/subs";
+         print("Falling back to subs endpoint: $url");
+         response = await http.get(Uri.parse(url), headers: _headers);
+      }
+
+      print("Submodules Response: ${response.statusCode} - ${response.body}");
+
       if (response.statusCode == 200) {
-        return List<Map<String, dynamic>>.from(jsonDecode(response.body));
+        final List<dynamic> data = jsonDecode(response.body);
+        return data.map<Map<String, dynamic>>((item) {
+          final rawItem = Map<String, dynamic>.from(item);
+          
+          // Prioritize 'sub' in ID detection
+          String smId = (rawItem['sub_moduleid'] ?? rawItem['subModuleId'] ?? rawItem['submoduleid'] ?? '').toString();
+          if (smId.isEmpty || smId == "null") {
+             // Search for keys containing both 'sub' and 'id'
+             final subIdKey = rawItem.keys.firstWhere((k) => k.toLowerCase().contains('sub') && k.toLowerCase().contains('id'), orElse: () => '');
+             if (subIdKey.isNotEmpty) {
+                 smId = rawItem[subIdKey].toString();
+             } else {
+                 smId = (rawItem['id'] ?? '').toString();
+             }
+          }
+
+          // Prioritize 'sub' in Name detection
+          String smName = (rawItem['sub_modulename'] ?? rawItem['subModuleName'] ?? rawItem['submodulename'] ?? '').toString();
+          if (smName.isEmpty || smName == "null") {
+             final subNameKey = rawItem.keys.firstWhere((k) => k.toLowerCase().contains('sub') && (k.toLowerCase().contains('name') || k.toLowerCase().contains('descn')), orElse: () => '');
+             if (subNameKey.isNotEmpty) {
+                 smName = rawItem[subNameKey].toString();
+             } else {
+                 smName = (rawItem['name'] ?? rawItem['descn'] ?? '').toString();
+             }
+          }
+          
+          final displayLabel = (smId.isNotEmpty && smId != "null") ? "$smId - $smName" : smName;
+          
+          return {
+            ...rawItem,
+            'id': smId,
+            'subModuleId': smId,
+            'display': displayLabel,
+          };
+        }).toList();
       }
     } catch (e) {
       print("Error fetching submodules: $e");

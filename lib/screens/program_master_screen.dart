@@ -6,8 +6,6 @@ import 'package:ams_flutter/widgets/widgets.dart';
 import 'package:ams_flutter/services/prm_api_service.dart' as prm;
 import 'package:ams_flutter/services/api_service.dart' as main;
 import 'package:ams_flutter/services/menu_api_service.dart';
-import 'package:ams_flutter/data.dart';
-
 class ProgramMasterScreen extends StatefulWidget {
   final Map<String, Auth101Config> authConfigs;
   final String? initialProg;
@@ -71,12 +69,14 @@ class _ProgramMasterScreenState extends State<ProgramMasterScreen> {
     });
   }
 
-  Future<void> _fetchSubModules(String moduleId) async {
+  Future<void> _fetchSubModules(String moduleId, {bool clearDropdown = true}) async {
     final subMods = await prm.apiService.getSubModules(moduleId);
     setState(() {
       _subModules = subMods;
-      _subModuleCtrl.clear();
-      _dynamicData['subModuleCd'] = null;
+      if (clearDropdown) {
+        _subModuleCtrl.clear();
+        _dynamicData['subModuleCd'] = null;
+      }
     });
   }
 
@@ -116,28 +116,44 @@ class _ProgramMasterScreenState extends State<ProgramMasterScreen> {
       _dynamicData['status'] = 1;
     } else {
       final data = record.map((k, v) => MapEntry(k.toLowerCase(), v));
-      _pgmIdCtrl.text = data['programid']?.toString() ?? data['pgmid']?.toString() ?? '';
+      _pgmIdCtrl.text = data['pgm_id']?.toString() ?? data['programid']?.toString() ?? data['pgmid']?.toString() ?? '';
       _pgmNameCtrl.text = data['programdescription']?.toString() ?? 
+                         data['descn']?.toString() ?? 
                          data['description']?.toString() ?? 
                          data['programname']?.toString() ?? '';
       _pgmRemarksCtrl.text = data['remarks']?.toString() ?? '';
-      _moduleCtrl.text = data['modulecd']?.toString() ?? '';
-      _subModuleCtrl.text = data['submodulecd']?.toString() ?? '';
+      final modIdRaw = (data['module'] ?? data['moduleid'] ?? data['modcd'] ?? data['module_id'] ?? data['modulecd'] ?? '').toString().trim();
+      String modDisplay = modIdRaw;
+      if (modIdRaw.isNotEmpty) {
+        try {
+          final matched = _modules.firstWhere((m) => m['module_id'].toString().trim() == modIdRaw);
+          modDisplay = matched['display'].toString().trim();
+          // 🔥 Fetch submodules for this module but DON'T clear since we're loading existing data
+          _fetchSubModules(modIdRaw, clearDropdown: false);
+        } catch (_) {}
+      }
+      _moduleCtrl.text = modDisplay;
+
+      final subModIdRaw = (data['sub_module'] ?? data['submoduleid'] ?? data['submodule_id'] ?? data['sub_moduleid'] ?? '').toString().trim();
+      _subModuleCtrl.text = subModIdRaw; // We'll try to find the display name after fetching
+      _dynamicData['subModuleCd'] = subModIdRaw;
+
       _orgcodeCtrl.text = data['orgcode']?.toString() ?? '50';
-      _pgmClass = data['programclass']?.toString() ?? data['pgmclass']?.toString();
-      if (_pgmClass != null && _pgmClass!.length > 1) {
-          _pgmClass = _pgmClass!.startsWith('N') ? 'N - Non Transaction / Master' : 'T - Transaction';
+      _pgmClass = data['pgm_class']?.toString() ?? data['programclass']?.toString() ?? data['pgmclass']?.toString();
+      if (_pgmClass != null && _pgmClass!.length >= 1) {
+          _pgmClass = (_pgmClass == '1' || _pgmClass!.startsWith('N')) ? 'N - Non Transaction / Master' : 'T - Transaction';
       }
       _pgmStatus = int.tryParse(data['status']?.toString() ?? '1') ?? 1;
 
       // Sync dynamic data
       _dynamicData['programId'] = _pgmIdCtrl.text;
       _dynamicData['programDescription'] = _pgmNameCtrl.text;
-      _dynamicData['moduleCd'] = _moduleCtrl.text;
-      _dynamicData['subModuleCd'] = _subModuleCtrl.text;
+      _dynamicData['moduleCd'] = modIdRaw;
+      _dynamicData['subModuleCd'] = _subModuleCtrl.text.startsWith('1') ? '1' : '0';
       _dynamicData['programClass'] = _pgmClass?.substring(0, 1);
       _dynamicData['status'] = _pgmStatus;
-      _dynamicData['orgcode'] = 50;
+      _dynamicData['orgcode'] = int.tryParse(_orgcodeCtrl.text) ?? 50;
+      _dynamicData['remarks'] = _pgmRemarksCtrl.text;
     }
   }
 
@@ -212,7 +228,8 @@ class _ProgramMasterScreenState extends State<ProgramMasterScreen> {
   }
 }
   void _confirmDelete(Map<String, dynamic> record) {
-    final pId = (record['pgmId'] ?? record['programId'] ?? record['pgmid'] ?? '—').toString();
+    final pId = (record['pgm_id'] ?? record['pgmId'] ?? record['programId'] ?? record['pgmid'] ?? '—').toString();
+    final orgCode = (record['orgcode']?.toString() ?? '50');
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -229,7 +246,7 @@ class _ProgramMasterScreenState extends State<ProgramMasterScreen> {
             small: true,
             onPressed: () {
               Navigator.pop(ctx);
-              _doDelete(pId);
+              _doDelete(pId, orgCode);
             },
           ),
         ],
@@ -237,8 +254,8 @@ class _ProgramMasterScreenState extends State<ProgramMasterScreen> {
     );
   }
 
-  void _doDelete(String pgmId) async {
-    final success = await prm.apiService.deleteProgram(pgmId, widget.userName ?? 'admin');
+  void _doDelete(String pgmId, String orgcode) async {
+    final success = await prm.apiService.deleteProgram(pgmId, orgcode, widget.userName ?? 'admin');
     if (success) {
       showAmsSnack(context, "Deleted successfully ✅");
       setState(() {
@@ -484,17 +501,17 @@ class _ProgramMasterScreenState extends State<ProgramMasterScreen> {
                   : (_loadingDropdowns
                       ? const Center(child: LinearProgressIndicator())
                       : AmsDropdown(
-                          initialValue: _moduleCtrl.text.isEmpty ? null : _moduleCtrl.text,
+                          initialValue: _moduleCtrl.text.isEmpty || !_modules.any((m) => m['display'].toString().trim() == _moduleCtrl.text.trim()) ? null : _moduleCtrl.text.trim(),
                           placeholder: "Select Module",
-                          items: _modules.map((m) => m['display'].toString()).toList(),
+                          items: _modules.map((m) => m['display'].toString().trim()).toList(),
                           onChanged: (val) {
                             if (val == null) return;
                             final selected = _modules.firstWhere(
-                              (m) => m['display'].toString() == val,
+                              (m) => m['display'].toString().trim() == val.trim(),
                               orElse: () => {},
                             );
                             if (selected.isEmpty) return;
-                            final mId = selected['module_id'].toString();
+                            final mId = (selected['module_id'] ?? selected['moduleId'] ?? selected['moduleid'] ?? selected['id']).toString();
                             setState(() {
                               _moduleCtrl.text = val;
                               _dynamicData['moduleCd'] = mId;
@@ -509,14 +526,30 @@ class _ProgramMasterScreenState extends State<ProgramMasterScreen> {
               child: (isViewMode == true)
                   ? AmsTextInput(initialValue: _subModuleCtrl.text, readOnly: true)
                   : AmsDropdown(
-                      initialValue: _subModuleCtrl.text.isEmpty ? null : _subModuleCtrl.text,
-                      placeholder: "Select Option",
-                      items: const ['0 - NO', '1 - YES'],
+                      initialValue: () {
+                        if (_subModuleCtrl.text.isEmpty) return null;
+                        // Check if it's already a display string or an ID
+                        final display = _subModules.any((sm) => sm['display'].toString() == _subModuleCtrl.text)
+                            ? _subModuleCtrl.text
+                            : _subModules.firstWhere(
+                                (sm) => sm['subModuleId'].toString() == _subModuleCtrl.text || sm['id'].toString() == _subModuleCtrl.text,
+                                orElse: () => {},
+                              )['display']?.toString();
+                        return display;
+                      }(),
+                      placeholder: _subModules.isEmpty ? "No Sub-Modules" : "Select Sub-Module",
+                      items: _subModules.map((sm) => sm['display'].toString()).toList(),
                       onChanged: (v) {
                         if (v == null) return;
+                        final selected = _subModules.firstWhere(
+                          (sm) => sm['display'].toString() == v,
+                          orElse: () => {},
+                        );
+                        if (selected.isEmpty) return;
+                        final smId = (selected['subModuleId'] ?? selected['id']).toString();
                         setState(() {
                           _subModuleCtrl.text = v;
-                          _dynamicData['subModuleCd'] = v.startsWith('1') ? '1' : '0';
+                          _dynamicData['subModuleCd'] = smId;
                         });
                       },
                     ),
@@ -677,7 +710,7 @@ class _ProgramListViewState extends State<_ProgramListView> {
                     itemBuilder: (context, idx) {
                       final d = _data![idx];
                       final pName = (d['descn'] ?? d['programName'] ?? d['programname'] ?? d['program_description'] ?? d['program_name'] ?? d['description'] ?? 'Unknown').toString();
-                      final pId = (d['pgmId'] ?? d['programId'] ?? d['programid'] ?? d['program_id'] ?? d['pgmid'] ?? '—').toString();
+                      final pId = (d['pgm_id'] ?? d['pgmId'] ?? d['programId'] ?? d['programid'] ?? d['program_id'] ?? d['pgmid'] ?? '—').toString();
                       final modId = (d['module'] ?? d['moduleid'] ?? d['modcd'] ?? d['module_id'] ?? '—').toString();
                       final isEnabled = (d['status'] == 1 || d['status'] == '1') == true;
 
