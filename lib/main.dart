@@ -22,7 +22,6 @@ import 'screens/gl_attribute_screen.dart';
 import 'screens/nontran_auth_screen.dart';
 import 'screens/auth_config_screen.dart';
 import 'screens/modal_queue_direct.dart';
-import 'screens/menu_screen.dart';
 import 'screens/organisation_screen.dart';
 import 'screens/branch_screen.dart';
 import 'screens/gl_dashboard_screen.dart';
@@ -464,11 +463,6 @@ class _AmsRootState extends State<AmsRoot> {
           body = GlSegmentsScreen(
             onBack: () => _navigate('list'),
             onBackToModule: () => _handleProceed('GL'),
-            userName: _state.userName,
-          );
-        } else if (_state.selectedProg == 'MENU-CRT') {
-          body = MenuScreen(
-            onBack: () => _navigate('list'),
             userName: _state.userName,
           );
         } else if (_state.selectedProg == 'ORG-CRT') {

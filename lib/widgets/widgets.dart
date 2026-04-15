@@ -1674,14 +1674,7 @@ class _AmsSidebarState extends State<AmsSidebar> {
                     isSelected: widget.selectedProg == 'MOD-CRT',
                     onTap: () => widget.onNavigate('nontran', 'MOD-CRT'),
                   ),
-                  AmsSubSidebarItem(
-                    label: 'Menus',
-                    isCollapsed: widget.isCollapsed,
-                    icon: Icons.menu_open_rounded,
-                    isSelected: widget.selectedProg == 'MENU-CRT',
-                    onTap: () => widget.onNavigate('nontran', 'MENU-CRT'),
-                  ),
-                  AmsSubSidebarItem(
+                   AmsSubSidebarItem(
                     label: 'Program',
                     isCollapsed: widget.isCollapsed,
                     icon: Icons.app_settings_alt_rounded,

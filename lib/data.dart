@@ -419,14 +419,6 @@ final List<SubmenuItem> mastersSubmenus = [
     trend: '99.9% Up',
   ),
   SubmenuItem(
-    label: 'Menu Designer', 
-    icon: Icons.menu_open_rounded, 
-    programId: 'MENU-CRT',
-    subtitle: 'Structure dynamic navigation and UI menus.',
-    metric: '42 Nodes',
-    trend: 'Optimized',
-  ),
-  SubmenuItem(
     label: 'Program Master', 
     icon: Icons.app_settings_alt_rounded, 
     programId: 'PROG-CRT',
