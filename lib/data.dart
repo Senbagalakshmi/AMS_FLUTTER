@@ -117,6 +117,12 @@ final Map<String, Auth101Config> auth101 = {
       approvalReq: true,
       isTran: false,
       levels: 1),
+  'MENU-MST': const Auth101Config(
+      id: 'MENU-MST',
+      name: 'Menu Master',
+      approvalReq: true,
+      isTran: false,
+      levels: 1),
   'BRN-CRT': const Auth101Config(
       id: 'BRN-CRT',
       name: 'Branch Master',
@@ -189,6 +195,7 @@ final Map<String, String> nonTranProgPkPrefix = {
   'GL-SEG': 'GLS',
   'GL-ATT': 'GLA',
   'PROG-CRT': 'PRG',
+  'MENU-MST': 'MNU',
   'BRN-CRT': 'BRN',
 
 };
@@ -425,6 +432,14 @@ final List<SubmenuItem> mastersSubmenus = [
     subtitle: 'Define and manage system programs and screens.',
     metric: '64 Progs',
     trend: 'Standard',
+  ),
+  SubmenuItem(
+    label: 'Menu Master', 
+    icon: Icons.menu_open_rounded, 
+    programId: 'MENU-MST',
+    subtitle: 'Manage multilevel navigation and system menus.',
+    metric: '3 Levels',
+    trend: 'Dynamic',
   ),
 ];
 

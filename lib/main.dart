@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'screens/gl_allowed_branch_screen.dart';
 import 'screens/gl_allowed_currency_screen.dart';
 import 'services/api_service.dart';
+import 'services/menu_api_service.dart';
 import 'services/gl_api_service.dart';
 import 'services/branch_api_service.dart';
 import 'theme.dart';
@@ -26,6 +27,7 @@ import 'screens/organisation_screen.dart';
 import 'screens/branch_screen.dart';
 import 'screens/gl_dashboard_screen.dart';
 import 'screens/program_master_screen.dart';
+import 'screens/menu_master_screen.dart';
 
 void main() {
   runApp(const AmsApp());
@@ -147,6 +149,7 @@ class _AmsRootState extends State<AmsRoot> {
 
   void _handleLogin(String token, String userName) {
     apiService.updateToken(token);
+    menuApiService.updateToken(token);
     setState(() => _state = _state.copyWith(
           screen: 'list',
           token: token,
@@ -210,8 +213,8 @@ class _AmsRootState extends State<AmsRoot> {
       success = await apiService.createRole(data);
     } else if (prog == 'MOD-CRT') {
       success = await apiService.createModule(data);
-    } else if (prog == 'MENU-CRT') {
-      success = await apiService.createMenu('program', data);
+    } else if (prog == 'MENU-CRT' || prog == 'MENU-MST') {
+      success = await menuApiService.createMenu('program', data);
     } else if (prog == 'USR-ACCESS') {
       success = await apiService.assignUserRole(data);
     } else if (prog == 'USR-ROLE') {
@@ -488,6 +491,13 @@ class _AmsRootState extends State<AmsRoot> {
             authConfigs: _state.authConfigs,
             initialProg: _state.selectedProg,
             onSubmit: _handleNonTranSubmit,
+            onBack: () => _navigate('list'),
+            onBackToModule: () => _handleProceed('MASTERS'),
+            userName: _state.userName,
+          );
+        } else if (_state.selectedProg == 'MENU-MST') {
+          body = MenuMasterScreen(
+            authConfigs: _state.authConfigs,
             onBack: () => _navigate('list'),
             onBackToModule: () => _handleProceed('MASTERS'),
             userName: _state.userName,

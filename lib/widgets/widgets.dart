@@ -1681,6 +1681,13 @@ class _AmsSidebarState extends State<AmsSidebar> {
                     isSelected: widget.selectedProg == 'PROG-CRT',
                     onTap: () => widget.onNavigate('nontran', 'PROG-CRT'),
                   ),
+                  AmsSubSidebarItem(
+                    label: 'Menu Master',
+                    isCollapsed: widget.isCollapsed,
+                    icon: Icons.menu_open_rounded,
+                    isSelected: widget.selectedProg == 'MENU-MST',
+                    onTap: () => widget.onNavigate('nontran', 'MENU-MST'),
+                  ),
                 ],
 
                 const SizedBox(height: 16),
