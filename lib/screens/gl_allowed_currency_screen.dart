@@ -407,21 +407,24 @@ class _AllowedCurrencyScreenState extends State<AllowedCurrencyScreen> {
                                   );
 
                                   if (confirm == true) {
-                                    final success =
-                                        await GLApiService()
-                                            .deleteAllowedCurrency(
-                                      item["orgCode"],
-                                      item["glNo"],
-                                    );
-
-                                    if (success) {
-                                      showAmsSnack(
-                                        context,
-                                        "Deleted successfully",
-                                        icon: "🗑️",
+                                    final int? parsedGlNo = int.tryParse(item["glNo"]?.toString() ?? '');
+                                    
+                                    if (parsedGlNo != null) {
+                                      final success = await GLApiService()
+                                          .deleteAllowedCurrency(
+                                        item["orgCode"],
+                                        parsedGlNo,
                                       );
 
-                                      loadSavedCurrencies();
+                                      if (success) {
+                                        showAmsSnack(
+                                          context,
+                                          "Deleted successfully",
+                                          icon: "🗑️",
+                                        );
+
+                                        loadSavedCurrencies();
+                                      }
                                     }
                                   }
                                 },
