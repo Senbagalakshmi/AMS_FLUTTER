@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../theme.dart';
 import '../widgets/widgets.dart';
 import '../services/gl_api_service.dart';
+import '../services/api_service.dart';
 import 'package:flutter/services.dart';
 
 class AllowedCurrencyScreen extends StatefulWidget {
@@ -31,14 +32,14 @@ class _AllowedCurrencyScreenState extends State<AllowedCurrencyScreen> {
   bool _isViewOnly = false;
   String? _orgError;
   String? _glError;
-  String? selectedGL;
-  String? _originalGL;
   String _searchQuery = "";
   final TextEditingController _orgCodeCtrl = TextEditingController(text: "50");
   Map<String, dynamic>? _selectedRecord;
 
-  /// GL Accounts List
-  List<String> glAccounts = [];
+  /// GL Masters (same pattern as GL Segments)
+  List<Map<String, dynamic>> _glMasters = [];
+  bool _loadingGlMasters = false;
+  Map<String, dynamic>? _selectedGlMaster;
 
   List<Map<String, dynamic>> savedList = [];
   final TextEditingController _currencyCtrl = TextEditingController();
@@ -58,7 +59,17 @@ class _AllowedCurrencyScreenState extends State<AllowedCurrencyScreen> {
     if (response != null && response.isNotEmpty) {
       setState(() {
         savedList = response.map((item) {
-          final glNo = item["glNo"] ?? item["GLNO"] ?? item["glno"] ?? "";
+          final glNo = (item["glNo"] ?? item["GLNO"] ?? item["GlNo"] ?? item["glno"])?.toString() ?? "";
+          
+          String glDisplay = "GL $glNo";
+          try {
+            final matched = _glMasters.firstWhere((m) => m['glNo']?.toString() == glNo);
+            final glName = matched['glName']?.toString() ?? '';
+            glDisplay = "GL $glNo — $glName";
+          } catch(e) {
+            // keep default
+          }
+          
           final raw = item["allowedCurr"] ??
               item["ALLOWEDCURR"] ??
               item["allowedcurr"] ??
@@ -73,10 +84,7 @@ class _AllowedCurrencyScreenState extends State<AllowedCurrencyScreen> {
             "orgCode": item["orgCode"] ?? item["ORGCODE"] ?? 50,
             "glNo": glNo,
             "gl": "GL $glNo",
-            "gl_full": glAccounts.firstWhere(
-              (g) => g.startsWith("GL $glNo —"),
-              orElse: () => "GL $glNo",
-            ),
+            "gl_full": glDisplay,
             "currencies": currencies
           };
         }).toList().reversed.toList();
@@ -103,40 +111,25 @@ class _AllowedCurrencyScreenState extends State<AllowedCurrencyScreen> {
     });
   }
 
-  Future<void> loadGLAccounts() async {
-    final response = await GLApiService().getGlList();
-    if (response != null && response.isNotEmpty) {
-      setState(() {
-        glAccounts = response.map<String>((item) {
-          final glNo = item['GLNO'] ?? item['glNo'] ?? item['glno'] ?? item['gl_no'] ?? item['GlNo'] ?? '';
-          final glName = item['GLNAME'] ?? item['glName'] ?? item['glname'] ?? item['gl_name'] ?? item['GlName'] ?? '';
-          return "GL $glNo — $glName";
-        }).toSet().toList();
-        
-        // If we are in Edit/View mode, try to re-match selectedGL from the newly loaded list
-        if (showForm && _selectedRecord != null) {
-          final glNo = _selectedRecord!["glNo"]?.toString();
-          if (glNo != null) {
-            try {
-              selectedGL = glAccounts.firstWhere(
-                (g) => g.startsWith("GL $glNo —"),
-              );
-            } catch (_) {
-              // Stay null if not found
-            }
-          }
-        }
-      });
-      loadSavedCurrencies();
-    }
+  Future<void> _loadGlMasters() async {
+    setState(() => _loadingGlMasters = true);
+    final data = await apiService.getAllGlMasters();
+    setState(() {
+      _loadingGlMasters = false;
+      _glMasters = data?.items ?? [];
+    });
+  }
+
+  Future<void> initData() async {
+    await _loadGlMasters();
+    await loadSavedCurrencies();
   }
   
 
   @override
   void initState() {
     super.initState();
-    loadGLAccounts();
-    loadSavedCurrencies();
+    initData();
   }
   Widget build(BuildContext context) {
     return Scaffold(
@@ -234,7 +227,7 @@ class _AllowedCurrencyScreenState extends State<AllowedCurrencyScreen> {
                       _orgError = null;
                       _glError = null;
                       _orgCodeCtrl.text = "50";
-                      selectedGL = null;
+                      _selectedGlMaster = null;
                       currencies = ["INR", "USD", "GBP", "EUR", "SGD"];
                       _currencyCtrl.clear();
                       showForm = true;
@@ -331,12 +324,11 @@ class _AllowedCurrencyScreenState extends State<AllowedCurrencyScreen> {
                                     _selectedRecord = item;
                                     _orgCodeCtrl.text =
                                         item["orgCode"].toString();
+                                    final glNo = item["glNo"]?.toString();
                                     try {
-                                      selectedGL = glAccounts.firstWhere(
-                                        (g) => g.startsWith("GL ${item["glNo"]} —"),
-                                      );
+                                      _selectedGlMaster = _glMasters.firstWhere((m) => m['glNo']?.toString() == glNo);
                                     } catch (_) {
-                                      selectedGL = null;
+                                      _selectedGlMaster = null;
                                     }
                                     currencies = List<String>.from(
                                         item["currencies"]);
@@ -360,12 +352,11 @@ class _AllowedCurrencyScreenState extends State<AllowedCurrencyScreen> {
                                     _orgCodeCtrl.text =
                                         item["orgCode"].toString();
 
+                                    final glNo = item["glNo"]?.toString();
                                     try {
-                                      selectedGL = glAccounts.firstWhere(
-                                        (g) => g.startsWith("GL ${item["glNo"]} —"),
-                                      );
+                                      _selectedGlMaster = _glMasters.firstWhere((m) => m['glNo']?.toString() == glNo);
                                     } catch (_) {
-                                      selectedGL = null;
+                                      _selectedGlMaster = null;
                                     }
 
                                     currencies = List<String>.from(
@@ -524,15 +515,15 @@ class _AllowedCurrencyScreenState extends State<AllowedCurrencyScreen> {
                   return;
                 }
 
-                if (selectedGL == null) {
+                if (_selectedGlMaster == null) {
                   setState(() {
-                    _glError = "Please select GL";
+                    _glError = "Please select GL Account";
                   });
+                  showAmsSnack(context, "Please select a GL Account.", type: 'e');
                   return;
                 }
 
-                final parsedGlNo =
-                    int.tryParse(selectedGL!.split(" ")[1]) ?? 0;
+                final parsedGlNo = _selectedGlMaster!['glNo'] as int? ?? 0;
 
                 final payload = {
                   "orgCode": int.parse(_orgCodeCtrl.text),
@@ -577,7 +568,7 @@ class _AllowedCurrencyScreenState extends State<AllowedCurrencyScreen> {
                   _currencyCtrl.clear();
                   _orgError = null;
                   _glError = null;
-                  selectedGL = null;
+                  _selectedGlMaster = null;
                 });
               },
             ),
@@ -624,29 +615,96 @@ class _AllowedCurrencyScreenState extends State<AllowedCurrencyScreen> {
         const SizedBox(height: 16),
 
         /// Select GL
-        AmsField(
-          label: "Select GL Account",
-          labelAbove: true,
-          child: glAccounts.isEmpty
-              ? const SizedBox(
-                  height: 48,
-                  child: Center(
-                    child: CircularProgressIndicator(strokeWidth: 2.5),
-                  ),
-                )
-              : AmsDropdown(
-                  items: glAccounts,
-                  placeholder: "Please select",
-                  initialValue: selectedGL,
-                  errorText: _glError,
-                  onChanged: (v) {
-                    setState(() {
-                      selectedGL = v;
-                      if (v != null) _glError = null;
-                    });
-                  },
-                ),
-        ),
+       const Text('* Select GL Account',
+           style: TextStyle(
+               fontSize: 13,
+               fontWeight: FontWeight.w600,
+               color: Color(0xFF475569))),
+       const SizedBox(height: 8),
+       if (_loadingGlMasters)
+         const Padding(
+           padding: EdgeInsets.symmetric(vertical: 14),
+           child: SizedBox(
+             width: 22,
+             height: 22,
+             child: CircularProgressIndicator(strokeWidth: 2),
+           ),
+         )
+       else if (_glMasters.isEmpty)
+         Container(
+           width: double.infinity,
+           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+           decoration: BoxDecoration(
+             color: const Color(0xFFF1F5FB),
+             borderRadius: BorderRadius.circular(8),
+             border: Border.all(color: const Color(0xFFE2E8F0), width: 1.5),
+           ),
+           child: Row(children: [
+             const Icon(Icons.info_outline, size: 16, color: Color(0xFF94A3B8)),
+             const SizedBox(width: 8),
+             const Text('No GL Accounts found.',
+                 style: TextStyle(color: Color(0xFF94A3B8), fontSize: 13)),
+             const Spacer(),
+             GestureDetector(
+               onTap: _loadGlMasters,
+               child: const Icon(Icons.refresh, size: 16, color: AppColors.sidebar),
+             ),
+           ]),
+         )
+       else
+         Container(
+           decoration: BoxDecoration(
+             color: Colors.white,
+             borderRadius: BorderRadius.circular(8),
+             border: Border.all(
+                 color: _glError != null ? Colors.red : const Color(0xFFE2E8F0),
+                 width: 1.5),
+           ),
+           padding: const EdgeInsets.symmetric(horizontal: 14),
+           child: DropdownButtonHideUnderline(
+             child: DropdownButton<Map<String, dynamic>>(
+               value: _selectedGlMaster,
+               isExpanded: true,
+               hint: const Text(
+                 'Select GL Account',
+                 style: TextStyle(color: Color(0xFFCBD5E1), fontSize: 14),
+               ),
+               style: const TextStyle(color: Color(0xFF475569), fontSize: 14),
+               icon: const Icon(Icons.keyboard_arrow_down, color: Color(0xFF475569)),
+               items: [
+                 const DropdownMenuItem<Map<String, dynamic>>(
+                   value: null,
+                   child: Text(
+                     'Select GL Account',
+                     style: TextStyle(color: Color(0xFFCBD5E1), fontSize: 14),
+                   ),
+                 ),
+                 ..._glMasters.map((gl) {
+                   final glNo = gl['glNo']?.toString() ?? '';
+                   final glName = gl['glName']?.toString() ?? '';
+                   return DropdownMenuItem<Map<String, dynamic>>(
+                     value: gl,
+                     child: Text('GL $glNo — $glName'),
+                   );
+                 }),
+               ],
+               onChanged: (_isViewOnly || _isEditMode) ? null : (v) {
+                 setState(() {
+                   _selectedGlMaster = v;
+                   if (v != null) _glError = null;
+                 });
+               },
+             ),
+           ),
+         ),
+         if (_glError != null)
+           Padding(
+             padding: const EdgeInsets.only(top: 8),
+             child: Text(
+               _glError!,
+               style: const TextStyle(color: Colors.red, fontSize: 12),
+             ),
+           ),
         const SizedBox(height: 20),
         Text(
           "Manage Currencies",
