@@ -596,8 +596,8 @@ class AmsTextInput extends StatelessWidget {
       onChanged: onChanged,
       onFieldSubmitted: onFieldSubmitted,
       onTap: onTap,
-      style: bodyStyle(
-          size: 13, color: readOnly ? AppColors.ink3 : AppColors.ink),
+      style:
+          bodyStyle(size: 13, color: readOnly ? AppColors.ink3 : AppColors.ink),
       decoration: InputDecoration(
         hintText: placeholder,
         hintStyle: bodyStyle(size: 13, color: AppColors.ink4),
@@ -611,13 +611,13 @@ class AmsTextInput extends StatelessWidget {
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(5),
           borderSide: BorderSide(
-              color: borderColor ?? (readOnly ? AppColors.border : const Color(0xFFD1D5DB)),
+              color: borderColor ??
+                  (readOnly ? AppColors.border : const Color(0xFFD1D5DB)),
               width: 1.0),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(5),
-          borderSide:
-              const BorderSide(color: AppColors.tBlue, width: 1.0),
+          borderSide: const BorderSide(color: AppColors.tBlue, width: 1.0),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(5),
@@ -685,7 +685,10 @@ class _AmsFilePickerState extends State<AmsFilePicker> {
         Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(5),
-            border: Border.all(color: widget.errorText != null ? AppColors.red : const Color(0xFFD1D5DB)),
+            border: Border.all(
+                color: widget.errorText != null
+                    ? AppColors.red
+                    : const Color(0xFFD1D5DB)),
           ),
           child: Row(
             children: [
@@ -698,14 +701,19 @@ class _AmsFilePickerState extends State<AmsFilePicker> {
                     bottomLeft: Radius.circular(5),
                   ),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 10),
                     decoration: const BoxDecoration(
                       color: Color(0xFFF1F5F9),
-                      border: Border(right: BorderSide(color: Color(0xFFD1D5DB))),
+                      border:
+                          Border(right: BorderSide(color: Color(0xFFD1D5DB))),
                     ),
                     child: Text(
                       'Choose File',
-                      style: bodyStyle(size: 13, weight: FontWeight.w500, color: AppColors.ink),
+                      style: bodyStyle(
+                          size: 13,
+                          weight: FontWeight.w500,
+                          color: AppColors.ink),
                     ),
                   ),
                 ),
@@ -715,7 +723,10 @@ class _AmsFilePickerState extends State<AmsFilePicker> {
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   child: Text(
                     _fileName ?? widget.placeholder ?? 'No file chosen',
-                    style: bodyStyle(size: 13, color: _fileName != null ? AppColors.ink : AppColors.ink4),
+                    style: bodyStyle(
+                        size: 13,
+                        color:
+                            _fileName != null ? AppColors.ink : AppColors.ink4),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -737,7 +748,8 @@ class _AmsFilePickerState extends State<AmsFilePicker> {
                       },
                       child: const Padding(
                         padding: EdgeInsets.all(4.0),
-                        child: Icon(Icons.close_rounded, size: 18, color: AppColors.red),
+                        child: Icon(Icons.close_rounded,
+                            size: 18, color: AppColors.red),
                       ),
                     ),
                   ),
@@ -797,13 +809,11 @@ class AmsDropdown extends StatelessWidget {
         contentPadding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(5),
-          borderSide:
-              const BorderSide(color: Color(0xFFD1D5DB), width: 1.0),
+          borderSide: const BorderSide(color: Color(0xFFD1D5DB), width: 1.0),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(5),
-          borderSide:
-              const BorderSide(color: AppColors.tBlue, width: 1.0),
+          borderSide: const BorderSide(color: AppColors.tBlue, width: 1.0),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(5),
@@ -1539,7 +1549,8 @@ class _AmsSidebarState extends State<AmsSidebar> {
     // Auto open menu based on selected page
     if ([
       'USR-CRT',
-      'USR-ROLE',
+      // 'USR-ROLE',
+      'USR-ACCESS',
       'ROLE-CRT',
       'MOD-CRT',
       'MENU-CRT',
@@ -1634,19 +1645,27 @@ class _AmsSidebarState extends State<AmsSidebar> {
                     isSelected: widget.selectedProg == 'USR-CRT',
                     onTap: () => widget.onNavigate('nontran', 'USR-CRT'),
                   ),
+                  // AmsSubSidebarItem(
+                  //   label: 'User Role Assign',
+                  //   isCollapsed: widget.isCollapsed,
+                  //   icon: Icons.assignment_ind_rounded,
+                  //   isSelected: widget.selectedProg == 'USR-ROLE',
+                  //   onTap: () => widget.onNavigate('nontran', 'USR-ROLE'),
+                  // ),
+
                   AmsSubSidebarItem(
-                    label: 'User Role Assign',
-                    isCollapsed: widget.isCollapsed,
-                    icon: Icons.assignment_ind_rounded,
-                    isSelected: widget.selectedProg == 'USR-ROLE',
-                    onTap: () => widget.onNavigate('nontran', 'USR-ROLE'),
-                  ),
-                  AmsSubSidebarItem(
-                    label: 'Role',
+                    label: ' Access',
                     isCollapsed: widget.isCollapsed,
                     icon: Icons.supervised_user_circle_rounded,
                     isSelected: widget.selectedProg == 'ROLE-CRT',
                     onTap: () => widget.onNavigate('nontran', 'ROLE-CRT'),
+                  ),
+                  AmsSubSidebarItem(
+                    label: 'User Access Mapping',
+                    isCollapsed: widget.isCollapsed,
+                    icon: Icons.assignment_ind_rounded,
+                    isSelected: widget.selectedProg == 'USR-ACCESS',
+                    onTap: () => widget.onNavigate('nontran', 'USR-ACCESS'),
                   ),
                   AmsSubSidebarItem(
                     label: 'Modules',

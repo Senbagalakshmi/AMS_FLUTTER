@@ -1,3 +1,4 @@
+import 'package:ams_flutter/screens/user_access_screen.dart';
 import 'package:ams_flutter/screens/gl_segments_screen.dart';
 import 'package:flutter/material.dart';
 import 'screens/gl_allowed_branch_screen.dart';
@@ -212,6 +213,8 @@ class _AmsRootState extends State<AmsRoot> {
       success = await apiService.createModule(data);
     } else if (prog == 'MENU-CRT') {
       success = await apiService.createMenu('program', data);
+    } else if (prog == 'USR-ACCESS') {
+      success = await apiService.assignUserRole(data);
     } else if (prog == 'USR-ROLE') {
       success = await apiService.assignUserRole(data);
     } else if (prog == 'BRN-CRT') {
@@ -327,7 +330,8 @@ class _AmsRootState extends State<AmsRoot> {
     final status = await apiService.updateAuthLock(record.authSl, userId);
 
     if (status == 409) {
-      _toast('Ã°Å¸â€â€™', 'Record is already locked by another user.', type: 'w');
+      _toast('Ã°Å¸â€â€™', 'Record is already locked by another user.',
+          type: 'w');
     } else if (status != 200) {
       _toast('Ã¢Å¡Â Ã¯Â¸Â', 'Failed to acquire review lock (Status: $status)',
           type: 'e');
@@ -479,6 +483,12 @@ class _AmsRootState extends State<AmsRoot> {
             onBackToModule: () => _handleProceed('MASTERS'),
             userName: _state.userName,
           );
+        } else if (_state.selectedProg == 'USR-ACCESS') {
+          body = UserAccessScreen(
+            onBack: () => _navigate('list'),
+            onBackToModule: () => _handleProceed('MASTERS'),
+            userName: _state.userName,
+          );
         } else if (_state.selectedProg == 'PROG-CRT') {
           body = ProgramMasterScreen(
             authConfigs: _state.authConfigs,
@@ -557,14 +567,19 @@ class _AmsRootState extends State<AmsRoot> {
           items = glSubmenus.map((item) {
             final count = _state.counts[item.programId] ?? 0;
             String metric = item.metric ?? '';
-            
-            if (item.programId == 'GL-CAT') metric = '$count Cat';
-            else if (item.programId == 'GL-MST') metric = '$count Mast';
-            else if (item.programId == 'GL-CUR') metric = '$count Cur';
-            else if (item.programId == 'GL-BRN') metric = '$count Br';
-            else if (item.programId == 'GL-SEG') metric = '$count Seg';
+
+            if (item.programId == 'GL-CAT')
+              metric = '$count Cat';
+            else if (item.programId == 'GL-MST')
+              metric = '$count Mast';
+            else if (item.programId == 'GL-CUR')
+              metric = '$count Cur';
+            else if (item.programId == 'GL-BRN')
+              metric = '$count Br';
+            else if (item.programId == 'GL-SEG')
+              metric = '$count Seg';
             else if (item.programId == 'GL-ATT') metric = '$count Attr';
-            
+
             return item.copyWith(metric: metric);
           }).toList();
         } else if (cat == 'CONFIG') {
@@ -585,14 +600,19 @@ class _AmsRootState extends State<AmsRoot> {
             items: glSubmenus.map((item) {
               final count = _state.counts[item.programId] ?? 0;
               String metric = item.metric ?? '';
-              
-              if (item.programId == 'GL-CAT') metric = '$count Cat';
-              else if (item.programId == 'GL-MST') metric = '$count Mast';
-              else if (item.programId == 'GL-CUR') metric = '$count Cur';
-              else if (item.programId == 'GL-BRN') metric = '$count Br';
-              else if (item.programId == 'GL-SEG') metric = '$count Seg';
+
+              if (item.programId == 'GL-CAT')
+                metric = '$count Cat';
+              else if (item.programId == 'GL-MST')
+                metric = '$count Mast';
+              else if (item.programId == 'GL-CUR')
+                metric = '$count Cur';
+              else if (item.programId == 'GL-BRN')
+                metric = '$count Br';
+              else if (item.programId == 'GL-SEG')
+                metric = '$count Seg';
               else if (item.programId == 'GL-ATT') metric = '$count Attr';
-              
+
               return item.copyWith(metric: metric);
             }).toList(),
             userName: _state.userName,
