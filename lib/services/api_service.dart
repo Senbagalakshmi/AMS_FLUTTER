@@ -197,6 +197,22 @@ class ApiService {
     }
   }
 
+  Future<List<Map<String, dynamic>>> getSubModules(String moduleId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/modules/$moduleId/subs'),
+        headers: _headers,
+      );
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        return data.cast<Map<String, dynamic>>();
+      }
+    } catch (e) {
+      print('Error fetching submodules: $e');
+    }
+    return [];
+  }
+
   Future<PaginatedResult<Map<String, dynamic>>?> getMenus(
       {int page = 0, int size = 10}) async {
     try {
@@ -578,14 +594,17 @@ class ApiService {
     }
   }
 
-  Future<bool> deleteModule(int orgCode, String moduleCd) async {
+  Future<bool> deleteModule(String moduleCd) async {
     try {
       final res = await http.delete(
-        Uri.parse('$baseUrl/modules/$orgCode/$moduleCd'),
+        Uri.parse('$baseUrl/modules/$moduleCd'),
         headers: _headers,
       );
-      return res.statusCode == 200;
+      if (res.statusCode == 200) return true;
+      print('Delete failed: ${res.statusCode} ${res.body}');
+      return false;
     } catch (e) {
+      print('Delete error: $e');
       return false;
     }
   }

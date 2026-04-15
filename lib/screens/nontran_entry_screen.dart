@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -113,9 +114,12 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
     );
 
     if (confirm == true) {
-      final orgCode = record['orgCode'] ?? record['orgcode'] ?? 50;
-      final moduleCd = (record['moduleCd'] ?? record['moduleid'] ?? record['modcd'] ?? '').toString();
-      final success = await apiService.deleteModule(orgCode is int ? orgCode : 50, moduleCd);
+      final moduleCd = (record['module_id'] ?? record['moduleCd'] ?? record['moduleid'] ?? record['modcd'] ?? '').toString();
+      if (moduleCd.isEmpty || moduleCd == '—') {
+        showAmsSnack(context, 'Invalid Module ID', icon: '⚠️');
+        return;
+      }
+      final success = await apiService.deleteModule(moduleCd);
       
       if (success) {
         showAmsSnack(context, 'Module deleted successfully', icon: '✅');
@@ -351,7 +355,14 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
                     // Body
                     Expanded(
                       child: () {
-                        void handleView(Map<String, dynamic> record) {
+                        Future<void> handleView(Map<String, dynamic> record) async {
+                          if (widget.initialProg == 'MOD-CRT') {
+                            final mid = (record['modCd'] ?? record['module_id'] ?? record['moduleid'] ?? record['moduleId'] ?? record['modcd'] ?? '').toString();
+                            if (mid.isNotEmpty) {
+                              final subms = await apiService.getSubModules(mid);
+                              record['submodules'] = subms;
+                            }
+                          }
                           setState(() {
                             _viewRecord = record;
                             _isEditMode = false;
@@ -359,7 +370,14 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
                           });
                         }
 
-                        void handleEdit(Map<String, dynamic> record) {
+                        Future<void> handleEdit(Map<String, dynamic> record) async {
+                          if (widget.initialProg == 'MOD-CRT') {
+                            final mid = (record['modCd'] ?? record['module_id'] ?? record['moduleid'] ?? record['moduleId'] ?? record['modcd'] ?? '').toString();
+                            if (mid.isNotEmpty) {
+                              final subms = await apiService.getSubModules(mid);
+                              record['submodules'] = subms;
+                            }
+                          }
                           setState(() {
                             _viewRecord = record;
                             _isEditMode = true;
@@ -494,7 +512,7 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
 class _UserListView extends StatefulWidget {
   final void Function(Map<String, dynamic>)? onView;
   final void Function(Map<String, dynamic>)? onEdit;
-  final void Function(Map<String, dynamic>)? onDelete;
+  final Future<void> Function(Map<String, dynamic>)? onDelete;
   const _UserListView({this.onView, this.onEdit, this.onDelete});
 
   @override
@@ -658,7 +676,12 @@ class _UserListViewState extends State<_UserListView> {
                             _ActionButton(
                               icon: Icons.delete_outline_rounded,
                               color: Colors.red,
-                              onTap: () => widget.onDelete?.call(u),
+                              onTap: () async {
+                                if (widget.onDelete != null) {
+                                  await widget.onDelete!(u);
+                                  _loadUsers(1);
+                                }
+                              },
                             ),
                           ],
                         ),
@@ -678,7 +701,7 @@ class _RoleListView extends StatefulWidget {
   final void Function(Map<String, dynamic>)? onView;
   // const _RoleListView({this.onView});
   final void Function(Map<String, dynamic>)? onEdit;
-  final void Function(Map<String, dynamic>)? onDelete;
+  final Future<void> Function(Map<String, dynamic>)? onDelete;
   const _RoleListView({this.onView, this.onEdit, this.onDelete});
 
   @override
@@ -825,7 +848,12 @@ class _RoleListViewState extends State<_RoleListView> {
                           _ActionButton(
                             icon: Icons.delete_outline_rounded,
                             color: Colors.red,
-                            onTap: () => widget.onDelete?.call(r),
+                              onTap: () async {
+                                if (widget.onDelete != null) {
+                                  await widget.onDelete!(r);
+                                  _loadRoles(1);
+                                }
+                              },
                           ),
                         ],
                       ),
@@ -940,7 +968,7 @@ class _UserRoleListViewState extends State<_UserRoleListView> {
 class _ModuleListView extends StatefulWidget {
   final void Function(Map<String, dynamic>)? onView;
   final void Function(Map<String, dynamic>)? onEdit;
-  final void Function(Map<String, dynamic>)? onDelete;
+  final Future<void> Function(Map<String, dynamic>)? onDelete;
   const _ModuleListView({this.onView, this.onEdit, this.onDelete});
 
   @override
@@ -1089,7 +1117,12 @@ class _ModuleListViewState extends State<_ModuleListView> {
                           _ActionButton(
                             icon: Icons.delete_outline_rounded,
                             color: Colors.red,
-                            onTap: () => widget.onDelete?.call(d),
+                              onTap: () async {
+                                if (widget.onDelete != null) {
+                                  await widget.onDelete!(d);
+                                  _load(1);
+                                }
+                              },
                           ),
                         ],
                       ),
@@ -1473,8 +1506,16 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
       _mStatus = int.tryParse(data['status']?.toString() ?? '1') ?? 1;
       final sm = data['sub_module'] ?? data['submodule'];
       _subModuleEnabled = sm == 1 || sm == true || sm == '1';
-      if (data['submodules'] is List) {
-        _subModules = List<Map<String, dynamic>>.from(data['submodules']);
+      var smData = data['submodules'] ?? data['submodulelist'] ?? data['sub_module_list'];
+      if (smData is String && smData.isNotEmpty) {
+        try {
+          smData = jsonDecode(smData);
+        } catch (e) {
+          print('Error decoding submodules: $e');
+        }
+      }
+      if (smData is List) {
+        _subModules = List<Map<String, dynamic>>.from(smData);
       } else {
         _subModules = [];
       }
@@ -2223,7 +2264,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
               AmsFormGrid(
                 children: [
                   AmsField(
-                    label: 'ORGCODE',
+                    label: 'Organization Code',
                     labelAbove: true,
                     tooltip: 'Unique organization code for this module.',
                     child: AmsTextInput(
@@ -2237,7 +2278,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                     ),
                   ),
                   AmsField(
-                    label: 'MODCD',
+                    label: 'Module Code',
                     required: true,
                     labelAbove: true,
                     tooltip: 'Unique module identifier.',
@@ -2259,7 +2300,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                     ),
                   ),
                   AmsField(
-                    label: 'MODNAME',
+                    label: 'Module Name',
                     required: true,
                     labelAbove: true,
                     tooltip: 'Human-readable module name.',
@@ -2281,7 +2322,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                     ),
                   ),
                   AmsField(
-                    label: 'SUB_MODULE',
+                    label: 'Sub Module Name',
                     labelAbove: true,
                     tooltip: 'Whether sub-module is required or not.',
                     child: widget.isViewMode
@@ -2303,7 +2344,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                           ),
                   ),
                   AmsField(
-                    label: 'STATUS',
+                    label: 'Status',
                     labelAbove: true,
                     tooltip: 'To enable or disable the module.',
                     child: widget.isViewMode
