@@ -19,7 +19,7 @@ class GLApiService {
   // ─────────────────────────────────────────
   // GL ATTRIBUTE API CALLS
   // ─────────────────────────────────────────
-  static const String _baseUrl = '${ApiService.baseUrl}/gl-attributes';
+  static String get _baseUrl => '${ApiService.baseUrl}/gl-attributes';
 
   /// GL102 LIST //////////////////////////////////
   Future<List<Map<String, dynamic>>?> getGlList() async {

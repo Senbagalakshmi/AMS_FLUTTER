@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/models.dart';
+import '../config/app_config.dart';
 
 class PaginatedResult<T> {
   final List<T> items;
@@ -10,7 +11,9 @@ class PaginatedResult<T> {
 }
 
 class ApiService {
-  static const String baseUrl = 'http://localhost:8080/api';
+  /// Finance backend base URL — read from config.json via AppConfig.
+  /// Static so other services can access it as ApiService.baseUrl.
+  static String get baseUrl => AppConfig.instance.baseUrl;
   String? _token;
 
   void updateToken(String? newToken) {
@@ -619,6 +622,34 @@ class ApiService {
       return res.statusCode == 200;
     } catch (e) {
       return false;
+    }
+  }
+
+  // ── SSO: Exchange mother token → child token ──────────────────────────────
+  // AM endpoint: POST <amBaseUrl>/exchange/exchange-token  (from config.json)
+  //   Header : Authorization: Bearer <mother_token>
+  //   Body   : { "productCode": <int> }
+  Future<Map<String, dynamic>?> exchangeToken(String motherToken) async {
+    try {
+      final amBaseUrl   = AppConfig.instance.amBaseUrl;
+      final productCode = AppConfig.instance.productCode;
+
+      final res = await http.post(
+        Uri.parse('$amBaseUrl/exchange/exchange-token'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $motherToken',
+        },
+        body: jsonEncode({'productCode': productCode}),
+      );
+      if (res.statusCode == 200) {
+        return jsonDecode(res.body) as Map<String, dynamic>;
+      }
+      print('⚠️ exchangeToken: HTTP ${res.statusCode} — ${res.body}');
+      return null;
+    } catch (e) {
+      print('❌ exchangeToken error: $e');
+      return null;
     }
   }
 }

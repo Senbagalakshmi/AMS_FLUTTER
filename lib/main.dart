@@ -1,6 +1,10 @@
 import 'package:ams_flutter/screens/user_access_screen.dart';
 import 'package:ams_flutter/screens/gl_segments_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+// ignore: avoid_web_libraries_in_flutter
+import 'dart:html' as html;
+import 'config/app_config.dart';
 import 'screens/gl_allowed_branch_screen.dart';
 import 'screens/gl_allowed_currency_screen.dart';
 import 'services/api_service.dart';
@@ -28,8 +32,11 @@ import 'screens/branch_screen.dart';
 import 'screens/gl_dashboard_screen.dart';
 import 'screens/program_master_screen.dart';
 import 'screens/menu_master_screen.dart';
+import 'screens/splash_screen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await AppConfig.getInstance();
   runApp(const AmsApp());
 }
 
@@ -56,7 +63,8 @@ class AmsRoot extends StatefulWidget {
 
 class _AmsRootState extends State<AmsRoot> {
   AppState _state = AppState(
-    screen: 'login',
+    // Start on splash – it resolves to 'list' (SSO) or 'login' (manual)
+    screen: 'splash',
     queue: seedQueue(),
     authQueue: const [],
     authConfigs: auth101,
@@ -76,6 +84,14 @@ class _AmsRootState extends State<AmsRoot> {
         clearCategory: screen == 'list' || screen == 'login',
       );
     });
+    // Keep browser URL in sync: /finance for app, / for login
+    if (kIsWeb) {
+      if (screen == 'login') {
+        html.window.history.pushState(null, '', '/');
+      } else if (screen == 'list') {
+        html.window.history.pushState(null, '', '/finance');
+      }
+    }
   }
 
   Future<void> _refreshData() async {
@@ -155,6 +171,10 @@ class _AmsRootState extends State<AmsRoot> {
           token: token,
           userName: userName,
         ));
+    // Push /finance to browser URL so dashboard has its own address
+    if (kIsWeb) {
+      html.window.history.pushState(null, '', '/finance');
+    }
     _refreshData();
     _fetchModuleCounts();
     _toast('Ã¢Å“â€¦', 'Authentication Successful  Welcome back!');
@@ -415,6 +435,18 @@ class _AmsRootState extends State<AmsRoot> {
 
     Widget body;
     switch (screen) {
+      // ── Splash / SSO entry point ─────────────────────────────────────────
+      case 'splash':
+        body = SplashScreen(
+          onLoginSuccess: (token, userName) {
+            // Exchange succeeded – treat exactly like a successful manual login
+            _handleLogin(token, userName);
+          },
+          onGoToLogin: () {
+            setState(() => _state = _state.copyWith(screen: 'login'));
+          },
+        );
+
       case 'login':
         body = LoginScreen(onLogin: _handleLogin);
       case 'select':

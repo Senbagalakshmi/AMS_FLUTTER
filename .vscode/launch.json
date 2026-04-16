@@ -1,0 +1,23 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "FMS - Chrome (port 50524)",
+      "request": "launch",
+      "type": "dart",
+      "args": [
+        "--web-port", "50524"
+      ],
+      "deviceId": "chrome"
+    },
+    {
+      "name": "FMS - Web Server (port 50524)",
+      "request": "launch",
+      "type": "dart",
+      "args": [
+        "--web-port", "50524"
+      ],
+      "deviceId": "web-server"
+    }
+  ]
+}

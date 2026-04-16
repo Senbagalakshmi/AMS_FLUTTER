@@ -1,0 +1,5 @@
+{
+  "baseUrl": "http://localhost:8080/api",
+  "amBaseUrl": "http://localhost:8082/accessmanager",
+  "productCode": 1
+}
