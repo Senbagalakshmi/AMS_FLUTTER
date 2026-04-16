@@ -2091,17 +2091,36 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
               AmsField(
                 label: 'Country',
                 labelAbove: true,
-                tooltip: 'Country code or identifier.',
-                child: AmsTextInput(
-                  controller: _countryCtrl,
-                  readOnly: widget.isViewMode,
-                  placeholder: 'e.g. 91',
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  textInputAction: TextInputAction.next,
-                  onChanged: (v) =>
-                      widget.onChanged('country', int.tryParse(v) ?? 0),
-                ),
+                tooltip: 'Select Country.',
+                child: widget.isViewMode
+                    ? AmsTextInput(
+                        controller: _countryCtrl,
+                        readOnly: true,
+                      )
+                    : AmsDropdown(
+                        initialValue: _countryCtrl.text.isNotEmpty ? _countryCtrl.text : null,
+                        placeholder: 'Select Country',
+                        items: const [
+                          'India', 'USA', 'UK', 'Australia', 'Canada', 
+                          'Singapore', 'UAE', 'Malaysia', 'New Zealand', 'South Africa'
+                        ],
+                        onChanged: (v) {
+                          if (v == null) return;
+                          setState(() {
+                            _countryCtrl.text = v;
+                            const callCodes = {
+                              'India': '91', 'USA': '1', 'UK': '44', 'Australia': '61',
+                              'Canada': '1', 'Singapore': '65', 'UAE': '971', 
+                              'Malaysia': '60', 'New Zealand': '64', 'South Africa': '27',
+                            };
+                            if (callCodes.containsKey(v)) {
+                              _callCodeCtrl.text = callCodes[v]!;
+                              widget.onChanged('callCode', int.tryParse(_callCodeCtrl.text) ?? 0);
+                            }
+                          });
+                          widget.onChanged('country', v);
+                        },
+                      ),
               ),
               AmsField(
                 label: 'Mobile Number',
@@ -2167,15 +2186,76 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                 label: 'Status',
                 labelAbove: true,
                 tooltip: 'Current status (1: Active, 0: Inactive).',
-                child: AmsTextInput(
-                  controller: _uStatusCtrl,
-                  readOnly: widget.isViewMode,
-                  placeholder: 'Status (Integer)',
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  textInputAction: TextInputAction.next,
-                  onChanged: (v) =>
-                      widget.onChanged('status', int.tryParse(v) ?? 1),
+                child: StatefulBuilder(
+                  builder: (context, setFieldState) {
+                    final bool isActive = _uStatusCtrl.text.isEmpty || _uStatusCtrl.text == '1';
+                    return Container(
+                      height: 44,
+                      alignment: Alignment.centerLeft,
+                      child: GestureDetector(
+                        onTap: widget.isViewMode ? null : () {
+                          setFieldState(() {
+                            _uStatusCtrl.text = isActive ? '0' : '1';
+                          });
+                          widget.onChanged('status', isActive ? 0 : 1);
+                        },
+                        child: MouseRegion(
+                          cursor: widget.isViewMode ? SystemMouseCursors.basic : SystemMouseCursors.click,
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 250),
+                            curve: Curves.easeInOut,
+                            width: 64,
+                            height: 28,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(20),
+                              color: isActive ? AppColors.tBlue : const Color(0xFFE2E8F0),
+                            ),
+                            child: Stack(
+                              children: [
+                                Align(
+                                  alignment: isActive ? Alignment.centerLeft : Alignment.centerRight,
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                                    child: Text(
+                                      isActive ? 'Yes' : 'No',
+                                      style: bodyStyle(
+                                        size: 11,
+                                        color: isActive ? Colors.white : AppColors.ink3,
+                                        weight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                AnimatedAlign(
+                                  duration: const Duration(milliseconds: 250),
+                                  curve: Curves.easeInOut,
+                                  alignment: isActive ? Alignment.centerRight : Alignment.centerLeft,
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(3.0),
+                                    child: Container(
+                                      width: 22,
+                                      height: 22,
+                                      decoration: const BoxDecoration(
+                                        color: Colors.white,
+                                        shape: BoxShape.circle,
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black12,
+                                            blurRadius: 4,
+                                            offset: Offset(0, 1),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ),
               AmsField(
