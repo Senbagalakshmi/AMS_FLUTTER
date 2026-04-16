@@ -67,18 +67,24 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
   final GlobalKey<DynamicNTFieldsState> _fieldsKey =
       GlobalKey<DynamicNTFieldsState>();
 
-  Future<void> _handleDeleteAccess(BuildContext context, Map<String, dynamic> record) async {
+  Future<void> _handleDeleteAccess(
+      BuildContext context, Map<String, dynamic> record) async {
     final bool? confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text('Delete Access', style: bodyStyle(weight: FontWeight.bold)),
-        content: Text('Are you sure you want to delete this record? This action cannot be undone.', style: bodyStyle()),
+        content: Text(
+            'Are you sure you want to delete this record? This action cannot be undone.',
+            style: bodyStyle()),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('Cancel', style: bodyStyle(color: AppColors.ink3))),
           TextButton(
-            onPressed: () => Navigator.pop(ctx, true), 
-            child: Text('Delete', style: bodyStyle(color: AppColors.red, weight: FontWeight.bold))
-          ),
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text('Cancel', style: bodyStyle(color: AppColors.ink3))),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text('Delete',
+                  style: bodyStyle(
+                      color: AppColors.red, weight: FontWeight.bold))),
         ],
       ),
     );
@@ -86,74 +92,95 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
     if (confirm == true) {
       final orgCode = record['orgCode'] ?? record['orgcode'] ?? 50;
       final accessCd = record['accessCd'] ?? record['accesscd'] ?? 0;
-      final success = await apiService.deleteAccess(orgCode is int ? orgCode : 50, accessCd is int ? accessCd : 0);
-      
+      final success = await apiService.deleteAccess(
+          orgCode is int ? orgCode : 50, accessCd is int ? accessCd : 0);
+
       if (success) {
         showAmsSnack(context, 'Record deleted successfully', icon: '✅');
-        setState(() {}); 
+        setState(() {});
       } else {
         showAmsSnack(context, 'Failed to delete record', icon: '❌');
       }
     }
   }
 
-  Future<void> _handleDeleteModule(BuildContext context, Map<String, dynamic> record) async {
+  Future<void> _handleDeleteModule(
+      BuildContext context, Map<String, dynamic> record) async {
     final bool? confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text('Delete Module', style: bodyStyle(weight: FontWeight.bold)),
-        content: Text('Are you sure you want to delete this module? This action cannot be undone.', style: bodyStyle()),
+        content: Text(
+            'Are you sure you want to delete this module? This action cannot be undone.',
+            style: bodyStyle()),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('Cancel', style: bodyStyle(color: AppColors.ink3))),
           TextButton(
-            onPressed: () => Navigator.pop(ctx, true), 
-            child: Text('Delete', style: bodyStyle(color: AppColors.red, weight: FontWeight.bold))
-          ),
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text('Cancel', style: bodyStyle(color: AppColors.ink3))),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text('Delete',
+                  style: bodyStyle(
+                      color: AppColors.red, weight: FontWeight.bold))),
         ],
       ),
     );
 
     if (confirm == true) {
-      final moduleCd = (record['module_id'] ?? record['moduleCd'] ?? record['moduleid'] ?? record['modcd'] ?? '').toString();
+      final moduleCd = (record['module_id'] ??
+              record['moduleCd'] ??
+              record['moduleid'] ??
+              record['modcd'] ??
+              '')
+          .toString();
       if (moduleCd.isEmpty || moduleCd == '—') {
         showAmsSnack(context, 'Invalid Module ID', icon: '⚠️');
         return;
       }
       final success = await apiService.deleteModule(moduleCd);
-      
+
       if (success) {
         showAmsSnack(context, 'Module deleted successfully', icon: '✅');
-        setState(() {}); 
+        setState(() {});
       } else {
         showAmsSnack(context, 'Failed to delete module', icon: '❌');
       }
     }
   }
 
-  Future<void> _handleDeleteUser(BuildContext context, Map<String, dynamic> record) async {
+  Future<void> _handleDeleteUser(
+      BuildContext context, Map<String, dynamic> record) async {
     final bool? confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text('Delete User', style: bodyStyle(weight: FontWeight.bold)),
-        content: Text('Are you sure you want to delete this user? This action cannot be undone.', style: bodyStyle()),
+        content: Text(
+            'Are you sure you want to delete this user? This action cannot be undone.',
+            style: bodyStyle()),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('Cancel', style: bodyStyle(color: AppColors.ink3))),
           TextButton(
-            onPressed: () => Navigator.pop(ctx, true), 
-            child: Text('Delete', style: bodyStyle(color: AppColors.red, weight: FontWeight.bold))
-          ),
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text('Cancel', style: bodyStyle(color: AppColors.ink3))),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text('Delete',
+                  style: bodyStyle(
+                      color: AppColors.red, weight: FontWeight.bold))),
         ],
       ),
     );
 
     if (confirm == true) {
       final orgCode = record['orgCode'] ?? record['orgcode'] ?? 50;
-      final usersCd = (record['usersCd'] ?? record['userScd'] ?? record['USERSCD'] ?? '').toString();
-      final success = await apiService.deleteUser(orgCode is int ? orgCode : 50, usersCd);
-      
+      final usersCd =
+          (record['usersCd'] ?? record['userScd'] ?? record['USERSCD'] ?? '')
+              .toString();
+      final success =
+          await apiService.deleteUser(orgCode is int ? orgCode : 50, usersCd);
+
       if (success) {
         showAmsSnack(context, 'User deleted successfully', icon: '✅');
-        setState(() {}); 
+        setState(() {});
       } else {
         showAmsSnack(context, 'Failed to delete user', icon: '❌');
       }
@@ -167,7 +194,6 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
       return;
     }
 
-    // Trigger validation in child
     if (_fieldsKey.currentState?.validate() == false) {
       return;
     }
@@ -187,7 +213,6 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
           ].contains(_selProg))
               ? 50
               : 1),
-      // For ROLE-CRT: default all access fields to 0 if user never touched the toggle
       if (_selProg == 'ROLE-CRT') ...{
         'orgCode': 50,
         'viewAccess': 0,
@@ -303,7 +328,6 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
                 ),
             ],
           ),
-          // Main Screen Area (Modern Container)
           Expanded(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
@@ -315,7 +339,6 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
                 ),
                 child: Column(
                   children: [
-                    // Navy Header Bar (Hidden for MOD-CRT List and USR-CRT List as per request)
                     if (!isModuleScreenList && !isUserScreenList)
                       Container(
                         width: double.infinity,
@@ -341,7 +364,8 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
                             ),
                             if (_showForm)
                               IconButton(
-                                icon: const Icon(Icons.keyboard_arrow_up_rounded,
+                                icon: const Icon(
+                                    Icons.keyboard_arrow_up_rounded,
                                     color: Colors.white),
                                 onPressed: () => setState(() {
                                   _showForm = false;
@@ -351,13 +375,18 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
                           ],
                         ),
                       ),
-
-                    // Body
                     Expanded(
                       child: () {
-                        Future<void> handleView(Map<String, dynamic> record) async {
+                        Future<void> handleView(
+                            Map<String, dynamic> record) async {
                           if (widget.initialProg == 'MOD-CRT') {
-                            final mid = (record['modCd'] ?? record['module_id'] ?? record['moduleid'] ?? record['moduleId'] ?? record['modcd'] ?? '').toString();
+                            final mid = (record['modCd'] ??
+                                    record['module_id'] ??
+                                    record['moduleid'] ??
+                                    record['moduleId'] ??
+                                    record['modcd'] ??
+                                    '')
+                                .toString();
                             if (mid.isNotEmpty) {
                               final subms = await apiService.getSubModules(mid);
                               record['submodules'] = subms;
@@ -370,9 +399,16 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
                           });
                         }
 
-                        Future<void> handleEdit(Map<String, dynamic> record) async {
+                        Future<void> handleEdit(
+                            Map<String, dynamic> record) async {
                           if (widget.initialProg == 'MOD-CRT') {
-                            final mid = (record['modCd'] ?? record['module_id'] ?? record['moduleid'] ?? record['moduleId'] ?? record['modcd'] ?? '').toString();
+                            final mid = (record['modCd'] ??
+                                    record['module_id'] ??
+                                    record['moduleid'] ??
+                                    record['moduleId'] ??
+                                    record['modcd'] ??
+                                    '')
+                                .toString();
                             if (mid.isNotEmpty) {
                               final subms = await apiService.getSubModules(mid);
                               record['submodules'] = subms;
@@ -393,11 +429,11 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
                           );
                         }
                         if (isRoleScreenList) {
-                          // return _RoleListView(onView: handleView);
                           return _RoleListView(
                             onView: handleView,
-                            onEdit: handleEdit, // Edit uses the same form logic
-                            onDelete: (rec) => _handleDeleteAccess(context, rec),
+                            onEdit: handleEdit,
+                            onDelete: (rec) =>
+                                _handleDeleteAccess(context, rec),
                           );
                         }
                         if (isUserRoleScreenList) {
@@ -407,7 +443,8 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
                           return _ModuleListView(
                             onView: handleView,
                             onEdit: handleEdit,
-                            onDelete: (rec) => _handleDeleteModule(context, rec),
+                            onDelete: (rec) =>
+                                _handleDeleteModule(context, rec),
                           );
                         }
                         if (isAuthCtrlScreenList) {
@@ -424,7 +461,8 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
                                   key: _fieldsKey,
                                   prog: _selProg!,
                                   initialData: _viewRecord,
-                                  isViewMode: _viewRecord != null && !_isEditMode,
+                                  isViewMode:
+                                      _viewRecord != null && !_isEditMode,
                                   onChanged: (key, val) =>
                                       _dynamicData[key] = val,
                                 ),
@@ -434,8 +472,6 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
                         );
                       }(),
                     ),
-
-                    // Fixed Footer Submit Bar (within the container)
                     if (!isAnyList)
                       AmsSubmitBar(
                         borderColor: AppColors.border,
@@ -551,18 +587,30 @@ class _UserListViewState extends State<_UserListView> {
 
     final filteredItems = (_users ?? []).where((u) {
       if (_searchQuery.isEmpty) return true;
-      final fName = (u['fName'] ?? u['fname'] ?? u['FNAME'] ?? '').toString().toLowerCase();
-      final lName = (u['lName'] ?? u['lname'] ?? u['LNAME'] ?? '').toString().toLowerCase();
-      final email = (u['email'] ?? u['EMAIL'] ?? '').toString().toLowerCase();
-      final mobile = (u['mobile'] ?? u['MOBILE'] ?? '').toString().toLowerCase();
-      final userCd = (u['userScd'] ?? u['usersCd'] ?? u['USERSCD'] ?? '').toString().toLowerCase();
+      final fName = (u['fName'] ?? u['fname'] ?? u['FNAME'] ?? '')
+          .toString()
+          .toLowerCase();
+      final lName = (u['lName'] ?? u['lname'] ?? u['LNAME'] ?? '')
+          .toString()
+          .toLowerCase();
+      final email = (u['email'] ?? u['EMAIL'] ?? u['emailid'] ?? '')
+          .toString()
+          .toLowerCase();
+      final mobile =
+          (u['mobile'] ?? u['MOBILE'] ?? '').toString().toLowerCase();
+      final userCd = (u['userScd'] ?? u['usersCd'] ?? u['USERSCD'] ?? '')
+          .toString()
+          .toLowerCase();
       final query = _searchQuery.toLowerCase();
-      return fName.contains(query) || lName.contains(query) || email.contains(query) || mobile.contains(query) || userCd.contains(query);
+      return fName.contains(query) ||
+          lName.contains(query) ||
+          email.contains(query) ||
+          mobile.contains(query) ||
+          userCd.contains(query);
     }).toList();
 
     return Column(
       children: [
-        // Premium Search Bar
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
           child: Row(
@@ -586,7 +634,8 @@ class _UserListViewState extends State<_UserListView> {
                   borderRadius: BorderRadius.circular(8),
                   child: const Padding(
                     padding: EdgeInsets.all(10),
-                    child: Icon(Icons.refresh_rounded, size: 20, color: AppColors.ink2),
+                    child: Icon(Icons.refresh_rounded,
+                        size: 20, color: AppColors.ink2),
                   ),
                 ),
               ),
@@ -603,17 +652,24 @@ class _UserListViewState extends State<_UserListView> {
               itemCount: currentItems.length,
               itemBuilder: (ctx, idx) {
                 final u = currentItems[idx];
-                final String fName = u['fName'] ?? u['fname'] ?? u['FNAME'] ?? '';
-                final String lName = u['lName'] ?? u['lname'] ?? u['LNAME'] ?? '';
-                final String email = u['email'] ?? u['EMAIL'] ?? u['emailid'] ?? 'No Email';
+                final String fName =
+                    u['fName'] ?? u['fname'] ?? u['FNAME'] ?? '';
+                final String lName =
+                    u['lName'] ?? u['lname'] ?? u['LNAME'] ?? '';
+                final String email =
+                    u['email'] ?? u['EMAIL'] ?? u['emailid'] ?? 'No Email';
                 final String mobile = u['mobile'] ?? u['MOBILE'] ?? 'No Mobile';
-                final String userCd = u['userScd'] ?? u['usersCd'] ?? u['USERSCD'] ?? 'Unknown';
+                final String userCd =
+                    u['userScd'] ?? u['usersCd'] ?? u['USERSCD'] ?? 'Unknown';
                 final String initial = fName.isNotEmpty
                     ? fName[0].toUpperCase()
-                    : (userCd.isNotEmpty && userCd != 'Unknown' ? userCd[0].toUpperCase() : 'U');
+                    : (userCd.isNotEmpty && userCd != 'Unknown'
+                        ? userCd[0].toUpperCase()
+                        : 'U');
 
                 return AmsCard(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   child: Row(
                     children: [
                       Container(
@@ -639,25 +695,34 @@ class _UserListViewState extends State<_UserListView> {
                                 ('$fName $lName').trim().isNotEmpty
                                     ? '$fName $lName'.trim()
                                     : 'Unnamed User',
-                                style: bodyStyle(size: 15, weight: FontWeight.w600)),
+                                style: bodyStyle(
+                                    size: 15, weight: FontWeight.w600)),
                             const SizedBox(height: 4),
                             Text('$email  |  $mobile',
-                                style: bodyStyle(color: AppColors.ink3, size: 12)),
+                                style:
+                                    bodyStyle(color: AppColors.ink3, size: 12)),
                           ],
                         ),
                       ),
-                      // Actions
-                      if (u['status']?.toString() == '0' || u['status']?.toString() == '2' || u['status']?.toString() == '3')
+                      if (u['status']?.toString() == '0' ||
+                          u['status']?.toString() == '2' ||
+                          u['status']?.toString() == '3')
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
                             color: Colors.orange.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: Colors.orange.withOpacity(0.5)),
+                            border: Border.all(
+                                color: Colors.orange.withOpacity(0.5)),
                           ),
-                          child: Text('Raised for Edit', style: bodyStyle(color: Colors.orange[800]!, size: 12, weight: FontWeight.w600)),
+                          child: Text('Raised for Edit',
+                              style: bodyStyle(
+                                  color: Colors.orange[800]!,
+                                  size: 12,
+                                  weight: FontWeight.w600)),
                         )
-                      else  
+                      else
                         Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -699,7 +764,6 @@ class _UserListViewState extends State<_UserListView> {
 
 class _RoleListView extends StatefulWidget {
   final void Function(Map<String, dynamic>)? onView;
-  // const _RoleListView({this.onView});
   final void Function(Map<String, dynamic>)? onEdit;
   final Future<void> Function(Map<String, dynamic>)? onDelete;
   const _RoleListView({this.onView, this.onEdit, this.onDelete});
@@ -712,14 +776,13 @@ class _RoleListViewState extends State<_RoleListView> {
   List<Map<String, dynamic>>? _roles;
   int _totalItems = 0;
   bool _loading = true;
+  String _searchQuery = '';
 
   @override
   void initState() {
     super.initState();
     _loadRoles(1);
   }
-
-  String _searchQuery = '';
 
   Future<void> _loadRoles(int page) async {
     setState(() => _loading = true);
@@ -741,14 +804,16 @@ class _RoleListViewState extends State<_RoleListView> {
 
     final filteredItems = (_roles ?? []).where((r) {
       if (_searchQuery.isEmpty) return true;
-      final name = (r['accessName'] ?? r['accessname'] ?? '').toString().toLowerCase();
-      final cd = (r['accessCd'] ?? r['accesscd'] ?? '').toString().toLowerCase();
-      return name.contains(_searchQuery.toLowerCase()) || cd.contains(_searchQuery.toLowerCase());
+      final name =
+          (r['accessName'] ?? r['accessname'] ?? '').toString().toLowerCase();
+      final cd =
+          (r['accessCd'] ?? r['accesscd'] ?? '').toString().toLowerCase();
+      return name.contains(_searchQuery.toLowerCase()) ||
+          cd.contains(_searchQuery.toLowerCase());
     }).toList();
 
     return Column(
       children: [
-        // Premium Search Bar
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
           child: Row(
@@ -772,7 +837,8 @@ class _RoleListViewState extends State<_RoleListView> {
                   borderRadius: BorderRadius.circular(8),
                   child: const Padding(
                     padding: EdgeInsets.all(10),
-                    child: Icon(Icons.refresh_rounded, size: 20, color: AppColors.ink2),
+                    child: Icon(Icons.refresh_rounded,
+                        size: 20, color: AppColors.ink2),
                   ),
                 ),
               ),
@@ -789,14 +855,17 @@ class _RoleListViewState extends State<_RoleListView> {
               itemCount: currentItems.length,
               itemBuilder: (ctx, idx) {
                 final r = currentItems[idx];
-                final accessName = r['accessName'] ?? r['access_name'] ?? 'Unnamed Access';
+                final accessName = r['accessName'] ??
+                    r['access_name'] ??
+                    r['accessname'] ??
+                    'Unnamed Access';
                 final accessCd = r['accessCd'] ?? r['accesscd'] ?? '—';
-                
+
                 return AmsCard(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   child: Row(
                     children: [
-                      // Avatar
                       Container(
                         width: 44,
                         height: 44,
@@ -806,18 +875,24 @@ class _RoleListViewState extends State<_RoleListView> {
                         ),
                         child: Center(
                           child: Text(
-                            accessName.toString().isNotEmpty ? accessName.toString()[0].toUpperCase() : 'R',
-                            style: bodyStyle(weight: FontWeight.bold, color: AppColors.tBlue, size: 16),
+                            accessName.toString().isNotEmpty
+                                ? accessName.toString()[0].toUpperCase()
+                                : 'R',
+                            style: bodyStyle(
+                                weight: FontWeight.bold,
+                                color: AppColors.tBlue,
+                                size: 16),
                           ),
                         ),
                       ),
                       const SizedBox(width: 16),
-                      // Info
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(accessName.toString(), style: bodyStyle(size: 15, weight: FontWeight.w600)),
+                            Text(accessName.toString(),
+                                style: bodyStyle(
+                                    size: 15, weight: FontWeight.w600)),
                             const SizedBox(height: 4),
                             Text(
                               'Type: ${r['accessType'] ?? r['accesstype'] ?? "—"}  |  Subtype: ${r['accessSubType'] ?? r['accesssubtype'] ?? "—"}',
@@ -826,10 +901,11 @@ class _RoleListViewState extends State<_RoleListView> {
                           ],
                         ),
                       ),
-                      // Stats
-                      AmsBadge(label: accessCd.toString(), background: AppColors.grayLt, color: AppColors.ink2),
+                      AmsBadge(
+                          label: accessCd.toString(),
+                          background: AppColors.grayLt,
+                          color: AppColors.ink2),
                       const SizedBox(width: 16),
-                      // Actions
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -848,12 +924,12 @@ class _RoleListViewState extends State<_RoleListView> {
                           _ActionButton(
                             icon: Icons.delete_outline_rounded,
                             color: Colors.red,
-                              onTap: () async {
-                                if (widget.onDelete != null) {
-                                  await widget.onDelete!(r);
-                                  _loadRoles(1);
-                                }
-                              },
+                            onTap: () async {
+                              if (widget.onDelete != null) {
+                                await widget.onDelete!(r);
+                                _loadRoles(1);
+                              }
+                            },
                           ),
                         ],
                       ),
@@ -874,7 +950,8 @@ class _ActionButton extends StatelessWidget {
   final Color color;
   final VoidCallback onTap;
 
-  const _ActionButton({required this.icon, required this.color, required this.onTap});
+  const _ActionButton(
+      {required this.icon, required this.color, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -1007,14 +1084,16 @@ class _ModuleListViewState extends State<_ModuleListView> {
 
     final filteredItems = (_data ?? []).where((d) {
       if (_searchQuery.isEmpty) return true;
-      final name = (d['moduleName'] ?? d['modulename'] ?? '').toString().toLowerCase();
-      final cd = (d['moduleCd'] ?? d['moduleid'] ?? '').toString().toLowerCase();
-      return name.contains(_searchQuery.toLowerCase()) || cd.contains(_searchQuery.toLowerCase());
+      final name =
+          (d['moduleName'] ?? d['modulename'] ?? '').toString().toLowerCase();
+      final cd =
+          (d['moduleCd'] ?? d['moduleid'] ?? '').toString().toLowerCase();
+      return name.contains(_searchQuery.toLowerCase()) ||
+          cd.contains(_searchQuery.toLowerCase());
     }).toList();
 
     return Column(
       children: [
-        // Search Box like Organization screen
         Padding(
           padding: const EdgeInsets.all(16.0),
           child: Row(
@@ -1039,7 +1118,8 @@ class _ModuleListViewState extends State<_ModuleListView> {
                   borderRadius: BorderRadius.circular(8),
                   child: const Padding(
                     padding: EdgeInsets.all(10),
-                    child: Icon(Icons.refresh_rounded, size: 20, color: AppColors.ink2),
+                    child: Icon(Icons.refresh_rounded,
+                        size: 20, color: AppColors.ink2),
                   ),
                 ),
               ),
@@ -1056,14 +1136,19 @@ class _ModuleListViewState extends State<_ModuleListView> {
               itemCount: currentItems.length,
               itemBuilder: (ctx, idx) {
                 final d = currentItems[idx];
-                final String moduleName = d['moduleName'] ?? d['modulename'] ?? d['module_name'] ?? 'Unknown';
-                final String moduleCd = (d['moduleCd'] ?? d['module_id'] ?? d['moduleid'] ?? '—').toString();
+                final String moduleName = d['moduleName'] ??
+                    d['modulename'] ??
+                    d['module_name'] ??
+                    'Unknown';
+                final String moduleCd =
+                    (d['moduleCd'] ?? d['module_id'] ?? d['moduleid'] ?? '—')
+                        .toString();
 
                 return AmsCard(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   child: Row(
                     children: [
-                      // Avatar/Icon
                       Container(
                         width: 44,
                         height: 44,
@@ -1073,32 +1158,44 @@ class _ModuleListViewState extends State<_ModuleListView> {
                         ),
                         child: Center(
                           child: Text(
-                            moduleName.isNotEmpty ? moduleName[0].toUpperCase() : 'M',
-                            style: bodyStyle(weight: FontWeight.bold, color: AppColors.tBlue, size: 16),
+                            moduleName.isNotEmpty
+                                ? moduleName[0].toUpperCase()
+                                : 'M',
+                            style: bodyStyle(
+                                weight: FontWeight.bold,
+                                color: AppColors.tBlue,
+                                size: 16),
                           ),
                         ),
                       ),
                       const SizedBox(width: 16),
-                      // Labels
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(moduleName, style: bodyStyle(size: 15, weight: FontWeight.w600)),
+                            Text(moduleName,
+                                style: bodyStyle(
+                                    size: 15, weight: FontWeight.w600)),
                             const SizedBox(height: 4),
-                            Text('Module Code: $moduleCd  |  ORG: ${d['orgCode'] ?? d['orgcode'] ?? 50}',
-                                style: bodyStyle(color: AppColors.ink3, size: 12)),
+                            Text(
+                                'Module Code: $moduleCd  |  ORG: ${d['orgCode'] ?? d['orgcode'] ?? 50}',
+                                style:
+                                    bodyStyle(color: AppColors.ink3, size: 12)),
                           ],
                         ),
                       ),
-                      // Status Badge
                       AmsBadge(
-                        label: (d['status']?.toString() == '0') ? 'Disabled' : 'Enabled',
-                        background: (d['status']?.toString() == '0') ? AppColors.grayLt : AppColors.nTealLt,
-                        color: (d['status']?.toString() == '0') ? AppColors.ink3 : AppColors.nTeal,
+                        label: (d['status']?.toString() == '0')
+                            ? 'Disabled'
+                            : 'Enabled',
+                        background: (d['status']?.toString() == '0')
+                            ? AppColors.grayLt
+                            : AppColors.nTealLt,
+                        color: (d['status']?.toString() == '0')
+                            ? AppColors.ink3
+                            : AppColors.nTeal,
                       ),
                       const SizedBox(width: 16),
-                      // Actions
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -1117,12 +1214,12 @@ class _ModuleListViewState extends State<_ModuleListView> {
                           _ActionButton(
                             icon: Icons.delete_outline_rounded,
                             color: Colors.red,
-                              onTap: () async {
-                                if (widget.onDelete != null) {
-                                  await widget.onDelete!(d);
-                                  _load(1);
-                                }
-                              },
+                            onTap: () async {
+                              if (widget.onDelete != null) {
+                                await widget.onDelete!(d);
+                                _load(1);
+                              }
+                            },
                           ),
                         ],
                       ),
@@ -1210,7 +1307,6 @@ class _AuthCtrlListViewState extends State<_AuthCtrlListView> {
   }
 }
 
-
 class _BranchListView extends StatefulWidget {
   final void Function(Map<String, dynamic>)? onView;
   const _BranchListView({this.onView});
@@ -1233,7 +1329,6 @@ class _BranchListViewState extends State<_BranchListView> {
     setState(() => _loading = true);
     final result = await branchApiService.getBranches(page: page - 1, size: 10);
     if (mounted) {
-
       setState(() {
         _data = result?.items ?? [];
         _totalItems = result?.totalElements ?? 0;
@@ -1256,8 +1351,17 @@ class _BranchListViewState extends State<_BranchListView> {
         itemCount: currentItems.length,
         itemBuilder: (ctx, idx) {
           final d = currentItems[idx];
-          final String bName = d['branchName'] ?? d['brnName'] ?? d['brnname'] ?? d['branchname'] ?? 'Unknown';
-          final String bCd = (d['branchCd'] ?? d['brnCd'] ?? d['brncd'] ?? d['branchcd'] ?? '—').toString();
+          final String bName = d['branchName'] ??
+              d['brnName'] ??
+              d['brnname'] ??
+              d['branchname'] ??
+              'Unknown';
+          final String bCd = (d['branchCd'] ??
+                  d['brnCd'] ??
+                  d['brncd'] ??
+                  d['branchcd'] ??
+                  '—')
+              .toString();
 
           return AmsCard(
             onTap: widget.onView != null ? () => widget.onView!(d) : null,
@@ -1270,7 +1374,8 @@ class _BranchListViewState extends State<_BranchListView> {
                   decoration: const BoxDecoration(
                       color: AppColors.nTealLt, shape: BoxShape.circle),
                   child: const Center(
-                      child: Icon(Icons.store_rounded, color: AppColors.nTeal, size: 20)),
+                      child: Icon(Icons.store_rounded,
+                          color: AppColors.nTeal, size: 20)),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -1286,9 +1391,14 @@ class _BranchListViewState extends State<_BranchListView> {
                   ),
                 ),
                 AmsBadge(
-                  label: (d['status']?.toString() == '0') ? 'Disabled' : 'Enabled',
-                  color: (d['status']?.toString() == '0') ? AppColors.red : AppColors.green,
-                  background: (d['status']?.toString() == '0') ? AppColors.redLt : AppColors.greenLt,
+                  label:
+                      (d['status']?.toString() == '0') ? 'Disabled' : 'Enabled',
+                  color: (d['status']?.toString() == '0')
+                      ? AppColors.red
+                      : AppColors.green,
+                  background: (d['status']?.toString() == '0')
+                      ? AppColors.redLt
+                      : AppColors.greenLt,
                 ),
               ],
             ),
@@ -1323,7 +1433,6 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
   String _formatDisplayDate(String? dateStr) {
     if (dateStr == null || dateStr.isEmpty) return '';
     try {
-      // Handle "yyyy-MM-dd" or full ISO strings
       final date = DateTime.parse(dateStr);
       return DateFormat('dd-MMM-yyyy').format(date);
     } catch (_) {
@@ -1383,7 +1492,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
   @override
   void didUpdateWidget(DynamicNTFields oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.prog != widget.prog || 
+    if (oldWidget.prog != widget.prog ||
         oldWidget.initialData != widget.initialData) {
       _loadInitialData();
       _notifyDefaults();
@@ -1404,9 +1513,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
   }
 
   void _notifyDefaults() {
-    if (widget.initialData != null) return; // Only notify defaults for new records!
-    // For AUTHCTL and others, notify the parent of initial switch/field states
-    // so they are included in the submission payload even if not touched.
+    if (widget.initialData != null) return;
     final prog = widget.prog.replaceAll(' ', '-').toUpperCase();
     if (prog == 'AUTHCTL') {
       widget.onChanged('approvalReq', _approvalReq ? 1 : 0);
@@ -1414,7 +1521,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
       widget.onChanged('postApproveProc', _postApprovalReq ? 1 : 0);
       widget.onChanged('isTranPgm', _isTran ? 1 : 0);
       widget.onChanged('authLevels', _authLevels);
-      widget.onChanged('orgCode', 50); // Default for AUTHCTL
+      widget.onChanged('orgCode', 50);
     } else if (prog == 'MOD-CRT') {
       widget.onChanged('orgCode', 50);
       widget.onChanged('status', _mStatus);
@@ -1424,7 +1531,6 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
       widget.onChanged('orgCode', 50);
       widget.onChanged('status', 1);
     }
-    // Add other defaults as needed per program
   }
 
   Future<void> _fetchDropdownData() async {
@@ -1444,7 +1550,6 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
 
   void _loadInitialData() {
     if (widget.initialData == null) {
-      // For new records, we might want to reset to true defaults
       if (widget.prog == 'AUTHCTL') {
         _approvalReq = true;
         _preApprovalReq = false;
@@ -1457,56 +1562,98 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
       }
       return;
     }
+
+    // ─── Normalize all keys to lowercase for safe access ───
     final data =
         widget.initialData!.map((k, v) => MapEntry(k.toLowerCase(), v));
     final prog = widget.prog.replaceAll(' ', '-').toUpperCase();
 
     if (prog == 'USR-CRT') {
-      _uScdCtrl.text = data['userscd']?.toString() ?? '';
-      _fNameCtrl.text = data['fname']?.toString() ?? '';
-      _lNameCtrl.text = data['lname']?.toString() ?? '';
-      _uRegDateCtrl.text = _formatDisplayDate(data['regdate']?.toString());
-      _uDobCtrl.text = _formatDisplayDate(data['dob']?.toString());
-      _uStatusCtrl.text = data['status']?.toString() ?? '';
-      _uBranchCdCtrl.text = (data['branchCd'] ?? data['branchcd'])?.toString() ?? '';
-      _uPictureCtrl.text = data['picture']?.toString() ?? '';
-      _emailCtrl.text = data['email']?.toString() ?? data['emailid']?.toString() ?? '';
-      _countryCtrl.text = data['country']?.toString() ?? '';
-      _mobileCtrl.text = data['mobile']?.toString() ?? '';
-      _callCodeCtrl.text = data['callCode']?.toString() ?? data['callcode']?.toString() ?? '';
-      final g1 = data['gender']?.toString().toUpperCase();
-      _gender = g1 == 'F' || g1 == 'FEMALE' ? 'Female' : (g1 == 'O' || g1 == 'OTHER' ? 'Other' : (g1 != null ? 'Male' : null));
-      _title = data['title']?.toString();
+      _uScdCtrl.text =
+          (data['userscd'] ?? data['userscd'] ?? data['usercd'] ?? '')
+              .toString();
+      _fNameCtrl.text = (data['fname'] ?? data['firstname'] ?? '').toString();
+      _lNameCtrl.text = (data['lname'] ?? data['lastname'] ?? '').toString();
+      _uRegDateCtrl.text = _formatDisplayDate((data['regdate'] ??
+              data['reg_date'] ??
+              data['registrationdate'] ??
+              '')
+          .toString());
+      _uDobCtrl.text = _formatDisplayDate(
+          (data['dob'] ?? data['dateofbirth'] ?? '').toString());
+      _uStatusCtrl.text = (data['status'] ?? '').toString();
+
+      // ✅ FIX: branchcd key fallback
+      _uBranchCdCtrl.text =
+          (data['branchcd'] ?? data['branchcode'] ?? data['branch_cd'] ?? '')
+              .toString();
+
+      // ✅ FIX: picture key fallback
+      _uPictureCtrl.text =
+          (data['picture'] ?? data['profilepicture'] ?? data['pic'] ?? '')
+              .toString();
+
+      // ✅ FIX: email key fallback
+      _emailCtrl.text =
+          (data['email'] ?? data['emailid'] ?? data['email_id'] ?? '')
+              .toString();
+
+      _countryCtrl.text = (data['country'] ?? '').toString();
+      _mobileCtrl.text =
+          (data['mobile'] ?? data['mobileno'] ?? data['phone'] ?? '')
+              .toString();
+      _callCodeCtrl.text =
+          (data['callcode'] ?? data['call_code'] ?? data['callingcode'] ?? '')
+              .toString();
+
+      // ✅ FIX: gender mapping
+      final g = (data['gender'] ?? '').toString().toUpperCase();
+      if (g == 'F' || g == 'FEMALE') {
+        _gender = 'Female';
+      } else if (g == 'O' || g == 'OTHER') {
+        _gender = 'Other';
+      } else if (g == 'M' || g == 'MALE') {
+        _gender = 'Male';
+      } else {
+        _gender = null;
+      }
+
+      _title = (data['title'] ?? '').toString().isNotEmpty
+          ? data['title'].toString()
+          : null;
     } else if (prog == 'ROLE-CRT') {
-      _rScdCtrl.text = data['rolecd']?.toString() ?? '';
-      _rNameCtrl.text = data['rolename']?.toString() ?? '';
-      _uBranchCdCtrl.text = data['branchcd']?.toString() ?? '';
-      _uPictureCtrl.text = data['picture']?.toString() ?? '';
-      final g2 = data['gender']?.toString().toUpperCase();
-      _gender = g2 == 'F' || g2 == 'FEMALE' ? 'Female' : (g2 == 'O' || g2 == 'OTHER' ? 'Other' : (g2 != null ? 'Male' : null));
-      _title = data['title']?.toString();
-    } else if (prog == 'ROLE-CRT') {
-      _rScdCtrl.text = data['accesscd']?.toString() ?? '';
-      _rNameCtrl.text = data['accessname']?.toString() ?? '';
-      _rTypeCtrl.text = data['accesstype']?.toString() ?? '';
-      _rSubtypeCtrl.text = data['accesssubtype']?.toString() ?? '';
+      // ✅ FIX: single correct ROLE-CRT block (removed duplicate)
+      _rScdCtrl.text =
+          (data['accesscd'] ?? data['access_cd'] ?? data['rolecd'] ?? '')
+              .toString();
+      _rNameCtrl.text =
+          (data['accessname'] ?? data['access_name'] ?? data['rolename'] ?? '')
+              .toString();
+      _rTypeCtrl.text =
+          (data['accesstype'] ?? data['access_type'] ?? '').toString();
+      _rSubtypeCtrl.text = (data['accesssubtype'] ??
+              data['access_sub_type'] ??
+              data['accesssubtype'] ??
+              '')
+          .toString();
     } else if (prog == 'MOD-CRT') {
       _mScdCtrl.text = (data['modcd'] ??
               data['module_id'] ??
               data['moduleid'] ??
-              data['moduleId'] ??
+              data['modulecode'] ??
               '')
           .toString();
-      _mNameCtrl.text = (data['modname'] ??
-              data['modulename'] ??
-              data['module_name'] ??
-              data['moduleName'] ??
-              '')
-          .toString();
-      _mStatus = int.tryParse(data['status']?.toString() ?? '1') ?? 1;
+      _mNameCtrl.text =
+          (data['modname'] ?? data['modulename'] ?? data['module_name'] ?? '')
+              .toString();
+      _mStatus = int.tryParse((data['status'] ?? '1').toString()) ?? 1;
+
       final sm = data['sub_module'] ?? data['submodule'];
       _subModuleEnabled = sm == 1 || sm == true || sm == '1';
-      var smData = data['submodules'] ?? data['submodulelist'] ?? data['sub_module_list'];
+
+      var smData = data['submodules'] ??
+          data['submodulelist'] ??
+          data['sub_module_list'];
       if (smData is String && smData.isNotEmpty) {
         try {
           smData = jsonDecode(smData);
@@ -1520,46 +1667,48 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
         _subModules = [];
       }
     } else if (prog == 'MENU-CRT') {
-      _menuScdCtrl.text = data['menucd']?.toString() ?? '';
-      _menuNameCtrl.text = data['menuname']?.toString() ?? '';
+      _menuScdCtrl.text = (data['menucd'] ?? data['menu_cd'] ?? '').toString();
+      _menuNameCtrl.text =
+          (data['menuname'] ?? data['menu_name'] ?? '').toString();
     } else if (prog == 'AUTHCTL') {
-      _authModCtrl.text = data['orgcode']?.toString() ??
-          data['modcd']?.toString() ??
-          '';
-      _authPgmCtrl.text = data['programid']?.toString() ??
-          data['pgmcd']?.toString() ??
-          '';
-      bool findBool(String k) {
-        final val = data[k.toLowerCase()] ?? data[k] ?? data[k.replaceAllMapped(RegExp(r'[A-Z]'), (m) => '_' + m.group(0)!.toLowerCase())];
-        return val == true || val == 1 || val == '1';
+      _authModCtrl.text =
+          (data['orgcode'] ?? data['org_code'] ?? data['modcd'] ?? '')
+              .toString();
+      _authPgmCtrl.text =
+          (data['programid'] ?? data['program_id'] ?? data['pgmcd'] ?? '')
+              .toString();
+
+      // ✅ FIX: bool helper that handles int 1, string '1', and true
+      bool parseBool(String key) {
+        final variants = [
+          key.toLowerCase(),
+          key.replaceAllMapped(
+              RegExp(r'[A-Z]'), (m) => '_${m.group(0)!.toLowerCase()}'),
+        ];
+        for (final k in variants) {
+          final val = data[k];
+          if (val == true || val == 1 || val == '1') return true;
+        }
+        return false;
       }
 
-      if (data.containsKey('approvalreq') || data.containsKey('approval_req')) {
-        _approvalReq = findBool('approvalReq');
-      }
-      if (data.containsKey('preapproveproc') || data.containsKey('pre_approve_proc')) {
-        _preApprovalReq = findBool('preApproveProc');
-      }
-      if (data.containsKey('postapproveproc') || data.containsKey('post_approve_proc')) {
-        _postApprovalReq = findBool('postApproveProc');
-      }
-      if (data.containsKey('istranpgm') || data.containsKey('istran') || data.containsKey('is_tran')) {
-        _isTran = findBool('isTranPgm') || findBool('isTran');
-      }
+      _approvalReq = parseBool('approvalReq');
+      _preApprovalReq = parseBool('preApproveProc');
+      _postApprovalReq = parseBool('postApproveProc');
+      _isTran = parseBool('isTranPgm') || parseBool('isTran');
 
-      if (data['authLevels'] is List) {
-        _authLevels = List<Map<String, dynamic>>.from(data['authLevels']);
+      if (data['authlevels'] is List) {
+        _authLevels = List<Map<String, dynamic>>.from(data['authlevels']);
       } else if (data['levels_grid'] is List) {
         _authLevels = List<Map<String, dynamic>>.from(data['levels_grid']);
       } else if (data['datablock'] is List) {
         _authLevels = List<Map<String, dynamic>>.from(data['datablock']);
       }
     } else if (prog == 'USR-ROLE') {
-      _uScdCtrl.text = data['userscd']?.toString() ??
-          data['users_cd']?.toString() ??
-          data['usercd']?.toString() ??
-          '';
-      _rScdCtrl.text = data['rolecd']?.toString() ?? '';
+      _uScdCtrl.text =
+          (data['userscd'] ?? data['users_cd'] ?? data['usercd'] ?? '')
+              .toString();
+      _rScdCtrl.text = (data['rolecd'] ?? data['role_cd'] ?? '').toString();
     }
   }
 
@@ -1612,7 +1761,8 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
           isValid = false;
         }
         if (_subModuleEnabled && _subModules.isEmpty) {
-          _errors['subModules'] = 'At least one sub-module is required when enabled';
+          _errors['subModules'] =
+              'At least one sub-module is required when enabled';
           isValid = false;
         }
       } else if (prog == 'MENU-CRT') {
@@ -1732,7 +1882,8 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                   textInputAction: TextInputAction.next,
                   onChanged: widget.isViewMode
                       ? null
-                      : (v) => widget.onChanged('orgCode', int.tryParse(v) ?? 50),
+                      : (v) =>
+                          widget.onChanged('orgCode', int.tryParse(v) ?? 50),
                 ),
               ),
               AmsField(
@@ -1770,20 +1921,28 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                 label: 'FULL NAME',
                 required: true,
                 labelAbove: true,
-                tooltip: 'Salutation and full name of the primary contact person.',
+                tooltip:
+                    'Salutation and full name of the primary contact person.',
                 child: Row(
                   children: [
                     Expanded(
                       flex: 2,
                       child: widget.isViewMode
                           ? AmsTextInput(
-                              initialValue: _title ?? data['title']?.toString() ?? 'Mr.',
+                              initialValue:
+                                  _title ?? data['title']?.toString() ?? 'Mr.',
                               readOnly: true,
                               placeholder: 'TITLE',
                             )
                           : AmsDropdown(
                               initialValue: _title ?? data['title']?.toString(),
-                              items: const ['Mr.', 'Ms.', 'Mrs.', 'Dr.', 'Prof.'],
+                              items: const [
+                                'Mr.',
+                                'Ms.',
+                                'Mrs.',
+                                'Dr.',
+                                'Prof.'
+                              ],
                               placeholder: 'TITLE',
                               onChanged: (v) {
                                 setState(() => _title = v);
@@ -1802,7 +1961,8 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                         errorText: _errors['fName'],
                         onChanged: (v) {
                           setState(() {
-                            _errors['fName'] = v.trim().isEmpty ? 'First Name required' : null;
+                            _errors['fName'] =
+                                v.trim().isEmpty ? 'First Name required' : null;
                           });
                           widget.onChanged('fName', v);
                         },
@@ -1813,10 +1973,13 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                       flex: 3,
                       child: AmsTextInput(
                         readOnly: widget.isViewMode,
-                        initialValue: data['mName']?.toString() ?? data['mname']?.toString(),
+                        initialValue: data['mname']?.toString() ??
+                            data['mName']?.toString(),
                         placeholder: 'MNAME',
                         textInputAction: TextInputAction.next,
-                        onChanged: widget.isViewMode ? null : (v) => widget.onChanged('mName', v),
+                        onChanged: widget.isViewMode
+                            ? null
+                            : (v) => widget.onChanged('mName', v),
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -1830,7 +1993,8 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                         errorText: _errors['lName'],
                         onChanged: (v) {
                           setState(() {
-                            _errors['lName'] = v.trim().isEmpty ? 'Last Name required' : null;
+                            _errors['lName'] =
+                                v.trim().isEmpty ? 'Last Name required' : null;
                           });
                           widget.onChanged('lName', v);
                         },
@@ -1883,7 +2047,8 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                             _errors['gender'] = null;
                           });
                           String mapped = 'M';
-                          if (v == 'Female') mapped = 'F';
+                          if (v == 'Female')
+                            mapped = 'F';
                           else if (v == 'Other') mapped = 'O';
                           widget.onChanged('gender', mapped);
                         },
@@ -1904,12 +2069,14 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                     if (widget.isViewMode) return;
                     final picked = await showDatePicker(
                       context: context,
-                      initialDate: DateTime.now().subtract(const Duration(days: 6570)),
+                      initialDate:
+                          DateTime.now().subtract(const Duration(days: 6570)),
                       firstDate: DateTime(1900),
                       lastDate: DateTime.now(),
                     );
                     if (picked != null) {
-                      final displayFmt = DateFormat('dd-MMM-yyyy').format(picked);
+                      final displayFmt =
+                          DateFormat('dd-MMM-yyyy').format(picked);
                       final isoFmt = DateFormat('yyyy-MM-dd').format(picked);
                       setState(() {
                         _uDobCtrl.text = displayFmt;
@@ -1931,7 +2098,8 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                   keyboardType: TextInputType.number,
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   textInputAction: TextInputAction.next,
-                  onChanged: (v) => widget.onChanged('country', int.tryParse(v) ?? 0),
+                  onChanged: (v) =>
+                      widget.onChanged('country', int.tryParse(v) ?? 0),
                 ),
               ),
               AmsField(
@@ -1967,7 +2135,8 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                       lastDate: DateTime(2100),
                     );
                     if (picked != null) {
-                      final displayFmt = DateFormat('dd-MMM-yyyy').format(picked);
+                      final displayFmt =
+                          DateFormat('dd-MMM-yyyy').format(picked);
                       final isoFmt = DateFormat('yyyy-MM-dd').format(picked);
                       setState(() {
                         _uRegDateCtrl.text = displayFmt;
@@ -1989,7 +2158,8 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                   keyboardType: TextInputType.number,
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   textInputAction: TextInputAction.next,
-                  onChanged: (v) => widget.onChanged('callCode', int.tryParse(v) ?? 0),
+                  onChanged: (v) =>
+                      widget.onChanged('callCode', int.tryParse(v) ?? 0),
                 ),
               ),
               AmsField(
@@ -2003,7 +2173,8 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                   keyboardType: TextInputType.number,
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   textInputAction: TextInputAction.next,
-                  onChanged: (v) => widget.onChanged('status', int.tryParse(v) ?? 1),
+                  onChanged: (v) =>
+                      widget.onChanged('status', int.tryParse(v) ?? 1),
                 ),
               ),
               AmsField(
@@ -2011,7 +2182,8 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                 labelAbove: true,
                 tooltip: 'User profile picture reference or URL.',
                 child: AmsFilePicker(
-                  initialValue: _uPictureCtrl.text.isNotEmpty ? _uPictureCtrl.text : null,
+                  initialValue:
+                      _uPictureCtrl.text.isNotEmpty ? _uPictureCtrl.text : null,
                   onFileSelected: (name, bytes) {
                     setState(() {
                       _uPictureCtrl.text = name;
@@ -2023,6 +2195,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
             ],
           ),
         );
+
       case 'USR-ROLE':
         return Container(
           padding: const EdgeInsets.all(24),
@@ -2066,14 +2239,17 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                               return '${u['usersCd'] ?? u['userScd'] ?? u['USERSCD'] ?? ''} - ${u['fName'] ?? u['fname'] ?? ''}';
                             }(),
                             placeholder: 'Select USERSCD',
-                            items: _userList.map((u) {
-                              final scd = u['usersCd'] ??
-                                  u['userScd'] ??
-                                  u['USERSCD'] ??
-                                  '';
-                              final name = u['fName'] ?? u['fname'] ?? '';
-                              return '$scd - $name';
-                            }).toSet().toList(),
+                            items: _userList
+                                .map((u) {
+                                  final scd = u['usersCd'] ??
+                                      u['userScd'] ??
+                                      u['USERSCD'] ??
+                                      '';
+                                  final name = u['fName'] ?? u['fname'] ?? '';
+                                  return '$scd - $name';
+                                })
+                                .toSet()
+                                .toList(),
                             errorText: _errors['usersCd'],
                             isValid: _errors['usersCd'] == null &&
                                 _uScdCtrl.text.isNotEmpty,
@@ -2118,11 +2294,15 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                               return '${r['roleCd'] ?? r['ROLECD'] ?? ''} - ${r['roleName'] ?? r['rolename'] ?? ''}';
                             }(),
                             placeholder: 'Select ROLECD',
-                            items: _roleList.map((r) {
-                              final cd = r['roleCd'] ?? r['ROLECD'] ?? '';
-                              final name = r['roleName'] ?? r['rolename'] ?? '';
-                              return '$cd - $name';
-                            }).toSet().toList(),
+                            items: _roleList
+                                .map((r) {
+                                  final cd = r['roleCd'] ?? r['ROLECD'] ?? '';
+                                  final name =
+                                      r['roleName'] ?? r['rolename'] ?? '';
+                                  return '$cd - $name';
+                                })
+                                .toSet()
+                                .toList(),
                             errorText: _errors['roleCd'],
                             isValid: _errors['roleCd'] == null &&
                                 _rScdCtrl.text.isNotEmpty,
@@ -2141,6 +2321,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
             ],
           ),
         );
+
       case 'ROLE-CRT':
         return Container(
           padding: const EdgeInsets.all(24),
@@ -2198,8 +2379,8 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                   placeholder: 'e.g. Administrator',
                   textInputAction: TextInputAction.next,
                   errorText: _errors['accessName'],
-                  isValid:
-                      _errors['accessName'] == null && _rNameCtrl.text.isNotEmpty,
+                  isValid: _errors['accessName'] == null &&
+                      _rNameCtrl.text.isNotEmpty,
                   onChanged: (v) {
                     setState(() {
                       _errors['accessName'] =
@@ -2233,23 +2414,30 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                   onChanged: (v) => widget.onChanged('accessSubType', v),
                 ),
               ),
+              // ✅ FIX: correct bool check for toggle initial values
               _AccessToggleGroup(
-                initialViewAccess:
-                    (data['viewaccess']?.toString() ?? '').startsWith('1'),
-                initialAuthAccess:
-                    (data['authaccess']?.toString() ?? '').startsWith('1'),
-                initialMakerAccess:
-                    (data['makeraccess']?.toString() ?? '').startsWith('1'),
-                initialAdminAccess:
-                    (data['adminaccess']?.toString() ?? '').startsWith('1'),
-                initialSysAdminAccess:
-                    (data['sysadminaccess']?.toString() ?? '').startsWith('1'),
+                initialViewAccess: data['viewaccess'] == 1 ||
+                    data['viewaccess'] == '1' ||
+                    data['viewaccess'] == true,
+                initialAuthAccess: data['authaccess'] == 1 ||
+                    data['authaccess'] == '1' ||
+                    data['authaccess'] == true,
+                initialMakerAccess: data['makeraccess'] == 1 ||
+                    data['makeraccess'] == '1' ||
+                    data['makeraccess'] == true,
+                initialAdminAccess: data['adminaccess'] == 1 ||
+                    data['adminaccess'] == '1' ||
+                    data['adminaccess'] == true,
+                initialSysAdminAccess: data['sysadminaccess'] == 1 ||
+                    data['sysadminaccess'] == '1' ||
+                    data['sysadminaccess'] == true,
                 isViewMode: widget.isViewMode,
                 onChanged: widget.onChanged,
               ),
             ],
           ),
         );
+
       case 'MOD-CRT':
         return Container(
           padding: const EdgeInsets.all(24),
@@ -2310,8 +2498,8 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                       placeholder: 'e.g. Finance',
                       textInputAction: TextInputAction.done,
                       errorText: _errors['modName'],
-                      isValid:
-                          _errors['modName'] == null && _mNameCtrl.text.isNotEmpty,
+                      isValid: _errors['modName'] == null &&
+                          _mNameCtrl.text.isNotEmpty,
                       onChanged: (v) {
                         setState(() {
                           _errors['modName'] =
@@ -2332,7 +2520,8 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                             readOnly: true,
                           )
                         : AmsDropdown(
-                            initialValue: _subModuleEnabled ? '1 - Yes' : '0 - No',
+                            initialValue:
+                                _subModuleEnabled ? '1 - Yes' : '0 - No',
                             items: const ['0 - No', '1 - Yes'],
                             onChanged: (v) {
                               setState(() {
@@ -2360,7 +2549,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                             onChanged: (v) {
                               final st = v?.startsWith('1') == true ? 1 : 0;
                               setState(() => _mStatus = st);
-                                widget.onChanged('status', st);
+                              widget.onChanged('status', st);
                             },
                           ),
                   ),
@@ -2388,6 +2577,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
             ],
           ),
         );
+
       case 'MENU-CRT':
         return Container(
           padding: const EdgeInsets.all(24),
@@ -2445,7 +2635,6 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
             ],
           ),
         );
-
 
       case 'AUTHCTL':
         return Container(
@@ -2537,7 +2726,8 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                                 },
                           activeThumbColor: AppColors.tBlue,
                         ),
-                        Text(_preApprovalReq ? 'Yes' : 'No', style: bodyStyle()),
+                        Text(_preApprovalReq ? 'Yes' : 'No',
+                            style: bodyStyle()),
                       ],
                     ),
                   ),
@@ -2552,11 +2742,13 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                               ? null
                               : (v) {
                                   setState(() => _postApprovalReq = v);
-                                  widget.onChanged('postApproveProc', v ? 1 : 0);
+                                  widget.onChanged(
+                                      'postApproveProc', v ? 1 : 0);
                                 },
                           activeThumbColor: AppColors.tBlue,
                         ),
-                        Text(_postApprovalReq ? 'Yes' : 'No', style: bodyStyle()),
+                        Text(_postApprovalReq ? 'Yes' : 'No',
+                            style: bodyStyle()),
                       ],
                     ),
                   ),
@@ -2602,6 +2794,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
             ],
           ),
         );
+
       default:
         return const SizedBox();
     }
@@ -2795,7 +2988,6 @@ class _Auth102LevelGridState extends State<_Auth102LevelGrid> {
       for (var item in widget.initialData) {
         if (item is Map) {
           final mappedItem = Map<String, dynamic>.from(item);
-          // Convert backend 'R'/'U' codes to display labels
           if (mappedItem['permissionType'] == 'R') {
             mappedItem['permissionType'] = 'R - Role';
           } else if (mappedItem['permissionType'] == 'U') {
@@ -2846,7 +3038,6 @@ class _Auth102LevelGridState extends State<_Auth102LevelGrid> {
   }
 
   void _notify() {
-    // Map display labels back to single-character codes for the backend
     final List<Map<String, dynamic>> mappedLevels = _levels.map((lvl) {
       final newLvl = Map<String, dynamic>.from(lvl);
       if (newLvl['permissionType'] == 'R - Role') {
@@ -2944,9 +3135,9 @@ class _Auth102LevelGridState extends State<_Auth102LevelGrid> {
                                 : AmsDropdown(
                                     initialValue: () {
                                       if (widget.roleList.isEmpty) return null;
-                                      final seek = _levels[i]['roleCd']
-                                              ?.toString() ??
-                                          '';
+                                      final seek =
+                                          _levels[i]['roleCd']?.toString() ??
+                                              '';
                                       if (seek.isEmpty) return null;
                                       final matches = widget.roleList.where(
                                           (r) =>
@@ -2959,13 +3150,17 @@ class _Auth102LevelGridState extends State<_Auth102LevelGrid> {
                                       return '${r['roleCd'] ?? r['ROLECD'] ?? ''} - ${r['roleName'] ?? r['rolename'] ?? ''}';
                                     }(),
                                     placeholder: 'Select ROLECD',
-                                    items: widget.roleList.map((r) {
-                                      final cd =
-                                          r['roleCd'] ?? r['ROLECD'] ?? '';
-                                      final name =
-                                          r['roleName'] ?? r['rolename'] ?? '';
-                                      return '$cd - $name';
-                                    }).toSet().toList(),
+                                    items: widget.roleList
+                                        .map((r) {
+                                          final cd =
+                                              r['roleCd'] ?? r['ROLECD'] ?? '';
+                                          final name = r['roleName'] ??
+                                              r['rolename'] ??
+                                              '';
+                                          return '$cd - $name';
+                                        })
+                                        .toSet()
+                                        .toList(),
                                     onChanged: (v) {
                                       final parts = v?.split(' - ') ?? [];
                                       final val =
@@ -2993,9 +3188,9 @@ class _Auth102LevelGridState extends State<_Auth102LevelGrid> {
                                 : AmsDropdown(
                                     initialValue: () {
                                       if (widget.userList.isEmpty) return null;
-                                      final seek = _levels[i]['userId']
-                                              ?.toString() ??
-                                          '';
+                                      final seek =
+                                          _levels[i]['userId']?.toString() ??
+                                              '';
                                       if (seek.isEmpty) return null;
                                       final matches = widget.userList.where(
                                           (u) =>
@@ -3009,15 +3204,18 @@ class _Auth102LevelGridState extends State<_Auth102LevelGrid> {
                                       return '${u['usersCd'] ?? u['userScd'] ?? u['USERSCD'] ?? ''} - ${u['fName'] ?? u['fname'] ?? ''}';
                                     }(),
                                     placeholder: 'Select USERID',
-                                    items: widget.userList.map((u) {
-                                      final scd = u['usersCd'] ??
-                                          u['userScd'] ??
-                                          u['USERSCD'] ??
-                                          '';
-                                      final name =
-                                          u['fName'] ?? u['fname'] ?? '';
-                                      return '$scd - $name';
-                                    }).toSet().toList(),
+                                    items: widget.userList
+                                        .map((u) {
+                                          final scd = u['usersCd'] ??
+                                              u['userScd'] ??
+                                              u['USERSCD'] ??
+                                              '';
+                                          final name =
+                                              u['fName'] ?? u['fname'] ?? '';
+                                          return '$scd - $name';
+                                        })
+                                        .toSet()
+                                        .toList(),
                                     onChanged: (v) {
                                       final parts = v?.split(' - ') ?? [];
                                       final val =
@@ -3179,8 +3377,7 @@ class _ModSubModuleGridState extends State<_ModSubModuleGrid> {
                       AmsField(
                         label: 'Status',
                         child: AmsDropdown(
-                          initialValue:
-                              (_list[i]['status']?.toString() == '0')
+                          initialValue: (_list[i]['status']?.toString() == '0')
                               ? '0 - Disable'
                               : '1 - Enable',
                           items: const ['1 - Enable', '0 - Disable'],
