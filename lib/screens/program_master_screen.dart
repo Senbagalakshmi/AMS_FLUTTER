@@ -162,7 +162,7 @@ class _ProgramMasterScreenState extends State<ProgramMasterScreen> {
     setState(() {
       _errors.clear();
       if (_orgcodeCtrl.text.trim().isEmpty) {
-        _errors['orgcode'] = 'Org Code required';
+        _errors['orgcode'] = 'Organisation Code required';
         isValid = false;
       }
       if (_pgmIdCtrl.text.trim().isEmpty) {
@@ -438,7 +438,7 @@ class _ProgramMasterScreenState extends State<ProgramMasterScreen> {
         AmsFormGrid(
           children: [
             AmsField(
-              label: 'ORGANIZATION CODE',
+              label: 'Organisation Code',
               required: true,
               labelAbove: true,
               child: AmsTextInput(
@@ -458,7 +458,7 @@ class _ProgramMasterScreenState extends State<ProgramMasterScreen> {
               ),
             ),
             AmsField(
-              label: 'PROGRAM ID',
+              label: 'Program Id',
               required: true,
               labelAbove: true,
               child: AmsTextInput(
@@ -475,7 +475,7 @@ class _ProgramMasterScreenState extends State<ProgramMasterScreen> {
               ),
             ),
             AmsField(
-              label: 'DESCRIPTION',
+              label: 'Description',
               required: true,
               labelAbove: true,
               child: AmsTextInput(
@@ -493,7 +493,7 @@ class _ProgramMasterScreenState extends State<ProgramMasterScreen> {
               ),
             ),
             AmsField(
-              label: 'MODULE',
+              label: 'Module',
               required: true,
               labelAbove: true,
               child: (isViewMode == true)
@@ -521,7 +521,7 @@ class _ProgramMasterScreenState extends State<ProgramMasterScreen> {
                         )),
             ),
             AmsField(
-              label: 'SUB MODULE',
+              label: 'Sub Module',
               labelAbove: true,
               child: (isViewMode == true)
                   ? AmsTextInput(initialValue: _subModuleCtrl.text, readOnly: true)
@@ -555,7 +555,7 @@ class _ProgramMasterScreenState extends State<ProgramMasterScreen> {
                     ),
             ),
             AmsField(
-              label: 'PROGRAM CLASS',
+              label: 'Program Class',
               required: true,
               labelAbove: true,
               child: (isViewMode == true)
@@ -576,7 +576,7 @@ class _ProgramMasterScreenState extends State<ProgramMasterScreen> {
                     ),
             ),
             AmsField(
-              label: 'STATUS',
+              label: 'Status',
               labelAbove: true,
               child: (isViewMode == true)
                   ? AmsTextInput(initialValue: _pgmStatus == 1 ? '1 - Enable' : '0 - Disable', readOnly: true)
@@ -594,7 +594,7 @@ class _ProgramMasterScreenState extends State<ProgramMasterScreen> {
         ),
         const SizedBox(height: 24),
         AmsField(
-          label: 'REMARKS',
+          label: 'Remarks',
           labelAbove: true,
           child: AmsTextInput(
             controller: _pgmRemarksCtrl,
@@ -692,11 +692,11 @@ class _ProgramListViewState extends State<_ProgramListView> {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Row(
               children: [
-                Expanded(flex: 2, child: Text('PROGRAM ID', style: bodyStyle(size: 11, weight: FontWeight.w700, color: AppColors.ink3))),
-                Expanded(flex: 4, child: Text('DESCRIPTION', style: bodyStyle(size: 11, weight: FontWeight.w700, color: AppColors.ink3))),
-                Expanded(flex: 2, child: Text('MOD ID', style: bodyStyle(size: 11, weight: FontWeight.w700, color: AppColors.ink3))),
-                Expanded(flex: 2, child: Text('STATUS', style: bodyStyle(size: 11, weight: FontWeight.w700, color: AppColors.ink3))),
-                SizedBox(width: 150, child: Text('ACTIONS', textAlign: TextAlign.center, style: bodyStyle(size: 11, weight: FontWeight.w700, color: AppColors.ink3))),
+                Expanded(flex: 2, child: Text('Program Id', style: bodyStyle(size: 11, weight: FontWeight.w700, color: AppColors.ink3))),
+                Expanded(flex: 4, child: Text('Description', style: bodyStyle(size: 11, weight: FontWeight.w700, color: AppColors.ink3))),
+                Expanded(flex: 2, child: Text('Mod Id', style: bodyStyle(size: 11, weight: FontWeight.w700, color: AppColors.ink3))),
+                Expanded(flex: 2, child: Text('Status', style: bodyStyle(size: 11, weight: FontWeight.w700, color: AppColors.ink3))),
+                SizedBox(width: 150, child: Text('Actions', textAlign: TextAlign.center, style: bodyStyle(size: 11, weight: FontWeight.w700, color: AppColors.ink3))),
               ],
             ),
           ),

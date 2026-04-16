@@ -1245,7 +1245,7 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
           AmsFormGrid(
             children: [
               AmsField(
-                label: 'Org Code',
+                label: 'Organisation Code',
                 required: true,
                 labelAbove: true,
                 tooltip: 'Organization code.',
@@ -1262,7 +1262,7 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
                   onChanged: (v) {
                     setState(() {
                       _errors['orgCode'] =
-                          v.trim().isEmpty ? 'Org Code required' : null;
+                          v.trim().isEmpty ? 'Organisation Code required' : null;
                     });
                     widget.onChanged('orgCode', int.tryParse(v) ?? 50);
                   },

@@ -298,7 +298,7 @@ class ApiService {
         Uri.parse('$baseUrl/auth/$action/$authSl?level=$level&userId=$userId'),
         headers: _headers,
       );
-      return res.statusCode == 200;
+      return res.statusCode >= 200 && res.statusCode < 300;
     } catch (e) {
       return false;
     }
@@ -312,7 +312,7 @@ class ApiService {
             '$baseUrl/auth/correction/$authSl?level=$level&userId=$userId&remarks=${Uri.encodeComponent(remarks)}'),
         headers: _headers,
       );
-      return res.statusCode == 200;
+      return res.statusCode >= 200 && res.statusCode < 300;
     } catch (e) {
       return false;
     }
@@ -337,12 +337,15 @@ class ApiService {
 
   Future<bool> createUser(Map<String, dynamic> data) async {
     try {
+      if (data['isUpdate'] == true || data.containsKey('usersCd') || data.containsKey('userScd')) {
+        return updateUser(data);
+      }
       final res = await http.post(
         Uri.parse('$baseUrl/users'),
         headers: _headers,
         body: jsonEncode(data),
       );
-      return res.statusCode == 200;
+      return res.statusCode >= 200 && res.statusCode < 300;
     } catch (e) {
       return false;
     }
@@ -350,12 +353,41 @@ class ApiService {
 
   Future<bool> createRole(Map<String, dynamic> data) async {
     try {
+      if (data['isUpdate'] == true || data.containsKey('accessCd')) {
+        return updateRole(data);
+      }
       final res = await http.post(
         Uri.parse('$baseUrl/access'),
         headers: _headers,
         body: jsonEncode(data),
       );
-      return res.statusCode == 200;
+      return res.statusCode >= 200 && res.statusCode < 300;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<bool> updateRole(Map<String, dynamic> data) async {
+    try {
+      final res = await http.put(
+        Uri.parse('$baseUrl/access'),
+        headers: _headers,
+        body: jsonEncode(data),
+      );
+      return res.statusCode >= 200 && res.statusCode < 300;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<bool> updateUser(Map<String, dynamic> data) async {
+    try {
+      final res = await http.put(
+        Uri.parse('$baseUrl/users'),
+        headers: _headers,
+        body: jsonEncode(data),
+      );
+      return res.statusCode >= 200 && res.statusCode < 300;
     } catch (e) {
       return false;
     }
@@ -363,12 +395,18 @@ class ApiService {
 
   Future<bool> createModule(Map<String, dynamic> data) async {
     try {
+      if (data['isUpdate'] == true ||
+          data.containsKey('moduleId') ||
+          data.containsKey('module_id') ||
+          data.containsKey('moduleid')) {
+        return updateModule(data);
+      }
       final res = await http.post(
         Uri.parse('$baseUrl/modules'),
         headers: _headers,
         body: jsonEncode(data),
       );
-      return res.statusCode == 200;
+      return res.statusCode >= 200 && res.statusCode < 300;
     } catch (e) {
       return false;
     }
@@ -382,7 +420,7 @@ class ApiService {
         headers: _headers,
         body: jsonEncode(data),
       );
-      return res.statusCode == 200;
+      return res.statusCode >= 200 && res.statusCode < 300;
     } catch (e) {
       return false;
     }
@@ -400,7 +438,7 @@ class ApiService {
         headers: _headers,
         body: jsonEncode(data),
       );
-      return res.statusCode == 200;
+      return res.statusCode >= 200 && res.statusCode < 300;
     } catch (e) {
       return false;
     }
@@ -413,7 +451,7 @@ class ApiService {
         headers: _headers,
         body: jsonEncode(data),
       );
-      return res.statusCode == 200;
+      return res.statusCode >= 200 && res.statusCode < 300;
     } catch (e) {
       return false;
     }
@@ -462,7 +500,7 @@ class ApiService {
         headers: _headers,
         body: jsonEncode(data),
       );
-      return res.statusCode == 200;
+      return res.statusCode >= 200 && res.statusCode < 300;
     } catch (e) {
       return false;
     }
@@ -474,7 +512,7 @@ class ApiService {
         Uri.parse('$baseUrl/gl-category/$glCatCd'),
         headers: _headers,
       );
-      return res.statusCode == 200;
+      return res.statusCode >= 200 && res.statusCode < 300;
     } catch (e) {
       return false;
     }
@@ -539,7 +577,7 @@ class ApiService {
         headers: _headers,
         body: jsonEncode(data),
       );
-      return res.statusCode == 200;
+      return res.statusCode >= 200 && res.statusCode < 300;
     } catch (e) {
       print("createGlMaster error: $e");
       return false;
@@ -553,7 +591,7 @@ class ApiService {
         headers: _headers,
         body: jsonEncode(data),
       );
-      return res.statusCode == 200;
+      return res.statusCode >= 200 && res.statusCode < 300;
     } catch (e) {
       print("updateGlMaster error: $e");
       return false;
@@ -566,7 +604,7 @@ class ApiService {
         Uri.parse('$baseUrl/gl-master/$glNo'),
         headers: _headers,
       );
-      return res.statusCode == 200;
+      return res.statusCode >= 200 && res.statusCode < 300;
     } catch (e) {
       print("deleteGlMaster error: $e");
       return false;
@@ -579,7 +617,7 @@ class ApiService {
         Uri.parse('$baseUrl/access/$orgCode/$accessCd'),
         headers: _headers,
       );
-      return res.statusCode == 200;
+      return res.statusCode >= 200 && res.statusCode < 300;
     } catch (e) {
       return false;
     }
@@ -591,7 +629,7 @@ class ApiService {
         Uri.parse('$baseUrl/users/$orgCode/$usersCd'),
         headers: _headers,
       );
-      return res.statusCode == 200;
+      return res.statusCode >= 200 && res.statusCode < 300;
     } catch (e) {
       return false;
     }
@@ -612,14 +650,105 @@ class ApiService {
     }
   }
 
-  Future<bool> updateModule(Map<String, dynamic> data) async {
+   Future<bool> updateModule(Map<String, dynamic> data) async {
     try {
+      final mappedData = Map<String, dynamic>.from(data);
+      
+      // Module Name mapping
+      if (data.containsKey('modName')) {
+        mappedData['moduleName'] = data['modName'];
+        mappedData['modulename'] = data['modName'];
+      }
+      // Sub Module flag mapping
+      if (data.containsKey('subModule')) {
+        mappedData['subModuleRequired'] = data['subModule'];
+        mappedData['sub_module'] = data['subModule'];
+        mappedData['submodule'] = data['subModule'];
+      }
+      // Organisation Code mapping
+      if (data.containsKey('orgCode')) {
+        mappedData['orgcode'] = data['orgCode'];
+      }
+      
+      // Module ID Identification (Check various possible keys)
+      final rawMid = data['modCd'] ?? data['moduleId'] ?? data['module_id'] ?? data['moduleid'] ?? data['modcd'];
+      final midInt = int.tryParse(rawMid.toString()) ?? 0;
+      
+      if (midInt != 0) {
+        mappedData['moduleId'] = midInt;
+        mappedData['module_id'] = midInt;
+        mappedData['moduleid'] = midInt;
+        mappedData['modcd'] = midInt;
+        mappedData['modCd'] = midInt;
+      }
+
       final res = await http.put(
         Uri.parse('$baseUrl/modules'),
         headers: _headers,
-        body: jsonEncode(data),
+        body: jsonEncode(mappedData),
       );
-      return res.statusCode == 200;
+
+      // Handle sub-modules if present
+      if (res.statusCode >= 200 && res.statusCode < 300 && midInt != 0 && data.containsKey('subModules')) {
+        try {
+          final List<dynamic> subs = data['subModules'];
+          for (var sm in subs) {
+            if (sm is Map<String, dynamic>) {
+              await updateSubModule(midInt.toString(), sm);
+            }
+          }
+        } catch (e) {
+          print('Sub-module update error (continuing): $e');
+        }
+      }
+
+      return res.statusCode >= 200 && res.statusCode < 300;
+    } catch (e) {
+      print('Update error: $e');
+      return false;
+    }
+  }
+
+  Future<bool> updateSubModule(String moduleId, Map<String, dynamic> data) async {
+    try {
+      final mappedData = Map<String, dynamic>.from(data);
+      
+      // 1. Map Organisation Code
+      if (data.containsKey('orgCode')) {
+        mappedData['orgcode'] = data['orgCode'];
+      }
+      
+      // 2. Map Module ID
+      mappedData['moduleId'] = int.tryParse(moduleId) ?? 0;
+      mappedData['module_id'] = int.tryParse(moduleId) ?? 0;
+
+      // 3. Map Sub Module Name (Aggressively overwrite all variants)
+      if (data.containsKey('subModuleName')) {
+        final newName = data['subModuleName'];
+        mappedData['subModuleName'] = newName;
+        mappedData['sub_modulename'] = newName;
+        mappedData['sub_module_name'] = newName;
+        mappedData['SUB_MODULENAME'] = newName; // Direct match for DB column case
+        mappedData['submodulename'] = newName;
+      }
+      
+      // 4. Map Sub Module ID
+      final rawSmid = data['subModuleId'] ?? data['sub_moduleid'] ?? data['submodule_id'] ?? data['SUB_MODULEID'] ?? data['submoduleid'];
+      if (rawSmid != null) {
+        final smid = int.tryParse(rawSmid.toString()) ?? 0;
+        mappedData['subModuleId'] = smid;
+        mappedData['sub_moduleid'] = smid;
+        mappedData['submodule_id'] = smid;
+        mappedData['SUB_MODULEID'] = smid; // Direct match for DB column case
+        mappedData['submoduleid'] = smid;
+      }
+
+      final res = await http.put(
+        Uri.parse('$baseUrl/modules/$moduleId/subs'),
+        headers: _headers,
+        body: jsonEncode(mappedData),
+      );
+      return res.statusCode >= 200 && res.statusCode < 300;
     } catch (e) {
       return false;
     }

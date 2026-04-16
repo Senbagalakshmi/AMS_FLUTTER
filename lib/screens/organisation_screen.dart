@@ -145,7 +145,7 @@ class _OrganisationScreenState extends State<OrganisationScreen> {
     bool hasError = false;
     setState(() {
       if (_orgCodeCtrl.text.isEmpty) {
-        _orgCodeError = 'Org Code is mandatory';
+        _orgCodeError = 'Organisation Code is mandatory';
         hasError = true;
       }
       if (_nameCtrl.text.isEmpty) {
@@ -678,7 +678,7 @@ class _OrganisationScreenState extends State<OrganisationScreen> {
               child: SingleChildScrollView(
                   padding: const EdgeInsets.all(32),
                   child: AmsFormGrid(cols: 2, children: [
-                    _field('Org Code*', _orgCodeCtrl,
+                    _field('Organisation Code*', _orgCodeCtrl,
                         isNum: true,
                         mandatory: true,
                         errorText: _orgCodeError,
@@ -737,7 +737,7 @@ class _OrganisationScreenState extends State<OrganisationScreen> {
             bool hasError = false;
             setState(() {
               if (_orgCodeCtrl.text.isEmpty) {
-                _orgCodeError = 'Org Code is mandatory';
+                _orgCodeError = 'Organisation Code is mandatory';
                 hasError = true;
               }
               if (_nameCtrl.text.isEmpty) {

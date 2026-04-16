@@ -224,7 +224,7 @@ class _GLMasterScreenState extends State<GLMasterScreen> {
   void _validateField(String value, String fieldName, FocusNode? nextFocus) {
     setState(() {
       if (fieldName == 'org') {
-        _orgError = value.trim().isEmpty ? 'Org Code is required' : null;
+        _orgError = value.trim().isEmpty ? 'Organisation Code is required' : null;
       }
       if (fieldName == 'number') {
         _glNumberError = value.trim().isEmpty ? 'GL Number is required' : null;
@@ -246,7 +246,7 @@ class _GLMasterScreenState extends State<GLMasterScreen> {
   void _validateAll() {
     setState(() {
       if (_orgCodeController.text.trim().isEmpty) {
-        _orgError = 'Org Code is required';
+        _orgError = 'Organisation Code is required';
       }
       if (_glNumberController.text.trim().isEmpty) {
         _glNumberError = 'GL Number is required';
@@ -891,7 +891,7 @@ class _GLMasterScreenState extends State<GLMasterScreen> {
     return AmsFormGrid(
       children: [
         AmsField(
-          label: 'Org Code',
+          label: 'Organisation Code',
           required: true,
           labelAbove: true,
           tooltip: 'Organization Code',
@@ -1236,7 +1236,7 @@ class _GLMasterFieldsState extends State<GLMasterFields> {
     return AmsFormGrid(
       children: [
         AmsField(
-          label: 'Org Code',
+          label: 'Organisation Code',
           required: true,
           labelAbove: true,
           child: AmsTextInput(

@@ -223,6 +223,7 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
       },
       ...(_viewRecord ?? {}),
       ..._dynamicData,
+      'isUpdate': _isEditMode,
     };
 
     final safeCfg = _cfg ??
@@ -1873,7 +1874,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
           child: AmsFormGrid(
             children: [
               AmsField(
-                label: 'ORGCODE',
+                label: 'Organisation Code',
                 labelAbove: true,
                 tooltip: 'Unique organization code assigned to this user.',
                 child: AmsTextInput(
@@ -1887,7 +1888,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                 ),
               ),
               AmsField(
-                label: 'BRANCH CODE',
+                label: 'Branch Code',
                 labelAbove: true,
                 tooltip: 'Associated branch code for the user.',
                 child: AmsTextInput(
@@ -1899,7 +1900,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                 ),
               ),
               AmsField(
-                label: 'USERSCD',
+                label: 'UserCD',
                 required: true,
                 labelAbove: true,
                 tooltip: 'Unique identification code for the user.',
@@ -1918,7 +1919,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                 ),
               ),
               AmsField(
-                label: 'FULL NAME',
+                label: 'Full Name',
                 required: true,
                 labelAbove: true,
                 tooltip:
@@ -1932,7 +1933,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                               initialValue:
                                   _title ?? data['title']?.toString() ?? 'Mr.',
                               readOnly: true,
-                              placeholder: 'TITLE',
+                              placeholder: 'Title',
                             )
                           : AmsDropdown(
                               initialValue: _title ?? data['title']?.toString(),
@@ -1943,7 +1944,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                                 'Dr.',
                                 'Prof.'
                               ],
-                              placeholder: 'TITLE',
+                              placeholder: 'Title',
                               onChanged: (v) {
                                 setState(() => _title = v);
                                 widget.onChanged('title', v);
@@ -1956,7 +1957,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                       child: AmsTextInput(
                         controller: _fNameCtrl,
                         readOnly: widget.isViewMode,
-                        placeholder: 'FNAME',
+                        placeholder: 'First Name',
                         textInputAction: TextInputAction.next,
                         errorText: _errors['fName'],
                         onChanged: (v) {
@@ -1975,7 +1976,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                         readOnly: widget.isViewMode,
                         initialValue: data['mname']?.toString() ??
                             data['mName']?.toString(),
-                        placeholder: 'MNAME',
+                        placeholder: 'Middle Name',
                         textInputAction: TextInputAction.next,
                         onChanged: widget.isViewMode
                             ? null
@@ -1988,7 +1989,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                       child: AmsTextInput(
                         controller: _lNameCtrl,
                         readOnly: widget.isViewMode,
-                        placeholder: 'LNAME',
+                        placeholder: 'Last Name',
                         textInputAction: TextInputAction.next,
                         errorText: _errors['lName'],
                         onChanged: (v) {
@@ -2004,7 +2005,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                 ),
               ),
               AmsField(
-                label: 'EMAIL ID',
+                label: 'Email Id',
                 labelAbove: true,
                 tooltip: 'Official email address for communication.',
                 child: AmsTextInput(
@@ -2027,7 +2028,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                 ),
               ),
               AmsField(
-                label: 'GENDER',
+                label: 'Gender',
                 required: true,
                 labelAbove: true,
                 tooltip: 'The user\'s gender for profile identification.',
@@ -2055,7 +2056,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                       ),
               ),
               AmsField(
-                label: 'DATE OF BIRTH',
+                label: 'Date Of Birth',
                 required: true,
                 labelAbove: true,
                 tooltip: 'The user\'s date of birth.',
@@ -2088,7 +2089,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                 ),
               ),
               AmsField(
-                label: 'COUNTRY',
+                label: 'Country',
                 labelAbove: true,
                 tooltip: 'Country code or identifier.',
                 child: AmsTextInput(
@@ -2103,7 +2104,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                 ),
               ),
               AmsField(
-                label: 'MOBILE NUMBER',
+                label: 'Mobile Number',
                 labelAbove: true,
                 tooltip: 'Primary mobile number for contact.',
                 child: AmsTextInput(
@@ -2116,7 +2117,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                 ),
               ),
               AmsField(
-                label: 'REGISTRATION DATE',
+                label: 'Registration Date',
                 required: true,
                 labelAbove: true,
                 tooltip: 'Date when the user was registered.',
@@ -2148,7 +2149,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                 ),
               ),
               AmsField(
-                label: 'CALL CODE',
+                label: 'Call Code',
                 labelAbove: true,
                 tooltip: 'International calling code (e.g. 91).',
                 child: AmsTextInput(
@@ -2163,7 +2164,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                 ),
               ),
               AmsField(
-                label: 'STATUS',
+                label: 'Status',
                 labelAbove: true,
                 tooltip: 'Current status (1: Active, 0: Inactive).',
                 child: AmsTextInput(
@@ -2178,7 +2179,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                 ),
               ),
               AmsField(
-                label: 'PICTURE',
+                label: 'Picture',
                 labelAbove: true,
                 tooltip: 'User profile picture reference or URL.',
                 child: AmsFilePicker(
@@ -2457,9 +2458,9 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                     tooltip: 'Unique organization code for this module.',
                     child: AmsTextInput(
                       initialValue: data['orgcode']?.toString() ?? '50',
-                      readOnly: widget.isViewMode,
+                      readOnly: widget.isViewMode || widget.initialData != null,
                       textInputAction: TextInputAction.next,
-                      onChanged: widget.isViewMode
+                      onChanged: widget.isViewMode || widget.initialData != null
                           ? null
                           : (v) => widget.onChanged(
                               'orgCode', int.tryParse(v) ?? 50),
@@ -2472,7 +2473,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                     tooltip: 'Unique module identifier.',
                     child: AmsTextInput(
                       controller: _mScdCtrl,
-                      readOnly: widget.isViewMode,
+                      readOnly: widget.isViewMode || widget.initialData != null,
                       placeholder: 'e.g. FIN',
                       textInputAction: TextInputAction.next,
                       errorText: _errors['modCd'],

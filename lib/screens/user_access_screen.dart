@@ -712,7 +712,7 @@ class UserAccessFieldsState extends State<UserAccessFields> {
 
           AmsFormGrid(
             children: [
-              // Org Code
+              // Organisation Code
               AmsField(
                 label: 'Organisation Code',
                 required: true,

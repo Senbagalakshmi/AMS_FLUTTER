@@ -509,9 +509,9 @@ Widget _buildListView() {
 
                 if (orgCodeController.text.trim().isEmpty) {
                   setState(() {
-                    _orgError = "Organization Code is required.";
+                    _orgError = "Organisation Code is required.";
                   });
-                  showAmsSnack(context, "Please enter an Organization Code.", type: 'e');
+                  showAmsSnack(context, "Please enter an Organisation Code.", type: 'e');
                   return;
                 }
 
@@ -595,12 +595,12 @@ Widget _buildListView() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        /// Org Code
+        /// Organisation Code
         AmsField(
-          label: "Org Code",
+          label: "Organisation Code",
           labelAbove: true,
           child: AmsTextInput(
-            placeholder: "Enter Org Code",
+            placeholder: "Enter Organisation Code",
             controller: orgCodeController,
             readOnly: _isViewOnly || _isEditMode,
             keyboardType: TextInputType.number,

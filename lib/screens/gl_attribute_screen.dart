@@ -197,7 +197,7 @@ class _GLAttributeScreenState extends State<GLAttributeScreen> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Failed to save attribute. Org code and GL already exists.'),
+          content: Text('Failed to save attribute. Organisation Code and GL already exists.'),
           backgroundColor: AppColors.red,
         ),
       );
@@ -678,7 +678,7 @@ class _GLAttributeScreenState extends State<GLAttributeScreen> {
                           cols: 2,
                           children: [
                             AmsField(
-                              label: 'Org Code',
+                              label: 'Organisation Code',
                               labelAbove: true,
                               required: true,
                               child: AmsTextInput(
@@ -695,7 +695,7 @@ class _GLAttributeScreenState extends State<GLAttributeScreen> {
                                 errorText: _orgError,
                                 onChanged: (v) => setState(() {
                                   _orgError = v.isEmpty
-                                      ? 'Org Code is required'
+                                      ? 'Organisation Code is required'
                                       : null;
                                 }),
                               ),

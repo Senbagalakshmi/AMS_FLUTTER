@@ -513,7 +513,7 @@ class _AllowedCurrencyScreenState extends State<AllowedCurrencyScreen> {
               onPressed: () async {
                 if (_orgCodeCtrl.text.trim().isEmpty) {
                   setState(() {
-                    _orgError = "Organization Code is required.";
+                    _orgError = "Organisation Code is required.";
                   });
                   return;
                 }
@@ -595,12 +595,12 @@ class _AllowedCurrencyScreenState extends State<AllowedCurrencyScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        /// Org Code
+        /// Organisation Code
         AmsField(
-          label: "Org Code",
+          label: "Organisation Code",
           labelAbove: true,
           child: AmsTextInput(
-            placeholder: "Enter Org Code",
+            placeholder: "Enter Organisation Code",
             controller: _orgCodeCtrl,
             readOnly: _isViewOnly || _isEditMode,
             keyboardType: TextInputType.number,

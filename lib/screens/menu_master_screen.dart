@@ -290,15 +290,15 @@ class _ParentMenuTabState extends State<_ParentMenuTab> {
             padding: const EdgeInsets.all(24),
             child: AmsFormGrid(
               children: [
-                AmsField(label: 'MENU CODE', required: true, child: AmsTextInput(controller: _menuCodeCtrl, readOnly: _editingRecord != null || _isViewOnly, keyboardType: TextInputType.number)),
-                AmsField(label: 'DESCRIPTION', required: true, child: AmsTextInput(controller: _menuDescnCtrl, readOnly: _isViewOnly)),
-                AmsField(label: 'MENU ORDER', required: true, child: AmsTextInput(controller: _menuOrderCtrl, readOnly: _isViewOnly, keyboardType: TextInputType.number)),
-                AmsField(label: 'SUBMENU REQUIRED', required: true, child: AmsDropdown(items: const ['1 - Yes', '0 - No'], initialValue: _subMenuReq, onChanged: _isViewOnly ? null : (v) => setState(() => _subMenuReq = v))),
-                AmsField(label: 'PROGRAM ID', child: AmsTextInput(controller: _pgmIdCtrl, readOnly: _isViewOnly)),
-                AmsField(label: 'PROGRAM PATH', child: AmsTextInput(controller: _pathCtrl, readOnly: _isViewOnly)),
-                AmsField(label: 'MENU LOGO (ICON)', child: AmsTextInput(controller: _logoCtrl, readOnly: _isViewOnly)),
-                AmsField(label: 'LOCATION', child: AmsDropdown(items: const ['L - Left', 'R - Right', 'C - Center', 'T - Top', 'B - Bottom'], initialValue: _location, onChanged: _isViewOnly ? null : (v) => setState(() => _location = v))),
-                AmsField(label: 'STATUS', child: AmsDropdown(items: const ['1 - Enabled', '0 - Disabled'], initialValue: _status == 1 ? '1 - Enabled' : '0 - Disabled', onChanged: _isViewOnly ? null : (v) => setState(() => _status = v?.startsWith('1') == true ? 1 : 0))),
+                AmsField(label: 'Menu Code', required: true, child: AmsTextInput(controller: _menuCodeCtrl, readOnly: _editingRecord != null || _isViewOnly, keyboardType: TextInputType.number)),
+                AmsField(label: 'Description', required: true, child: AmsTextInput(controller: _menuDescnCtrl, readOnly: _isViewOnly)),
+                AmsField(label: 'Menu Order', required: true, child: AmsTextInput(controller: _menuOrderCtrl, readOnly: _isViewOnly, keyboardType: TextInputType.number)),
+                AmsField(label: 'Submenu Required', required: true, child: AmsDropdown(items: const ['1 - Yes', '0 - No'], initialValue: _subMenuReq, onChanged: _isViewOnly ? null : (v) => setState(() => _subMenuReq = v))),
+                AmsField(label: 'Program Id', child: AmsTextInput(controller: _pgmIdCtrl, readOnly: _isViewOnly)),
+                AmsField(label: 'Program Path', child: AmsTextInput(controller: _pathCtrl, readOnly: _isViewOnly)),
+                AmsField(label: 'Menu Logo (Icon)', child: AmsTextInput(controller: _logoCtrl, readOnly: _isViewOnly)),
+                AmsField(label: 'Location', child: AmsDropdown(items: const ['L - Left', 'R - Right', 'C - Center', 'T - Top', 'B - Bottom'], initialValue: _location, onChanged: _isViewOnly ? null : (v) => setState(() => _location = v))),
+                AmsField(label: 'Status', child: AmsDropdown(items: const ['1 - Enabled', '0 - Disabled'], initialValue: _status == 1 ? '1 - Enabled' : '0 - Disabled', onChanged: _isViewOnly ? null : (v) => setState(() => _status = v?.startsWith('1') == true ? 1 : 0))),
               ],
             ),
           ),
@@ -564,7 +564,7 @@ class _SubMenuTabState extends State<_SubMenuTab> {
             padding: const EdgeInsets.all(24),
             child: AmsFormGrid(
               children: [
-                AmsField(label: 'PARENT MENU', required: true, child: _loadingParents ? const LinearProgressIndicator() : AmsDropdown(
+                AmsField(label: 'Parent Menu', required: true, child: _loadingParents ? const LinearProgressIndicator() : AmsDropdown(
                   items: _parentMenus.map((m) => "${m['menuCode'] ?? m['Menucode']} - ${m['menuDescn'] ?? m['MENU_DESCN']}").toList(),
                   initialValue: parentDisplay,
                   onChanged: _isViewOnly ? null : (v) {
@@ -572,13 +572,13 @@ class _SubMenuTabState extends State<_SubMenuTab> {
                     _menuCodeCtrl.text = v.split(' - ').first;
                   },
                 )),
-                AmsField(label: 'SUB MENU CODE', required: true, child: AmsTextInput(controller: _subMenuCodeCtrl, readOnly: _editingRecord != null || _isViewOnly, keyboardType: TextInputType.number)),
-                AmsField(label: 'DESCRIPTION', required: true, child: AmsTextInput(controller: _descnCtrl, readOnly: _isViewOnly)),
-                AmsField(label: 'MENU ORDER', required: true, child: AmsTextInput(controller: _orderCtrl, readOnly: _isViewOnly, keyboardType: TextInputType.number)),
-                AmsField(label: 'SUBMENU PGM ID', child: AmsTextInput(controller: _pgmIdCtrl, readOnly: _isViewOnly)),
-                AmsField(label: 'PROGRAM PATH', child: AmsTextInput(controller: _pathCtrl, readOnly: _isViewOnly)),
-                AmsField(label: 'MENU LOGO', child: AmsTextInput(controller: _logoCtrl, readOnly: _isViewOnly)),
-                AmsField(label: 'STATUS', child: AmsDropdown(items: const ['1 - Enabled', '0 - Disabled'], initialValue: _status == 1 ? '1 - Enabled' : '0 - Disabled', onChanged: _isViewOnly ? null : (v) => setState(() => _status = v?.startsWith('1') == true ? 1 : 0))),
+                AmsField(label: 'Sub Menu Code', required: true, child: AmsTextInput(controller: _subMenuCodeCtrl, readOnly: _editingRecord != null || _isViewOnly, keyboardType: TextInputType.number)),
+                AmsField(label: 'Description', required: true, child: AmsTextInput(controller: _descnCtrl, readOnly: _isViewOnly)),
+                AmsField(label: 'Menu Order', required: true, child: AmsTextInput(controller: _orderCtrl, readOnly: _isViewOnly, keyboardType: TextInputType.number)),
+                AmsField(label: 'Submenu Program Id', child: AmsTextInput(controller: _pgmIdCtrl, readOnly: _isViewOnly)),
+                AmsField(label: 'Program Path', child: AmsTextInput(controller: _pathCtrl, readOnly: _isViewOnly)),
+                AmsField(label: 'Menu Logo', child: AmsTextInput(controller: _logoCtrl, readOnly: _isViewOnly)),
+                AmsField(label: 'Status', child: AmsDropdown(items: const ['1 - Enabled', '0 - Disabled'], initialValue: _status == 1 ? '1 - Enabled' : '0 - Disabled', onChanged: _isViewOnly ? null : (v) => setState(() => _status = v?.startsWith('1') == true ? 1 : 0))),
               ],
             ),
           ),
@@ -870,7 +870,7 @@ class _MenuProgramTabState extends State<_MenuProgramTab> {
             padding: const EdgeInsets.all(24),
             child: AmsFormGrid(
               children: [
-                AmsField(label: 'PARENT MENU', required: true, child: AmsDropdown(
+                AmsField(label: 'Parent Menu', required: true, child: AmsDropdown(
                   items: _parentMenus.map((m) => "${m['menuCode'] ?? m['Menucode']} - ${m['menuDescn'] ?? m['MENU_DESCN']}").toList(),
                   initialValue: parentDisplay,
                   onChanged: _isViewOnly ? null : (v) {
@@ -881,7 +881,7 @@ class _MenuProgramTabState extends State<_MenuProgramTab> {
                     });
                   },
                 )),
-                AmsField(label: 'SUB MENU', child: AmsDropdown(
+                AmsField(label: 'Sub Menu', child: AmsDropdown(
                   items: ["0 - No Submenu", ...filteredSubs.map((m) => "${m['subMenuCode'] ?? m['submenucode']} - ${m['description'] ?? m['Decription']}")],
                   initialValue: subDisplay,
                   onChanged: _isViewOnly ? null : (v) {
@@ -891,7 +891,7 @@ class _MenuProgramTabState extends State<_MenuProgramTab> {
                     });
                   },
                 )),
-                AmsField(label: 'PROGRAM ID', required: true, child: AmsDropdown(
+                AmsField(label: 'Program Id', required: true, child: AmsDropdown(
                   items: _allPrograms.map((p) => "${p['pgmId'] ?? p['programId'] ?? p['PGM_ID']} - ${p['descn'] ?? p['programDescription'] ?? p['description']}").toList(),
                   initialValue: programDisplay,
                   onChanged: _isViewOnly ? null : (v) {
@@ -905,11 +905,11 @@ class _MenuProgramTabState extends State<_MenuProgramTab> {
                      });
                   },
                 )),
-                AmsField(label: 'DESCRIPTION', required: true, child: AmsTextInput(controller: _descnCtrl, readOnly: _isViewOnly)),
-                AmsField(label: 'MENU ORDER', required: true, child: AmsTextInput(controller: _orderCtrl, readOnly: _isViewOnly, keyboardType: TextInputType.number)),
-                AmsField(label: 'PROGRAM PATH', child: AmsTextInput(controller: _pathCtrl, readOnly: _isViewOnly)),
-                AmsField(label: 'MENU LOGO', child: AmsTextInput(controller: _logoCtrl, readOnly: _isViewOnly)),
-                AmsField(label: 'STATUS', child: AmsDropdown(items: const ['1 - Enabled', '0 - Disabled'], initialValue: _status == 1 ? '1 - Enabled' : '0 - Disabled', onChanged: _isViewOnly ? null : (v) => setState(() => _status = v?.startsWith('1') == true ? 1 : 0))),
+                AmsField(label: 'Description', required: true, child: AmsTextInput(controller: _descnCtrl, readOnly: _isViewOnly)),
+                AmsField(label: 'Menu Order', required: true, child: AmsTextInput(controller: _orderCtrl, readOnly: _isViewOnly, keyboardType: TextInputType.number)),
+                AmsField(label: 'Program Path', child: AmsTextInput(controller: _pathCtrl, readOnly: _isViewOnly)),
+                AmsField(label: 'Menu Logo', child: AmsTextInput(controller: _logoCtrl, readOnly: _isViewOnly)),
+                AmsField(label: 'Status', child: AmsDropdown(items: const ['1 - Enabled', '0 - Disabled'], initialValue: _status == 1 ? '1 - Enabled' : '0 - Disabled', onChanged: _isViewOnly ? null : (v) => setState(() => _status = v?.startsWith('1') == true ? 1 : 0))),
               ],
             ),
           ),

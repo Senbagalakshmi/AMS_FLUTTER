@@ -449,7 +449,7 @@ class _GLSegmentPageState extends State<GLSegmentPage> {
 
                       // ✅ ADDED: Org Code field in View page
                       final fields = [
-                        readField('Org Code', seg.orgCode?.toString() ?? '—',
+                        readField('Organisation Code', seg.orgCode?.toString() ?? '—',
                             tooltip: 'Organization Code'),
                         readField('GL No.', seg.glNo?.toString() ?? '—',
                             tooltip: 'GL Account Number'),
@@ -1105,9 +1105,9 @@ class _AddEditFormState extends State<_AddEditForm> {
                     );
 
                 final fields = [
-                  // ✅ FIXED: Org Code - readOnly in edit mode, pre-filled, greyed out
+                  // ✅ FIXED: Organisation Code - readOnly in edit mode, pre-filled, greyed out
                   _field(
-                    'Org Code',
+                    'Organisation Code',
                     TextField(
                       controller: _orgCodeCtrl,
                       readOnly: _isEditing, // ✅ disabled when editing
@@ -1125,7 +1125,7 @@ class _AddEditFormState extends State<_AddEditForm> {
                           dec('e.g. 50', _orgCodeValid, disabled: _isEditing),
                     ),
                     info: 'Organization Code',
-                    errorWidget: _errorMsg('Org Code is required',
+                    errorWidget: _errorMsg('Organisation Code is required',
                         _submitted ? _orgCodeValid : null),
                   ),
                   _field(

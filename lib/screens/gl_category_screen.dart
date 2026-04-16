@@ -188,7 +188,7 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
   void _validateField(String value, String fieldName, FocusNode? nextFocus) {
     setState(() {
       if (fieldName == 'org') {
-        _orgError = value.trim().isEmpty ? 'Org Code is required' : null;
+        _orgError = value.trim().isEmpty ? 'Organisation Code is required' : null;
       } else if (fieldName == 'code') {
         _catCodeError =
             value.trim().isEmpty ? 'Category Code is required' : null;
@@ -215,7 +215,7 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
   void _validateAll() {
     setState(() {
       if (_orgCodeController.text.trim().isEmpty) {
-        _orgError = 'Org Code is required';
+        _orgError = 'Organisation Code is required';
       }
       if (_catCodeController.text.trim().isEmpty) {
         _catCodeError = 'Category Code is required';
@@ -696,7 +696,7 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
         AmsFormGrid(
           children: [
             AmsField(
-              label: 'Org Code',
+              label: 'Organisation Code',
               required: true,
               labelAbove: true,
               tooltip: 'Unique organization code identifying this entry',
@@ -1226,7 +1226,7 @@ class _GLCategoryFieldsState extends State<GLCategoryFields> {
     return AmsFormGrid(
       children: [
         AmsField(
-          label: 'Org Code',
+          label: 'Organisation Code',
           required: true,
           labelAbove: true,
           child: AmsTextInput(

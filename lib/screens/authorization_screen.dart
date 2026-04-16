@@ -300,7 +300,7 @@ class _AuthDetailView extends StatelessWidget {
                   _tableCell(record.eDate, isValue: true),
                 ]),
                 TableRow(children: [
-                  _tableCell('Org Code'),
+                  _tableCell('Organisation Code'),
                   _tableCell(record.orgCode, isValue: true),
                 ]),
               ],

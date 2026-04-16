@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import '../theme.dart';
 import '../data.dart';
 import '../models/models.dart';
@@ -253,7 +253,7 @@ class _TransactionEntryScreenState extends State<TransactionEntryScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   AmsField(
-                                    label: 'Org Code',
+                                    label: 'Organisation Code',
                                     pill: AmsPill.auto(),
                                     tooltip:
                                         'The organization where this transaction originated.',
