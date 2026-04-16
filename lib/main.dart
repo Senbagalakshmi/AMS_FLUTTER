@@ -257,7 +257,6 @@ class _AmsRootState extends State<AmsRoot> {
       } else {
         showAmsSnack(context, 'Record saved directly: $authsl', type: 's');
       }
-      _navigate('list');
       _refreshData();
     } else {
       showAmsSnack(context, 'Failed to save record.', type: 'e');
