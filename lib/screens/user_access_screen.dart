@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import '../theme.dart';
 import '../widgets/widgets.dart';
+import '../services/api_service.dart'; // ← உங்கள் existing api_service import
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // UserAccessScreen  (Table: PRODUsers001 / USER004)
@@ -39,10 +40,9 @@ class _UserAccessScreenState extends State<UserAccessScreen> {
       GlobalKey<UserAccessFieldsState>();
 
   // ── Sample / stub data (replace with your real API service) ─────────────────
-  // Swap these stubs for your real userAccessApiService calls.
   Future<void> _loadRecords() async {
     setState(() => _isLoading = true);
-    await Future.delayed(const Duration(milliseconds: 600)); // simulate network
+    await Future.delayed(const Duration(milliseconds: 600));
     if (mounted) {
       setState(() {
         _records = [
@@ -68,19 +68,16 @@ class _UserAccessScreenState extends State<UserAccessScreen> {
 
   Future<bool> _apiCreate(Map<String, dynamic> payload) async {
     await Future.delayed(const Duration(milliseconds: 400));
-
     return true;
   }
 
   Future<bool> _apiUpdate(Map<String, dynamic> payload) async {
     await Future.delayed(const Duration(milliseconds: 400));
-
     return true;
   }
 
   Future<bool> _apiDelete(String userCode, String productCode) async {
     await Future.delayed(const Duration(milliseconds: 400));
-
     return true;
   }
 
@@ -343,7 +340,6 @@ class _UserAccessScreenState extends State<UserAccessScreen> {
           ),
           child: Row(
             children: [
-              // Avatar
               CircleAvatar(
                 backgroundColor: AppColors.tBlueLt,
                 child: Text(
@@ -353,8 +349,6 @@ class _UserAccessScreenState extends State<UserAccessScreen> {
                 ),
               ),
               const SizedBox(width: 16),
-
-              // Info
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -382,8 +376,6 @@ class _UserAccessScreenState extends State<UserAccessScreen> {
                   ],
                 ),
               ),
-
-              // Status badge
               AmsBadge(
                 label: (status == '0') ? 'Disabled' : 'Enabled',
                 color: (status == '0') ? AppColors.red : AppColors.green,
@@ -391,8 +383,6 @@ class _UserAccessScreenState extends State<UserAccessScreen> {
                     (status == '0') ? AppColors.redLt : AppColors.greenLt,
               ),
               const SizedBox(width: 24),
-
-              // Actions
               Row(children: [
                 _actionIcon(
                   icon: Icons.visibility_outlined,
@@ -444,7 +434,6 @@ class _UserAccessScreenState extends State<UserAccessScreen> {
       ),
       child: Column(
         children: [
-          // Form header bar
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             decoration: const BoxDecoration(
@@ -474,8 +463,6 @@ class _UserAccessScreenState extends State<UserAccessScreen> {
               ),
             ]),
           ),
-
-          // Form fields
           Expanded(
             child: SingleChildScrollView(
               child: UserAccessFields(
@@ -487,8 +474,6 @@ class _UserAccessScreenState extends State<UserAccessScreen> {
               ),
             ),
           ),
-
-          // Footer
           _buildEntryFooter(),
         ],
       ),
@@ -598,61 +583,176 @@ class UserAccessFields extends StatefulWidget {
 class UserAccessFieldsState extends State<UserAccessFields> {
   // ── Controllers ──────────────────────────────────────────────────────────────
   final _orgCodeCtrl = TextEditingController(text: '50');
-  final _userCodeCtrl = TextEditingController();
-  final _productCodeCtrl = TextEditingController();
-  final _accessCodeCtrl = TextEditingController();
 
-  int _status = 1; // 1=Enable, 0=Disable
-
+  int _status = 1;
   final Map<String, String?> _errors = {};
+
+  // ── Dropdown state ───────────────────────────────────────────────────────────
+  List<Map<String, dynamic>> _userList = [];
+  List<Map<String, dynamic>> _accessList = [];
+  bool _loadingDropdowns = true;
+
+  // ── Selected raw values (stored for payload) ─────────────────────────────────
+  String? _selectedUserCode; // e.g. "USR001"
+  String? _selectedAccessCode; // e.g. "ACC001"
+
+  // ── Dropdown display values ──────────────────────────────────────────────────
+  String? _selectedUserDisplay; // e.g. "USR001 - John Doe"
+  String? _selectedAccessDisplay; // e.g. "ACC001 - Admin Access"
 
   // ── Lifecycle ────────────────────────────────────────────────────────────────
   @override
   void initState() {
     super.initState();
-    _populateFields();
+    _fetchDropdownData();
   }
 
   @override
   void didUpdateWidget(covariant UserAccessFields oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.initialData != oldWidget.initialData) {
-      _populateFields();
+      _applyInitialData();
     }
   }
 
   @override
   void dispose() {
     _orgCodeCtrl.dispose();
-    _userCodeCtrl.dispose();
-    _productCodeCtrl.dispose();
-    _accessCodeCtrl.dispose();
     super.dispose();
   }
 
-  // ── Populate / Clear ─────────────────────────────────────────────────────────
-  void _populateFields() {
+  // ── Fetch dropdown data from API ─────────────────────────────────────────────
+  Future<void> _fetchDropdownData() async {
+    setState(() => _loadingDropdowns = true);
+    try {
+      // ── Users: apiService.getUsers() → usersCd, fName, lName ────────────────
+      final usersResult = await apiService.getUsers(size: 200);
+      // ── Access/Roles: apiService.getRoles() → accessCd, accessName ──────────
+      final rolesResult = await apiService.getRoles(size: 200);
+
+      if (mounted) {
+        setState(() {
+          _userList = usersResult?.items ?? [];
+          _accessList = rolesResult?.items ?? [];
+          _loadingDropdowns = false;
+        });
+        // Now apply initial data (needs lists to resolve display labels)
+        _applyInitialData();
+      }
+    } catch (e) {
+      if (mounted) setState(() => _loadingDropdowns = false);
+    }
+  }
+
+  // ── Populate fields from initialData ─────────────────────────────────────────
+  void _applyInitialData() {
     final d = widget.initialData;
     if (d == null || d.isEmpty) {
       clear();
       return;
     }
+
     _orgCodeCtrl.text = (d['orgCode'] ?? d['orgcode'] ?? 50).toString();
-    _userCodeCtrl.text = (d['userCode'] ?? d['usercode'] ?? '').toString();
-    _productCodeCtrl.text =
-        (d['productCode'] ?? d['productcode'] ?? '').toString();
-    _accessCodeCtrl.text =
-        (d['accessCode'] ?? d['accesscode'] ?? '').toString();
     _status = int.tryParse((d['status'] ?? 1).toString()) ?? 1;
+
+    // ── Resolve User Code display label ──────────────────────────────────────
+    final rawUserCode = (d['userCode'] ?? d['usercode'] ?? '').toString();
+    _selectedUserCode = rawUserCode.isNotEmpty ? rawUserCode : null;
+    _selectedUserDisplay = _resolveUserDisplay(rawUserCode);
+
+    // ── Resolve Access Code display label ────────────────────────────────────
+    final rawAccessCode = (d['accessCode'] ?? d['accesscode'] ?? '').toString();
+    _selectedAccessCode = rawAccessCode.isNotEmpty ? rawAccessCode : null;
+    _selectedAccessDisplay = _resolveAccessDisplay(rawAccessCode);
+
     _errors.clear();
     if (mounted) setState(() {});
   }
 
+  /// Returns "USR001 - John Doe" given "USR001"
+  String? _resolveUserDisplay(String? code) {
+    if (code == null || code.isEmpty) return null;
+    final match = _userList.firstWhere(
+      (u) =>
+          (u['usersCd'] ?? u['userScd'] ?? u['USERSCD'] ?? '').toString() ==
+          code,
+      orElse: () => {},
+    );
+    if (match.isEmpty) return null;
+    final cd = match['usersCd'] ?? match['userScd'] ?? match['USERSCD'] ?? '';
+    final fn = match['fName'] ?? match['fname'] ?? match['FNAME'] ?? '';
+    final ln = match['lName'] ?? match['lname'] ?? match['LNAME'] ?? '';
+    final fullName = '$fn $ln'.trim();
+    return '$cd${fullName.isNotEmpty ? ' - $fullName' : ''}';
+  }
+
+  /// Returns "ACC001 - Admin Access" given "ACC001"
+  String? _resolveAccessDisplay(String? code) {
+    if (code == null || code.isEmpty) return null;
+    final match = _accessList.firstWhere(
+      (a) =>
+          (a['accessCd'] ?? a['accesscd'] ?? a['roleCd'] ?? a['rolecd'] ?? '')
+              .toString() ==
+          code,
+      orElse: () => {},
+    );
+    if (match.isEmpty) return null;
+    final cd = match['accessCd'] ??
+        match['accesscd'] ??
+        match['roleCd'] ??
+        match['rolecd'] ??
+        '';
+    final name = match['access_name'] ??
+        match['accessname'] ??
+        match['roleName'] ??
+        match['rolename'] ??
+        '';
+    return '$cd${name.toString().isNotEmpty ? ' - $name' : ''}';
+  }
+
+  // ── Build user dropdown items ─────────────────────────────────────────────
+  List<String> get _userDropdownItems {
+    return _userList
+        .map((u) {
+          final cd = u['usersCd'] ?? u['userScd'] ?? u['USERSCD'] ?? '';
+          final fn = u['fName'] ?? u['fname'] ?? u['FNAME'] ?? '';
+          final ln = u['lName'] ?? u['lname'] ?? u['LNAME'] ?? '';
+          final fullName = '$fn $ln'.trim();
+          return '$cd${fullName.isNotEmpty ? ' - $fullName' : ''}';
+        })
+        .toSet()
+        .toList()
+      ..sort();
+  }
+
+  // ── Build access dropdown items ───────────────────────────────────────────
+  List<String> get _accessDropdownItems {
+    return _accessList
+        .map((a) {
+          final cd = a['accessCd'] ??
+              a['accesscd'] ??
+              a['roleCd'] ??
+              a['rolecd'] ??
+              '';
+          final name = a['access_name'] ??
+              a['accessname'] ??
+              a['roleName'] ??
+              a['rolename'] ??
+              '';
+          return '$cd${name.toString().isNotEmpty ? ' - $name' : ''}';
+        })
+        .toSet()
+        .toList()
+      ..sort();
+  }
+
+  // ── Clear ────────────────────────────────────────────────────────────────────
   void clear() {
     _orgCodeCtrl.text = '50';
-    _userCodeCtrl.clear();
-    _productCodeCtrl.clear();
-    _accessCodeCtrl.clear();
+    _selectedUserCode = null;
+    _selectedUserDisplay = null;
+    _selectedAccessCode = null;
+    _selectedAccessDisplay = null;
     _status = 1;
     _errors.clear();
     if (mounted) setState(() {});
@@ -669,21 +769,14 @@ class UserAccessFieldsState extends State<UserAccessFields> {
         _errors['orgCode'] = null;
       }
 
-      if (_userCodeCtrl.text.trim().isEmpty) {
+      if (_selectedUserCode == null || _selectedUserCode!.isEmpty) {
         _errors['userCode'] = 'User Code is required';
         ok = false;
       } else {
         _errors['userCode'] = null;
       }
 
-      if (_productCodeCtrl.text.trim().isEmpty) {
-        _errors['productCode'] = 'Product Code is required';
-        ok = false;
-      } else {
-        _errors['productCode'] = null;
-      }
-
-      if (_accessCodeCtrl.text.trim().isEmpty) {
+      if (_selectedAccessCode == null || _selectedAccessCode!.isEmpty) {
         _errors['accessCode'] = 'Access Code is required';
         ok = false;
       } else {
@@ -739,28 +832,43 @@ class UserAccessFieldsState extends State<UserAccessFields> {
                 ),
               ),
 
-              // User Code
+              // ─── User Code — DROPDOWN ───────────────────────────────────────
               AmsField(
                 label: 'User Code',
                 required: true,
                 labelAbove: true,
-                tooltip: 'Unique identifier for the user (e.g. USR001).',
-                child: AmsTextInput(
-                  controller: _userCodeCtrl,
-                  readOnly: widget.isViewMode || widget.initialData != null,
-                  placeholder: 'e.g. USR001',
-                  textInputAction: TextInputAction.next,
-                  errorText: _errors['userCode'],
-                  isValid: _errors['userCode'] == null &&
-                      _userCodeCtrl.text.isNotEmpty,
-                  onChanged: (v) {
-                    setState(() {
-                      _errors['userCode'] =
-                          v.trim().isEmpty ? 'User Code is required' : null;
-                    });
-                    widget.onChanged('userCode', v.trim());
-                  },
-                ),
+                tooltip: 'Select the user (UserCD - First Last).',
+                child: _loadingDropdowns
+                    ? const LinearProgressIndicator()
+                    : widget.isViewMode
+                        // View mode: show plain text
+                        ? AmsTextInput(
+                            initialValue:
+                                _selectedUserDisplay ?? _selectedUserCode ?? '',
+                            readOnly: true,
+                          )
+                        // Edit / Create mode: show dropdown
+                        : AmsDropdown(
+                            initialValue: _selectedUserDisplay,
+                            placeholder: 'Select User',
+                            items: _userDropdownItems,
+                            errorText: _errors['userCode'],
+                            isValid: _errors['userCode'] == null &&
+                                _selectedUserCode != null,
+                            onChanged: (v) {
+                              // Extract raw code before " - "
+                              final code = v?.split(' - ').first.trim() ?? '';
+                              setState(() {
+                                _selectedUserDisplay = v;
+                                _selectedUserCode =
+                                    code.isNotEmpty ? code : null;
+                                _errors['userCode'] = code.isEmpty
+                                    ? 'User Code is required'
+                                    : null;
+                              });
+                              widget.onChanged('userCode', code);
+                            },
+                          ),
               ),
             ],
           ),
@@ -773,20 +881,22 @@ class UserAccessFieldsState extends State<UserAccessFields> {
 
           AmsFormGrid(
             children: [
-              // Product Code
+              // Product Code  (plain text — no dropdown needed per requirement)
               AmsField(
                 label: 'Product Code',
                 required: true,
                 labelAbove: true,
                 tooltip: 'Product code this user is mapped to (e.g. PROD001).',
                 child: AmsTextInput(
-                  controller: _productCodeCtrl,
+                  initialValue:
+                      widget.initialData?['productCode']?.toString() ??
+                          widget.initialData?['productcode']?.toString() ??
+                          '',
                   readOnly: widget.isViewMode,
                   placeholder: 'e.g. PROD001',
                   textInputAction: TextInputAction.next,
                   errorText: _errors['productCode'],
-                  isValid: _errors['productCode'] == null &&
-                      _productCodeCtrl.text.isNotEmpty,
+                  isValid: _errors['productCode'] == null,
                   onChanged: (v) {
                     setState(() {
                       _errors['productCode'] =
@@ -797,29 +907,43 @@ class UserAccessFieldsState extends State<UserAccessFields> {
                 ),
               ),
 
-              // Access Code
+              // ─── Access Code — DROPDOWN ──────────────────────────────────────
               AmsField(
                 label: 'Access Code',
                 required: true,
                 labelAbove: true,
-                tooltip:
-                    'Access code that defines the permission level (e.g. ACC001).',
-                child: AmsTextInput(
-                  controller: _accessCodeCtrl,
-                  readOnly: widget.isViewMode,
-                  placeholder: 'e.g. ACC001',
-                  textInputAction: TextInputAction.next,
-                  errorText: _errors['accessCode'],
-                  isValid: _errors['accessCode'] == null &&
-                      _accessCodeCtrl.text.isNotEmpty,
-                  onChanged: (v) {
-                    setState(() {
-                      _errors['accessCode'] =
-                          v.trim().isEmpty ? 'Access Code is required' : null;
-                    });
-                    widget.onChanged('accessCode', v.trim());
-                  },
-                ),
+                tooltip: 'Select the access/role (AccessCD - Name).',
+                child: _loadingDropdowns
+                    ? const LinearProgressIndicator()
+                    : widget.isViewMode
+                        // View mode: plain text
+                        ? AmsTextInput(
+                            initialValue: _selectedAccessDisplay ??
+                                _selectedAccessCode ??
+                                '',
+                            readOnly: true,
+                          )
+                        // Edit / Create mode: dropdown
+                        : AmsDropdown(
+                            initialValue: _selectedAccessDisplay,
+                            placeholder: 'Select Access',
+                            items: _accessDropdownItems,
+                            errorText: _errors['accessCode'],
+                            isValid: _errors['accessCode'] == null &&
+                                _selectedAccessCode != null,
+                            onChanged: (v) {
+                              final code = v?.split(' - ').first.trim() ?? '';
+                              setState(() {
+                                _selectedAccessDisplay = v;
+                                _selectedAccessCode =
+                                    code.isNotEmpty ? code : null;
+                                _errors['accessCode'] = code.isEmpty
+                                    ? 'Access Code is required'
+                                    : null;
+                              });
+                              widget.onChanged('accessCode', code);
+                            },
+                          ),
               ),
 
               // Status
