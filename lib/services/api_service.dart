@@ -801,6 +801,34 @@ class ApiService {
       return null;
     }
   }
+
+  // ── Get full user profile after SSO exchange ───────────────────────────────
+  // AM endpoint: GET <amBaseUrl>/user/get-user/?userCode=<userCode>&orgCode=<orgCode>
+  //   Header: Authorization: Bearer <child_token>
+  Future<Map<String, dynamic>?> getUserDetails(int userCode, int orgCode) async {
+    try {
+      final amBaseUrl = AppConfig.instance.amBaseUrl;
+      final url = '$amBaseUrl/user/get-user/?userCode=$userCode&orgCode=$orgCode';
+      print('🌐 GET $url');
+
+      final res = await http.get(
+        Uri.parse(url),
+        headers: _headers, // includes Authorization: Bearer <child_token>
+      );
+
+      print('🔍 get-user status: ${res.statusCode}');
+      print('🔍 get-user response: ${res.body}');
+
+      if (res.statusCode == 200) {
+        return jsonDecode(res.body) as Map<String, dynamic>;
+      }
+      print('⚠️ getUserDetails: HTTP ${res.statusCode} — ${res.body}');
+      return null;
+    } catch (e) {
+      print('❌ getUserDetails error: $e');
+      return null;
+    }
+  }
 }
 
 final apiService = ApiService();

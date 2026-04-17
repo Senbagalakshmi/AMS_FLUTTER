@@ -137,12 +137,9 @@ class _SplashScreenState extends State<SplashScreen>
         return;
       }
 
-      // 🔍 DEBUG: print full raw response to inspect key names
-      print('🔍 Exchange raw response keys: ${response.keys.toList()}');
-      print('🔍 Exchange full response: $response');
+      print('🔍 Exchange response: $response');
 
-      // ── Parse child token ────────────────────────────────────────────────
-      // Response is FLAT — all fields at top level, no session_data nesting.
+      // ── Parse child token ─────────────────────────────────────────────────
       final childToken = response['child_token'] as String? ??
           response['access_token'] as String? ??
           response['token'] as String?;
@@ -153,59 +150,76 @@ class _SplashScreenState extends State<SplashScreen>
         return;
       }
 
-      // ── Parse fields directly from top-level response ────────────────────
-      final roleType   = (response['roleType']  ?? response['role_type'] ?? '').toString();
-      final userName   = (response['userName']  ?? response['name']      ?? response['email'] ?? '').toString();
-      final email      = (response['email']     ?? '').toString();
-      final orgCode    = response['orgCode'];
-      final usersCd    = response['usersCd']    ?? response['userScd'];
-      final accessCd   = response['accessCd']   ?? response['accessCode'];
+      // ── Parse fields — handles BOTH flat and session_data-nested shapes ───
+      final sessionData = response['session_data'] as Map<String, dynamic>?;
 
-      print('🔍 childToken: $childToken');
-      print('🔍 userName: $userName  email: $email  orgCode: $orgCode  roleType: $roleType');
+      final roleType = (response['roleType']  ??
+                        response['role_type'] ??
+                        sessionData?['roleType'] ??
+                        sessionData?['role_type'] ?? '').toString();
 
-      // ── Build user record for sessionStorage ─────────────────────────────
+      // userScd is the key used as userCode in the get-user API
+      final userScd = sessionData?['userScd']  ??
+                      response['userScd']       ??
+                      response['usersCd'];
+
+      final orgCode = sessionData?['orgCode']  ?? response['orgCode'];
+
+      // ── Update ApiService token so /am/get-user call is authenticated ─────
+      apiService.updateToken(childToken);
+
+      // ── Call GET /am/get-user?userCode=<userScd> ──────────────────────────
+      _setStatus('Loading user profile…');
+      Map<String, dynamic>? userDetails;
+      if (userScd != null) {
+        final uCode = userScd is int ? userScd : int.tryParse(userScd.toString()) ?? 0;
+        final oCode = orgCode is int ? orgCode : int.tryParse(orgCode?.toString() ?? '0') ?? 0;
+        userDetails = await apiService.getUserDetails(uCode, oCode);
+      }
+
+      // ── Build final user record from get-user response (or fallback) ──────
+      final userName = userDetails?['userName']  ??
+                       userDetails?['name']       ??
+                       sessionData?['userName']   ??
+                       response['userName']       ??
+                       response['email'] ?? '';
+
+      final email    = userDetails?['email']     ??
+                       sessionData?['email']      ??
+                       response['email'] ?? '';
+
       final userJson = {
-        'id'       : usersCd?.toString() ?? '',
-        'email'    : email,
-        'name'     : userName,
-        'userScd'  : usersCd,
+        'id'       : userScd?.toString() ?? '',
+        'email'    : email.toString(),
+        'name'     : userName.toString(),
+        'userScd'  : userScd,
         'orgCode'  : orgCode,
-        'accessCd' : accessCd,
         'roleType' : roleType,
         'role_type': roleType,
+        // merge all extra fields from get-user if available
+        if (userDetails != null) ...userDetails,
       };
 
       // ── Persist to sessionStorage ─────────────────────────────────────────
       if (kIsWeb) {
-        // Clear any stale data first
         for (final k in [
-          'child_token',
-          'mother_token',
-          'user_data',
-          'role_type',
-          'flutter.child_token',
-          'flutter.mother_token',
-          'flutter.user_data',
+          'child_token', 'mother_token', 'user_data', 'role_type',
+          'flutter.child_token', 'flutter.mother_token', 'flutter.user_data',
         ]) {
           html.window.sessionStorage.remove(k);
         }
 
         html.window.sessionStorage['child_token'] = childToken;
         html.window.sessionStorage['mother_token'] = motherToken;
-        html.window.sessionStorage['role_type'] = roleType;
-        html.window.sessionStorage['user_data'] = jsonEncode(userJson);
+        html.window.sessionStorage['role_type']    = roleType;
+        html.window.sessionStorage['user_data']    = jsonEncode(userJson);
 
-        // Redirect URL to /finance (remove the raw ?token= from the address bar)
+        // Clean ?token= from address bar, show /finance
         html.window.history.replaceState(null, '', '/finance');
-
-        print('✅ SSO exchange successful. roleType=$roleType user=$userName');
+        print('✅ SSO complete. user=$userName  roleType=$roleType');
       }
 
-      // ── Update ApiService so all subsequent calls include the token ───────
-      apiService.updateToken(childToken);
-
-      _goToList(childToken, userName);
+      _goToList(childToken, userName.toString());
     } catch (e) {
       print('❌ _doExchange error: $e');
       _goToLogin();

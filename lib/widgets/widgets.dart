@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:ui' as ui;
+import 'dart:convert';
+// ignore: avoid_web_libraries_in_flutter
+import 'dart:html' as html;
 import 'package:google_fonts/google_fonts.dart';
 import '../services/picker.dart';
 import '../theme.dart';
@@ -2181,7 +2184,7 @@ class _AnimatedNineDotsState extends State<_AnimatedNineDots>
 }
 
 // ─────────────────────────────────────────────────────────────
-// 🔹 9 DOTS APP LAUNCHER
+// 🔹 9 DOTS APP LAUNCHER  (dynamic – products from sessionStorage)
 // ─────────────────────────────────────────────────────────────
 class _PremiumAppLauncher extends StatefulWidget {
   @override
@@ -2191,16 +2194,84 @@ class _PremiumAppLauncher extends StatefulWidget {
 class _PremiumAppLauncherState extends State<_PremiumAppLauncher> {
   bool _hover = false;
 
+  // ── Helpers ──────────────────────────────────────────────────
+
+  /// Pick an icon based on the product name
+  IconData _makeIcon(String title) {
+    final t = title.toLowerCase();
+    if (t.contains('connect'))   return Icons.connect_without_contact_outlined;
+    if (t.contains('ticket'))    return Icons.confirmation_number_outlined;
+    if (t.contains('hr'))        return Icons.people_alt_outlined;
+    if (t.contains('crm'))       return Icons.handshake_outlined;
+    if (t.contains('payroll'))   return Icons.payments_outlined;
+    if (t.contains('test'))      return Icons.science_outlined;
+    if (t.contains('project'))   return Icons.rocket_launch_outlined;
+    if (t.contains('am') || t.contains('access'))
+                                 return Icons.admin_panel_settings_outlined;
+    if (t.contains('payment'))   return Icons.account_balance_wallet_outlined;
+    if (t.contains('dashboard')) return Icons.dashboard_customize_outlined;
+    if (t.contains('product'))   return Icons.widgets_outlined;
+    if (t.contains('user'))      return Icons.person_outline;
+    if (t.contains('lock'))      return Icons.lock_outline;
+    if (t.contains('org') || t.contains('organization'))
+                                 return Icons.apartment_outlined;
+    if (t.contains('finance'))   return Icons.account_balance_outlined;
+    return Icons.apps;
+  }
+
+  /// Read products list from sessionStorage user_data
+  List<Map<String, dynamic>> _loadProducts() {
+    try {
+      final raw = html.window.sessionStorage['user_data'] ??
+                  html.window.sessionStorage['flutter.user_data'];
+      if (raw == null) return [];
+      final data = jsonDecode(raw) as Map<String, dynamic>;
+      final prods = data['products'];
+      if (prods is! List) return [];
+
+      // Deduplicate by prodcode + homeUrl, filter out Finance (current app)
+      final seen = <String>{};
+      final result = <Map<String, dynamic>>[];
+      for (final item in prods) {
+        if (item is! Map) continue;
+        final p = Map<String, dynamic>.from(item);
+        final name    = (p['prodname']  ?? p['name'] ?? '').toString().toLowerCase();
+        final homeUrl = (p['homeUrl']   ?? p['url']  ?? '').toString();
+        final code    = (p['prodcode']  ?? '').toString();
+        if (name.contains('finance')) continue;     // skip current app
+        final key = '$code|$homeUrl';
+        if (seen.contains(key)) continue;           // skip duplicates
+        seen.add(key);
+        result.add(p);
+      }
+      return result;
+    } catch (e) {
+      print('⚠️ _loadProducts error: $e');
+      return [];
+    }
+  }
+
+  /// Navigate to homeUrl appending the mother token
+  void _navigate(String homeUrl) {
+    if (homeUrl.isEmpty) return;
+    final motherToken =
+        (html.window.sessionStorage['mother_token'] ??
+         html.window.sessionStorage['flutter.mother_token'] ?? '')
+            .replaceAll('"', '');
+    final url = motherToken.isEmpty ? homeUrl : '$homeUrl?token=$motherToken';
+    html.window.open(url, '_blank');
+  }
+
   @override
   Widget build(BuildContext context) {
-    return PopupMenuButton(
+    final products = _loadProducts();
+
+    return PopupMenuButton<void>(
       offset: const Offset(0, 50),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: MouseRegion(
         onEnter: (_) => setState(() => _hover = true),
-        onExit: (_) => setState(() => _hover = false),
+        onExit:  (_) => setState(() => _hover = false),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 150),
           padding: const EdgeInsets.all(8),
@@ -2214,40 +2285,128 @@ class _PremiumAppLauncherState extends State<_PremiumAppLauncher> {
         ),
       ),
       itemBuilder: (context) => [
-        PopupMenuItem(
+        PopupMenuItem<void>(
           enabled: false,
-          child: SizedBox(
-            width: 250,
-            child: GridView.count(
-              shrinkWrap: true,
-              crossAxisCount: 3,
-              children: [
-                _appItem(Icons.dashboard_rounded, "Dashboard"),
-                _appItem(Icons.admin_panel_settings_rounded, "User"),
-                _appItem(Icons.people_alt_rounded, "HRMS"),
-                _appItem(Icons.handshake_rounded, "CRM"),
-                _appItem(Icons.verified_user, "Auth"),
-                _appItem(Icons.settings_rounded, "Admin"),
-                _appItem(Icons.security_rounded, "Security"),
-                _appItem(Icons.notifications_active_rounded, "Alerts"),
-                _appItem(Icons.support_agent_rounded, "Support"),
-                _appItem(Icons.payments, "Payments"),
-              ],
-            ),
-          ),
+          padding: EdgeInsets.zero,
+          child: products.isEmpty
+              ? const SizedBox(
+                  width: 200,
+                  height: 80,
+                  child: Center(
+                    child: Text(
+                      'No other apps assigned',
+                      style: TextStyle(color: Colors.grey, fontSize: 13),
+                    ),
+                  ),
+                )
+              : SizedBox(
+                  width: 240,
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: products.map((p) {
+                        final name    = (p['prodname'] ?? p['name'] ?? 'App').toString();
+                        final homeUrl = (p['homeUrl']  ?? p['url']  ?? '').toString();
+                        final icon    = _makeIcon(name);
+                        return _AppTile(
+                          icon:     icon,
+                          label:    name,
+                          onTap:    () => _navigate(homeUrl),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ),
         ),
       ],
     );
   }
+}
 
-  Widget _appItem(IconData icon, String label) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(icon, size: 22, color: Colors.blue.shade900),
-        const SizedBox(height: 6),
-        Text(label, style: bodyStyle(size: 11)),
-      ],
+// ── Single tile inside the nine-dots popup ────────────────────
+class _AppTile extends StatefulWidget {
+  final IconData icon;
+  final String   label;
+  final VoidCallback onTap;
+  const _AppTile({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+  @override
+  State<_AppTile> createState() => _AppTileState();
+}
+
+class _AppTileState extends State<_AppTile> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit:  (_) => setState(() => _hovered = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          width: 68,
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+          decoration: BoxDecoration(
+            color: _hovered
+                ? const Color(0xFF3D6EBE).withOpacity(0.08)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AnimatedScale(
+                scale: _hovered ? 1.12 : 1.0,
+                duration: const Duration(milliseconds: 160),
+                curve: Curves.easeOutBack,
+                child: Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF3D6EBE), Color(0xFF2D5BA8)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF3D6EBE).withOpacity(0.25),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: Icon(widget.icon, color: Colors.white, size: 22),
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                widget.label.toUpperCase(),
+                style: TextStyle(
+                  fontSize: 9,
+                  fontWeight: FontWeight.w700,
+                  color: _hovered
+                      ? const Color(0xFF3D6EBE)
+                      : const Color(0xFF475569),
+                  letterSpacing: 0.4,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
