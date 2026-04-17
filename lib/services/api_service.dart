@@ -19,7 +19,8 @@ class ApiService {
   void updateToken(String? newToken) {
     _token = newToken;
   }
- String? get token => _token;
+
+  String? get token => _token;
   Map<String, String> get _headers => {
         'Content-Type': 'application/json',
         if (_token != null) 'Authorization': 'Bearer $_token',
@@ -337,7 +338,9 @@ class ApiService {
 
   Future<bool> createUser(Map<String, dynamic> data) async {
     try {
-      if (data['isUpdate'] == true || data.containsKey('usersCd') || data.containsKey('userScd')) {
+      if (data['isUpdate'] == true ||
+          data.containsKey('usersCd') ||
+          data.containsKey('userScd')) {
         return updateUser(data);
       }
       final res = await http.post(
@@ -353,9 +356,9 @@ class ApiService {
 
   Future<bool> createRole(Map<String, dynamic> data) async {
     try {
-      if (data['isUpdate'] == true || data.containsKey('accessCd')) {
-        return updateRole(data);
-      }
+      // if (data['isUpdate'] == true || data.containsKey('accessCd')) {
+      //   return updateRole(data);
+      // }
       final res = await http.post(
         Uri.parse('$baseUrl/access'),
         headers: _headers,
@@ -426,10 +429,14 @@ class ApiService {
     }
   }
 
-  Future<bool> createProgramMaster(Map<String, dynamic> data) => createMenu('program', data);
-  Future<bool> createParentMenu(Map<String, dynamic> data) => createMenu('parent', data);
-  Future<bool> createSubMenu(Map<String, dynamic> data) => createMenu('submenu', data);
-  Future<bool> createMenuProgram(Map<String, dynamic> data) => createMenu('items', data);
+  Future<bool> createProgramMaster(Map<String, dynamic> data) =>
+      createMenu('program', data);
+  Future<bool> createParentMenu(Map<String, dynamic> data) =>
+      createMenu('parent', data);
+  Future<bool> createSubMenu(Map<String, dynamic> data) =>
+      createMenu('submenu', data);
+  Future<bool> createMenuProgram(Map<String, dynamic> data) =>
+      createMenu('items', data);
 
   Future<bool> assignUserRole(Map<String, dynamic> data) async {
     try {
@@ -650,10 +657,10 @@ class ApiService {
     }
   }
 
-   Future<bool> updateModule(Map<String, dynamic> data) async {
+  Future<bool> updateModule(Map<String, dynamic> data) async {
     try {
       final mappedData = Map<String, dynamic>.from(data);
-      
+
       // Module Name mapping
       if (data.containsKey('modName')) {
         mappedData['moduleName'] = data['modName'];
@@ -669,11 +676,15 @@ class ApiService {
       if (data.containsKey('orgCode')) {
         mappedData['orgcode'] = data['orgCode'];
       }
-      
+
       // Module ID Identification (Check various possible keys)
-      final rawMid = data['modCd'] ?? data['moduleId'] ?? data['module_id'] ?? data['moduleid'] ?? data['modcd'];
+      final rawMid = data['modCd'] ??
+          data['moduleId'] ??
+          data['module_id'] ??
+          data['moduleid'] ??
+          data['modcd'];
       final midInt = int.tryParse(rawMid.toString()) ?? 0;
-      
+
       if (midInt != 0) {
         mappedData['moduleId'] = midInt;
         mappedData['module_id'] = midInt;
@@ -689,7 +700,10 @@ class ApiService {
       );
 
       // Handle sub-modules if present
-      if (res.statusCode >= 200 && res.statusCode < 300 && midInt != 0 && data.containsKey('subModules')) {
+      if (res.statusCode >= 200 &&
+          res.statusCode < 300 &&
+          midInt != 0 &&
+          data.containsKey('subModules')) {
         try {
           final List<dynamic> subs = data['subModules'];
           for (var sm in subs) {
@@ -709,15 +723,16 @@ class ApiService {
     }
   }
 
-  Future<bool> updateSubModule(String moduleId, Map<String, dynamic> data) async {
+  Future<bool> updateSubModule(
+      String moduleId, Map<String, dynamic> data) async {
     try {
       final mappedData = Map<String, dynamic>.from(data);
-      
+
       // 1. Map Organisation Code
       if (data.containsKey('orgCode')) {
         mappedData['orgcode'] = data['orgCode'];
       }
-      
+
       // 2. Map Module ID
       mappedData['moduleId'] = int.tryParse(moduleId) ?? 0;
       mappedData['module_id'] = int.tryParse(moduleId) ?? 0;
@@ -728,12 +743,17 @@ class ApiService {
         mappedData['subModuleName'] = newName;
         mappedData['sub_modulename'] = newName;
         mappedData['sub_module_name'] = newName;
-        mappedData['SUB_MODULENAME'] = newName; // Direct match for DB column case
+        mappedData['SUB_MODULENAME'] =
+            newName; // Direct match for DB column case
         mappedData['submodulename'] = newName;
       }
-      
+
       // 4. Map Sub Module ID
-      final rawSmid = data['subModuleId'] ?? data['sub_moduleid'] ?? data['submodule_id'] ?? data['SUB_MODULEID'] ?? data['submoduleid'];
+      final rawSmid = data['subModuleId'] ??
+          data['sub_moduleid'] ??
+          data['submodule_id'] ??
+          data['SUB_MODULEID'] ??
+          data['submoduleid'];
       if (rawSmid != null) {
         final smid = int.tryParse(rawSmid.toString()) ?? 0;
         mappedData['subModuleId'] = smid;
@@ -760,7 +780,7 @@ class ApiService {
   //   Body   : { "productCode": <int> }
   Future<Map<String, dynamic>?> exchangeToken(String motherToken) async {
     try {
-      final amBaseUrl   = AppConfig.instance.amBaseUrl;
+      final amBaseUrl = AppConfig.instance.amBaseUrl;
       final productCode = AppConfig.instance.productCode;
 
       final res = await http.post(
