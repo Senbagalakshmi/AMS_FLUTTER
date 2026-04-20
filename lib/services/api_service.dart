@@ -1,4 +1,7 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart' show kIsWeb;
+// ignore: avoid_web_libraries_in_flutter
+import 'dart:html' as html;
 import 'package:http/http.dart' as http;
 import '../models/models.dart';
 import '../config/app_config.dart';
@@ -44,23 +47,71 @@ class ApiService {
     return PaginatedResult(items: [], totalElements: 0);
   }
 
-  Future<String?> login(String username, String password) async {
+  Future<String?> login(String email, String password) async {
     try {
-      final response = await http.post(
+      // ── Step 1: POST /auth/login → get mother_token ───────────────────────
+      final loginRes = await http.post(
         Uri.parse('$baseUrl/auth/login'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          'username': username,
-          'password': password,
+          'email':       email,
+          'password':    password,
+          'productCode': AppConfig.instance.productCode,
         }),
       );
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return data['jwt'];
+      print('🔑 Login status: ${loginRes.statusCode}');
+      print('🔑 Login body: ${loginRes.body}');
+
+      if (loginRes.statusCode != 200) return null;
+
+      final loginData   = jsonDecode(loginRes.body) as Map<String, dynamic>;
+      final motherToken = loginData['mother_token'] as String?;
+      final userData    = loginData['user']         as Map<String, dynamic>?;
+
+      if (motherToken == null) {
+        print('⚠️ No mother_token in login response');
+        return null;
       }
-      return null;
+
+      // Store mother_token for SSO nine-dots navigation
+      if (kIsWeb) {
+        html.window.sessionStorage['mother_token'] = motherToken;
+        if (userData != null) {
+          html.window.sessionStorage['user_data'] = jsonEncode(userData);
+        }
+      }
+
+      // ── Step 2: POST /am/exchange-token → get child_token ─────────────────
+      // Note: endpoint has no /api prefix
+      final host = baseUrl.replaceFirst('/api', '');
+      final exchangeRes = await http.post(
+        Uri.parse('$host/am/exchange-token'),
+        headers: {
+          'Content-Type':  'application/json',
+          'Authorization': 'Bearer $motherToken',
+        },
+        body: jsonEncode({'productCode': AppConfig.instance.productCode}),
+      );
+
+      print('🔄 Exchange status: ${exchangeRes.statusCode}');
+      print('🔄 Exchange body: ${exchangeRes.body}');
+
+      if (exchangeRes.statusCode != 200) return null;
+
+      final exchangeData = jsonDecode(exchangeRes.body) as Map<String, dynamic>;
+      final childToken   = exchangeData['child_token']  as String? ??
+                           exchangeData['access_token'] as String? ??
+                           exchangeData['token']        as String?;
+
+      if (childToken != null && kIsWeb) {
+        html.window.sessionStorage['child_token'] = childToken;
+      }
+
+      print('✅ child_token: ${childToken?.substring(0, 20)}...');
+      return childToken;
     } catch (e) {
+      print('❌ login error: $e');
       return null;
     }
   }

@@ -46,7 +46,7 @@ class AppConfig {
     _instance = AppConfig._(
       baseUrl:     data['baseUrl']     ?? 'http://localhost:8080/api',
       amBaseUrl:   data['amBaseUrl']   ?? 'http://localhost:8082/accessmanager',
-      productCode: data['productCode'] ?? 1,
+      productCode: data['productCode'] ?? 8,
     );
 
     return _instance!;
