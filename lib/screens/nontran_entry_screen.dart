@@ -1648,17 +1648,24 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
           (data['email'] ?? data['emailid'] ?? data['email_id'] ?? '')
               .toString();
 
-      _countryCtrl.text = (data['country'] ?? '').toString();
-      
-      // ✅ FIX: gracefully handle old numerical call codes saved as Country
-      if (_countryCtrl.text.isNotEmpty && !_kAllCountries.containsKey(_countryCtrl.text)) {
-        final revMap = <String, String>{};
-        _kAllCountries.forEach((name, code) {
-          revMap.putIfAbsent(code, () => name);
-        });
-        _countryCtrl.text = revMap[_countryCtrl.text] ?? '';
+      final rawCountry = (data['country'] ?? '').toString();
+      if (rawCountry.isNotEmpty) {
+        if (_kAllCountries.containsKey(rawCountry)) {
+          _countryCtrl.text = "$rawCountry, ${_kAllCountries[rawCountry]}";
+        } else {
+          // Check if it's already a code
+          final revMap = <String, String>{};
+          _kAllCountries.forEach((name, code) => revMap[code] = name);
+          if (revMap.containsKey(rawCountry)) {
+            _countryCtrl.text = "${revMap[rawCountry]}, $rawCountry";
+          } else {
+            _countryCtrl.text = rawCountry;
+          }
+        }
+      } else {
+        _countryCtrl.text = '';
       }
-
+      
       _mobileCtrl.text =
           (data['mobile'] ?? data['mobileno'] ?? data['phone'] ?? '')
               .toString();
@@ -2159,17 +2166,18 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                     : AmsDropdown(
                         initialValue: _countryCtrl.text.isNotEmpty ? _countryCtrl.text : null,
                         placeholder: 'Select Country',
-                        items: _kAllCountries.keys.toList(),
+                        items: _kAllCountries.entries.map((e) => "${e.key}, ${e.value}").toList(),
                         onChanged: (v) {
                           if (v == null) return;
+                          final parts = v.split(', ');
+                          if (parts.length < 2) return;
+                          final code = parts.last;
                           setState(() {
                             _countryCtrl.text = v;
-                            if (_kAllCountries.containsKey(v)) {
-                              _callCodeCtrl.text = _kAllCountries[v]!;
-                              widget.onChanged('callCode', int.tryParse(_callCodeCtrl.text) ?? 0);
-                            }
+                            _callCodeCtrl.text = code;
                           });
-                          widget.onChanged('country', v);
+                          widget.onChanged('country', int.tryParse(code) ?? 0);
+                          widget.onChanged('callCode', int.tryParse(code) ?? 0);
                         },
                       ),
               ),

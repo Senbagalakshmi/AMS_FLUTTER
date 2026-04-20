@@ -254,10 +254,10 @@ class MenuApiService {
     }
   }
 
-  Future<bool> deleteParentMenu(int menuCode) async {
+  Future<bool> deleteParentMenu(int menuCode, int orgCode) async {
     try {
       final res = await http.delete(
-        Uri.parse('$baseUrl/menus/menu/$menuCode'),
+        Uri.parse('$baseUrl/menus/menu/$menuCode?orgcode=$orgCode'),
         headers: _headers,
       );
       return res.statusCode == 200;
@@ -266,10 +266,10 @@ class MenuApiService {
     }
   }
 
-  Future<bool> deleteSubMenu(int subMenuCode) async {
+  Future<bool> deleteSubMenu(int subMenuCode, int orgCode) async {
     try {
       final res = await http.delete(
-        Uri.parse('$baseUrl/menus/submenu/$subMenuCode'),
+        Uri.parse('$baseUrl/menus/submenu/$subMenuCode?orgcode=$orgCode'),
         headers: _headers,
       );
       return res.statusCode == 200;
@@ -278,10 +278,10 @@ class MenuApiService {
     }
   }
 
-  Future<bool> deleteMenuProgram(String pgmId) async {
+  Future<bool> deleteMenuProgram(String pgmId, int orgCode) async {
     try {
       final res = await http.delete(
-        Uri.parse('$baseUrl/menus/$pgmId'),
+        Uri.parse('$baseUrl/menus/$pgmId?orgcode=$orgCode'),
         headers: _headers,
       );
       return res.statusCode == 200;
