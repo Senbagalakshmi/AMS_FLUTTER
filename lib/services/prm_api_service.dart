@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import '../config/app_config.dart';
 
 class PaginatedResponse {
   final List<Map<String, dynamic>> items;
@@ -15,7 +16,8 @@ class PaginatedResponse {
 class ApiService {
   // 🔥 IMPORTANT: change if needed
   // Use 10.0.2.2 for Android Emulator, localhost for Web/Windows/iOS
-  static const String baseUrl = "http://localhost:8080/api";
+  // static const String baseUrl = "http://localhost:8080/api";
+  static String get baseUrl => AppConfig.instance.baseUrl;
   String? _token;
 
   void updateToken(String? token) {
@@ -163,23 +165,23 @@ class ApiService {
     }
   }
   Future<List<Map<String, dynamic>>> getModules() async {
-  try {
-    final response = await http.get(
+    try {
+      final response = await http.get(
       Uri.parse("$baseUrl/programs/modules"),  
-      headers: _headers,
-    );
+        headers: _headers,
+      );
 
-    print("Modules API status: ${response.statusCode}");
+      print("Modules API status: ${response.statusCode}");
     print("Modules API body: ${response.body}");
 
-    if (response.statusCode == 200) {
+      if (response.statusCode == 200) {
       return List<Map<String, dynamic>>.from(jsonDecode(response.body));
+      }
+    } catch (e) {
+      print("Error fetching modules: $e");
     }
-  } catch (e) {
-    print("Error fetching modules: $e");
+    return [];
   }
-  return [];
-}
 
   Future<List<Map<String, dynamic>>> getSubModules(String moduleId) async {
     try {

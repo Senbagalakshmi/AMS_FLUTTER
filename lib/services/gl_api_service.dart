@@ -5,7 +5,7 @@ import 'api_service.dart';
 class GLApiService {
   static Future<Map<String, dynamic>?> getUserProfile() async {
     final response = await http.get(
-      Uri.parse("http://localhost:8080/api/users/profile"),
+      Uri.parse("${ApiService.baseUrl}/users/profile"),
       headers: apiService.headers,
     );
 
