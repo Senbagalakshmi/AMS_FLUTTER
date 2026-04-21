@@ -28,11 +28,7 @@ final Map<String, Auth101Config> auth101 = {
       isTran: true,
       levels: 1),
   'USR-CRT': const Auth101Config(
-      id: 'USR-CRT',
-      name: 'User',
-      approvalReq: true,
-      isTran: false,
-      levels: 1),
+      id: 'USR-CRT', name: 'User', approvalReq: true, isTran: false, levels: 1),
   'ROLE-CRT': const Auth101Config(
       id: 'ROLE-CRT',
       name: 'Role Creation',
@@ -129,7 +125,6 @@ final Map<String, Auth101Config> auth101 = {
       approvalReq: true,
       isTran: false,
       levels: 1),
-
 };
 
 final Map<String, List<Auth103Limit>> auth103 = {
@@ -197,7 +192,6 @@ final Map<String, String> nonTranProgPkPrefix = {
   'PROG-CRT': 'PRG',
   'MENU-MST': 'MNU',
   'BRN-CRT': 'BRN',
-
 };
 
 List<QueueEntry> seedQueue() => [
@@ -378,64 +372,64 @@ List<AuthRecord> seedAuthQueue() => [
 
 final List<SubmenuItem> mastersSubmenus = [
   SubmenuItem(
-    label: 'Organisation', 
-    icon: Icons.business_rounded, 
+    label: 'Organisation',
+    icon: Icons.business_rounded,
     programId: 'ORG-CRT',
     subtitle: 'Manage organizational structure and entities.',
     metric: '3 Units',
     trend: 'Global',
   ),
   SubmenuItem(
-    label: 'Branch Master', 
-    icon: Icons.store_rounded, 
+    label: 'Branch Master',
+    icon: Icons.store_rounded,
     programId: 'BRN-CRT',
     subtitle: 'Manage organizational units and branch data.',
     metric: '12 Br',
     trend: 'Global',
   ),
   SubmenuItem(
-    label: 'User Management', 
-    icon: Icons.person_add_alt_1_rounded, 
+    label: 'User Management',
+    icon: Icons.person_add_alt_1_rounded,
     programId: 'USR-CRT',
     subtitle: 'Manage administrative access and user credentials.',
     metric: '128 Active',
     trend: '+4 this week',
   ),
   SubmenuItem(
-    label: 'Role Assignment', 
-    icon: Icons.assignment_ind_rounded, 
+    label: 'Role Assignment',
+    icon: Icons.assignment_ind_rounded,
     programId: 'ROLE-CRT',
     subtitle: 'Assign RBAC profiles to system operators.',
     metric: '15 Roles',
     trend: 'Stable',
   ),
   SubmenuItem(
-    label: 'Role Master', 
-    icon: Icons.admin_panel_settings_rounded, 
+    label: 'Role Master',
+    icon: Icons.admin_panel_settings_rounded,
     programId: 'USR-ROLE',
     subtitle: 'Define global permission and access profiles.',
     metric: '24 Defined',
     trend: 'Secure',
   ),
   SubmenuItem(
-    label: 'Module Config', 
-    icon: Icons.view_module_rounded, 
+    label: 'Module Config',
+    icon: Icons.view_module_rounded,
     programId: 'MOD-CRT',
     subtitle: 'Configure core system architectural modules.',
     metric: '8 Core',
     trend: '99.9% Up',
   ),
   SubmenuItem(
-    label: 'Program Master', 
-    icon: Icons.app_settings_alt_rounded, 
+    label: 'Program Master',
+    icon: Icons.app_settings_alt_rounded,
     programId: 'PROG-CRT',
     subtitle: 'Define and manage system programs and screens.',
     metric: '64 Progs',
     trend: 'Standard',
   ),
   SubmenuItem(
-    label: 'Menu Master', 
-    icon: Icons.menu_open_rounded, 
+    label: 'Menu Master',
+    icon: Icons.menu_open_rounded,
     programId: 'MENU-MST',
     subtitle: 'Manage multilevel navigation and system menus.',
     metric: '3 Levels',
@@ -445,48 +439,60 @@ final List<SubmenuItem> mastersSubmenus = [
 
 final List<SubmenuItem> glSubmenus = [
   SubmenuItem(
-    label: 'GL Category', 
-    icon: Icons.category_rounded, 
+    label: 'GL Category',
+    icon: Icons.category_rounded,
     programId: 'GL-CAT',
     subtitle: 'Define financial ledger classification groups.',
     metric: '12 Cat',
     trend: 'Balanced',
   ),
   SubmenuItem(
-    label: 'GL Master', 
-    icon: Icons.account_balance_wallet_rounded, 
+    label: 'GL Master',
+    icon: Icons.account_balance_wallet_rounded,
     programId: 'GL-MST',
     subtitle: 'Configure core account and ledger frameworks.',
     metric: '85 Mast',
     trend: 'Audited',
   ),
   SubmenuItem(
-    label: 'Currency Matrix', 
-    icon: Icons.currency_exchange_rounded, 
+    label: 'Sub Category',
+    icon: Icons.folder_open_rounded,
+    programId: 'GL-SUB',
+    screen: 'submenu_dashboard',
+    subtitle: 'Open the GL control sub modules in one place.',
+    metric: '4 Modules',
+    trend: 'Grouped',
+  ),
+];
+
+final List<SubmenuItem> glSubCategorySubmenus = [
+  SubmenuItem(
+    label: 'Allowed Currency',
+    icon: Icons.currency_exchange_rounded,
     programId: 'GL-CUR',
     subtitle: 'Manage multi-currency exchange parameters.',
     metric: '150+ Cur',
     trend: 'Live FX',
   ),
   SubmenuItem(
-    label: 'Branch Control', 
-    icon: Icons.location_city_rounded, 
+    label: 'Allowed Branch',
+    icon: Icons.location_city_rounded,
     programId: 'GL-BRN',
     subtitle: 'Set organizational unit and branch access.',
     metric: '12 Br',
     trend: 'Global',
   ),
   SubmenuItem(
-    label: 'GL Segments', 
-    icon: Icons.segment_rounded, 
+    label: 'GL Segments',
+    icon: Icons.segment_rounded,
     programId: 'GL-SEG',
     subtitle: 'Manage data dimensionality and segmentation.',
     metric: '5 Seg',
     trend: 'Syncing',
   ),
   SubmenuItem(
-    label: 'GL Attributes', 
-    icon: Icons.settings_input_component_rounded, 
+    label: 'GL Attributes',
+    icon: Icons.settings_input_component_rounded,
     programId: 'GL-ATT',
     subtitle: 'Customize metadata fields and ledger attrs.',
     metric: '32 Attr',
@@ -496,8 +502,8 @@ final List<SubmenuItem> glSubmenus = [
 
 final List<SubmenuItem> configSubmenus = [
   SubmenuItem(
-    label: 'Auth Controller', 
-    icon: Icons.admin_panel_settings_rounded, 
+    label: 'Auth Controller',
+    icon: Icons.admin_panel_settings_rounded,
     programId: 'AUTHCTL',
     subtitle: 'Centralized authorization logic gatekeeper.',
     metric: 'v2.4.0',
@@ -507,9 +513,9 @@ final List<SubmenuItem> configSubmenus = [
 
 final List<SubmenuItem> authSubmenus = [
   SubmenuItem(
-    label: 'Authorization Queue', 
-    icon: Icons.fact_check_rounded, 
-    programId: 'nontranauth', 
+    label: 'Authorization Queue',
+    icon: Icons.fact_check_rounded,
+    programId: 'nontranauth',
     screen: 'nontranauth',
     subtitle: 'Monitor and approve pending security requests.',
     metric: '—',

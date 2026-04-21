@@ -12,52 +12,188 @@ import '../data.dart';
 import 'branch_screen.dart';
 
 const Map<String, String> _kAllCountries = {
-  "Afghanistan": "93", "Albania": "355", "Algeria": "213", "Andorra": "376",
-  "Angola": "244", "Argentina": "54", "Armenia": "374", "Australia": "61",
-  "Austria": "43", "Azerbaijan": "994", "Bahamas": "1", "Bahrain": "973",
-  "Bangladesh": "880", "Belarus": "375", "Belgium": "32", "Belize": "501",
-  "Benin": "229", "Bhutan": "975", "Bolivia": "591", "Bosnia and Herzegovina": "387",
-  "Botswana": "267", "Brazil": "55", "Brunei": "673", "Bulgaria": "359",
-  "Burkina Faso": "226", "Burundi": "257", "Cambodia": "855", "Cameroon": "237",
-  "Canada": "1", "Central African Republic": "236", "Chad": "235", "Chile": "56",
-  "China": "86", "Colombia": "57", "Comoros": "269", "Congo": "242",
-  "Costa Rica": "506", "Croatia": "385", "Cuba": "53", "Cyprus": "357",
-  "Czech Republic": "420", "Denmark": "45", "Djibouti": "253", "Dominican Republic": "1",
-  "Ecuador": "593", "Egypt": "20", "El Salvador": "503", "Equatorial Guinea": "240",
-  "Eritrea": "291", "Estonia": "372", "Ethiopia": "251", "Fiji": "679",
-  "Finland": "358", "France": "33", "Gabon": "241", "Gambia": "220",
-  "Georgia": "995", "Germany": "49", "Ghana": "233", "Greece": "30",
-  "Grenada": "1", "Guatemala": "502", "Guinea": "224", "Guyana": "592",
-  "Haiti": "509", "Honduras": "504", "Hungary": "36", "Iceland": "354",
-  "India": "91", "Indonesia": "62", "Iran": "98", "Iraq": "964",
-  "Ireland": "353", "Israel": "972", "Italy": "39", "Jamaica": "1",
-  "Japan": "81", "Jordan": "962", "Kazakhstan": "7", "Kenya": "254",
-  "Kiribati": "686", "Kuwait": "965", "Kyrgyzstan": "996", "Laos": "856",
-  "Latvia": "371", "Lebanon": "961", "Lesotho": "266", "Liberia": "231",
-  "Libya": "218", "Liechtenstein": "423", "Lithuania": "370", "Luxembourg": "352",
-  "Madagascar": "261", "Malawi": "265", "Malaysia": "60", "Maldives": "960",
-  "Mali": "223", "Malta": "356", "Marshall Islands": "692", "Mauritania": "222",
-  "Mauritius": "230", "Mexico": "52", "Micronesia": "691", "Moldova": "373",
-  "Monaco": "377", "Mongolia": "976", "Montenegro": "382", "Morocco": "212",
-  "Mozambique": "258", "Myanmar": "95", "Namibia": "264", "Nauru": "674",
-  "Nepal": "977", "Netherlands": "31", "New Zealand": "64", "Nicaragua": "505",
-  "Niger": "227", "Nigeria": "234", "North Korea": "850", "Norway": "47",
-  "Oman": "968", "Pakistan": "92", "Palau": "680", "Panama": "507",
-  "Papua New Guinea": "675", "Paraguay": "595", "Peru": "51", "Philippines": "63",
-  "Poland": "48", "Portugal": "351", "Qatar": "974", "Romania": "40",
-  "Russia": "7", "Rwanda": "250", "Samoa": "685", "San Marino": "378",
-  "Saudi Arabia": "966", "Senegal": "221", "Serbia": "381", "Seychelles": "248",
-  "Sierra Leone": "232", "Singapore": "65", "Slovakia": "421", "Slovenia": "386",
-  "Solomon Islands": "677", "Somalia": "252", "South Africa": "27", "South Korea": "82",
-  "South Sudan": "211", "Spain": "34", "Sri Lanka": "94", "Sudan": "249",
-  "Suriname": "597", "Swaziland": "268", "Sweden": "46", "Switzerland": "41",
-  "Syria": "963", "Taiwan": "886", "Tajikistan": "992", "Tanzania": "255",
-  "Thailand": "66", "Togo": "228", "Tonga": "676", "Trinidad and Tobago": "1",
-  "Tunisia": "216", "Turkey": "90", "Turkmenistan": "993", "Tuvalu": "688",
-  "Uganda": "256", "Ukraine": "380", "United Arab Emirates": "971", "United Kingdom": "44",
-  "United States": "1", "Uruguay": "598", "Uzbekistan": "998", "Vanuatu": "678",
-  "Vatican City": "379", "Venezuela": "58", "Vietnam": "84", "Yemen": "967",
-  "Zambia": "260", "Zimbabwe": "263"
+  "Afghanistan": "93",
+  "Albania": "355",
+  "Algeria": "213",
+  "Andorra": "376",
+  "Angola": "244",
+  "Argentina": "54",
+  "Armenia": "374",
+  "Australia": "61",
+  "Austria": "43",
+  "Azerbaijan": "994",
+  "Bahamas": "1",
+  "Bahrain": "973",
+  "Bangladesh": "880",
+  "Belarus": "375",
+  "Belgium": "32",
+  "Belize": "501",
+  "Benin": "229",
+  "Bhutan": "975",
+  "Bolivia": "591",
+  "Bosnia and Herzegovina": "387",
+  "Botswana": "267",
+  "Brazil": "55",
+  "Brunei": "673",
+  "Bulgaria": "359",
+  "Burkina Faso": "226",
+  "Burundi": "257",
+  "Cambodia": "855",
+  "Cameroon": "237",
+  "Canada": "1",
+  "Central African Republic": "236",
+  "Chad": "235",
+  "Chile": "56",
+  "China": "86",
+  "Colombia": "57",
+  "Comoros": "269",
+  "Congo": "242",
+  "Costa Rica": "506",
+  "Croatia": "385",
+  "Cuba": "53",
+  "Cyprus": "357",
+  "Czech Republic": "420",
+  "Denmark": "45",
+  "Djibouti": "253",
+  "Dominican Republic": "1",
+  "Ecuador": "593",
+  "Egypt": "20",
+  "El Salvador": "503",
+  "Equatorial Guinea": "240",
+  "Eritrea": "291",
+  "Estonia": "372",
+  "Ethiopia": "251",
+  "Fiji": "679",
+  "Finland": "358",
+  "France": "33",
+  "Gabon": "241",
+  "Gambia": "220",
+  "Georgia": "995",
+  "Germany": "49",
+  "Ghana": "233",
+  "Greece": "30",
+  "Grenada": "1",
+  "Guatemala": "502",
+  "Guinea": "224",
+  "Guyana": "592",
+  "Haiti": "509",
+  "Honduras": "504",
+  "Hungary": "36",
+  "Iceland": "354",
+  "India": "91",
+  "Indonesia": "62",
+  "Iran": "98",
+  "Iraq": "964",
+  "Ireland": "353",
+  "Israel": "972",
+  "Italy": "39",
+  "Jamaica": "1",
+  "Japan": "81",
+  "Jordan": "962",
+  "Kazakhstan": "7",
+  "Kenya": "254",
+  "Kiribati": "686",
+  "Kuwait": "965",
+  "Kyrgyzstan": "996",
+  "Laos": "856",
+  "Latvia": "371",
+  "Lebanon": "961",
+  "Lesotho": "266",
+  "Liberia": "231",
+  "Libya": "218",
+  "Liechtenstein": "423",
+  "Lithuania": "370",
+  "Luxembourg": "352",
+  "Madagascar": "261",
+  "Malawi": "265",
+  "Malaysia": "60",
+  "Maldives": "960",
+  "Mali": "223",
+  "Malta": "356",
+  "Marshall Islands": "692",
+  "Mauritania": "222",
+  "Mauritius": "230",
+  "Mexico": "52",
+  "Micronesia": "691",
+  "Moldova": "373",
+  "Monaco": "377",
+  "Mongolia": "976",
+  "Montenegro": "382",
+  "Morocco": "212",
+  "Mozambique": "258",
+  "Myanmar": "95",
+  "Namibia": "264",
+  "Nauru": "674",
+  "Nepal": "977",
+  "Netherlands": "31",
+  "New Zealand": "64",
+  "Nicaragua": "505",
+  "Niger": "227",
+  "Nigeria": "234",
+  "North Korea": "850",
+  "Norway": "47",
+  "Oman": "968",
+  "Pakistan": "92",
+  "Palau": "680",
+  "Panama": "507",
+  "Papua New Guinea": "675",
+  "Paraguay": "595",
+  "Peru": "51",
+  "Philippines": "63",
+  "Poland": "48",
+  "Portugal": "351",
+  "Qatar": "974",
+  "Romania": "40",
+  "Russia": "7",
+  "Rwanda": "250",
+  "Samoa": "685",
+  "San Marino": "378",
+  "Saudi Arabia": "966",
+  "Senegal": "221",
+  "Serbia": "381",
+  "Seychelles": "248",
+  "Sierra Leone": "232",
+  "Singapore": "65",
+  "Slovakia": "421",
+  "Slovenia": "386",
+  "Solomon Islands": "677",
+  "Somalia": "252",
+  "South Africa": "27",
+  "South Korea": "82",
+  "South Sudan": "211",
+  "Spain": "34",
+  "Sri Lanka": "94",
+  "Sudan": "249",
+  "Suriname": "597",
+  "Swaziland": "268",
+  "Sweden": "46",
+  "Switzerland": "41",
+  "Syria": "963",
+  "Taiwan": "886",
+  "Tajikistan": "992",
+  "Tanzania": "255",
+  "Thailand": "66",
+  "Togo": "228",
+  "Tonga": "676",
+  "Trinidad and Tobago": "1",
+  "Tunisia": "216",
+  "Turkey": "90",
+  "Turkmenistan": "993",
+  "Tuvalu": "688",
+  "Uganda": "256",
+  "Ukraine": "380",
+  "United Arab Emirates": "971",
+  "United Kingdom": "44",
+  "United States": "1",
+  "Uruguay": "598",
+  "Uzbekistan": "998",
+  "Vanuatu": "678",
+  "Vatican City": "379",
+  "Venezuela": "58",
+  "Vietnam": "84",
+  "Yemen": "967",
+  "Zambia": "260",
+  "Zimbabwe": "263"
 };
 
 class NonTranEntryScreen extends StatefulWidget {
@@ -1531,6 +1667,12 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
   List<Map<String, dynamic>> _userList = [];
   List<Map<String, dynamic>> _roleList = [];
   List<Map<String, dynamic>> _moduleList = [];
+
+  // ── NEW: Branch dropdown data ──────────────────────────────────────────────
+  List<Map<String, dynamic>> _branchList = [];
+  bool _loadingBranches = false;
+  // ──────────────────────────────────────────────────────────────────────────
+
   String? _selModule;
   String? _selSubModule;
   bool _loadingDropdowns = false;
@@ -1549,6 +1691,11 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
       if (widget.prog == 'USR-ROLE' || widget.prog == 'AUTHCTL') {
         _fetchDropdownData();
       }
+      // ── NEW ──
+      if (widget.prog == 'USR-CRT') {
+        _fetchBranches();
+      }
+      // ─────────
     }
   }
 
@@ -1560,6 +1707,11 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
     if (widget.prog == 'USR-ROLE' || widget.prog == 'AUTHCTL') {
       _fetchDropdownData();
     }
+    // ── NEW ──
+    if (widget.prog == 'USR-CRT') {
+      _fetchBranches();
+    }
+    // ─────────
   }
 
   void _notifyDefaults() {
@@ -1598,6 +1750,19 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
     }
   }
 
+  // ── NEW: Fetch branches for dropdown ───────────────────────────────────────
+  Future<void> _fetchBranches() async {
+    setState(() => _loadingBranches = true);
+    final result = await branchApiService.getBranches(size: 100);
+    if (mounted) {
+      setState(() {
+        _branchList = result?.items ?? [];
+        _loadingBranches = false;
+      });
+    }
+  }
+  // ──────────────────────────────────────────────────────────────────────────
+
   void _loadInitialData() {
     if (widget.initialData == null) {
       if (widget.prog == 'AUTHCTL') {
@@ -1613,7 +1778,6 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
       return;
     }
 
-    // ─── Normalize all keys to lowercase for safe access ───
     final data =
         widget.initialData!.map((k, v) => MapEntry(k.toLowerCase(), v));
     final prog = widget.prog.replaceAll(' ', '-').toUpperCase();
@@ -1633,17 +1797,14 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
           (data['dob'] ?? data['dateofbirth'] ?? '').toString());
       _uStatusCtrl.text = (data['status'] ?? '').toString();
 
-      // ✅ FIX: branchcd key fallback
       _uBranchCdCtrl.text =
           (data['branchcd'] ?? data['branchcode'] ?? data['branch_cd'] ?? '')
               .toString();
 
-      // ✅ FIX: picture key fallback
       _uPictureCtrl.text =
           (data['picture'] ?? data['profilepicture'] ?? data['pic'] ?? '')
               .toString();
 
-      // ✅ FIX: email key fallback
       _emailCtrl.text =
           (data['email'] ?? data['emailid'] ?? data['email_id'] ?? '')
               .toString();
@@ -1653,7 +1814,6 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
         if (_kAllCountries.containsKey(rawCountry)) {
           _countryCtrl.text = "$rawCountry, ${_kAllCountries[rawCountry]}";
         } else {
-          // Check if it's already a code
           final revMap = <String, String>{};
           _kAllCountries.forEach((name, code) => revMap[code] = name);
           if (revMap.containsKey(rawCountry)) {
@@ -1665,7 +1825,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
       } else {
         _countryCtrl.text = '';
       }
-      
+
       _mobileCtrl.text =
           (data['mobile'] ?? data['mobileno'] ?? data['phone'] ?? '')
               .toString();
@@ -1673,7 +1833,6 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
           (data['callcode'] ?? data['call_code'] ?? data['callingcode'] ?? '')
               .toString();
 
-      // ✅ FIX: gender mapping
       final g = (data['gender'] ?? '').toString().toUpperCase();
       if (g == 'F' || g == 'FEMALE') {
         _gender = 'Female';
@@ -1689,7 +1848,6 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
           ? data['title'].toString()
           : null;
     } else if (prog == 'ROLE-CRT') {
-      // ✅ FIX: single correct ROLE-CRT block (removed duplicate)
       _rScdCtrl.text =
           (data['accesscd'] ?? data['access_cd'] ?? data['rolecd'] ?? '')
               .toString();
@@ -1745,7 +1903,6 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
           (data['programid'] ?? data['program_id'] ?? data['pgmcd'] ?? '')
               .toString();
 
-      // ✅ FIX: bool helper that handles int 1, string '1', and true
       bool parseBool(String key) {
         final variants = [
           key.toLowerCase(),
@@ -1953,18 +2110,62 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                           widget.onChanged('orgCode', int.tryParse(v) ?? 50),
                 ),
               ),
+
+              // ── BRANCH CODE DROPDOWN (NEW) ─────────────────────────────────
               AmsField(
                 label: 'Branch Code',
                 labelAbove: true,
                 tooltip: 'Associated branch code for the user.',
-                child: AmsTextInput(
-                  controller: _uBranchCdCtrl,
-                  readOnly: widget.isViewMode,
-                  placeholder: 'Branch CD',
-                  textInputAction: TextInputAction.next,
-                  onChanged: (v) => widget.onChanged('branchCd', v),
-                ),
+                child: widget.isViewMode
+                    ? AmsTextInput(
+                        controller: _uBranchCdCtrl,
+                        readOnly: true,
+                        placeholder: 'Branch CD',
+                      )
+                    : _loadingBranches
+                        ? const LinearProgressIndicator()
+                        : AmsDropdown(
+                            initialValue: () {
+                              if (_branchList.isEmpty) return null;
+                              final seek = _uBranchCdCtrl.text;
+                              if (seek.isEmpty) return null;
+                              final matches = _branchList.where((b) =>
+                                  (b['brnCd'] ??
+                                          b['branchcd'] ??
+                                          b['brncd'] ??
+                                          '')
+                                      .toString() ==
+                                  seek);
+                              if (matches.isEmpty) return null;
+                              final b = matches.first;
+                              return '${b['brnCd'] ?? b['branchcd'] ?? ''} - ${b['brnName'] ?? b['branchname'] ?? ''}';
+                            }(),
+                            placeholder: 'Select Branch',
+                            items: _branchList
+                                .map((b) {
+                                  final cd = b['brnCd'] ??
+                                      b['branchcd'] ??
+                                      b['brncd'] ??
+                                      '';
+                                  final name = b['brnName'] ??
+                                      b['branchname'] ??
+                                      b['brnname'] ??
+                                      '';
+                                  return '$cd - $name';
+                                })
+                                .toSet()
+                                .toList(),
+                            onChanged: (v) {
+                              final parts = v?.split(' - ') ?? [];
+                              final val = parts.isNotEmpty ? parts[0] : '';
+                              setState(() => _uBranchCdCtrl.text = val);
+                              widget.onChanged(
+                                  'branchCd', int.tryParse(val) ?? val);
+                            },
+                          ),
               ),
+              // ─────────────────────────────────────────────────────────────
+
               AmsField(
                 label: 'UserCD',
                 required: true,
@@ -2164,9 +2365,13 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                         readOnly: true,
                       )
                     : AmsDropdown(
-                        initialValue: _countryCtrl.text.isNotEmpty ? _countryCtrl.text : null,
+                        initialValue: _countryCtrl.text.isNotEmpty
+                            ? _countryCtrl.text
+                            : null,
                         placeholder: 'Select Country',
-                        items: _kAllCountries.entries.map((e) => "${e.key}, ${e.value}").toList(),
+                        items: _kAllCountries.entries
+                            .map((e) => "${e.key}, ${e.value}")
+                            .toList(),
                         onChanged: (v) {
                           if (v == null) return;
                           final parts = v.split(', ');
@@ -2247,19 +2452,24 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                 tooltip: 'Current status (1: Active, 0: Inactive).',
                 child: StatefulBuilder(
                   builder: (context, setFieldState) {
-                    final bool isActive = _uStatusCtrl.text.isEmpty || _uStatusCtrl.text == '1';
+                    final bool isActive =
+                        _uStatusCtrl.text.isEmpty || _uStatusCtrl.text == '1';
                     return Container(
                       height: 44,
                       alignment: Alignment.centerLeft,
                       child: GestureDetector(
-                        onTap: widget.isViewMode ? null : () {
-                          setFieldState(() {
-                            _uStatusCtrl.text = isActive ? '0' : '1';
-                          });
-                          widget.onChanged('status', isActive ? 0 : 1);
-                        },
+                        onTap: widget.isViewMode
+                            ? null
+                            : () {
+                                setFieldState(() {
+                                  _uStatusCtrl.text = isActive ? '0' : '1';
+                                });
+                                widget.onChanged('status', isActive ? 0 : 1);
+                              },
                         child: MouseRegion(
-                          cursor: widget.isViewMode ? SystemMouseCursors.basic : SystemMouseCursors.click,
+                          cursor: widget.isViewMode
+                              ? SystemMouseCursors.basic
+                              : SystemMouseCursors.click,
                           child: AnimatedContainer(
                             duration: const Duration(milliseconds: 250),
                             curve: Curves.easeInOut,
@@ -2267,19 +2477,26 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                             height: 28,
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(20),
-                              color: isActive ? AppColors.tBlue : const Color(0xFFE2E8F0),
+                              color: isActive
+                                  ? AppColors.tBlue
+                                  : const Color(0xFFE2E8F0),
                             ),
                             child: Stack(
                               children: [
                                 Align(
-                                  alignment: isActive ? Alignment.centerLeft : Alignment.centerRight,
+                                  alignment: isActive
+                                      ? Alignment.centerLeft
+                                      : Alignment.centerRight,
                                   child: Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 10.0),
                                     child: Text(
                                       isActive ? 'Yes' : 'No',
                                       style: bodyStyle(
                                         size: 11,
-                                        color: isActive ? Colors.white : AppColors.ink3,
+                                        color: isActive
+                                            ? Colors.white
+                                            : AppColors.ink3,
                                         weight: FontWeight.bold,
                                       ),
                                     ),
@@ -2288,7 +2505,9 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                                 AnimatedAlign(
                                   duration: const Duration(milliseconds: 250),
                                   curve: Curves.easeInOut,
-                                  alignment: isActive ? Alignment.centerRight : Alignment.centerLeft,
+                                  alignment: isActive
+                                      ? Alignment.centerRight
+                                      : Alignment.centerLeft,
                                   child: Padding(
                                     padding: const EdgeInsets.all(3.0),
                                     child: Container(
@@ -2554,7 +2773,6 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                   onChanged: (v) => widget.onChanged('accessSubType', v),
                 ),
               ),
-              // ✅ FIX: correct bool check for toggle initial values
               _AccessToggleGroup(
                 initialViewAccess: data['viewaccess'] == 1 ||
                     data['viewaccess'] == '1' ||

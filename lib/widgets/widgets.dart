@@ -1449,6 +1449,8 @@ class AmsSubSidebarItem extends StatelessWidget {
   final VoidCallback onTap;
   final IconData? icon;
   final bool isCollapsed;
+  final int indentLevel;
+  final IconData? trailingIcon;
 
   const AmsSubSidebarItem({
     super.key,
@@ -1457,6 +1459,8 @@ class AmsSubSidebarItem extends StatelessWidget {
     required this.onTap,
     this.icon,
     this.isCollapsed = false,
+    this.indentLevel = 0,
+    this.trailingIcon,
   });
 
   @override
@@ -1468,7 +1472,10 @@ class AmsSubSidebarItem extends StatelessWidget {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           margin: EdgeInsets.only(
-              left: isCollapsed ? 6 : 30, right: 0, top: 1, bottom: 1),
+              left: isCollapsed ? 6 : 30 + (indentLevel * 18),
+              right: 0,
+              top: 1,
+              bottom: 1),
           padding: EdgeInsets.symmetric(
               horizontal: isCollapsed ? 8 : 16, vertical: 10),
           decoration: BoxDecoration(
@@ -1513,6 +1520,14 @@ class AmsSubSidebarItem extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
+                      if (trailingIcon != null) ...[
+                        const SizedBox(width: 4),
+                        Icon(
+                          trailingIcon,
+                          size: 16,
+                          color: isSelected ? Colors.white : Colors.white70,
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -1545,6 +1560,7 @@ class AmsSidebar extends StatefulWidget {
 
 class _AmsSidebarState extends State<AmsSidebar> {
   String openMenu = ''; // 'masters', 'gl', 'config', 'auth'
+  bool openGlSubCategory = false;
 
   @override
   void initState() {
@@ -1562,9 +1578,18 @@ class _AmsSidebarState extends State<AmsSidebar> {
       'BRN-CRT'
     ].contains(widget.selectedProg)) {
       openMenu = 'masters';
-    } else if (['GL-CAT', 'GL-MST', 'GL-CUR', 'GL-BRN', 'GL-SEG', 'GL-ATT']
-        .contains(widget.selectedProg)) {
+    } else if ([
+      'GL-CAT',
+      'GL-MST',
+      'GL-SUB',
+      'GL-CUR',
+      'GL-BRN',
+      'GL-SEG',
+      'GL-ATT'
+    ].contains(widget.selectedProg)) {
       openMenu = 'gl';
+      openGlSubCategory = ['GL-SUB', 'GL-CUR', 'GL-BRN', 'GL-SEG', 'GL-ATT']
+          .contains(widget.selectedProg);
     } else if (['AUTHCTL'].contains(widget.selectedProg)) {
       openMenu = 'config';
     } else if (widget.currentScreen == 'nontranauth') {
@@ -1677,7 +1702,7 @@ class _AmsSidebarState extends State<AmsSidebar> {
                     isSelected: widget.selectedProg == 'MOD-CRT',
                     onTap: () => widget.onNavigate('nontran', 'MOD-CRT'),
                   ),
-                   AmsSubSidebarItem(
+                  AmsSubSidebarItem(
                     label: 'Program',
                     isCollapsed: widget.isCollapsed,
                     icon: Icons.app_settings_alt_rounded,
@@ -1728,33 +1753,59 @@ class _AmsSidebarState extends State<AmsSidebar> {
                     onTap: () => widget.onNavigate('nontran', 'GL-MST'),
                   ),
                   AmsSubSidebarItem(
-                    label: 'Allowed Currency',
+                    label: 'Configuration',
                     isCollapsed: widget.isCollapsed,
-                    icon: Icons.currency_exchange_rounded,
-                    isSelected: widget.selectedProg == 'GL-CUR',
-                    onTap: () => widget.onNavigate('nontran', 'GL-CUR'),
+                    icon: Icons.folder_open_rounded,
+                    isSelected: [
+                      'GL-SUB',
+                      'GL-CUR',
+                      'GL-BRN',
+                      'GL-SEG',
+                      'GL-ATT'
+                    ].contains(widget.selectedProg),
+                    trailingIcon: openGlSubCategory
+                        ? Icons.keyboard_arrow_down_rounded
+                        : Icons.keyboard_arrow_right_rounded,
+                    onTap: () {
+                      setState(() {
+                        openGlSubCategory = !openGlSubCategory;
+                      });
+                    },
                   ),
-                  AmsSubSidebarItem(
-                    label: 'Allowed Branch',
-                    isCollapsed: widget.isCollapsed,
-                    icon: Icons.store_rounded,
-                    isSelected: widget.selectedProg == 'GL-BRN',
-                    onTap: () => widget.onNavigate('nontran', 'GL-BRN'),
-                  ),
-                  AmsSubSidebarItem(
-                    label: 'GL Segments',
-                    isCollapsed: widget.isCollapsed,
-                    icon: Icons.pie_chart_rounded,
-                    isSelected: widget.selectedProg == 'GL-SEG',
-                    onTap: () => widget.onNavigate('nontran', 'GL-SEG'),
-                  ),
-                  AmsSubSidebarItem(
-                    label: 'GL Attributes',
-                    isCollapsed: widget.isCollapsed,
-                    icon: Icons.tune_rounded,
-                    isSelected: widget.selectedProg == 'GL-ATT',
-                    onTap: () => widget.onNavigate('nontran', 'GL-ATT'),
-                  ),
+                  if (openGlSubCategory) ...[
+                    AmsSubSidebarItem(
+                      label: 'Allowed Currency',
+                      isCollapsed: widget.isCollapsed,
+                      icon: Icons.currency_exchange_rounded,
+                      indentLevel: 1,
+                      isSelected: widget.selectedProg == 'GL-CUR',
+                      onTap: () => widget.onNavigate('nontran', 'GL-CUR'),
+                    ),
+                    AmsSubSidebarItem(
+                      label: 'Allowed Branch',
+                      isCollapsed: widget.isCollapsed,
+                      icon: Icons.location_city_rounded,
+                      indentLevel: 1,
+                      isSelected: widget.selectedProg == 'GL-BRN',
+                      onTap: () => widget.onNavigate('nontran', 'GL-BRN'),
+                    ),
+                    AmsSubSidebarItem(
+                      label: 'GL Segments',
+                      isCollapsed: widget.isCollapsed,
+                      icon: Icons.segment_rounded,
+                      indentLevel: 1,
+                      isSelected: widget.selectedProg == 'GL-SEG',
+                      onTap: () => widget.onNavigate('nontran', 'GL-SEG'),
+                    ),
+                    AmsSubSidebarItem(
+                      label: 'GL Attributes',
+                      isCollapsed: widget.isCollapsed,
+                      icon: Icons.settings_input_component_rounded,
+                      indentLevel: 1,
+                      isSelected: widget.selectedProg == 'GL-ATT',
+                      onTap: () => widget.onNavigate('nontran', 'GL-ATT'),
+                    ),
+                  ],
                 ],
 
                 const SizedBox(height: 16),
@@ -2199,23 +2250,23 @@ class _PremiumAppLauncherState extends State<_PremiumAppLauncher> {
   /// Pick an icon based on the product name
   IconData _makeIcon(String title) {
     final t = title.toLowerCase();
-    if (t.contains('connect'))   return Icons.connect_without_contact_outlined;
-    if (t.contains('ticket'))    return Icons.confirmation_number_outlined;
-    if (t.contains('hr'))        return Icons.people_alt_outlined;
-    if (t.contains('crm'))       return Icons.handshake_outlined;
-    if (t.contains('payroll'))   return Icons.payments_outlined;
-    if (t.contains('test'))      return Icons.science_outlined;
-    if (t.contains('project'))   return Icons.rocket_launch_outlined;
+    if (t.contains('connect')) return Icons.connect_without_contact_outlined;
+    if (t.contains('ticket')) return Icons.confirmation_number_outlined;
+    if (t.contains('hr')) return Icons.people_alt_outlined;
+    if (t.contains('crm')) return Icons.handshake_outlined;
+    if (t.contains('payroll')) return Icons.payments_outlined;
+    if (t.contains('test')) return Icons.science_outlined;
+    if (t.contains('project')) return Icons.rocket_launch_outlined;
     if (t.contains('am') || t.contains('access'))
-                                 return Icons.admin_panel_settings_outlined;
-    if (t.contains('payment'))   return Icons.account_balance_wallet_outlined;
+      return Icons.admin_panel_settings_outlined;
+    if (t.contains('payment')) return Icons.account_balance_wallet_outlined;
     if (t.contains('dashboard')) return Icons.dashboard_customize_outlined;
-    if (t.contains('product'))   return Icons.widgets_outlined;
-    if (t.contains('user'))      return Icons.person_outline;
-    if (t.contains('lock'))      return Icons.lock_outline;
+    if (t.contains('product')) return Icons.widgets_outlined;
+    if (t.contains('user')) return Icons.person_outline;
+    if (t.contains('lock')) return Icons.lock_outline;
     if (t.contains('org') || t.contains('organization'))
-                                 return Icons.apartment_outlined;
-    if (t.contains('finance'))   return Icons.account_balance_outlined;
+      return Icons.apartment_outlined;
+    if (t.contains('finance')) return Icons.account_balance_outlined;
     return Icons.apps;
   }
 
@@ -2223,7 +2274,7 @@ class _PremiumAppLauncherState extends State<_PremiumAppLauncher> {
   List<Map<String, dynamic>> _loadProducts() {
     try {
       final raw = html.window.sessionStorage['user_data'] ??
-                  html.window.sessionStorage['flutter.user_data'];
+          html.window.sessionStorage['flutter.user_data'];
       if (raw == null) return [];
       final data = jsonDecode(raw) as Map<String, dynamic>;
       final prods = data['products'];
@@ -2235,12 +2286,13 @@ class _PremiumAppLauncherState extends State<_PremiumAppLauncher> {
       for (final item in prods) {
         if (item is! Map) continue;
         final p = Map<String, dynamic>.from(item);
-        final name    = (p['prodname']  ?? p['name'] ?? '').toString().toLowerCase();
-        final homeUrl = (p['homeUrl']   ?? p['url']  ?? '').toString();
-        final code    = (p['prodcode']  ?? '').toString();
-        if (name.contains('finance')) continue;     // skip current app
+        final name =
+            (p['prodname'] ?? p['name'] ?? '').toString().toLowerCase();
+        final homeUrl = (p['homeUrl'] ?? p['url'] ?? '').toString();
+        final code = (p['prodcode'] ?? '').toString();
+        if (name.contains('finance')) continue; // skip current app
         final key = '$code|$homeUrl';
-        if (seen.contains(key)) continue;           // skip duplicates
+        if (seen.contains(key)) continue; // skip duplicates
         seen.add(key);
         result.add(p);
       }
@@ -2254,10 +2306,10 @@ class _PremiumAppLauncherState extends State<_PremiumAppLauncher> {
   /// Navigate to homeUrl appending the mother token
   void _navigate(String homeUrl) {
     if (homeUrl.isEmpty) return;
-    final motherToken =
-        (html.window.sessionStorage['mother_token'] ??
-         html.window.sessionStorage['flutter.mother_token'] ?? '')
-            .replaceAll('"', '');
+    final motherToken = (html.window.sessionStorage['mother_token'] ??
+            html.window.sessionStorage['flutter.mother_token'] ??
+            '')
+        .replaceAll('"', '');
     final url = motherToken.isEmpty ? homeUrl : '$homeUrl?token=$motherToken';
     html.window.open(url, '_blank');
   }
@@ -2271,7 +2323,7 @@ class _PremiumAppLauncherState extends State<_PremiumAppLauncher> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: MouseRegion(
         onEnter: (_) => setState(() => _hover = true),
-        onExit:  (_) => setState(() => _hover = false),
+        onExit: (_) => setState(() => _hover = false),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 150),
           padding: const EdgeInsets.all(8),
@@ -2307,13 +2359,15 @@ class _PremiumAppLauncherState extends State<_PremiumAppLauncher> {
                       spacing: 8,
                       runSpacing: 8,
                       children: products.map((p) {
-                        final name    = (p['prodname'] ?? p['name'] ?? 'App').toString();
-                        final homeUrl = (p['homeUrl']  ?? p['url']  ?? '').toString();
-                        final icon    = _makeIcon(name);
+                        final name =
+                            (p['prodname'] ?? p['name'] ?? 'App').toString();
+                        final homeUrl =
+                            (p['homeUrl'] ?? p['url'] ?? '').toString();
+                        final icon = _makeIcon(name);
                         return _AppTile(
-                          icon:     icon,
-                          label:    name,
-                          onTap:    () => _navigate(homeUrl),
+                          icon: icon,
+                          label: name,
+                          onTap: () => _navigate(homeUrl),
                         );
                       }).toList(),
                     ),
@@ -2328,7 +2382,7 @@ class _PremiumAppLauncherState extends State<_PremiumAppLauncher> {
 // ── Single tile inside the nine-dots popup ────────────────────
 class _AppTile extends StatefulWidget {
   final IconData icon;
-  final String   label;
+  final String label;
   final VoidCallback onTap;
   const _AppTile({
     required this.icon,
@@ -2347,7 +2401,7 @@ class _AppTileState extends State<_AppTile> {
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _hovered = true),
-      onExit:  (_) => setState(() => _hovered = false),
+      onExit: (_) => setState(() => _hovered = false),
       child: GestureDetector(
         onTap: widget.onTap,
         child: AnimatedContainer(

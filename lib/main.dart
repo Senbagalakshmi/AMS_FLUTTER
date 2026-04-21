@@ -607,7 +607,18 @@ class _AmsRootState extends State<AmsRoot> {
               metric = '$count Cat';
             else if (item.programId == 'GL-MST')
               metric = '$count Mast';
-            else if (item.programId == 'GL-CUR')
+            else if (item.programId == 'GL-SUB')
+              metric = '4 Modules';
+            
+            return item.copyWith(metric: metric);
+          }).toList();
+        } else if (cat == 'GL-SUB') {
+          title = 'Sub Category';
+          items = glSubCategorySubmenus.map((item) {
+            final count = _state.counts[item.programId] ?? 0;
+            String metric = item.metric ?? '';
+
+            if (item.programId == 'GL-CUR')
               metric = '$count Cur';
             else if (item.programId == 'GL-BRN')
               metric = '$count Br';
@@ -640,13 +651,8 @@ class _AmsRootState extends State<AmsRoot> {
                 metric = '$count Cat';
               else if (item.programId == 'GL-MST')
                 metric = '$count Mast';
-              else if (item.programId == 'GL-CUR')
-                metric = '$count Cur';
-              else if (item.programId == 'GL-BRN')
-                metric = '$count Br';
-              else if (item.programId == 'GL-SEG')
-                metric = '$count Seg';
-              else if (item.programId == 'GL-ATT') metric = '$count Attr';
+              else if (item.programId == 'GL-SUB')
+                metric = '4 Modules';
 
               return item.copyWith(metric: metric);
             }).toList(),
