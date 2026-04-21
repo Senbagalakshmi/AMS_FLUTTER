@@ -122,7 +122,7 @@ class _GlDashboardScreenState extends State<GlDashboardScreen> with SingleTicker
     return Container(
       color: Colors.white,
       padding: const EdgeInsets.symmetric(horizontal: 20),
-      height: 44, // Explicit height to reduce space
+      height: 60, // Increased to match _TabItem height
       child: Row(
         children: [
           _TabItem(
@@ -190,19 +190,11 @@ class _GlDashboardScreenState extends State<GlDashboardScreen> with SingleTicker
               )),
               const SizedBox(width: 16),
               Expanded(child: _SummaryCard3D(
-                title: 'Currencies',
-                value: (140 + (safeIndex * 5)).toString(),
-                icon: Icons.currency_exchange_rounded,
-                color: const Color(0xFFF59E0B),
-                delay: 0.2,
-              )),
-              const SizedBox(width: 16),
-              Expanded(child: _SummaryCard3D(
                 title: 'Branches',
                 value: (8 + (safeIndex % 4)).toString(),
                 icon: Icons.business_rounded,
                 color: const Color(0xFFEF4444),
-                delay: 0.3,
+                delay: 0.2,
               )),
             ],
           ),
@@ -216,7 +208,7 @@ class _GlDashboardScreenState extends State<GlDashboardScreen> with SingleTicker
               Expanded(
                 child: _ChartFrame(
                   title: 'Ledger Composition: ${selectedItem.label}',
-                  child: _ModernPieChart(items: widget.items, type: PieType.distribution, seed: safeIndex),
+                  child: _ModernPieChart(items: widget.items, type: PieType.distribution, seed: safeIndex.abs()),
                 ),
               ),
               const SizedBox(width: 20),
@@ -224,7 +216,7 @@ class _GlDashboardScreenState extends State<GlDashboardScreen> with SingleTicker
               Expanded(
                 child: _ChartFrame(
                   title: 'Authorization Integrity: ${selectedItem.label}',
-                  child: _ModernPieChart(items: widget.items, type: PieType.authorization, seed: safeIndex + 10),
+                  child: _ModernPieChart(items: widget.items, type: PieType.authorization, seed: (safeIndex + 10).abs()),
                 ),
               ),
             ],
@@ -501,7 +493,7 @@ class _SummaryCard3DState extends State<_SummaryCard3D> {
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [Colors.white, _isHovered ? widget.color.withValues(alpha: 0.05) : Colors.white],
+                      colors: [Colors.white, _isHovered ? widget.color.withOpacity(0.05) : Colors.white],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
@@ -509,7 +501,7 @@ class _SummaryCard3DState extends State<_SummaryCard3D> {
                     border: Border.all(color: _isHovered ? widget.color : AppColors.border, width: _isHovered ? 2 : 1),
                     boxShadow: [
                       BoxShadow(
-                        color: _isHovered ? widget.color.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.03),
+                        color: _isHovered ? widget.color.withOpacity(0.1) : Colors.black.withOpacity(0.03),
                         blurRadius: _isHovered ? 20 : 10,
                         offset: Offset(0, _isHovered ? 12 : 5),
                       ),
@@ -520,19 +512,21 @@ class _SummaryCard3DState extends State<_SummaryCard3D> {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: widget.color.withValues(alpha: 0.1),
+                          color: widget.color.withOpacity(0.1),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(widget.icon, color: widget.color, size: 28),
                       ),
                       const SizedBox(width: 16),
-                      Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(widget.title, style: bodyStyle(size: 13, color: AppColors.ink2, weight: FontWeight.w600)),
-                          Text(widget.value, style: bodyStyle(size: 24, weight: FontWeight.w900, color: AppColors.ink)),
-                        ],
+                      Expanded(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(widget.title, style: bodyStyle(size: 13, color: AppColors.ink2, weight: FontWeight.w600), overflow: TextOverflow.ellipsis),
+                            Text(widget.value, style: bodyStyle(size: 24, weight: FontWeight.w900, color: AppColors.ink)),
+                          ],
+                        ),
                       ),
                     ],
                   ),
@@ -590,9 +584,9 @@ class _ModernPieChartState extends State<_ModernPieChart> {
                     });
                   },
                 ),
-                sectionsSpace: 8,
-                centerSpaceRadius: 70,
-                startDegreeOffset: -90,
+                sectionsSpace: 8.0,
+                centerSpaceRadius: 70.0,
+                startDegreeOffset: -90.0,
                 sections: isDist ? _getDistSections() : _getAuthSections(),
               ),
             ),
@@ -612,20 +606,20 @@ class _ModernPieChartState extends State<_ModernPieChart> {
   List<PieChartSectionData> _getDistSections() {
     final s = widget.seed;
     return [
-      _pieSection(0, 35.0 + (s % 12), 'Income', const Color(0xFF10B981), Icons.trending_up_rounded),
-      _pieSection(1, 25.0 - (s % 8), 'Asset', const Color(0xFF6366F1), Icons.account_balance_rounded),
-      _pieSection(2, 25.0 + (s % 5), 'Liability', const Color(0xFFF59E0B), Icons.account_balance_wallet_rounded),
-      _pieSection(3, 15.0 - (s % 3), 'Expense', const Color(0xFFEF4444), Icons.trending_down_rounded),
+      _pieSection(0, 35.0 + (s % 12), 'Income', const Color(0xFF34D399), Icons.trending_up_rounded), // Lighter Green
+      _pieSection(1, 25.0 - (s % 8), 'Asset', const Color(0xFF818CF8), Icons.account_balance_rounded), // Lighter Indigo
+      _pieSection(2, 25.0 + (s % 5), 'Liability', const Color(0xFFFBBF24), Icons.account_balance_wallet_rounded), // Lighter Amber
+      _pieSection(3, 15.0 - (s % 3), 'Expense', const Color(0xFFFB7185), Icons.trending_down_rounded), // Lighter Rose/Red
     ];
   }
 
   List<PieChartSectionData> _getAuthSections() {
     final s = widget.seed;
     return [
-      _pieSection(0, 40.0 - (s % 10), 'Approver', const Color(0xFF8B5CF6), Icons.verified_user_rounded), // Purple
-      _pieSection(1, 30.0 + (s % 5), 'Checker', const Color(0xFFFDAB3D), Icons.fact_check_rounded),
-      _pieSection(2, 20.0 + (s % 8), 'Maker', const Color(0xFF0EA5E9), Icons.edit_note_rounded), // Sky Blue
-      _pieSection(3, 10.0, 'Posted', const Color(0xFFEC4899), Icons.cloud_done_rounded),
+      _pieSection(0, 40.0 - (s % 10), 'Approver', const Color(0xFF818CF8), Icons.verified_user_rounded), // Lighter Purple
+      _pieSection(1, 30.0 + (s % 5), 'Checker', const Color(0xFFFDBA74), Icons.fact_check_rounded), // Lighter Orange
+      _pieSection(2, 20.0 + (s % 8), 'Maker', const Color(0xFF38BDF8), Icons.edit_note_rounded), // Lighter Sky Blue
+      _pieSection(3, 10.0, 'Posted', const Color(0xFFF472B6), Icons.cloud_done_rounded), // Lighter Pink
     ];
   }
 
@@ -661,12 +655,12 @@ class _PieBadge extends StatelessWidget {
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
-            color: color.withValues(alpha: isTouched ? 0.5 : 0.3), 
+            color: color.withOpacity(isTouched ? 0.5 : 0.3), 
             blurRadius: isTouched ? 20 : 12, 
             spreadRadius: isTouched ? 4 : 2
           ),
         ],
-        border: Border.all(color: color.withValues(alpha: isTouched ? 0.8 : 0.5), width: isTouched ? 2 : 1),
+        border: Border.all(color: color.withOpacity(isTouched ? 0.8 : 0.5), width: isTouched ? 2 : 1),
       ),
       child: Icon(icon, color: color, size: isTouched ? 20 : 16),
     );
@@ -693,10 +687,10 @@ class _ScenarioAuthorizationPipeline extends StatelessWidget {
             margin: const EdgeInsets.only(bottom: 24),
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: isSelected ? Colors.white : AppColors.bg.withValues(alpha: 0.5),
+              color: isSelected ? Colors.white : AppColors.bg.withOpacity(0.5),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: AppColors.border.withValues(alpha: 0.5), width: 1),
-              boxShadow: isSelected ? [BoxShadow(color: AppColors.tBlue.withValues(alpha: 0.05), blurRadius: 20, offset: const Offset(0, 10))] : [],
+              border: Border.all(color: AppColors.border.withOpacity(0.5), width: 1),
+              boxShadow: isSelected ? [BoxShadow(color: AppColors.tBlue.withOpacity(0.05), blurRadius: 20, offset: const Offset(0, 10))] : [],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

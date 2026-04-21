@@ -407,9 +407,9 @@ class ApiService {
 
   Future<bool> createRole(Map<String, dynamic> data) async {
     try {
-      // if (data['isUpdate'] == true || data.containsKey('accessCd')) {
-      //   return updateRole(data);
-      // }
+      if (data['isUpdate'] == true || data.containsKey('accessCd')) {
+        return updateRole(data);
+      }
       final res = await http.post(
         Uri.parse('$baseUrl/access'),
         headers: _headers,

@@ -5,6 +5,8 @@ import '../models/models.dart';
 import 'nontran_entry_screen.dart';
 import 'gl_category_screen.dart';
 import 'gl_master_screen.dart';
+import 'organisation_screen.dart';
+import 'program_master_screen.dart';
 
 class NonTranAuthScreen extends StatefulWidget {
   final List<AuthRecord> authQueue;
@@ -394,6 +396,18 @@ class _NonTranAuthScreenState extends State<NonTranAuthScreen> {
                                 isViewMode: true,
                                 onChanged: (k, v) {},
                                 categoryList: const [],
+                              );
+                            } else if (record.programId == 'ORG-CRT') {
+                              return OrganisationFields(
+                                isViewMode: true,
+                                initialData: block.data,
+                                onChanged: (k, v) {},
+                              );
+                            } else if (record.programId == 'PRM_CRT' || record.programId == 'PROG-CRT') {
+                              return ProgramMasterFields(
+                                isViewMode: true,
+                                initialData: block.data,
+                                onChanged: (k, v) {},
                               );
                             }
                             return Column(

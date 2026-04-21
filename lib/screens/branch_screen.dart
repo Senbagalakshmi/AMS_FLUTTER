@@ -272,7 +272,9 @@ class _BranchScreenState extends State<BranchScreen> {
     );
 
     if (ok == true) {
-      final success = await branchApiService.deleteBranch(cd);
+      final orgCode = b['orgCode'] ?? b['orgcode'] ?? 50;
+      final success = await branchApiService.deleteBranch(
+          orgCode is int ? orgCode : 50, cd);
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Branch deleted successfully')),

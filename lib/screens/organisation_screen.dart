@@ -676,54 +676,30 @@ class _OrganisationScreenState extends State<OrganisationScreen> {
           ),
           Expanded(
               child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(32),
-                  child: AmsFormGrid(cols: 2, children: [
-                    _field('Organisation Code*', _orgCodeCtrl,
-                        isNum: true,
-                        mandatory: true,
-                        errorText: _orgCodeError,
-                        onChanged: (v) => setState(() => _orgCodeError = null)),
-                    _field('Organisation Name*', _nameCtrl,
-                        mandatory: true,
-                        errorText: _orgNameError,
-                        onChanged: (v) => setState(() => _orgNameError = null)),
-                    _buildPickerField('Open Date', _openDateCtrl, _selectDate,
-                        Icons.calendar_today_rounded),
-                    _buildPickerField('Country', _countryCtrl, _selectCountry,
-                        Icons.public_rounded),
-                    _buildPickerField('State Code', _stateCtrl, _selectState,
-                        Icons.map_rounded),
-                    _buildPickerField('District Code', _districtCtrl,
-                        _selectDistrict, Icons.location_city_rounded),
-                    _field('Pincode', _pincodeCtrl, enabled: false),
-                    _field('Email Address', _emailCtrl,
-                        errorText: _emailError,
-                        onChanged: (v) => setState(() => _emailError = null)),
-                    _field('Telephone', _phoneCtrl, icon: Icons.phone_rounded),
-                    _field('Address Line 1', _addr1Ctrl),
-                    _field('Address Line 2', _addr2Ctrl),
-                    _field('Address Line 3', _addr3Ctrl),
-                  ]))),
+                  padding: const EdgeInsets.all(0),
+                  child: OrganisationFields(
+                    isViewMode: _isViewOnly,
+                    initialData: _isEditMode || _isViewOnly ? _organisations.firstWhere((o) => (o['orgcode'] ?? o['orgCode'])?.toString() == _orgCodeCtrl.text, orElse: () => {}) : null,
+                    onChanged: (k, v) {
+                      // Sync from Fields widgets to screen controllers for save logic
+                      if (k == 'orgCode') _orgCodeCtrl.text = v.toString();
+                      if (k == 'name') _nameCtrl.text = v.toString();
+                      if (k == 'email') _emailCtrl.text = v.toString();
+                      if (k == 'openDate') _openDateCtrl.text = v.toString();
+                      if (k == 'country') _countryCtrl.text = v.toString();
+                      if (k == 'state') _stateCtrl.text = v.toString();
+                      if (k == 'district') _districtCtrl.text = v.toString();
+                      if (k == 'pincode') _pincodeCtrl.text = v.toString();
+                      if (k == 'addrline1') _addr1Ctrl.text = v.toString();
+                      if (k == 'addrline2') _addr2Ctrl.text = v.toString();
+                      if (k == 'addrline3') _addr3Ctrl.text = v.toString();
+                      if (k == 'telephone') _phoneCtrl.text = v.toString();
+                    },
+                  ))),
           _buildEntryFooter(),
         ],
       ),
     );
-  }
-
-  Widget _buildPickerField(String label, TextEditingController ctrl,
-      VoidCallback onTap, IconData icon) {
-    return AmsField(
-        label: label,
-        labelAbove: true,
-        child: GestureDetector(
-            onTap: onTap,
-            child: AbsorbPointer(
-                child: AmsTextInput(
-                    controller: ctrl,
-                    readOnly: _isViewOnly,
-                    placeholder: 'Select $label',
-                    borderColor: AppColors.tBlue,
-                    icon: icon))));
   }
 
   Widget _buildEntryFooter() {
@@ -772,32 +748,15 @@ class _OrganisationScreenState extends State<OrganisationScreen> {
           icon: Icons.close_rounded,
           onPressed: () => setState(() => _showForm = false),
         ),
-      ],
+      ] else ...[
+        AmsButton(
+          label: 'Back to List',
+          variant: AmsButtonVariant.outline,
+          icon: Icons.arrow_back_rounded,
+          onPressed: () => setState(() => _showForm = false),
+        ),
+      ]
     ]);
-  }
-
-  Widget _field(String label, TextEditingController ctrl,
-      {bool isNum = false,
-      bool mandatory = false,
-      bool enabled = true,
-      String? errorText,
-      IconData? icon,
-      void Function(String)? onChanged}) {
-    return AmsField(
-        label: label,
-        labelAbove: true,
-        required: mandatory,
-        child: AmsTextInput(
-            controller: ctrl,
-            readOnly: _isViewOnly || !enabled,
-            placeholder: enabled
-                ? 'Enter ${label.replaceAll('*', '')}'
-                : 'Auto-populated',
-            borderColor: AppColors.tBlue,
-            keyboardType: isNum ? TextInputType.number : TextInputType.text,
-            errorText: errorText,
-            icon: icon,
-            onChanged: onChanged));
   }
 
   Widget _actionIcon(
@@ -815,7 +774,265 @@ class _OrganisationScreenState extends State<OrganisationScreen> {
                 border: Border.all(color: AppColors.border)),
             child: Icon(icon, size: 16, color: color)));
   }
+}
 
+class OrganisationFields extends StatefulWidget {
+  final bool isViewMode;
+  final Map<String, dynamic>? initialData;
+  final void Function(String, dynamic) onChanged;
+
+  const OrganisationFields({
+    super.key,
+    required this.isViewMode,
+    this.initialData,
+    required this.onChanged,
+  });
+
+  @override
+  State<OrganisationFields> createState() => OrganisationFieldsState();
+}
+
+class OrganisationFieldsState extends State<OrganisationFields> {
+  final _orgCodeCtrl = TextEditingController();
+  final _nameCtrl = TextEditingController();
+  final _openDateCtrl = TextEditingController();
+  final _countryCtrl = TextEditingController();
+  final _stateCtrl = TextEditingController();
+  final _districtCtrl = TextEditingController();
+  final _pincodeCtrl = TextEditingController();
+  final _addr1Ctrl = TextEditingController();
+  final _addr2Ctrl = TextEditingController();
+  final _addr3Ctrl = TextEditingController();
+  final _phoneCtrl = TextEditingController();
+  final _emailCtrl = TextEditingController();
+
+  String? _orgCodeError;
+  String? _orgNameError;
+  String? _emailError;
+
+  static const Map<String, Map<String, String>> _countryInfo = {
+    'India': {'flag': '🇮🇳', 'code': '+91', 'iso': 'IN'},
+    'USA': {'flag': '🇺🇸', 'code': '+1', 'iso': 'US'},
+    'UK': {'flag': '🇬🇧', 'code': '+44', 'iso': 'GB'},
+    'Singapore': {'flag': '🇸🇬', 'code': '+65', 'iso': 'SG'},
+  };
+
+  static const Map<String, List<String>> _countryStates = {
+    'India': ['Tamil Nadu', 'Karnataka', 'Maharashtra', 'Kerala'],
+    'USA': ['New York', 'California', 'Texas'],
+  };
+
+  final Map<String, List<String>> _stateDistricts = {
+    'Tamil Nadu': ['Chennai', 'Coimbatore', 'Madurai', 'Salem', 'Trichy'],
+    'Karnataka': ['Bangalore', 'Mysore', 'Hubli', 'Mangalore'],
+  };
+
+  final Map<String, String> _pincodeMap = {
+    'Chennai': '600001',
+    'Bangalore': '560001',
+  };
+
+  @override
+  void initState() {
+    super.initState();
+    _loadInitialData();
+  }
+
+  @override
+  void didUpdateWidget(OrganisationFields oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialData != oldWidget.initialData) {
+      _loadInitialData();
+    }
+  }
+
+  void _loadInitialData() {
+    if (widget.initialData == null) return;
+    final d = widget.initialData!;
+    _orgCodeCtrl.text = (d['orgcode'] ?? d['orgCode'] ?? '').toString();
+    _nameCtrl.text = (d['name'] ?? d['orgName'] ?? '').toString();
+    
+    String rawDate = (d['openDate'] ?? d['opendate'] ?? '').toString();
+    if (rawDate.isNotEmpty) {
+      try {
+        DateTime dt = DateTime.parse(rawDate.split('T')[0]);
+        _openDateCtrl.text = DateFormat('dd-MM-yyyy').format(dt);
+      } catch (_) {
+        _openDateCtrl.text = rawDate;
+      }
+    }
+
+    String countryCode = (d['country'] ?? '').toString();
+    var match = _countryInfo.entries.where((e) => e.value['iso'] == countryCode);
+    if (match.isNotEmpty) {
+      final info = match.first.value;
+      _countryCtrl.text = "${info['flag']} ${match.first.key}";
+    } else {
+      _countryCtrl.text = countryCode;
+    }
+
+    String div = (d['divisionName'] ?? d['state'] ?? '').toString();
+    if (div.contains(' - ')) {
+      var parts = div.split(' - ');
+      _stateCtrl.text = parts[0];
+      _districtCtrl.text = parts[1];
+    } else {
+      _stateCtrl.text = div;
+      _districtCtrl.text = (d['district'] ?? '').toString();
+    }
+    _pincodeCtrl.text = (d['pincode'] ?? '').toString();
+    _addr1Ctrl.text = (d['addrline1'] ?? '').toString();
+    _addr2Ctrl.text = (d['addrline2'] ?? '').toString();
+    _addr3Ctrl.text = (d['addrline3'] ?? '').toString();
+    _phoneCtrl.text = (d['telephone'] ?? '').toString();
+    _emailCtrl.text = (d['email'] ?? '').toString();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(32),
+      child: AmsFormGrid(cols: 2, children: [
+        _field('Organisation Code*', _orgCodeCtrl,
+            isNum: true,
+            mandatory: true,
+            errorText: _orgCodeError,
+            onChanged: (v) => widget.onChanged('orgCode', v)),
+        _field('Organisation Name*', _nameCtrl,
+            mandatory: true,
+            errorText: _orgNameError,
+            onChanged: (v) => widget.onChanged('name', v)),
+        _buildPickerField('Open Date', _openDateCtrl, _selectDate,
+            Icons.calendar_today_rounded),
+        _buildPickerField('Country', _countryCtrl, _selectCountry,
+            Icons.public_rounded),
+        _buildPickerField('State Code', _stateCtrl, _selectState,
+            Icons.map_rounded),
+        _buildPickerField('District Code', _districtCtrl,
+            _selectDistrict, Icons.location_city_rounded),
+        _field('Pincode', _pincodeCtrl, enabled: false),
+        _field('Email Address', _emailCtrl,
+            errorText: _emailError,
+            onChanged: (v) => widget.onChanged('email', v)),
+        _field('Telephone', _phoneCtrl, icon: Icons.phone_rounded,
+            onChanged: (v) => widget.onChanged('telephone', v)),
+        _field('Address Line 1', _addr1Ctrl,
+            onChanged: (v) => widget.onChanged('addrline1', v)),
+        _field('Address Line 2', _addr2Ctrl,
+            onChanged: (v) => widget.onChanged('addrline2', v)),
+        _field('Address Line 3', _addr3Ctrl,
+            onChanged: (v) => widget.onChanged('addrline3', v)),
+      ]),
+    );
+  }
+
+  Widget _field(String label, TextEditingController ctrl,
+      {bool isNum = false,
+      bool mandatory = false,
+      bool enabled = true,
+      String? errorText,
+      IconData? icon,
+      void Function(String)? onChanged}) {
+    return AmsField(
+        label: label,
+        labelAbove: true,
+        required: mandatory,
+        child: AmsTextInput(
+            controller: ctrl,
+            readOnly: widget.isViewMode || !enabled,
+            placeholder: enabled
+                ? 'Enter ${label.replaceAll('*', '')}'
+                : 'Auto-populated',
+            borderColor: AppColors.tBlue,
+            keyboardType: isNum ? TextInputType.number : TextInputType.text,
+            errorText: errorText,
+            icon: icon,
+            onChanged: onChanged));
+  }
+
+  Widget _buildPickerField(String label, TextEditingController ctrl,
+      VoidCallback onTap, IconData icon) {
+    return AmsField(
+        label: label,
+        labelAbove: true,
+        child: GestureDetector(
+            onTap: onTap,
+            child: AbsorbPointer(
+                child: AmsTextInput(
+                    controller: ctrl,
+                    readOnly: widget.isViewMode,
+                    placeholder: 'Select $label',
+                    borderColor: AppColors.tBlue,
+                    icon: icon))));
+  }
+
+  Future<void> _selectDate() async {
+    if (widget.isViewMode) return;
+    DateTime? pick = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(1900),
+      lastDate: DateTime(2100),
+      builder: (ctx, child) => Theme(
+          data: Theme.of(ctx).copyWith(
+              colorScheme: const ColorScheme.light(primary: AppColors.tBlue)),
+          child: child!),
+    );
+    if (pick != null) {
+      String fmt = DateFormat('dd-MM-yyyy').format(pick);
+      setState(() => _openDateCtrl.text = fmt);
+      widget.onChanged('openDate', fmt);
+    }
+  }
+
+  Future<void> _selectCountry() async {
+    if (widget.isViewMode) return;
+    final countries = _countryInfo.keys.toList();
+    final s = await showDialog<String>(
+        context: context,
+        builder: (ctx) =>
+            _SearchPicker(title: 'Select Country', items: countries));
+    if (s != null) {
+      final info = _countryInfo[s]!;
+      setState(() {
+        _countryCtrl.text = "${info['flag']} $s";
+        _phoneCtrl.text = "${info['flag']} ${info['code']} ";
+      });
+      widget.onChanged('country', s);
+    }
+  }
+
+  Future<void> _selectState() async {
+    if (widget.isViewMode) return;
+    if (_countryCtrl.text.isEmpty) return;
+    String country = _countryCtrl.text.split(' ').last;
+    final states = _countryStates[country] ?? [];
+    final s = await showDialog<String>(
+        context: context,
+        builder: (ctx) => _SearchPicker(title: 'Select State', items: states));
+    if (s != null) {
+      setState(() => _stateCtrl.text = s);
+      widget.onChanged('state', s);
+    }
+  }
+
+  Future<void> _selectDistrict() async {
+    if (widget.isViewMode) return;
+    if (_stateCtrl.text.isEmpty) return;
+    final s = await showDialog<String>(
+        context: context,
+        builder: (ctx) => _SearchPicker(
+            title: 'Select District',
+            items: _stateDistricts[_stateCtrl.text] ?? []));
+    if (s != null) {
+      setState(() {
+        _districtCtrl.text = s;
+        _pincodeCtrl.text = _pincodeMap[s] ?? '';
+      });
+      widget.onChanged('district', s);
+      widget.onChanged('pincode', _pincodeCtrl.text);
+    }
+  }
 }
 
 class _SearchPicker extends StatefulWidget {
@@ -865,25 +1082,5 @@ class _SearchPickerState extends State<_SearchPicker> {
       ],
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     );
-  }
-}
-
-class AmsPill extends StatelessWidget {
-  final String label;
-  final Color color;
-  final Color background;
-  const AmsPill(
-      {super.key,
-      required this.label,
-      required this.color,
-      required this.background});
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-        decoration: BoxDecoration(
-            color: background, borderRadius: BorderRadius.circular(6)),
-        child: Text(label,
-            style: bodyStyle(size: 11, color: color, weight: FontWeight.w600)));
   }
 }

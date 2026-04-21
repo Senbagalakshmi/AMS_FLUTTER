@@ -376,7 +376,21 @@ class _ProgramMasterScreenState extends State<ProgramMasterScreen> {
                           )
                         : SingleChildScrollView(
                             padding: const EdgeInsets.all(24),
-                            child: _buildFormFields(),
+                            child: ProgramMasterFields(
+                              isViewMode: _isViewOnly,
+                              initialData: _viewRecord ?? _dynamicData,
+                              onChanged: (k, v) {
+                                _dynamicData[k] = v;
+                                if (k == 'orgcode') _orgcodeCtrl.text = v.toString();
+                                if (k == 'programId') _pgmIdCtrl.text = v.toString();
+                                if (k == 'programDescription') _pgmNameCtrl.text = v.toString();
+                                if (k == 'moduleCd') _moduleCtrl.text = v.toString();
+                                if (k == 'subModuleCd') _subModuleCtrl.text = v.toString();
+                                if (k == 'programClass') _pgmClass = v.toString();
+                                if (k == 'status') _pgmStatus = int.tryParse(v.toString()) ?? 1;
+                                if (k == 'remarks') _pgmRemarksCtrl.text = v.toString();
+                              },
+                            ),
                           ),
                     ),
                     if (isListView == false)
@@ -429,156 +443,151 @@ class _ProgramMasterScreenState extends State<ProgramMasterScreen> {
       ),
     );
   }
+}
 
-  Widget _buildFormFields() {
-    final isViewMode = (_isViewOnly == true);
+class ProgramMasterFields extends StatefulWidget {
+  final bool isViewMode;
+  final Map<String, dynamic>? initialData;
+  final void Function(String, dynamic) onChanged;
+
+  const ProgramMasterFields({
+    super.key,
+    required this.isViewMode,
+    this.initialData,
+    required this.onChanged,
+  });
+
+  @override
+  State<ProgramMasterFields> createState() => ProgramMasterFieldsState();
+}
+
+class ProgramMasterFieldsState extends State<ProgramMasterFields> {
+  final _pgmIdCtrl = TextEditingController();
+  final _pgmNameCtrl = TextEditingController();
+  final _pgmRemarksCtrl = TextEditingController();
+  final _moduleCtrl = TextEditingController();
+  final _subModuleCtrl = TextEditingController();
+  final _orgcodeCtrl = TextEditingController();
+
+  String? _pgmClass;
+  int _pgmStatus = 1;
+  List<Map<String, dynamic>> _modules = [];
+  List<Map<String, dynamic>> _subModules = [];
+  bool _loadingDropdowns = false;
+  final Map<String, String?> _errors = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchModules();
+    _loadInitialData();
+  }
+
+  @override
+  void didUpdateWidget(ProgramMasterFields oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialData != oldWidget.initialData) {
+      _loadInitialData();
+    }
+  }
+
+  void _loadInitialData() {
+    if (widget.initialData == null) return;
+    final data = widget.initialData!.map((k, v) => MapEntry(k.toLowerCase(), v));
+    _pgmIdCtrl.text = data['programid']?.toString() ?? data['pgm_id']?.toString() ?? data['pgmid']?.toString() ?? '';
+    _pgmNameCtrl.text = data['programdescription']?.toString() ?? 
+                       data['descn']?.toString() ?? 
+                       data['programname']?.toString() ?? '';
+    _pgmRemarksCtrl.text = data['remarks']?.toString() ?? '';
+    _orgcodeCtrl.text = data['orgcode']?.toString() ?? '50';
+    
+    final modId = (data['modulecd'] ?? data['module'] ?? data['moduleid'] ?? data['modcd'] ?? '').toString();
+    _moduleCtrl.text = modId;
+    
+    final subModId = (data['submodulecd'] ?? data['sub_module'] ?? data['submoduleid'] ?? '').toString();
+    _subModuleCtrl.text = subModId;
+
+    _pgmClass = data['programclass']?.toString() ?? data['pgm_class']?.toString() ?? data['pgmclass']?.toString();
+    if (_pgmClass != null && _pgmClass!.isNotEmpty) {
+      if (!_pgmClass!.contains(' - ')) {
+          _pgmClass = (_pgmClass == '1' || _pgmClass!.startsWith('N')) ? 'N - Non Transaction / Master' : 'T - Transaction';
+      }
+    }
+    _pgmStatus = int.tryParse(data['status']?.toString() ?? '1') ?? 1;
+  }
+
+  Future<void> _fetchModules() async {
+    setState(() => _loadingDropdowns = true);
+    final mods = await prm.apiService.getModules();
+    setState(() {
+      _modules = mods;
+      _loadingDropdowns = false;
+    });
+    if (_moduleCtrl.text.isNotEmpty) {
+       _fetchSubModules(_moduleCtrl.text, clear: false);
+    }
+  }
+
+  Future<void> _fetchSubModules(String moduleId, {bool clear = true}) async {
+    final subMods = await prm.apiService.getSubModules(moduleId);
+    setState(() {
+      _subModules = subMods;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         AmsFormGrid(
           children: [
-            AmsField(
-              label: 'Organisation Code',
+            _field('Organisation Code', _orgcodeCtrl, 
+              required: true, 
+              isNum: true,
+              error: _errors['orgcode'],
+              onChanged: (v) => widget.onChanged('orgcode', v)),
+            _field('Program Id', _pgmIdCtrl, 
+              required: true, 
+              readOnly: widget.initialData != null && widget.initialData!['programId'] != null,
+              error: _errors['pgmId'],
+              onChanged: (v) => widget.onChanged('programId', v)),
+            _field('Description', _pgmNameCtrl, 
+              required: true, 
+              error: _errors['pgmName'],
+              onChanged: (v) {
+                widget.onChanged('programDescription', v);
+                widget.onChanged('programName', v);
+              }),
+            _dropdown('Module', _moduleCtrl, _modules, 
               required: true,
-              labelAbove: true,
-              child: AmsTextInput(
-                controller: _orgcodeCtrl,
-                readOnly: isViewMode,
-                placeholder: 'e.g. 50',
-                keyboardType: TextInputType.number,
-                inputFormatters: [
-                  FilteringTextInputFormatter.digitsOnly,
-                  LengthLimitingTextInputFormatter(10),
-                ],
-                errorText: _errors['orgcode'],
-                onChanged: (v) {
-                  _dynamicData['orgcode'] = int.tryParse(v) ?? 50;
-                  setState(() => _errors['orgcode'] = null);
-                },
-              ),
-            ),
-            AmsField(
-              label: 'Program Id',
-              required: true,
-              labelAbove: true,
-              child: AmsTextInput(
-                controller: _pgmIdCtrl,
-                readOnly: (_viewRecord != null),
-                placeholder: 'e.g. GL101',
-                inputFormatters: [LengthLimitingTextInputFormatter(15)],
-                errorText: _errors['pgmId'],
-                isValid: (_errors['pgmId'] == null && _pgmIdCtrl.text.isNotEmpty) == true,
-                onChanged: (v) {
-                   _dynamicData['programId'] = v;
-                   setState(() => _errors['pgmId'] = null);
-                },
-              ),
-            ),
-            AmsField(
-              label: 'Description',
-              required: true,
-              labelAbove: true,
-              child: AmsTextInput(
-                controller: _pgmNameCtrl,
-                readOnly: (isViewMode == true),
-                placeholder: 'e.g. Finance Dashboard Entry',
-                inputFormatters: [LengthLimitingTextInputFormatter(100)],
-                errorText: _errors['pgmName'],
-                isValid: (_errors['pgmName'] == null && _pgmNameCtrl.text.isNotEmpty) == true,
-                onChanged: (v) {
-                  _dynamicData['programDescription'] = v;
-                  _dynamicData['programName'] = v;
-                  setState(() => _errors['pgmName'] = null);
-                },
-              ),
-            ),
-            AmsField(
-              label: 'Module',
-              required: true,
-              labelAbove: true,
-              child: (isViewMode == true)
-                  ? AmsTextInput(initialValue: _moduleCtrl.text, readOnly: true)
-                  : (_loadingDropdowns
-                      ? const Center(child: LinearProgressIndicator())
-                      : AmsDropdown(
-                          initialValue: _moduleCtrl.text.isEmpty || !_modules.any((m) => m['display'].toString().trim() == _moduleCtrl.text.trim()) ? null : _moduleCtrl.text.trim(),
-                          placeholder: "Select Module",
-                          items: _modules.map((m) => m['display'].toString().trim()).toList(),
-                          onChanged: (val) {
-                            if (val == null) return;
-                            final selected = _modules.firstWhere(
-                              (m) => m['display'].toString().trim() == val.trim(),
-                              orElse: () => {},
-                            );
-                            if (selected.isEmpty) return;
-                            final mId = (selected['module_id'] ?? selected['moduleId'] ?? selected['moduleid'] ?? selected['id']).toString();
-                            setState(() {
-                              _moduleCtrl.text = val;
-                              _dynamicData['moduleCd'] = mId;
-                            });
-                            _fetchSubModules(mId);
-                          },
-                        )),
-            ),
-            AmsField(
-              label: 'Sub Module',
-              labelAbove: true,
-              child: (isViewMode == true)
-                  ? AmsTextInput(initialValue: _subModuleCtrl.text, readOnly: true)
-                  : AmsDropdown(
-                      initialValue: () {
-                        if (_subModuleCtrl.text.isEmpty) return null;
-                        // Check if it's already a display string or an ID
-                        final display = _subModules.any((sm) => sm['display'].toString() == _subModuleCtrl.text)
-                            ? _subModuleCtrl.text
-                            : _subModules.firstWhere(
-                                (sm) => sm['subModuleId'].toString() == _subModuleCtrl.text || sm['id'].toString() == _subModuleCtrl.text,
-                                orElse: () => {},
-                              )['display']?.toString();
-                        return display;
-                      }(),
-                      placeholder: _subModules.isEmpty ? "No Sub-Modules" : "Select Sub-Module",
-                      items: _subModules.map((sm) => sm['display'].toString()).toList(),
-                      onChanged: (v) {
-                        if (v == null) return;
-                        final selected = _subModules.firstWhere(
-                          (sm) => sm['display'].toString() == v,
-                          orElse: () => {},
-                        );
-                        if (selected.isEmpty) return;
-                        final smId = (selected['subModuleId'] ?? selected['id']).toString();
-                        setState(() {
-                          _subModuleCtrl.text = v;
-                          _dynamicData['subModuleCd'] = smId;
-                        });
-                      },
-                    ),
-            ),
+              onChanged: (val, id) {
+                widget.onChanged('moduleCd', id);
+                _fetchSubModules(id);
+              }),
+            _dropdown('Sub Module', _subModuleCtrl, _subModules, 
+              onChanged: (val, id) => widget.onChanged('subModuleCd', id)),
             AmsField(
               label: 'Program Class',
               required: true,
               labelAbove: true,
-              child: (isViewMode == true)
+              child: widget.isViewMode
                   ? AmsTextInput(initialValue: _pgmClass ?? '—', readOnly: true)
                   : AmsDropdown(
                       initialValue: _pgmClass,
                       placeholder: 'Select Class',
                       items: const ['N - Non Transaction / Master', 'T - Transaction'],
                       errorText: _errors['pgmClass'],
-                      isValid: (_errors['pgmClass'] == null && _pgmClass != null) == true,
                       onChanged: (v) {
-                        setState(() {
-                          _pgmClass = v;
-                          _errors['pgmClass'] = null;
-                        });
-                        _dynamicData['programClass'] = v?.substring(0, 1);
+                        setState(() => _pgmClass = v);
+                        widget.onChanged('programClass', v?.substring(0, 1));
                       },
                     ),
             ),
             AmsField(
               label: 'Status',
               labelAbove: true,
-              child: (isViewMode == true)
+              child: widget.isViewMode
                   ? AmsTextInput(initialValue: _pgmStatus == 1 ? '1 - Enable' : '0 - Disable', readOnly: true)
                   : AmsDropdown(
                       initialValue: _pgmStatus == 1 ? '1 - Enable' : '0 - Disable',
@@ -586,28 +595,75 @@ class _ProgramMasterScreenState extends State<ProgramMasterScreen> {
                       onChanged: (v) {
                         final st = v?.startsWith('1') == true ? 1 : 0;
                         setState(() => _pgmStatus = st);
-                        _dynamicData['status'] = st;
+                        widget.onChanged('status', st);
                       },
                     ),
             ),
           ],
         ),
         const SizedBox(height: 24),
-        AmsField(
-          label: 'Remarks',
-          labelAbove: true,
-          child: AmsTextInput(
-            controller: _pgmRemarksCtrl,
-            readOnly: (isViewMode == true),
-            placeholder: 'Enter any additional notes...',
-            maxLines: 3,
-            onChanged: (v) => _dynamicData['remarks'] = v,
-          ),
-        ),
+        _field('Remarks', _pgmRemarksCtrl, 
+          maxLines: 3,
+          onChanged: (v) => widget.onChanged('remarks', v)),
       ],
     );
   }
+
+  Widget _field(String label, TextEditingController ctrl, 
+      {bool required = false, bool isNum = false, bool readOnly = false, String? error, int maxLines = 1, void Function(String)? onChanged}) {
+    return AmsField(
+      label: label,
+      required: required,
+      labelAbove: true,
+      child: AmsTextInput(
+        controller: ctrl,
+        readOnly: widget.isViewMode || readOnly,
+        placeholder: 'Enter $label',
+        keyboardType: isNum ? TextInputType.number : TextInputType.text,
+        maxLines: maxLines,
+        errorText: error,
+        onChanged: onChanged,
+      ),
+    );
+  }
+
+  Widget _dropdown(String label, TextEditingController ctrl, List<Map<String, dynamic>> items, {bool required = false, void Function(String, String)? onChanged}) {
+    String? currentVal;
+    if (ctrl.text.isNotEmpty) {
+       try {
+         final matched = items.firstWhere((m) => 
+           m['display'].toString().trim() == ctrl.text.trim() || 
+           (m['module_id'] ?? m['subModuleId'] ?? m['id']).toString() == ctrl.text.trim());
+         currentVal = matched['display'].toString();
+       } catch (_) {
+         currentVal = widget.isViewMode ? ctrl.text : null;
+       }
+    }
+
+    return AmsField(
+      label: label,
+      required: required,
+      labelAbove: true,
+      child: widget.isViewMode
+          ? AmsTextInput(initialValue: currentVal ?? ctrl.text, readOnly: true)
+          : (_loadingDropdowns && label == 'Module'
+              ? const Center(child: LinearProgressIndicator())
+              : AmsDropdown(
+                  initialValue: currentVal,
+                  placeholder: "Select $label",
+                  items: items.map((m) => m['display'].toString()).toList(),
+                  onChanged: (val) {
+                    if (val == null) return;
+                    final selected = items.firstWhere((m) => m['display'].toString() == val);
+                    final id = (selected['module_id'] ?? selected['subModuleId'] ?? selected['id']).toString();
+                    ctrl.text = val;
+                    if (onChanged != null) onChanged(val, id);
+                  },
+                )),
+    );
+  }
 }
+
 
 class _ProgramListView extends StatefulWidget {
   final void Function(Map<String, dynamic>) onView;

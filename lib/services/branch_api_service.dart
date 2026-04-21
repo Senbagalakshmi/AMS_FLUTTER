@@ -63,10 +63,10 @@ class BranchApiService {
     }
   }
 
-  Future<bool> deleteBranch(int branchCd) async {
+  Future<bool> deleteBranch(int orgCode, int branchCd) async {
     try {
       final res = await http.delete(
-        Uri.parse('${ApiService.baseUrl}$_path/$branchCd'),
+        Uri.parse('${ApiService.baseUrl}$_path/$orgCode/$branchCd'),
         headers: apiService.headers,
       );
       return res.statusCode == 200;
