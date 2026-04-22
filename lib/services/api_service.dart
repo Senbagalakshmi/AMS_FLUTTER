@@ -135,7 +135,12 @@ class ApiService {
           }
           final cfg = Auth101Config(
             id: item['programId']?.toString() ?? '',
-            name: item['programId']?.toString() ?? '',
+
+            name: (item['description'] ??
+                    item['name'] ??
+                    item['programId'] ??
+                    'Unknown')
+                .toString(),
             approvalReq:
                 item['approvalReq'] == 1 || item['approvalReq'] == true,
             isTran: item['isTranPgm'] == 1 || item['isTranPgm'] == true,
@@ -148,6 +153,9 @@ class ApiService {
                 item['postApproveProc'] == 1 || item['postApproveProc'] == true,
             postExecMethod: item['postExecMethod']?.toString(),
             postProcessName: item['postProcessName']?.toString(),
+            orgCode: (item['orgCode'] ?? item['orgcode']) is num 
+                ? (item['orgCode'] ?? item['orgcode']).toInt() 
+                : 50,
           );
           configs[cfg.id] = cfg;
         }
@@ -504,16 +512,87 @@ class ApiService {
 
   Future<bool> createAuthConfig(Map<String, dynamic> data) async {
     try {
+      if (data['isUpdate'] == true) {
+        return updateAuthConfig(data);
+      }
+      
+      final payload = _normalizeAuthPayload(data);
+      
       final res = await http.post(
         Uri.parse('$baseUrl/auth/authctl/create'),
         headers: _headers,
-        body: jsonEncode(data),
+        body: jsonEncode(payload),
       );
+      print('AUTHCTL Create response: ${res.statusCode} - ${res.body}');
       return res.statusCode >= 200 && res.statusCode < 300;
     } catch (e) {
+      print('AUTHCTL Create error: $e');
       return false;
     }
   }
+
+  Future<bool> updateAuthConfig(Map<String, dynamic> data) async {
+    try {
+      final payload = _normalizeAuthPayload(data);
+      
+      final res = await http.put(
+        Uri.parse('$baseUrl/auth/authctl/update'),
+        headers: _headers,
+        body: jsonEncode(payload),
+      );
+      print('AUTHCTL Update response: ${res.statusCode} - ${res.body}');
+      return res.statusCode >= 200 && res.statusCode < 300;
+    } catch (e) {
+      print('AUTHCTL Update error: $e');
+      return false;
+    }
+  }
+
+  Map<String, dynamic> _normalizeAuthPayload(Map<String, dynamic> data) {
+    final payload = Map<String, dynamic>.from(data);
+    
+    // Convert bool to int (Backend requirement)
+    final boolKeys = [
+      'approvalReq',
+      'preApproveProc',
+      'postApproveProc',
+      'isTran',
+      'isTranPgm'
+    ];
+    
+    for (final key in boolKeys) {
+      if (payload.containsKey(key)) {
+        if (payload[key] == true) {
+          payload[key] = 1;
+        } else if (payload[key] == false) {
+          payload[key] = 0;
+        }
+      }
+    }
+    
+    // Remove frontend flags
+    payload.remove('isUpdate');
+    payload.remove('id'); // Usually programId is used
+    
+    return payload;
+  }
+
+  Future<bool> deleteAuthConfig(String programId) async {
+  try {
+    print('AUTHCTL: Deleting $programId');
+
+    final res = await http.delete(
+      Uri.parse('$baseUrl/auth/authctl/delete/$programId'),
+      headers: _headers,
+    );
+
+    print('AUTHCTL Delete response: ${res.statusCode}');
+    return res.statusCode >= 200 && res.statusCode < 300;
+  } catch (e) {
+    print('AUTHCTL Delete error: $e');
+    return false;
+  }
+}
 
   // --- GL Category ---
 

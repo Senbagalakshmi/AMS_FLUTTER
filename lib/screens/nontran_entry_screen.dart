@@ -224,6 +224,7 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
   final Map<String, dynamic> _dynamicData = {};
   bool _showForm = false;
   bool _isEditMode = false;
+  bool _isLoading = false;
   Map<String, dynamic>? _viewRecord;
 
   @override
@@ -277,6 +278,7 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
     if (confirm == true) {
       final orgCode = record['orgCode'] ?? record['orgcode'] ?? 50;
       final accessCd = record['accessCd'] ?? record['accesscd'] ?? 0;
+      setState(() => _isLoading = true);
       final success = await apiService.deleteAccess(
           orgCode is int ? orgCode : 50, accessCd is int ? accessCd : 0);
 
@@ -286,6 +288,7 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
       } else {
         showAmsSnack(context, 'Failed to delete record', icon: '❌');
       }
+      setState(() => _isLoading = false);
     }
   }
 
@@ -312,24 +315,25 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
     );
 
     if (confirm == true) {
-      final moduleCd = (record['module_id'] ??
-              record['moduleCd'] ??
+      final mid = (record['modCd'] ??
+              record['module_id'] ??
               record['moduleid'] ??
-              record['modcd'] ??
+              record['moduleId'] ??
               '')
           .toString();
-      if (moduleCd.isEmpty || moduleCd == '—') {
+      if (mid.isEmpty || mid == '—') {
         showAmsSnack(context, 'Invalid Module ID', icon: '⚠️');
         return;
       }
-      final success = await apiService.deleteModule(moduleCd);
-
+      setState(() => _isLoading = true);
+      final success = await apiService.deleteModule(mid);
       if (success) {
         showAmsSnack(context, 'Module deleted successfully', icon: '✅');
         setState(() {});
       } else {
-        showAmsSnack(context, 'Failed to delete module', icon: '❌');
+        showAmsSnack(context, 'Failed to delete module - check logs.', icon: '❌', type: 'e');
       }
+      setState(() => _isLoading = false);
     }
   }
 
@@ -360,6 +364,7 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
       final usersCd =
           (record['usersCd'] ?? record['userScd'] ?? record['USERSCD'] ?? '')
               .toString();
+      setState(() => _isLoading = true);
       final success =
           await apiService.deleteUser(orgCode is int ? orgCode : 50, usersCd);
 
@@ -369,6 +374,48 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
       } else {
         showAmsSnack(context, 'Failed to delete user', icon: '❌');
       }
+      setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _handleDeleteAuth(
+      BuildContext context, Map<String, dynamic> record) async {
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Delete Authorization',
+            style: bodyStyle(weight: FontWeight.bold)),
+        content: Text(
+            'Are you sure you want to delete this authorization configuration? This action cannot be undone.',
+            style: bodyStyle()),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text('Cancel', style: bodyStyle(color: AppColors.ink3))),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text('Delete',
+                  style: bodyStyle(
+                      color: AppColors.red, weight: FontWeight.bold))),
+        ],
+      ),
+    );
+    if (confirm == true) {
+      final pgmId = (record['programId'] ?? record['id'] ?? '').toString();
+      if (pgmId.isEmpty) {
+        showAmsSnack(context, 'Invalid Program ID', icon: '⚠️');
+        return;
+      }
+      setState(() => _isLoading = true);
+      final success = await apiService.deleteAuthConfig(pgmId);
+      if (success) {
+        showAmsSnack(context, 'Authorization deleted successfully', icon: '✅');
+        setState(() {});
+      } else {
+        showAmsSnack(context, 'Failed to delete authorization. Please check logs.', 
+            icon: '❌', type: 'e');
+      }
+      setState(() => _isLoading = false);
     }
   }
 
@@ -411,10 +458,12 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
       'isUpdate': _isEditMode,
     };
 
+    if (_selProg == null) return;
+
     final safeCfg = _cfg ??
         Auth101Config(
-          id: _selProg!,
-          name: _selProg!,
+          id: _selProg ?? 'AUTHCTL',
+          name: _selProg ?? 'Authorization Control',
           approvalReq: false,
           isTran: false,
           levels: 1,
@@ -450,7 +499,9 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
 
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Column(
+      body: Stack(
+        children: [
+          Column(
         children: [
           AmsIdentityHeader(
             icon: Icon(
@@ -487,17 +538,17 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
               HeaderBreadcrumb(label: 'Home', onTap: widget.onBack),
               HeaderBreadcrumb(label: 'Masters', onTap: widget.onBack),
               if (_selProg != null)
-                HeaderBreadcrumb(label: _cfg?.name ?? _selProg!),
+                HeaderBreadcrumb(label: _cfg?.name ?? _selProg ?? 'Unknown'),
             ],
             onBack: [
-                      'USR-CRT',
-                      'USR-ROLE',
-                      'ROLE-CRT',
-                      'MOD-CRT',
-                      'MENU-CRT',
-                      'AUTHCTL'
-                    ].contains(_selProg) &&
-                    _showForm
+              'USR-CRT',
+              'USR-ROLE',
+              'ROLE-CRT',
+              'MOD-CRT',
+              'MENU-CRT',
+              'AUTHCTL'
+            ].contains(_selProg ?? '') &&
+                _showForm
                 ? () => setState(() => _showForm = false)
                 : widget.onBack,
             actions: [
@@ -540,8 +591,8 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
                           children: [
                             Text(
                               isAnyList
-                                  ? '${_cfg?.name ?? _selProg!} List'
-                                  : '${_viewRecord != null ? (_isEditMode ? 'Edit' : 'View') : 'New'} ${_cfg?.name ?? _selProg!}',
+                                  ? '${_cfg?.name ?? _selProg ?? 'Unknown'} List'
+                                  : '${_viewRecord != null ? (_isEditMode ? 'Edit' : 'View') : 'New'} ${_cfg?.name ?? _selProg ?? 'Record'}',
                               style: bodyStyle(
                                 size: 14,
                                 color: Colors.white,
@@ -609,6 +660,7 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
 
                         if (isUserScreenList) {
                           return _UserListView(
+                            key: ValueKey('user_list_$_showForm'),
                             onView: handleView,
                             onEdit: handleEdit,
                             onDelete: (rec) => _handleDeleteUser(context, rec),
@@ -616,6 +668,7 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
                         }
                         if (isRoleScreenList) {
                           return _RoleListView(
+                            key: ValueKey('role_list_$_showForm'),
                             onView: handleView,
                             onEdit: handleEdit,
                             onDelete: (rec) =>
@@ -623,10 +676,14 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
                           );
                         }
                         if (isUserRoleScreenList) {
-                          return _UserRoleListView(onView: handleView);
+                          return _UserRoleListView(
+                            key: ValueKey('user_role_list_$_showForm'),
+                            onView: handleView,
+                          );
                         }
                         if (isModuleScreenList) {
                           return _ModuleListView(
+                            key: ValueKey('module_list_$_showForm'),
                             onView: handleView,
                             onEdit: handleEdit,
                             onDelete: (rec) =>
@@ -634,7 +691,12 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
                           );
                         }
                         if (isAuthCtrlScreenList) {
-                          return _AuthCtrlListView(onView: handleView);
+                          return _AuthCtrlListView(
+                            key: ValueKey('auth_list_$_showForm'),
+                            onView: handleView,
+                            onEdit: handleEdit,
+                            onDelete: (rec) => _handleDeleteAuth(context, rec),
+                          );
                         }
 
                         return SingleChildScrollView(
@@ -642,17 +704,15 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              if (_selProg != null) ...[
-                                DynamicNTFields(
-                                  key: _fieldsKey,
-                                  prog: _selProg!,
-                                  initialData: _viewRecord,
-                                  isViewMode:
-                                      _viewRecord != null && !_isEditMode,
-                                  onChanged: (key, val) =>
-                                      _dynamicData[key] = val,
-                                ),
-                              ],
+                              DynamicNTFields(
+                                key: _fieldsKey,
+                                prog: _selProg ?? 'AUTHCTL',
+                                initialData: _viewRecord,
+                                isViewMode:
+                                    _viewRecord != null && !_isEditMode,
+                                onChanged: (key, val) =>
+                                    _dynamicData[key] = val,
+                              ),
                             ],
                           ),
                         );
@@ -676,7 +736,9 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
                             )
                           else ...[
                             AmsButton(
-                              label: isDirectSave ? 'Save' : 'Submit',
+                              label: _isEditMode
+                                  ? 'Update'
+                                  : (isDirectSave ? 'Save' : 'Submit'),
                               variant: isDirectSave
                                   ? AmsButtonVariant.green
                                   : AmsButtonVariant.primary,
@@ -727,15 +789,28 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
           ),
         ],
       ),
-    );
-  }
+      if (_isLoading)
+        Positioned.fill(
+          child: Container(
+            color: Colors.black26,
+            child: const Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(AppColors.tBlue),
+              ),
+            ),
+          ),
+        ),
+    ],
+  ),
+);
+}
 }
 
 class _UserListView extends StatefulWidget {
   final void Function(Map<String, dynamic>)? onView;
   final void Function(Map<String, dynamic>)? onEdit;
   final Future<void> Function(Map<String, dynamic>)? onDelete;
-  const _UserListView({this.onView, this.onEdit, this.onDelete});
+  const _UserListView({super.key, this.onView, this.onEdit, this.onDelete});
 
   @override
   State<_UserListView> createState() => _UserListViewState();
@@ -830,7 +905,7 @@ class _UserListViewState extends State<_UserListView> {
         ),
         Expanded(
           child: AmsPaginatedView<Map<String, dynamic>>(
-            items: filteredItems,
+            items: filteredItems.reversed.toList(),
             totalRecords: _totalItems,
             onPageChanged: _loadUsers,
             builder: (ctx, currentItems) => ListView.builder(
@@ -952,7 +1027,7 @@ class _RoleListView extends StatefulWidget {
   final void Function(Map<String, dynamic>)? onView;
   final void Function(Map<String, dynamic>)? onEdit;
   final Future<void> Function(Map<String, dynamic>)? onDelete;
-  const _RoleListView({this.onView, this.onEdit, this.onDelete});
+  const _RoleListView({super.key, this.onView, this.onEdit, this.onDelete});
 
   @override
   State<_RoleListView> createState() => _RoleListViewState();
@@ -1033,7 +1108,7 @@ class _RoleListViewState extends State<_RoleListView> {
         ),
         Expanded(
           child: AmsPaginatedView<Map<String, dynamic>>(
-            items: filteredItems,
+            items: filteredItems.reversed.toList(),
             totalRecords: _totalItems,
             onPageChanged: _loadRoles,
             builder: (ctx, currentItems) => ListView.builder(
@@ -1158,7 +1233,7 @@ class _ActionButton extends StatelessWidget {
 
 class _UserRoleListView extends StatefulWidget {
   final void Function(Map<String, dynamic>)? onView;
-  const _UserRoleListView({this.onView});
+  const _UserRoleListView({super.key, this.onView});
   @override
   State<_UserRoleListView> createState() => _UserRoleListViewState();
 }
@@ -1193,7 +1268,7 @@ class _UserRoleListViewState extends State<_UserRoleListView> {
       return const AmsListSkeleton();
     }
     return AmsPaginatedView<Map<String, dynamic>>(
-      items: _data ?? [],
+      items: (_data ?? []).reversed.toList(),
       totalRecords: _totalItems,
       onPageChanged: _load,
       builder: (ctx, currentItems) => ListView.builder(
@@ -1232,7 +1307,7 @@ class _ModuleListView extends StatefulWidget {
   final void Function(Map<String, dynamic>)? onView;
   final void Function(Map<String, dynamic>)? onEdit;
   final Future<void> Function(Map<String, dynamic>)? onDelete;
-  const _ModuleListView({this.onView, this.onEdit, this.onDelete});
+  const _ModuleListView({super.key, this.onView, this.onEdit, this.onDelete});
 
   @override
   State<_ModuleListView> createState() => _ModuleListViewState();
@@ -1314,7 +1389,7 @@ class _ModuleListViewState extends State<_ModuleListView> {
         ),
         Expanded(
           child: AmsPaginatedView<Map<String, dynamic>>(
-            items: filteredItems,
+            items: filteredItems.reversed.toList(),
             totalRecords: _totalItems,
             onPageChanged: _load,
             builder: (ctx, currentItems) => ListView.builder(
@@ -1423,7 +1498,9 @@ class _ModuleListViewState extends State<_ModuleListView> {
 
 class _AuthCtrlListView extends StatefulWidget {
   final void Function(Map<String, dynamic>)? onView;
-  const _AuthCtrlListView({this.onView});
+  final void Function(Map<String, dynamic>)? onEdit;
+  final Future<void> Function(Map<String, dynamic>)? onDelete;
+  const _AuthCtrlListView({super.key, this.onView, this.onEdit, this.onDelete});
   @override
   State<_AuthCtrlListView> createState() => _AuthCtrlListViewState();
 }
@@ -1431,6 +1508,7 @@ class _AuthCtrlListView extends StatefulWidget {
 class _AuthCtrlListViewState extends State<_AuthCtrlListView> {
   Map<String, Auth101Config>? _configs;
   bool _loading = true;
+  String _searchQuery = '';
 
   @override
   void initState() {
@@ -1439,56 +1517,125 @@ class _AuthCtrlListViewState extends State<_AuthCtrlListView> {
   }
 
   Future<void> _load() async {
+    setState(() => _loading = true);
     final data = await apiService.getAuthConfigs();
-    setState(() {
-      _configs = data ?? auth101;
-      _loading = false;
-    });
+    if (mounted) {
+      setState(() {
+        _configs = data ?? auth101;
+        _loading = false;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_loading) return const Center(child: CircularProgressIndicator());
-    final cfgList = _configs!.values.toList();
-    return AmsPaginatedView<Auth101Config>(
-      items: cfgList,
-      builder: (ctx, currentItems) => ListView.builder(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-        itemCount: currentItems.length,
-        itemBuilder: (ctx, idx) {
-          final c = currentItems[idx];
-          return AmsCard(
-            onTap: widget.onView != null
-                ? () => widget.onView!({
-                      'id': c.id,
-                      'name': c.name,
-                      'approvalReq': c.approvalReq,
-                      'isTran': c.isTran,
-                      'levels': c.levels
-                    })
-                : null,
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(c.name,
-                          style: bodyStyle(size: 15, weight: FontWeight.w600)),
-                      const SizedBox(height: 4),
-                      Text(
-                          'Approval Req: ${c.approvalReq ? 'Yes' : 'No'}  |  Levels: ${c.levels}',
-                          style: bodyStyle(color: AppColors.ink3)),
-                    ],
+    if (_loading && _configs == null) {
+      return const AmsListSkeleton();
+    }
+
+    final cfgList = _configs!.values.where((c) {
+      if (_searchQuery.isEmpty) return true;
+      final q = _searchQuery.toLowerCase();
+      return c.name.toLowerCase().contains(q) || c.id.toLowerCase().contains(q);
+    }).toList();
+
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+          child: Row(
+            children: [
+              Expanded(
+                child: AmsTextInput(
+                  placeholder: 'Search Authorization configurations...',
+                  icon: Icons.search_rounded,
+                  onChanged: (v) => setState(() => _searchQuery = v),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Material(
+                color: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  side: const BorderSide(color: AppColors.border),
+                ),
+                child: InkWell(
+                  onTap: _load,
+                  borderRadius: BorderRadius.circular(8),
+                  child: const Padding(
+                    padding: EdgeInsets.all(10),
+                    child: Icon(Icons.refresh_rounded,
+                        size: 20, color: AppColors.ink2),
                   ),
                 ),
-                AmsBadge(label: c.id),
-              ],
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: AmsPaginatedView<Auth101Config>(
+            items: cfgList.reversed.toList(),
+            builder: (ctx, currentItems) => ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+              itemCount: currentItems.length,
+              itemBuilder: (ctx, idx) {
+                final c = currentItems[idx];
+                final rec = c.toMap();
+                return AmsCard(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(c.name.toString(),
+                                style: bodyStyle(
+                                    size: 15, weight: FontWeight.w600)),
+                            const SizedBox(height: 4),
+                            Text(
+                                'Approval Req: ${c.approvalReq ? 'Yes' : 'No'}  |  Levels: ${c.levels}',
+                                style: bodyStyle(color: AppColors.ink3, size: 12)),
+                          ],
+                        ),
+                      ),
+                      AmsBadge(label: c.id.toString()),
+                      const SizedBox(width: 16),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _ActionButton(
+                            icon: Icons.visibility_outlined,
+                            color: Colors.green,
+                            onTap: () => widget.onView?.call(rec),
+                          ),
+                          const SizedBox(width: 8),
+                          _ActionButton(
+                            icon: Icons.edit_outlined,
+                            color: AppColors.tBlue,
+                            onTap: () => widget.onEdit?.call(rec),
+                          ),
+                          const SizedBox(width: 8),
+                          _ActionButton(
+                            icon: Icons.delete_outline_rounded,
+                            color: Colors.red,
+                            onTap: () async {
+                              if (widget.onDelete != null) {
+                                await widget.onDelete!(rec);
+                                _load();
+                              }
+                            },
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
-          );
-        },
-      ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -1529,7 +1676,7 @@ class _BranchListViewState extends State<_BranchListView> {
       return const AmsListSkeleton();
     }
     return AmsPaginatedView<Map<String, dynamic>>(
-      items: _data ?? [],
+      items: (_data ?? []).reversed.toList(),
       totalRecords: _totalItems,
       onPageChanged: _load,
       builder: (ctx, currentItems) => ListView.builder(
@@ -1659,6 +1806,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
 
   final _menuScdCtrl = TextEditingController();
   final _menuNameCtrl = TextEditingController();
+  final _orgCodeCtrl = TextEditingController();
 
   final _authModCtrl = TextEditingController();
   final _authPgmCtrl = TextEditingController();
@@ -1778,11 +1926,12 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
       return;
     }
 
-    final data =
-        widget.initialData!.map((k, v) => MapEntry(k.toLowerCase(), v));
-    final prog = widget.prog.replaceAll(' ', '-').toUpperCase();
+    // ─── Normalize all keys to lowercase for safe access ───
+    final data = widget.initialData?.map((k, v) => MapEntry(k.toLowerCase(), v)) ?? {};
+    final prog = (widget.prog ?? '').replaceAll(' ', '-').toUpperCase();
 
     if (prog == 'USR-CRT') {
+      _orgCodeCtrl.text = (data['orgcode'] ?? '50').toString();
       _uScdCtrl.text =
           (data['userscd'] ?? data['userscd'] ?? data['usercd'] ?? '')
               .toString();
@@ -1825,7 +1974,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
       } else {
         _countryCtrl.text = '';
       }
-
+      
       _mobileCtrl.text =
           (data['mobile'] ?? data['mobileno'] ?? data['phone'] ?? '')
               .toString();
@@ -1862,6 +2011,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
               '')
           .toString();
     } else if (prog == 'MOD-CRT') {
+      _orgCodeCtrl.text = (data['orgcode'] ?? '50').toString();
       _mScdCtrl.text = (data['modcd'] ??
               data['module_id'] ??
               data['moduleid'] ??
@@ -1896,13 +2046,14 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
       _menuNameCtrl.text =
           (data['menuname'] ?? data['menu_name'] ?? '').toString();
     } else if (prog == 'AUTHCTL') {
+      _orgCodeCtrl.text = (data['orgcode'] ?? data['org_code'] ?? '50').toString();
       _authModCtrl.text =
-          (data['orgcode'] ?? data['org_code'] ?? data['modcd'] ?? '')
-              .toString();
+          (data['modcd'] ?? data['moduleid'] ?? data['module_id'] ?? '').toString();
       _authPgmCtrl.text =
           (data['programid'] ?? data['program_id'] ?? data['pgmcd'] ?? '')
               .toString();
 
+      // ✅ FIX: bool helper that handles int 1, string '1', and true
       bool parseBool(String key) {
         final variants = [
           key.toLowerCase(),
@@ -1934,6 +2085,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
               .toString();
       _rScdCtrl.text = (data['rolecd'] ?? data['role_cd'] ?? '').toString();
     }
+    if (mounted) setState(() {});
   }
 
   bool validate() {
@@ -2008,12 +2160,12 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
           isValid = false;
         }
       } else if (widget.prog == 'AUTHCTL') {
-        if (_authModCtrl.text.trim().isEmpty) {
-          _errors['authMod'] = 'Module Code required';
+        if (_orgCodeCtrl.text.trim().isEmpty) {
+          _errors['orgCode'] = 'Organization Code required';
           isValid = false;
         }
         if (_authPgmCtrl.text.trim().isEmpty) {
-          _errors['authPgm'] = 'Program Code required';
+          _errors['authPgm'] = 'Program Id required';
           isValid = false;
         }
       }
@@ -2101,13 +2253,11 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                 labelAbove: true,
                 tooltip: 'Unique organization code assigned to this user.',
                 child: AmsTextInput(
-                  initialValue: data['orgcode']?.toString() ?? '50',
+                  controller: _orgCodeCtrl,
                   readOnly: widget.isViewMode,
                   textInputAction: TextInputAction.next,
-                  onChanged: widget.isViewMode
-                      ? null
-                      : (v) =>
-                          widget.onChanged('orgCode', int.tryParse(v) ?? 50),
+                  onChanged: (v) =>
+                      widget.onChanged('orgCode', int.tryParse(v) ?? 50),
                 ),
               ),
 
@@ -2461,11 +2611,11 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                         onTap: widget.isViewMode
                             ? null
                             : () {
-                                setFieldState(() {
-                                  _uStatusCtrl.text = isActive ? '0' : '1';
-                                });
-                                widget.onChanged('status', isActive ? 0 : 1);
-                              },
+                          setFieldState(() {
+                            _uStatusCtrl.text = isActive ? '0' : '1';
+                          });
+                          widget.onChanged('status', isActive ? 0 : 1);
+                        },
                         child: MouseRegion(
                           cursor: widget.isViewMode
                               ? SystemMouseCursors.basic
@@ -2814,13 +2964,11 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                     labelAbove: true,
                     tooltip: 'Unique organization code for this module.',
                     child: AmsTextInput(
-                      initialValue: data['orgcode']?.toString() ?? '50',
+                      controller: _orgCodeCtrl,
                       readOnly: widget.isViewMode || widget.initialData != null,
                       textInputAction: TextInputAction.next,
-                      onChanged: widget.isViewMode || widget.initialData != null
-                          ? null
-                          : (v) => widget.onChanged(
-                              'orgCode', int.tryParse(v) ?? 50),
+                      onChanged: (v) => widget.onChanged(
+                          'orgCode', int.tryParse(v) ?? 50),
                     ),
                   ),
                   AmsField(
@@ -3012,16 +3160,16 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                     required: true,
                     labelAbove: true,
                     child: AmsTextInput(
-                      controller: _authModCtrl,
-                      readOnly: widget.isViewMode,
-                      placeholder: 'e.g. 101',
+                      controller: _orgCodeCtrl,
+                      readOnly: widget.isViewMode || widget.initialData != null,
+                      placeholder: 'e.g. 50',
                       textInputAction: TextInputAction.next,
-                      errorText: _errors['authMod'],
-                      isValid: _errors['authMod'] == null &&
-                          _authModCtrl.text.isNotEmpty,
+                      errorText: _errors['orgCode'],
+                      isValid: _errors['orgCode'] == null &&
+                          _orgCodeCtrl.text.isNotEmpty,
                       onChanged: (v) {
                         setState(() {
-                          _errors['authMod'] = v.trim().isEmpty
+                          _errors['orgCode'] = v.trim().isEmpty
                               ? 'Organization Code required'
                               : null;
                         });
@@ -3035,7 +3183,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                     labelAbove: true,
                     child: AmsTextInput(
                       controller: _authPgmCtrl,
-                      readOnly: widget.isViewMode,
+                      readOnly: widget.isViewMode || widget.initialData != null,
                       placeholder: 'e.g. USR-ROLE',
                       textInputAction: TextInputAction.done,
                       errorText: _errors['authPgm'],
@@ -3492,20 +3640,25 @@ class _Auth102LevelGridState extends State<_Auth102LevelGrid> {
                                 ? const LinearProgressIndicator()
                                 : AmsDropdown(
                                     initialValue: () {
-                                      if (widget.roleList.isEmpty) return null;
+                                      if (_levels[i]['roleCd'] == null ||
+                                          widget.roleList.isEmpty) return null;
                                       final seek =
-                                          _levels[i]['roleCd']?.toString() ??
-                                              '';
+                                          _levels[i]['roleCd']?.toString() ?? '';
                                       if (seek.isEmpty) return null;
-                                      final matches = widget.roleList.where(
-                                          (r) =>
-                                              (r['roleCd']?.toString() ??
-                                                  r['ROLECD']?.toString() ??
-                                                  '') ==
-                                              seek);
+                                      final matches = widget.roleList.where((r) =>
+                                          (r['roleCd']?.toString() ??
+                                              r['ROLECD']?.toString()) ==
+                                          seek);
+
                                       if (matches.isEmpty) return null;
                                       final r = matches.first;
-                                      return '${r['roleCd'] ?? r['ROLECD'] ?? ''} - ${r['roleName'] ?? r['rolename'] ?? ''}';
+                                      final cd =
+                                          r['roleCd'] ?? r['ROLECD'] ?? '';
+                                      final name = r['roleName'] ??
+                                          r['rolename'] ??
+                                          r['ROLENAME'] ??
+                                          '';
+                                      return '$cd - $name';
                                     }(),
                                     placeholder: 'Select ROLECD',
                                     items: widget.roleList
@@ -3514,9 +3667,11 @@ class _Auth102LevelGridState extends State<_Auth102LevelGrid> {
                                               r['roleCd'] ?? r['ROLECD'] ?? '';
                                           final name = r['roleName'] ??
                                               r['rolename'] ??
+                                              r['ROLENAME'] ??
                                               '';
                                           return '$cd - $name';
                                         })
+                                        .where((s) => s.trim().isNotEmpty)
                                         .toSet()
                                         .toList(),
                                     onChanged: (v) {
@@ -3545,21 +3700,29 @@ class _Auth102LevelGridState extends State<_Auth102LevelGrid> {
                                 ? const LinearProgressIndicator()
                                 : AmsDropdown(
                                     initialValue: () {
-                                      if (widget.userList.isEmpty) return null;
+                                      if (_levels[i]['userId'] == null ||
+                                          widget.userList.isEmpty) return null;
                                       final seek =
-                                          _levels[i]['userId']?.toString() ??
-                                              '';
+                                          _levels[i]['userId']?.toString() ?? '';
                                       if (seek.isEmpty) return null;
-                                      final matches = widget.userList.where(
-                                          (u) =>
-                                              (u['usersCd'] ??
-                                                  u['userScd'] ??
-                                                  u['USERSCD'] ??
-                                                  '') ==
-                                              seek);
+                                      final matches = widget.userList.where((u) =>
+                                          (u['usersCd'] ??
+                                              u['users_cd'] ??
+                                              u['userScd'] ??
+                                              u['USERSCD'] ??
+                                              '')
+                                          .toString() ==
+                                          seek);
+
                                       if (matches.isEmpty) return null;
                                       final u = matches.first;
-                                      return '${u['usersCd'] ?? u['userScd'] ?? u['USERSCD'] ?? ''} - ${u['fName'] ?? u['fname'] ?? ''}';
+                                      final scd = u['usersCd'] ??
+                                          u['userScd'] ??
+                                          u['USERSCD'] ??
+                                          '';
+                                      final name =
+                                          u['fName'] ?? u['fname'] ?? '';
+                                      return '$scd - $name';
                                     }(),
                                     placeholder: 'Select USERID',
                                     items: widget.userList
@@ -3572,6 +3735,7 @@ class _Auth102LevelGridState extends State<_Auth102LevelGrid> {
                                               u['fName'] ?? u['fname'] ?? '';
                                           return '$scd - $name';
                                         })
+                                        .where((s) => s.trim().isNotEmpty)
                                         .toSet()
                                         .toList(),
                                     onChanged: (v) {

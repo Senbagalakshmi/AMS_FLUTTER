@@ -12,6 +12,7 @@ class Auth101Config {
   final String? postProcessName;
   final bool isTran;
   final int levels;
+  final int? orgCode;
 
   const Auth101Config({
     required this.id,
@@ -25,7 +26,26 @@ class Auth101Config {
     this.postProcessName,
     required this.isTran,
     required this.levels,
+    this.orgCode,
   });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'programId': id,
+      'name': name,
+      'approvalReq': approvalReq ? 1 : 0,
+      'preApproveProc': preApproveProc ? 1 : 0,
+      'preExecMethod': preExecMethod,
+      'preProcessName': preProcessName,
+      'postApproveProc': postApproveProc ? 1 : 0,
+      'postExecMethod': postExecMethod,
+      'postProcessName': postProcessName,
+      'isTranPgm': isTran ? 1 : 0,
+      'isTran': isTran ? 1 : 0,
+      'levels': levels,
+      'orgCode': orgCode ?? 50,
+    };
+  }
 }
 
 class Auth103Limit {
