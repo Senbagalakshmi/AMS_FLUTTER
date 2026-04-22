@@ -481,9 +481,9 @@ class _SummaryCard3DState extends State<_SummaryCard3D> {
         curve: Interval(widget.delay, 1.0, curve: Curves.easeOutBack),
         builder: (context, anim, _) {
           return Opacity(
-            opacity: anim,
+            opacity: anim.clamp(0.0, 1.0),
             child: Transform.translate(
-              offset: Offset(0, 50 * (1 - anim)),
+              offset: Offset(0, 50 * (1 - anim.clamp(0.0, 1.0))),
               child: MouseRegion(
                 onEnter: (_) => setState(() => _isHovered = true),
                 onExit: (_) => setState(() => _isHovered = false),
