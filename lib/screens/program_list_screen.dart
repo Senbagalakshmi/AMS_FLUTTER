@@ -302,6 +302,7 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
           const SizedBox(height: 20),
           _actionBtn(Icons.add_moderator_rounded, 'New User Gate', 'MASTERS'),
           _actionBtn(Icons.account_tree_rounded, 'Configure GL', 'GL'),
+          _actionBtn(Icons.receipt_long_rounded, 'Post Transactions', 'TRANSACTIONS'),
           _actionBtn(Icons.verified_user_rounded, 'Audit Logs', 'AUTH'),
           _actionBtn(Icons.settings_input_composite_rounded, 'System Settings', 'CONFIG'),
         ],

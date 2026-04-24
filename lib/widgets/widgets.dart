@@ -1585,7 +1585,8 @@ class _AmsSidebarState extends State<AmsSidebar> {
       'GL-CUR',
       'GL-BRN',
       'GL-SEG',
-      'GL-ATT'
+      'GL-ATT',
+      'GL-JRN'
     ].contains(widget.selectedProg)) {
       openMenu = 'gl';
       openGlSubCategory = ['GL-SUB', 'GL-CUR', 'GL-BRN', 'GL-SEG', 'GL-ATT']
@@ -1594,6 +1595,8 @@ class _AmsSidebarState extends State<AmsSidebar> {
       openMenu = 'config';
     } else if (widget.currentScreen == 'nontranauth') {
       openMenu = 'auth';
+    } else if (['GL-JRN'].contains(widget.selectedProg)) {
+      openMenu = 'transactions';
     }
   }
 
@@ -1806,6 +1809,35 @@ class _AmsSidebarState extends State<AmsSidebar> {
                       onTap: () => widget.onNavigate('nontran', 'GL-ATT'),
                     ),
                   ],
+                ],
+
+                const SizedBox(height: 16),
+
+                // 🔹 TRANSACTIONS
+                AmsSidebarItem(
+                  label: widget.isCollapsed ? '' : 'Transactions',
+                  icon: openMenu == 'transactions'
+                      ? Icons.receipt_long_rounded
+                      : Icons.receipt_long_outlined,
+                  isCollapsed: widget.isCollapsed,
+                  isSelected: (widget.currentScreen == 'submenu_dashboard' &&
+                      widget.selectedProg == 'TRANSACTIONS'),
+                  onTap: () {
+                    setState(() {
+                      openMenu = openMenu == 'transactions' ? '' : 'transactions';
+                    });
+                    widget.onNavigate('submenu_dashboard', 'TRANSACTIONS');
+                  },
+                ),
+
+                if (openMenu == 'transactions') ...[
+                  AmsSubSidebarItem(
+                    label: 'Journal Entry',
+                    isCollapsed: widget.isCollapsed,
+                    icon: Icons.description_rounded,
+                    isSelected: widget.selectedProg == 'GL-JRN',
+                    onTap: () => widget.onNavigate('nontran', 'GL-JRN'),
+                  ),
                 ],
 
                 const SizedBox(height: 16),

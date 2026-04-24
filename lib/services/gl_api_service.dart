@@ -21,21 +21,45 @@ class GLApiService {
   // ─────────────────────────────────────────
   static String get _baseUrl => '${ApiService.baseUrl}/gl-attributes';
 
-  /// GL102 LIST //////////////////////////////////
+  /// GL MASTER LIST //////////////////////////////////
   Future<List<Map<String, dynamic>>?> getGlList() async {
     try {
+      // Trying the more standard endpoint first
       final response = await http.get(
-        Uri.parse("${ApiService.baseUrl}/gl-branch/gl102/list"),
+        Uri.parse("${ApiService.baseUrl}/gl-master?page=0&size=200"),
         headers: apiService.headers,
       );
 
       if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
-        return data.cast<Map<String, dynamic>>();
+        final dynamic decoded = jsonDecode(response.body);
+        
+        // Handle paginated response (standard in this app)
+        if (decoded is Map && decoded.containsKey('content')) {
+          final List<dynamic> content = decoded['content'] ?? [];
+          return content.cast<Map<String, dynamic>>();
+        }
+        
+        // Handle direct list response
+        if (decoded is List) {
+          return decoded.cast<Map<String, dynamic>>();
+        }
+      }
+
+      // Fallback to the specific gl102 endpoint if above fails or returns nothing
+      final fallbackRes = await http.get(
+        Uri.parse("${ApiService.baseUrl}/gl-branch/gl102/list"),
+        headers: apiService.headers,
+      );
+
+      if (fallbackRes.statusCode == 200) {
+        final dynamic decoded = jsonDecode(fallbackRes.body);
+        if (decoded is List) {
+          return decoded.cast<Map<String, dynamic>>();
+        }
       }
 
     } catch (e) {
-      print(e);
+      print('GLApiService.getGlList Error: $e');
     }
     return null;
   }

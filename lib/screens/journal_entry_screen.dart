@@ -1,0 +1,438 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import '../theme.dart';
+import '../widgets/widgets.dart';
+import '../services/gl_api_service.dart';
+
+class JournalEntryScreen extends StatefulWidget {
+  final VoidCallback onBack;
+  final VoidCallback onBackToModule;
+  final String? userName;
+
+  const JournalEntryScreen({
+    super.key,
+    required this.onBack,
+    required this.onBackToModule,
+    this.userName,
+  });
+
+  @override
+  State<JournalEntryScreen> createState() => _JournalEntryScreenState();
+}
+
+class _JournalEntryScreenState extends State<JournalEntryScreen> {
+  final _dateController = TextEditingController(text: _formatDate(DateTime.now()));
+  final _journalNoController = TextEditingController(text: 'Auto Generated');
+  final _descriptionController = TextEditingController();
+  final _currencyController = TextEditingController(text: 'INR - Indian Rupee');
+  final _referenceController = TextEditingController();
+
+  final List<JournalRow> _rows = [
+    JournalRow(),
+  ];
+
+  final GLApiService _glApiService = GLApiService();
+  List<Map<String, dynamic>> _accounts = [];
+  List<String> _accountOptions = [];
+  bool _isLoadingAccounts = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchAccounts();
+  }
+
+  Future<void> _fetchAccounts() async {
+    try {
+      final list = await _glApiService.getGlList();
+      if (mounted) {
+        setState(() {
+          _accounts = list ?? [];
+          _accountOptions = _accounts
+              .where((e) => e['glNo'] != null)
+              .map((e) => "${e['glNo']} - ${e['glName'] ?? ''}")
+              .toList();
+          _isLoadingAccounts = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoadingAccounts = false;
+          _accountOptions = [];
+        });
+      }
+    }
+  }
+
+  static String _formatDate(DateTime date) {
+    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+  }
+
+  @override
+  void dispose() {
+    _dateController.dispose();
+    _journalNoController.dispose();
+    _descriptionController.dispose();
+    _currencyController.dispose();
+    _referenceController.dispose();
+    super.dispose();
+  }
+
+  void _addRow() {
+    setState(() {
+      _rows.add(JournalRow());
+    });
+  }
+
+  void _removeRow(int index) {
+    if (_rows.length > 1) {
+      setState(() {
+        _rows.removeAt(index);
+      });
+    }
+  }
+
+  double get _totalDebit => _rows.fold(0, (sum, row) => sum + row.debit);
+  double get _totalCredit => _rows.fold(0, (sum, row) => sum + row.credit);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.bg,
+      body: Column(
+        children: [
+          AmsIdentityHeader(
+            icon: const Icon(Icons.description_rounded, size: 28, color: AppColors.tBlue),
+            title: 'Journal Entry',
+            subtitle: 'Create and manage ledger journal entries',
+            badges: const [],
+            accentColor: AppColors.tBlue,
+            accentLt: AppColors.tBlueLt,
+            accentMd: AppColors.tBlueMd,
+            onBack: widget.onBackToModule,
+            breadcrumbs: [
+              HeaderBreadcrumb(label: 'Home', onTap: widget.onBack),
+              HeaderBreadcrumb(label: 'GL Module', onTap: widget.onBackToModule),
+              HeaderBreadcrumb(label: 'Journal Entry'),
+            ],
+          ),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.border),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.03),
+                      blurRadius: 20,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Screen Title Bar
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF4A69BD), // Replicating the blue from image
+                        borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+                      ),
+                      child: const Text(
+                        'New Journal Entry',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+
+                    Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Header Fields
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: AmsField(
+                                  label: 'Date',
+                                  child: AmsTextInput(
+                                    controller: _dateController,
+                                    readOnly: true,
+                                    icon: Icons.calendar_today_rounded,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 32),
+                              Expanded(
+                                child: AmsField(
+                                  label: 'Journal No',
+                                  child: AmsTextInput(
+                                    controller: _journalNoController,
+                                    readOnly: true,
+                                    placeholder: 'Auto Generated',
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 20),
+                          AmsField(
+                            label: 'Journal Description',
+                            child: AmsTextInput(
+                              controller: _descriptionController,
+                              maxLines: 2,
+                              placeholder: 'Enter journal description...',
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: AmsField(
+                                  label: 'Currency',
+                                  child: AmsTextInput(
+                                    controller: _currencyController,
+                                    placeholder: 'Load default currency of the organization',
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 32),
+                              Expanded(
+                                child: AmsField(
+                                  label: 'Reference No (Optional)',
+                                  child: AmsTextInput(
+                                    controller: _referenceController,
+                                    placeholder: 'Enter reference number',
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 40),
+
+                          // Table Header
+                          Container(
+                            decoration: const BoxDecoration(
+                              color: Color(0xFF3B5998), // Slightly darker blue
+                              borderRadius: BorderRadius.vertical(top: Radius.circular(4)),
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                            child: const Row(
+                              children: [
+                                Expanded(flex: 2, child: Text('Account No', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
+                                SizedBox(width: 24), // Added space
+                                Expanded(flex: 1, child: Text('Debit', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
+                                Expanded(flex: 1, child: Text('Credit', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
+                                Expanded(flex: 4, child: Text('Remarks', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
+                                SizedBox(width: 40), // Space for action button
+                              ],
+                            ),
+                          ),
+
+                          // Table Rows
+                          ListView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: _rows.length,
+                            itemBuilder: (context, index) {
+                              return _buildRow(index);
+                            },
+                          ),
+
+                          const SizedBox(height: 20),
+
+                          // Add Row Button
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: IconButton(
+                              onPressed: _addRow,
+                              icon: Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF3B5998),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: const Icon(Icons.add, color: Colors.white, size: 20),
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 40),
+
+                          // Totals (Optional but helpful)
+                          Divider(color: AppColors.border),
+                          const SizedBox(height: 10),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              Text('Total Debit: ', style: bodyStyle(weight: FontWeight.w600)),
+                              Text(_totalDebit.toStringAsFixed(2), style: bodyStyle(color: AppColors.green, weight: FontWeight.w700)),
+                              const SizedBox(width: 40),
+                              Text('Total Credit: ', style: bodyStyle(weight: FontWeight.w600)),
+                              Text(_totalCredit.toStringAsFixed(2), style: bodyStyle(color: AppColors.red, weight: FontWeight.w700)),
+                              const SizedBox(width: 40),
+                            ],
+                          ),
+                          const SizedBox(height: 40),
+
+                          // Bottom Actions
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              AmsButton(
+                                label: 'Save',
+                                variant: AmsButtonVariant.primary,
+                                backgroundColor: const Color(0xFF27AE60), // Green from image
+                                onPressed: () {
+                                  // Implementation for save
+                                  showAmsSnack(context, 'Journal Entry Saved Successfully', type: 's');
+                                },
+                              ),
+                              const SizedBox(width: 16),
+                              AmsButton(
+                                label: 'Cancel',
+                                variant: AmsButtonVariant.outline,
+                                onPressed: widget.onBackToModule,
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRow(int index) {
+    final row = _rows[index];
+    return Container(
+      decoration: BoxDecoration(
+        color: index % 2 == 0 ? Colors.white : const Color(0xFFF8F9FA),
+        border: Border(
+          bottom: BorderSide(color: AppColors.border),
+          left: BorderSide(color: AppColors.border),
+          right: BorderSide(color: AppColors.border),
+        ),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        children: [
+          Expanded(
+            flex: 2,
+            child: _isLoadingAccounts
+                ? const SizedBox(
+                    height: 38,
+                    child: Center(
+                      child: SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    ),
+                  )
+                : AmsSearchableDropdown(
+                    items: _accountOptions,
+                    placeholder: 'Auto help',
+                    initialValue: row.accountNo.isNotEmpty ? _accountOptions.firstWhere((e) => e.startsWith(row.accountNo), orElse: () => '') : null,
+                    onChanged: (v) {
+                      if (v != null && v.contains(' - ')) {
+                        row.accountNo = v.split(' - ').first;
+                      } else {
+                        row.accountNo = v ?? '';
+                      }
+                    },
+                  ),
+          ),
+          const SizedBox(width: 24), // Added space
+          Expanded(
+            flex: 1,
+            child: TextField(
+              decoration: const InputDecoration(
+                hintText: '0.00',
+                border: InputBorder.none,
+                isDense: true,
+              ),
+              keyboardType: TextInputType.number,
+              style: bodyStyle(size: 14),
+              onChanged: (v) {
+                setState(() {
+                  row.debit = double.tryParse(v) ?? 0.0;
+                });
+              },
+            ),
+          ),
+          Expanded(
+            flex: 1,
+            child: TextField(
+              decoration: const InputDecoration(
+                hintText: '0.00',
+                border: InputBorder.none,
+                isDense: true,
+              ),
+              keyboardType: TextInputType.number,
+              style: bodyStyle(size: 14),
+              onChanged: (v) {
+                setState(() {
+                  row.credit = double.tryParse(v) ?? 0.0;
+                });
+              },
+            ),
+          ),
+          Expanded(
+            flex: 4,
+            child: TextField(
+              decoration: const InputDecoration(
+                hintText: 'Remarks',
+                border: InputBorder.none,
+                isDense: true,
+              ),
+              style: bodyStyle(size: 14),
+              onChanged: (v) => row.remarks = v,
+            ),
+          ),
+          SizedBox(
+            width: 40,
+            child: IconButton(
+              icon: const Icon(Icons.remove_circle_outline, color: AppColors.red, size: 20),
+              onPressed: () => _removeRow(index),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class JournalRow {
+  String accountNo;
+  double debit;
+  double credit;
+  String remarks;
+
+  JournalRow({
+    this.accountNo = '',
+    this.debit = 0.0,
+    this.credit = 0.0,
+    this.remarks = '',
+  });
+}

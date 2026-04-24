@@ -107,6 +107,12 @@ final Map<String, Auth101Config> auth101 = {
       approvalReq: true,
       isTran: false,
       levels: 1),
+  'GL-JRN': const Auth101Config(
+      id: 'GL-JRN',
+      name: 'Journal Entry',
+      approvalReq: true,
+      isTran: true,
+      levels: 2),
   'PROG-CRT': const Auth101Config(
       id: 'PROG-CRT',
       name: 'Program',
@@ -189,6 +195,7 @@ final Map<String, String> nonTranProgPkPrefix = {
   'GL-BRN': 'GLB',
   'GL-SEG': 'GLS',
   'GL-ATT': 'GLA',
+  'GL-JRN': 'JRN',
   'PROG-CRT': 'PRG',
   'MENU-MST': 'MNU',
   'BRN-CRT': 'BRN',
@@ -462,6 +469,17 @@ final List<SubmenuItem> glSubmenus = [
     subtitle: 'Open the GL control sub modules in one place.',
     metric: '4 Modules',
     trend: 'Grouped',
+  ),
+];
+
+final List<SubmenuItem> transactionSubmenus = [
+  SubmenuItem(
+    label: 'Journal Entry',
+    icon: Icons.description_rounded,
+    programId: 'GL-JRN',
+    subtitle: 'Create and manage ledger journal entries.',
+    metric: 'New',
+    trend: 'Daily',
   ),
 ];
 

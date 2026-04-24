@@ -33,6 +33,7 @@ import 'screens/gl_dashboard_screen.dart';
 import 'screens/program_master_screen.dart';
 import 'screens/menu_master_screen.dart';
 import 'screens/splash_screen.dart';
+import 'screens/journal_entry_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -481,6 +482,12 @@ class _AmsRootState extends State<AmsRoot> {
             onBackToModule: () => _handleProceed('GL'),
             userName: _state.userName,
           );
+        } else if (_state.selectedProg == 'GL-JRN') {
+          body = JournalEntryScreen(
+            onBack: () => _navigate('list'),
+            onBackToModule: () => _handleProceed('GL'),
+            userName: _state.userName,
+          );
         } else if (_state.selectedProg == 'GL-CUR') {
           body = AllowedCurrencyScreen(
             onBack: () => _navigate('list'),
@@ -639,6 +646,9 @@ class _AmsRootState extends State<AmsRoot> {
             }
             return item;
           }).toList();
+        } else if (cat == 'TRANSACTIONS') {
+          title = 'Transactions';
+          items = transactionSubmenus;
         }
 
         if (cat == 'GL') {
