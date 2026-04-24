@@ -5,7 +5,7 @@ import 'dart:convert';
 import '../theme.dart';
 import '../widgets/widgets.dart';
 import '../services/branch_api_service.dart';
-import '../services/api_service.dart';
+import '../services/org_api_service.dart';   // ← NEW import
 import 'package:intl/intl.dart';
 
 class BranchScreen extends StatefulWidget {
@@ -76,15 +76,13 @@ class _BranchScreenState extends State<BranchScreen> {
       _formData['addrline3'] = record['addrline3'] ?? '';
       _formData['addrline4'] = record['addrline4'] ?? '';
       _formData['addrline5'] = record['addrline5'] ?? '';
-      _formData['telephone'] = record['telephone'] ?? '';
-      _formData['email'] = record['email'] ?? '';
+      _formData['telephone'] = record['telephone'] ?? record['TELEPHONE'] ?? '';
+      _formData['email'] = record['email'] ?? record['EMAIL'] ?? '';
       _formData['eUser'] = record['eUser'] ?? record['euser'] ?? 'ADMIN';
       _formData['eDate'] = record['eDate'] ??
           record['edate'] ??
           DateFormat('yyyy-MM-dd').format(DateTime.now());
       _formData['headBrn'] = record['headBrn'] ?? record['headbrn'] ?? 1;
-      _formData['telephone'] = record['telephone'] ?? record['TELEPHONE'] ?? '';
-      _formData['email'] = record['email'] ?? record['EMAIL'] ?? '';
 
       _pgmStatus = int.tryParse(_formData['status'].toString()) ?? 1;
       _showForm = true;
@@ -132,30 +130,24 @@ class _BranchScreenState extends State<BranchScreen> {
     try {
       if (_formData['brnCd'] == null || _formData['brnCd'] == 0) {
         final val = _fieldsKey.currentState?.getBranchCode();
-        if (val != null) {
-          _formData['brnCd'] = val;
-        }
+        if (val != null) _formData['brnCd'] = val;
       }
 
       _formData['eUser'] = widget.userName ?? 'ADMIN';
       _formData['eDate'] = DateFormat('yyyy-MM-dd').format(DateTime.now());
       _formData['headBrn'] = 1;
-      _formData['orgCode'] = 50;
+      _formData['orgCode'] = _formData['orgCode'] ?? 50;
 
-      // ── Helper: truncate string to max DB column length ──────────────────
       String trunc(String? v, int max) =>
           (v ?? '').length > max ? (v ?? '').substring(0, max) : (v ?? '');
 
-      // Build a clean payload — only DB columns, values truncated to column size.
-      // Sizes inferred from working payload & error (country VARCHAR(2) confirmed).
       final cleanPayload = {
-        'orgCode': _formData['orgCode'], // BIGINT
-        'brnCd': _formData['brnCd'], // BIGINT
+        'orgCode': _formData['orgCode'],
+        'brnCd': _formData['brnCd'],
         'brnName': trunc(_formData['brnName']?.toString(), 100),
-        'openDate': trunc(_formData['openDate']?.toString(), 10), // yyyy-MM-dd
+        'openDate': trunc(_formData['openDate']?.toString(), 10),
         'address': trunc(_formData['address']?.toString(), 200),
-        'country':
-            trunc(_formData['country']?.toString(), 2), // ISO2 VARCHAR(2)
+        'country': trunc(_formData['country']?.toString(), 2),
         'divisionName': trunc(_formData['divisionName']?.toString(), 50),
         'pincode': trunc(_formData['pincode']?.toString(), 10),
         'addrline1': trunc(_formData['addrline1']?.toString(), 100),
@@ -165,10 +157,10 @@ class _BranchScreenState extends State<BranchScreen> {
         'addrline5': trunc(_formData['addrline5']?.toString(), 100),
         'telephone': trunc(_formData['telephone']?.toString(), 20),
         'email': trunc(_formData['email']?.toString(), 100),
-        'status': _formData['status'], // INT
-        'eUser': trunc(_formData['eUser']?.toString(), 5), // e.g. "ADMIN"
-        'eDate': trunc(_formData['eDate']?.toString(), 10), // yyyy-MM-dd
-        'headBrn': _formData['headBrn'], // BIGINT
+        'status': _formData['status'],
+        'eUser': trunc(_formData['eUser']?.toString(), 5),
+        'eDate': trunc(_formData['eDate']?.toString(), 10),
+        'headBrn': _formData['headBrn'],
       };
 
       final success = _isEditMode
@@ -176,56 +168,13 @@ class _BranchScreenState extends State<BranchScreen> {
           : await branchApiService.createBranch(cleanPayload);
 
       if (success) {
-        final savedRecord = {
-          'brnCd': _formData['brnCd'],
-          'branchcd': _formData['brnCd'],
-          'brnName': _formData['brnName'],
-          'branchname': _formData['brnName'], // UI display only
-          'brnname': _formData['brnName'], // UI display only
-          'status': _formData['status'],
-          'orgCode': _formData['orgCode'],
-          'orgcode': _formData['orgCode'],
-          'openDate': _formData['openDate'],
-          'opendate': _formData['openDate'],
-          'address': _formData['address'],
-          'country': _formData['country'],
-          'divisionName': _formData['divisionName'],
-          'divisionname': _formData['divisionName'],
-          'pincode': _formData['pincode'],
-          'addrline1': _formData['addrline1'],
-          'addrline2': _formData['addrline2'],
-          'addrline3': _formData['addrline3'],
-          'addrline4': _formData['addrline4'],
-          'addrline5': _formData['addrline5'],
-          'telephone': _formData['telephone'],
-          'TELEPHONE': _formData['telephone'],
-          'email': _formData['email'],
-          'EMAIL': _formData['email'],
-          'eUser': _formData['eUser'],
-          'euser': _formData['eUser'],
-          'eDate': _formData['eDate'],
-          'edate': _formData['eDate'],
-          'headBrn': _formData['headBrn'],
-          'headbrn': _formData['headBrn'],
-        };
-
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
               content: Text(
                   'Branch ${_isEditMode ? 'updated' : 'created'} successfully')),
         );
-
         await _loadBranches(1);
-
-        if (mounted) {
-          setState(() {
-            final exists = _branches.any((b) =>
-                (b['brnCd'] ?? b['brncd'] ?? b['branchcd'])?.toString() ==
-                savedRecord['brnCd']?.toString());
-            if (!exists) _branches.insert(0, savedRecord);
-            _showForm = false;
-          });
-        }
+        if (mounted) setState(() => _showForm = false);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -237,9 +186,7 @@ class _BranchScreenState extends State<BranchScreen> {
         SnackBar(content: Text('Error: $e')),
       );
     } finally {
-      if (mounted) {
-        setState(() => _isSaving = false);
-      }
+      if (mounted) setState(() => _isSaving = false);
     }
   }
 
@@ -591,7 +538,7 @@ class BranchScreenFields extends StatefulWidget {
 
 class BranchScreenFieldsState extends State<BranchScreenFields> {
   // ── Text Controllers ────────────────────────────────────────────────────────
-  final _brnOrgCtrl = TextEditingController(text: '1');
+  final _brnOrgCtrl = TextEditingController();       // shows "50 – Org Name"
   final _brnCdCtrl = TextEditingController();
   final _brnNameCtrl = TextEditingController();
   final _brnOpenDateCtrl = TextEditingController();
@@ -609,35 +556,39 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
   final _brnStateCtrl = TextEditingController();
   final _brnDistrictCtrl = TextEditingController();
 
-  // ── Overlay search controllers ──────────────────────────────────────────────
+  // ── Org-code searchable dropdown ────────────────────────────────────────────
+  final _orgSearchCtrl = TextEditingController();       // search text inside overlay
+  final _orgLayerLink = LayerLink();
+  OverlayEntry? _orgOverlay;
+  List<Map<String, dynamic>> _orgList = [];             // [{orgcode, name}, ...]
+  bool _orgLoading = false;
+  int? _selectedOrgCode;                                // numeric code sent to DB
+
+  // ── Country / State / District overlay controllers ──────────────────────────
   final _countrySearchCtrl = TextEditingController();
   final _stateSearchCtrl = TextEditingController();
   final _districtSearchCtrl = TextEditingController();
 
-  // ── LayerLinks for overlay positioning ─────────────────────────────────────
   final _countryLayerLink = LayerLink();
   final _stateLayerLink = LayerLink();
   final _districtLayerLink = LayerLink();
 
-  // ── Overlay entries ─────────────────────────────────────────────────────────
   OverlayEntry? _countryOverlay;
   OverlayEntry? _stateOverlay;
   OverlayEntry? _districtOverlay;
 
-  // ── API-driven dropdown data ────────────────────────────────────────────────
   List<String> _countries = [];
   List<String> _states = [];
   List<String> _districts = [];
-  // country display name → ISO2 code  e.g. "India" → "IN"
   final Map<String, String> _countryIsoMap = {};
   bool _countriesLoading = false;
   bool _statesLoading = false;
   bool _districtsLoading = false;
   bool _pincodeLoading = false;
   String? _selectedCountryName;
-  String? _selectedCountryIso; // 2-char code sent to DB (VARCHAR(2))
+  String? _selectedCountryIso;
   String? _selectedStateName;
-  String? _selectedStateAbbr; // e.g. "TN" for "Tamil Nadu"
+  String? _selectedStateAbbr;
 
   final Map<String, String?> _errors = {};
 
@@ -645,6 +596,7 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
   @override
   void initState() {
     super.initState();
+    _loadOrganisations();
     _loadCountries();
     _populateFields();
   }
@@ -661,6 +613,7 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
   void dispose() {
     _removeAllOverlays();
     _brnOrgCtrl.dispose();
+    _orgSearchCtrl.dispose();
     _brnCdCtrl.dispose();
     _brnNameCtrl.dispose();
     _brnOpenDateCtrl.dispose();
@@ -683,8 +636,10 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
     super.dispose();
   }
 
-  // ── Overlay helpers ─────────────────────────────────────────────────────────
+  // ── Remove all overlays ──────────────────────────────────────────────────────
   void _removeAllOverlays() {
+    _orgOverlay?.remove();
+    _orgOverlay = null;
     _countryOverlay?.remove();
     _countryOverlay = null;
     _stateOverlay?.remove();
@@ -692,6 +647,314 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
     _districtOverlay?.remove();
     _districtOverlay = null;
   }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ORGANISATION CODE – fetch + searchable overlay dropdown
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /// Fetch all organisations from the API (page 0, large size to get all).
+  Future<void> _loadOrganisations() async {
+    if (_orgLoading || _orgList.isNotEmpty) return;
+    setState(() => _orgLoading = true);
+    try {
+      // Use orgApiService just like OrganisationScreen does.
+      // We ask for page 0 with a large page size so we get everything.
+      final res = await orgApiService.getAllOrganisations(page: 0, size: 200);
+      if (res != null && mounted) {
+        setState(() => _orgList = res.items);
+      }
+    } catch (_) {
+      // silent – user can still type the code manually
+    } finally {
+      if (mounted) setState(() => _orgLoading = false);
+    }
+  }
+
+  /// Build the org-code overlay dropdown.
+  void _openOrgDropdown() {
+    if (widget.isViewMode) return;
+    _removeAllOverlays();
+    // Seed the search box with whatever the user has typed so far,
+    // stripping the "– Name" suffix if present.
+    _orgSearchCtrl.text = '';
+
+    _orgOverlay = OverlayEntry(
+      builder: (ctx) {
+        return GestureDetector(
+          behavior: HitTestBehavior.translucent,
+          onTap: () {
+            _orgOverlay?.remove();
+            _orgOverlay = null;
+          },
+          child: Stack(
+            children: [
+              CompositedTransformFollower(
+                link: _orgLayerLink,
+                showWhenUnlinked: false,
+                offset: const Offset(0, 52),
+                child: GestureDetector(
+                  onTap: () {}, // prevent bubble
+                  child: Material(
+                    elevation: 8,
+                    borderRadius: BorderRadius.circular(10),
+                    shadowColor: Colors.black26,
+                    child: StatefulBuilder(
+                      builder: (ctx2, setInner) {
+                        final query = _orgSearchCtrl.text.toLowerCase();
+
+                        // Filter by code OR name
+                        final filtered = _orgList.where((o) {
+                          final code =
+                              (o['orgcode'] ?? o['orgCode'] ?? '').toString();
+                          final name =
+                              (o['name'] ?? '').toString().toLowerCase();
+                          return code.contains(query) || name.contains(query);
+                        }).toList();
+
+                        return Container(
+                          width: 360,
+                          constraints: const BoxConstraints(maxHeight: 340),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: AppColors.border),
+                          ),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // ── Search bar ────────────────────────────────
+                              Padding(
+                                padding: const EdgeInsets.all(10),
+                                child: TextField(
+                                  controller: _orgSearchCtrl,
+                                  autofocus: true,
+                                  decoration: InputDecoration(
+                                    hintText: 'Search by code or name…',
+                                    hintStyle: const TextStyle(
+                                        color: AppColors.ink4, fontSize: 13),
+                                    prefixIcon: const Icon(Icons.search,
+                                        size: 18, color: AppColors.ink3),
+                                    suffixIcon: _orgSearchCtrl.text.isNotEmpty
+                                        ? IconButton(
+                                            icon: const Icon(Icons.clear,
+                                                size: 16,
+                                                color: AppColors.ink3),
+                                            onPressed: () {
+                                              _orgSearchCtrl.clear();
+                                              setInner(() {});
+                                            },
+                                          )
+                                        : null,
+                                    isDense: true,
+                                    contentPadding:
+                                        const EdgeInsets.symmetric(
+                                            vertical: 10, horizontal: 12),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                      borderSide: const BorderSide(
+                                          color: AppColors.border),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                      borderSide: const BorderSide(
+                                          color: AppColors.tBlue, width: 1.5),
+                                    ),
+                                    filled: true,
+                                    fillColor: AppColors.bg,
+                                  ),
+                                  onChanged: (_) => setInner(() {}),
+                                ),
+                              ),
+                              const Divider(height: 1, color: AppColors.border),
+
+                              // ── List ──────────────────────────────────────
+                              Flexible(
+                                child: _orgLoading
+                                    ? const Padding(
+                                        padding: EdgeInsets.all(24),
+                                        child: Center(
+                                          child: Column(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              CircularProgressIndicator(
+                                                  strokeWidth: 2,
+                                                  color: AppColors.tBlue),
+                                              SizedBox(height: 8),
+                                              Text('Loading organisations…',
+                                                  style: TextStyle(
+                                                      fontSize: 13,
+                                                      color: AppColors.ink3)),
+                                            ],
+                                          ),
+                                        ),
+                                      )
+                                    : filtered.isEmpty
+                                        ? Padding(
+                                            padding: const EdgeInsets.all(24),
+                                            child: Text(
+                                              'No organisations found',
+                                              style: bodyStyle(
+                                                  color: AppColors.ink4),
+                                            ),
+                                          )
+                                        : ListView.builder(
+                                            shrinkWrap: true,
+                                            itemCount: filtered.length,
+                                            itemBuilder: (_, idx) {
+                                              final org = filtered[idx];
+                                              final code = (org['orgcode'] ??
+                                                      org['orgCode'] ??
+                                                      '')
+                                                  .toString();
+                                              final name =
+                                                  (org['name'] ?? '').toString();
+                                              final isSelected =
+                                                  _selectedOrgCode?.toString() ==
+                                                      code;
+
+                                              return InkWell(
+                                                onTap: () {
+                                                  _selectOrg(org);
+                                                  _orgSearchCtrl.clear();
+                                                  _orgOverlay?.remove();
+                                                  _orgOverlay = null;
+                                                },
+                                                child: Container(
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                          horizontal: 16,
+                                                          vertical: 11),
+                                                  decoration: BoxDecoration(
+                                                    color: isSelected
+                                                        ? AppColors.tBlueLt
+                                                            .withValues(
+                                                                alpha: 0.15)
+                                                        : Colors.transparent,
+                                                    border: idx <
+                                                            filtered.length - 1
+                                                        ? const Border(
+                                                            bottom: BorderSide(
+                                                                color: AppColors
+                                                                    .border,
+                                                                width: 0.5))
+                                                        : null,
+                                                  ),
+                                                  child: Row(
+                                                    children: [
+                                                      // Code badge
+                                                      Container(
+                                                        padding: const EdgeInsets
+                                                            .symmetric(
+                                                            horizontal: 8,
+                                                            vertical: 3),
+                                                        decoration: BoxDecoration(
+                                                          color: isSelected
+                                                              ? AppColors.tBlue
+                                                              : AppColors
+                                                                  .tBlueLt,
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(6),
+                                                        ),
+                                                        child: Text(
+                                                          code,
+                                                          style: TextStyle(
+                                                            fontSize: 12,
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                            color: isSelected
+                                                                ? Colors.white
+                                                                : AppColors
+                                                                    .tBlue,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                      const SizedBox(width: 10),
+                                                      // Org name
+                                                      Expanded(
+                                                        child: Text(
+                                                          name,
+                                                          style: bodyStyle(
+                                                              size: 13),
+                                                          overflow: TextOverflow
+                                                              .ellipsis,
+                                                        ),
+                                                      ),
+                                                      if (isSelected)
+                                                        const Icon(
+                                                            Icons.check_rounded,
+                                                            size: 16,
+                                                            color:
+                                                                AppColors.tBlue),
+                                                    ],
+                                                  ),
+                                                ),
+                                              );
+                                            },
+                                          ),
+                              ),
+
+                              // ── Footer: total count ───────────────────────
+                              if (!_orgLoading && _orgList.isNotEmpty)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 16, vertical: 8),
+                                  decoration: const BoxDecoration(
+                                    color: AppColors.bg,
+                                    border: Border(
+                                        top: BorderSide(
+                                            color: AppColors.border,
+                                            width: 0.5)),
+                                    borderRadius: BorderRadius.vertical(
+                                        bottom: Radius.circular(10)),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      const Icon(Icons.info_outline_rounded,
+                                          size: 13, color: AppColors.ink3),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        '${filtered.length} of ${_orgList.length} organisations',
+                                        style: const TextStyle(
+                                            fontSize: 11,
+                                            color: AppColors.ink3),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    Overlay.of(context).insert(_orgOverlay!);
+  }
+
+  /// Called when user selects an org from the overlay.
+  void _selectOrg(Map<String, dynamic> org) {
+    final code = (org['orgcode'] ?? org['orgCode'] ?? '').toString();
+    final name = (org['name'] ?? '').toString();
+    setState(() {
+      _selectedOrgCode = int.tryParse(code);
+      // Show "50 – Main Organisation" in the field
+      _brnOrgCtrl.text = name.isNotEmpty ? '$code – $name' : code;
+      _errors['orgCode'] = null;
+    });
+    widget.onChanged('orgCode', int.tryParse(code) ?? 0);
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // COUNTRY / STATE / DISTRICT overlay (unchanged logic, same helper)
+  // ═══════════════════════════════════════════════════════════════════════════
 
   OverlayEntry _buildDropdownOverlay({
     required LayerLink link,
@@ -713,7 +976,7 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
                 showWhenUnlinked: false,
                 offset: const Offset(0, 50),
                 child: GestureDetector(
-                  onTap: () {}, // prevent tap-through to background dismiss
+                  onTap: () {},
                   child: Material(
                     elevation: 8,
                     borderRadius: BorderRadius.circular(10),
@@ -736,7 +999,6 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              // Search bar inside dropdown
                               Padding(
                                 padding: const EdgeInsets.all(10),
                                 child: TextField(
@@ -744,13 +1006,14 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
                                   autofocus: true,
                                   decoration: InputDecoration(
                                     hintText: 'Search...',
-                                    hintStyle: TextStyle(
+                                    hintStyle: const TextStyle(
                                         color: AppColors.ink4, fontSize: 13),
                                     prefixIcon: const Icon(Icons.search,
                                         size: 18, color: AppColors.ink3),
                                     isDense: true,
-                                    contentPadding: const EdgeInsets.symmetric(
-                                        vertical: 10, horizontal: 12),
+                                    contentPadding:
+                                        const EdgeInsets.symmetric(
+                                            vertical: 10, horizontal: 12),
                                     border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(8),
                                       borderSide: const BorderSide(
@@ -768,7 +1031,6 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
                                 ),
                               ),
                               const Divider(height: 1, color: AppColors.border),
-                              // List
                               Flexible(
                                 child: isLoading
                                     ? const Padding(
@@ -801,31 +1063,34 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
                                         : ListView.builder(
                                             shrinkWrap: true,
                                             itemCount: filtered.length,
-                                            itemBuilder: (_, idx) => InkWell(
-                                              onTap: () {
-                                                onSelect(filtered[idx]);
-                                                searchCtrl.clear();
-                                                onClose();
-                                              },
-                                              child: Container(
-                                                padding:
-                                                    const EdgeInsets.symmetric(
+                                            itemBuilder: (_, idx) =>
+                                                InkWell(
+                                                  onTap: () {
+                                                    onSelect(filtered[idx]);
+                                                    searchCtrl.clear();
+                                                    onClose();
+                                                  },
+                                                  child: Container(
+                                                    padding: const EdgeInsets
+                                                        .symmetric(
                                                         horizontal: 16,
                                                         vertical: 11),
-                                                decoration: BoxDecoration(
-                                                  border: idx <
-                                                          filtered.length - 1
-                                                      ? const Border(
-                                                          bottom: BorderSide(
-                                                              color: AppColors
-                                                                  .border,
-                                                              width: 0.5))
-                                                      : null,
+                                                    decoration: BoxDecoration(
+                                                      border: idx <
+                                                              filtered.length -
+                                                                  1
+                                                          ? const Border(
+                                                              bottom: BorderSide(
+                                                                  color: AppColors
+                                                                      .border,
+                                                                  width: 0.5))
+                                                          : null,
+                                                    ),
+                                                    child: Text(filtered[idx],
+                                                        style:
+                                                            bodyStyle(size: 13)),
+                                                  ),
                                                 ),
-                                                child: Text(filtered[idx],
-                                                    style: bodyStyle(size: 13)),
-                                              ),
-                                            ),
                                           ),
                               ),
                             ],
@@ -843,7 +1108,6 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
     );
   }
 
-  // ── Open Country Dropdown ───────────────────────────────────────────────────
   Future<void> _openCountryDropdown() async {
     if (widget.isViewMode) return;
     _removeAllOverlays();
@@ -862,8 +1126,7 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
         setState(() {
           _selectedCountryName = selected;
           _selectedCountryIso = iso;
-          _brnCountryCtrl.text = selected; // show full name in UI
-          // Reset dependent fields
+          _brnCountryCtrl.text = selected;
           _selectedStateName = null;
           _brnStateCtrl.clear();
           _brnDistrictCtrl.clear();
@@ -871,7 +1134,7 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
           _states = [];
           _districts = [];
         });
-        widget.onChanged('country', iso); // send ISO2 to DB (VARCHAR 2)
+        widget.onChanged('country', iso);
         _loadStates(selected);
       },
       onClose: () {
@@ -882,7 +1145,6 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
     Overlay.of(context).insert(_countryOverlay!);
   }
 
-  // ── Open State Dropdown ─────────────────────────────────────────────────────
   Future<void> _openStateDropdown() async {
     if (widget.isViewMode) return;
     if (_selectedCountryName == null || _selectedCountryName!.isEmpty) {
@@ -900,8 +1162,6 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
       isLoading: _statesLoading,
       searchCtrl: _stateSearchCtrl,
       onSelect: (selected) {
-        // Build abbreviation: first letter of each word, max 5 chars
-        // e.g. "Tamil Nadu" → "TN", "Andhra Pradesh" → "AP"
         final abbr = selected
             .split(RegExp(r'\s+'))
             .where((w) => w.isNotEmpty)
@@ -911,12 +1171,10 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
           _selectedStateName = selected;
           _selectedStateAbbr = abbr;
           _brnStateCtrl.text = selected;
-          // Reset dependent fields
           _brnDistrictCtrl.clear();
           _brnPinCtrl.clear();
           _districts = [];
         });
-        // divisionName not finalized until district is picked
         widget.onChanged('divisionName', abbr);
         _loadDistricts(_selectedCountryName!, selected);
       },
@@ -928,7 +1186,6 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
     Overlay.of(context).insert(_stateOverlay!);
   }
 
-  // ── Open District Dropdown ──────────────────────────────────────────────────
   Future<void> _openDistrictDropdown() async {
     if (widget.isViewMode) return;
     if (_selectedStateName == null || _selectedStateName!.isEmpty) {
@@ -950,14 +1207,12 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
       onSelect: (selected) {
         setState(() {
           _brnDistrictCtrl.text = selected;
-          _brnPinCtrl.clear(); // clear while fetching
+          _brnPinCtrl.clear();
         });
-        // Format: "TN, Madurai"  (state abbr + district name)
         final divVal = _selectedStateAbbr != null
             ? '$_selectedStateAbbr, $selected'
             : selected;
         widget.onChanged('divisionName', divVal);
-        // Auto-populate pincode
         _loadPincode(selected);
       },
       onClose: () {
@@ -979,9 +1234,8 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
       if (res.statusCode == 200) {
         final decoded = jsonDecode(res.body);
         final List data = decoded['data'] ?? [];
-        final names = data.map<String>((e) => e['country'] as String).toList()
-          ..sort();
-        // Build name→ISO2 map for DB payload
+        final names =
+            data.map<String>((e) => e['country'] as String).toList()..sort();
         final isoMap = <String, String>{};
         for (final entry in data) {
           final name = entry['country'] as String? ?? '';
@@ -996,13 +1250,11 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
           });
       }
     } catch (_) {
-      // silent
     } finally {
       if (mounted) setState(() => _countriesLoading = false);
     }
   }
 
-  // ── API: States ─────────────────────────────────────────────────────────────
   Future<void> _loadStates(String countryName) async {
     setState(() {
       _statesLoading = true;
@@ -1012,7 +1264,8 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
     try {
       final res = await http
           .post(
-            Uri.parse('https://countriesnow.space/api/v0.1/countries/states'),
+            Uri.parse(
+                'https://countriesnow.space/api/v0.1/countries/states'),
             headers: {'Content-Type': 'application/json'},
             body: jsonEncode({'country': countryName}),
           )
@@ -1020,8 +1273,8 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
       if (res.statusCode == 200) {
         final decoded = jsonDecode(res.body);
         final List stateList = decoded['data']?['states'] ?? [];
-        final names = stateList.map<String>((s) => s['name'] as String).toList()
-          ..sort();
+        final names =
+            stateList.map<String>((s) => s['name'] as String).toList()..sort();
         if (mounted) setState(() => _states = names);
       }
     } catch (_) {
@@ -1030,7 +1283,6 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
     }
   }
 
-  // ── API: Districts / Cities ─────────────────────────────────────────────────
   Future<void> _loadDistricts(String countryName, String stateName) async {
     setState(() {
       _districtsLoading = true;
@@ -1057,17 +1309,13 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
     }
   }
 
-  // ── API: Pincode auto-populate ──────────────────────────────────────────────
-  // Uses postalpincode.in for India; falls back gracefully for other countries.
   Future<void> _loadPincode(String cityName) async {
     if (!mounted) return;
     setState(() => _pincodeLoading = true);
     try {
       final res = await http
-          .get(
-            Uri.parse(
-                'https://api.postalpincode.in/postoffice/${Uri.encodeComponent(cityName)}'),
-          )
+          .get(Uri.parse(
+              'https://api.postalpincode.in/postoffice/${Uri.encodeComponent(cityName)}'))
           .timeout(const Duration(seconds: 8));
       if (res.statusCode == 200) {
         final List data = jsonDecode(res.body);
@@ -1083,7 +1331,6 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
         }
       }
     } catch (_) {
-      // Pincode lookup not available for this country – user enters manually
     } finally {
       if (mounted) setState(() => _pincodeLoading = false);
     }
@@ -1097,9 +1344,22 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
       return;
     }
 
-    _brnOrgCtrl.text =
-        (data['orgcode'] ?? data['ORGCODE'] ?? data['orgCode'] ?? '1')
-            .toString();
+    // Org code – show "50 – Org Name" if we already have the list
+    final orgCodeRaw =
+        (data['orgcode'] ?? data['ORGCODE'] ?? data['orgCode'] ?? '').toString();
+    _selectedOrgCode = int.tryParse(orgCodeRaw);
+    if (_orgList.isNotEmpty && _selectedOrgCode != null) {
+      final match = _orgList.firstWhere(
+          (o) =>
+              (o['orgcode'] ?? o['orgCode'] ?? '').toString() == orgCodeRaw,
+          orElse: () => {});
+      final orgName = (match['name'] ?? '').toString();
+      _brnOrgCtrl.text =
+          orgName.isNotEmpty ? '$orgCodeRaw – $orgName' : orgCodeRaw;
+    } else {
+      _brnOrgCtrl.text = orgCodeRaw;
+    }
+
     _brnCdCtrl.text = (data['branchcd'] ??
             data['brncd'] ??
             data['BRNCD'] ??
@@ -1123,9 +1383,6 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
     _selectedCountryName = countryVal.isNotEmpty ? countryVal : null;
     _selectedCountryIso = countryVal.isNotEmpty ? countryVal : null;
 
-    // ── FIX: Read state & district from divisionName ──────────────────────
-    // divisionName is saved as "TN, Madurai" (stateAbbr, district)
-    // or just "TN" if only state was selected.
     final divVal = (data['divisionName'] ??
             data['divisionname'] ??
             data['DIVISIONNAME'] ??
@@ -1142,7 +1399,6 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
       _selectedStateAbbr = stateAbbr;
       _brnDistrictCtrl.text = districtName;
     } else if (divVal.isNotEmpty) {
-      // Only state abbr stored — no district chosen
       _brnStateCtrl.text = divVal;
       _selectedStateName = divVal;
       _selectedStateAbbr = divVal;
@@ -1153,7 +1409,6 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
       _selectedStateName = null;
       _selectedStateAbbr = null;
     }
-    // ── END FIX ───────────────────────────────────────────────────────────
 
     _brnPinCtrl.text = (data['pincode'] ?? data['PINCODE'] ?? '').toString();
     _brnAddr1Ctrl.text =
@@ -1174,7 +1429,8 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
   }
 
   void clear() {
-    _brnOrgCtrl.text = '1';
+    _brnOrgCtrl.clear();
+    _selectedOrgCode = null;
     _brnCdCtrl.clear();
     _brnNameCtrl.clear();
     _brnOpenDateCtrl.clear();
@@ -1206,6 +1462,14 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
   bool validate() {
     bool isValid = true;
     setState(() {
+      // Org code
+      if (_selectedOrgCode == null && _brnOrgCtrl.text.trim().isEmpty) {
+        _errors['orgCode'] = 'Organisation Code required';
+        isValid = false;
+      } else {
+        _errors['orgCode'] = null;
+      }
+
       if (_brnCdCtrl.text.trim().isEmpty) {
         _errors['brnCd'] = 'Branch Code required';
         isValid = false;
@@ -1243,33 +1507,38 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── Basic Info Section ──────────────────────────────────────────────
           AmsFormGrid(
             children: [
+              // ── ORGANISATION CODE – searchable dropdown ─────────────────────
               AmsField(
                 label: 'Organisation Code',
                 required: true,
                 labelAbove: true,
-                tooltip: 'Organization code.',
-                child: AmsTextInput(
-                  controller: _brnOrgCtrl,
-                  readOnly: widget.isViewMode,
-                  placeholder: 'e.g. 1',
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  textInputAction: TextInputAction.next,
-                  errorText: _errors['orgCode'],
-                  isValid:
-                      _errors['orgCode'] == null && _brnOrgCtrl.text.isNotEmpty,
-                  onChanged: (v) {
-                    setState(() {
-                      _errors['orgCode'] =
-                          v.trim().isEmpty ? 'Organisation Code required' : null;
-                    });
-                    widget.onChanged('orgCode', int.tryParse(v) ?? 50);
-                  },
+                tooltip: 'Select the parent organisation.',
+                child: CompositedTransformTarget(
+                  link: _orgLayerLink,
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: widget.isViewMode ? null : _openOrgDropdown,
+                    child: AbsorbPointer(
+                      child: AmsTextInput(
+                        controller: _brnOrgCtrl,
+                        readOnly: true,
+                        placeholder: _orgLoading
+                            ? 'Loading organisations…'
+                            : 'Select Organisation',
+                        icon: _orgLoading
+                            ? Icons.hourglass_empty_rounded
+                            : Icons.business_rounded,
+                        errorText: _errors['orgCode'],
+                        isValid: _errors['orgCode'] == null &&
+                            _brnOrgCtrl.text.isNotEmpty,
+                      ),
+                    ),
+                  ),
                 ),
               ),
+
               AmsField(
                 label: 'Branch Code',
                 required: true,
@@ -1355,18 +1624,8 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
                       final formattedDataDate =
                           "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
                       const monthNames = [
-                        "Jan",
-                        "Feb",
-                        "Mar",
-                        "Apr",
-                        "May",
-                        "Jun",
-                        "Jul",
-                        "Aug",
-                        "Sep",
-                        "Oct",
-                        "Nov",
-                        "Dec"
+                        "Jan","Feb","Mar","Apr","May","Jun",
+                        "Jul","Aug","Sep","Oct","Nov","Dec"
                       ];
                       final displayDate =
                           '${picked.day.toString().padLeft(2, '0')}-${monthNames[picked.month - 1]}-${picked.year}';
@@ -1383,7 +1642,6 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
                           v.trim().isEmpty ? 'Open Date required' : null;
                     });
                     widget.onChanged('openDate', v);
-                    widget.onChanged('opendate', v);
                   },
                 ),
               ),
@@ -1418,7 +1676,6 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
           sectionTitle('Address & Contact', color: AppColors.tBlue),
           const SizedBox(height: 16),
 
-          // ── Address & Contact Section ───────────────────────────────────────
           AmsFormGrid(
             children: [
               AmsField(
@@ -1433,7 +1690,6 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
                 ),
               ),
 
-              // ── COUNTRY (overlay dropdown) ────────────────────────────────
               AmsField(
                 label: 'Country',
                 labelAbove: true,
@@ -1459,7 +1715,6 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
                 ),
               ),
 
-              // ── STATE (overlay dropdown – depends on Country) ─────────────
               AmsField(
                 label: 'State code',
                 labelAbove: true,
@@ -1485,7 +1740,6 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
                 ),
               ),
 
-              // ── DISTRICT (overlay dropdown – depends on State) ────────────
               AmsField(
                 label: 'Distric code',
                 labelAbove: true,
@@ -1511,7 +1765,6 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
                 ),
               ),
 
-              // ── PINCODE (auto-populated + manual) ────────────────────────
               AmsField(
                 label: 'Pincode',
                 labelAbove: true,

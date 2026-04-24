@@ -7,6 +7,7 @@ import '../models/models.dart';
 import '../widgets/widgets.dart';
 import '../services/api_service.dart';
 import '../services/branch_api_service.dart';
+import '../services/org_api_service.dart'; // ← ADD THIS IMPORT
 import '../data.dart';
 
 import 'branch_screen.dart';
@@ -331,7 +332,8 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
         showAmsSnack(context, 'Module deleted successfully', icon: '✅');
         setState(() {});
       } else {
-        showAmsSnack(context, 'Failed to delete module - check logs.', icon: '❌', type: 'e');
+        showAmsSnack(context, 'Failed to delete module - check logs.',
+            icon: '❌', type: 'e');
       }
       setState(() => _isLoading = false);
     }
@@ -412,7 +414,8 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
         showAmsSnack(context, 'Authorization deleted successfully', icon: '✅');
         setState(() {});
       } else {
-        showAmsSnack(context, 'Failed to delete authorization. Please check logs.', 
+        showAmsSnack(
+            context, 'Failed to delete authorization. Please check logs.',
             icon: '❌', type: 'e');
       }
       setState(() => _isLoading = false);
@@ -502,309 +505,319 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
       body: Stack(
         children: [
           Column(
-        children: [
-          AmsIdentityHeader(
-            icon: Icon(
-                _selProg == 'USR-CRT' || _selProg == 'USR-ROLE'
-                    ? Icons.person_rounded
-                    : _selProg == 'ROLE-CRT'
-                        ? Icons.admin_panel_settings_rounded
-                        : _selProg == 'GL-CAT' || _selProg == 'GL-MST'
-                            ? Icons.category_rounded
-                            : Icons.settings_applications_rounded,
-                size: 28,
-                color: AppColors.tBlue),
-            title: _selProg == 'USR-ROLE'
-                ? (isAnyList ? 'Role Assign' : 'New Role Assign')
-                : (_cfg != null
-                    ? (isAnyList ? _cfg!.name : 'New ${_cfg!.name}')
-                    : 'New Record'),
-            subtitle: isAnyList
-                ? 'Manage and view existing records.'
-                : 'Fill in the information to create a new record.',
-            badges: [
-              if (isAnyList)
-                AmsBadge(label: 'List View')
-              else
-                AmsBadge(
-                    label: 'Entry Form',
-                    background: AppColors.tBlueLt,
+            children: [
+              AmsIdentityHeader(
+                icon: Icon(
+                    _selProg == 'USR-CRT' || _selProg == 'USR-ROLE'
+                        ? Icons.person_rounded
+                        : _selProg == 'ROLE-CRT'
+                            ? Icons.admin_panel_settings_rounded
+                            : _selProg == 'GL-CAT' || _selProg == 'GL-MST'
+                                ? Icons.category_rounded
+                                : Icons.settings_applications_rounded,
+                    size: 28,
                     color: AppColors.tBlue),
-            ],
-            accentColor: AppColors.tBlue,
-            accentLt: AppColors.tBlueLt,
-            accentMd: AppColors.tBlueMd,
-            breadcrumbs: [
-              HeaderBreadcrumb(label: 'Home', onTap: widget.onBack),
-              HeaderBreadcrumb(label: 'Masters', onTap: widget.onBack),
-              if (_selProg != null)
-                HeaderBreadcrumb(label: _cfg?.name ?? _selProg ?? 'Unknown'),
-            ],
-            onBack: [
-              'USR-CRT',
-              'USR-ROLE',
-              'ROLE-CRT',
-              'MOD-CRT',
-              'MENU-CRT',
-              'AUTHCTL'
-            ].contains(_selProg ?? '') &&
-                _showForm
-                ? () => setState(() => _showForm = false)
-                : widget.onBack,
-            actions: [
-              if (isAnyList)
-                AmsButton(
-                  label: 'New ${_cfg?.name ?? 'Record'}',
-                  icon: Icons.add_rounded,
-                  small: true,
-                  backgroundColor: AppColors.sidebar,
-                  onPressed: () => setState(() {
-                    _viewRecord = null;
-                    _showForm = true;
-                  }),
-                ),
-            ],
-          ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  border: Border.all(color: AppColors.border),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Column(
-                  children: [
-                    if (!isModuleScreenList && !isUserScreenList)
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 12),
-                        decoration: const BoxDecoration(
-                          color: AppColors.sidebar,
-                          borderRadius:
-                              BorderRadius.vertical(top: Radius.circular(8)),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              isAnyList
-                                  ? '${_cfg?.name ?? _selProg ?? 'Unknown'} List'
-                                  : '${_viewRecord != null ? (_isEditMode ? 'Edit' : 'View') : 'New'} ${_cfg?.name ?? _selProg ?? 'Record'}',
-                              style: bodyStyle(
-                                size: 14,
-                                color: Colors.white,
-                                weight: FontWeight.w700,
-                              ),
+                title: _selProg == 'USR-ROLE'
+                    ? (isAnyList ? 'Role Assign' : 'New Role Assign')
+                    : (_cfg != null
+                        ? (isAnyList ? _cfg!.name : 'New ${_cfg!.name}')
+                        : 'New Record'),
+                subtitle: isAnyList
+                    ? 'Manage and view existing records.'
+                    : 'Fill in the information to create a new record.',
+                badges: [
+                  if (isAnyList)
+                    AmsBadge(label: 'List View')
+                  else
+                    AmsBadge(
+                        label: 'Entry Form',
+                        background: AppColors.tBlueLt,
+                        color: AppColors.tBlue),
+                ],
+                accentColor: AppColors.tBlue,
+                accentLt: AppColors.tBlueLt,
+                accentMd: AppColors.tBlueMd,
+                breadcrumbs: [
+                  HeaderBreadcrumb(label: 'Home', onTap: widget.onBack),
+                  HeaderBreadcrumb(label: 'Masters', onTap: widget.onBack),
+                  if (_selProg != null)
+                    HeaderBreadcrumb(
+                        label: _cfg?.name ?? _selProg ?? 'Unknown'),
+                ],
+                onBack: [
+                          'USR-CRT',
+                          'USR-ROLE',
+                          'ROLE-CRT',
+                          'MOD-CRT',
+                          'MENU-CRT',
+                          'AUTHCTL'
+                        ].contains(_selProg ?? '') &&
+                        _showForm
+                    ? () => setState(() => _showForm = false)
+                    : widget.onBack,
+                actions: [
+                  if (isAnyList)
+                    AmsButton(
+                      label: 'New ${_cfg?.name ?? 'Record'}',
+                      icon: Icons.add_rounded,
+                      small: true,
+                      backgroundColor: AppColors.sidebar,
+                      onPressed: () => setState(() {
+                        _viewRecord = null;
+                        _showForm = true;
+                      }),
+                    ),
+                ],
+              ),
+              Expanded(
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      border: Border.all(color: AppColors.border),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Column(
+                      children: [
+                        if (!isModuleScreenList && !isUserScreenList)
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 12),
+                            decoration: const BoxDecoration(
+                              color: AppColors.sidebar,
+                              borderRadius: BorderRadius.vertical(
+                                  top: Radius.circular(8)),
                             ),
-                            if (_showForm)
-                              IconButton(
-                                icon: const Icon(
-                                    Icons.keyboard_arrow_up_rounded,
-                                    color: Colors.white),
-                                onPressed: () => setState(() {
-                                  _showForm = false;
-                                  _viewRecord = null;
-                                }),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  isAnyList
+                                      ? '${_cfg?.name ?? _selProg ?? 'Unknown'} List'
+                                      : '${_viewRecord != null ? (_isEditMode ? 'Edit' : 'View') : 'New'} ${_cfg?.name ?? _selProg ?? 'Record'}',
+                                  style: bodyStyle(
+                                    size: 14,
+                                    color: Colors.white,
+                                    weight: FontWeight.w700,
+                                  ),
+                                ),
+                                if (_showForm)
+                                  IconButton(
+                                    icon: const Icon(
+                                        Icons.keyboard_arrow_up_rounded,
+                                        color: Colors.white),
+                                    onPressed: () => setState(() {
+                                      _showForm = false;
+                                      _viewRecord = null;
+                                    }),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        Expanded(
+                          child: () {
+                            Future<void> handleView(
+                                Map<String, dynamic> record) async {
+                              if (widget.initialProg == 'MOD-CRT') {
+                                final mid = (record['modCd'] ??
+                                        record['module_id'] ??
+                                        record['moduleid'] ??
+                                        record['moduleId'] ??
+                                        record['modcd'] ??
+                                        '')
+                                    .toString();
+                                if (mid.isNotEmpty) {
+                                  final subms =
+                                      await apiService.getSubModules(mid);
+                                  record['submodules'] = subms;
+                                }
+                              }
+                              setState(() {
+                                _viewRecord = record;
+                                _isEditMode = false;
+                                _showForm = true;
+                              });
+                            }
+
+                            Future<void> handleEdit(
+                                Map<String, dynamic> record) async {
+                              if (widget.initialProg == 'MOD-CRT') {
+                                final mid = (record['modCd'] ??
+                                        record['module_id'] ??
+                                        record['moduleid'] ??
+                                        record['moduleId'] ??
+                                        record['modcd'] ??
+                                        '')
+                                    .toString();
+                                if (mid.isNotEmpty) {
+                                  final subms =
+                                      await apiService.getSubModules(mid);
+                                  record['submodules'] = subms;
+                                }
+                              }
+                              setState(() {
+                                _viewRecord = record;
+                                _isEditMode = true;
+                                _showForm = true;
+                              });
+                            }
+
+                            if (isUserScreenList) {
+                              return _UserListView(
+                                key: ValueKey('user_list_$_showForm'),
+                                onView: handleView,
+                                onEdit: handleEdit,
+                                onDelete: (rec) =>
+                                    _handleDeleteUser(context, rec),
+                              );
+                            }
+                            if (isRoleScreenList) {
+                              return _RoleListView(
+                                key: ValueKey('role_list_$_showForm'),
+                                onView: handleView,
+                                onEdit: handleEdit,
+                                onDelete: (rec) =>
+                                    _handleDeleteAccess(context, rec),
+                              );
+                            }
+                            if (isUserRoleScreenList) {
+                              return _UserRoleListView(
+                                key: ValueKey('user_role_list_$_showForm'),
+                                onView: handleView,
+                              );
+                            }
+                            if (isModuleScreenList) {
+                              return _ModuleListView(
+                                key: ValueKey('module_list_$_showForm'),
+                                onView: handleView,
+                                onEdit: handleEdit,
+                                onDelete: (rec) =>
+                                    _handleDeleteModule(context, rec),
+                              );
+                            }
+                            if (isAuthCtrlScreenList) {
+                              return _AuthCtrlListView(
+                                key: ValueKey('auth_list_$_showForm'),
+                                onView: handleView,
+                                onEdit: handleEdit,
+                                onDelete: (rec) =>
+                                    _handleDeleteAuth(context, rec),
+                              );
+                            }
+
+                            return SingleChildScrollView(
+                              padding: const EdgeInsets.all(24),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  DynamicNTFields(
+                                    key: _fieldsKey,
+                                    prog: _selProg ?? 'AUTHCTL',
+                                    initialData: _viewRecord,
+                                    isViewMode:
+                                        _viewRecord != null && !_isEditMode,
+                                    onChanged: (key, val) =>
+                                        _dynamicData[key] = val,
+                                  ),
+                                ],
                               ),
-                          ],
+                            );
+                          }(),
                         ),
-                      ),
-                    Expanded(
-                      child: () {
-                        Future<void> handleView(
-                            Map<String, dynamic> record) async {
-                          if (widget.initialProg == 'MOD-CRT') {
-                            final mid = (record['modCd'] ??
-                                    record['module_id'] ??
-                                    record['moduleid'] ??
-                                    record['moduleId'] ??
-                                    record['modcd'] ??
-                                    '')
-                                .toString();
-                            if (mid.isNotEmpty) {
-                              final subms = await apiService.getSubModules(mid);
-                              record['submodules'] = subms;
-                            }
-                          }
-                          setState(() {
-                            _viewRecord = record;
-                            _isEditMode = false;
-                            _showForm = true;
-                          });
-                        }
-
-                        Future<void> handleEdit(
-                            Map<String, dynamic> record) async {
-                          if (widget.initialProg == 'MOD-CRT') {
-                            final mid = (record['modCd'] ??
-                                    record['module_id'] ??
-                                    record['moduleid'] ??
-                                    record['moduleId'] ??
-                                    record['modcd'] ??
-                                    '')
-                                .toString();
-                            if (mid.isNotEmpty) {
-                              final subms = await apiService.getSubModules(mid);
-                              record['submodules'] = subms;
-                            }
-                          }
-                          setState(() {
-                            _viewRecord = record;
-                            _isEditMode = true;
-                            _showForm = true;
-                          });
-                        }
-
-                        if (isUserScreenList) {
-                          return _UserListView(
-                            key: ValueKey('user_list_$_showForm'),
-                            onView: handleView,
-                            onEdit: handleEdit,
-                            onDelete: (rec) => _handleDeleteUser(context, rec),
-                          );
-                        }
-                        if (isRoleScreenList) {
-                          return _RoleListView(
-                            key: ValueKey('role_list_$_showForm'),
-                            onView: handleView,
-                            onEdit: handleEdit,
-                            onDelete: (rec) =>
-                                _handleDeleteAccess(context, rec),
-                          );
-                        }
-                        if (isUserRoleScreenList) {
-                          return _UserRoleListView(
-                            key: ValueKey('user_role_list_$_showForm'),
-                            onView: handleView,
-                          );
-                        }
-                        if (isModuleScreenList) {
-                          return _ModuleListView(
-                            key: ValueKey('module_list_$_showForm'),
-                            onView: handleView,
-                            onEdit: handleEdit,
-                            onDelete: (rec) =>
-                                _handleDeleteModule(context, rec),
-                          );
-                        }
-                        if (isAuthCtrlScreenList) {
-                          return _AuthCtrlListView(
-                            key: ValueKey('auth_list_$_showForm'),
-                            onView: handleView,
-                            onEdit: handleEdit,
-                            onDelete: (rec) => _handleDeleteAuth(context, rec),
-                          );
-                        }
-
-                        return SingleChildScrollView(
-                          padding: const EdgeInsets.all(24),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              DynamicNTFields(
-                                key: _fieldsKey,
-                                prog: _selProg ?? 'AUTHCTL',
-                                initialData: _viewRecord,
-                                isViewMode:
-                                    _viewRecord != null && !_isEditMode,
-                                onChanged: (key, val) =>
-                                    _dynamicData[key] = val,
-                              ),
+                        if (!isAnyList)
+                          AmsSubmitBar(
+                            borderColor: AppColors.border,
+                            actions: [
+                              if (_viewRecord != null && !_isEditMode)
+                                AmsButton(
+                                  label: 'Back to List',
+                                  icon: Icons.arrow_back_rounded,
+                                  variant: AmsButtonVariant.ghost,
+                                  onPressed: () {
+                                    setState(() {
+                                      _showForm = false;
+                                      _viewRecord = null;
+                                    });
+                                  },
+                                )
+                              else ...[
+                                AmsButton(
+                                  label: _isEditMode
+                                      ? 'Update'
+                                      : (isDirectSave ? 'Save' : 'Submit'),
+                                  variant: isDirectSave
+                                      ? AmsButtonVariant.green
+                                      : AmsButtonVariant.primary,
+                                  backgroundColor: isDirectSave
+                                      ? const Color(0xFF22C55E)
+                                      : AppColors.sidebar,
+                                  onPressed: _doSubmit,
+                                ),
+                                AmsButton(
+                                  label: 'Clear',
+                                  icon: Icons.clear_all_rounded,
+                                  variant: AmsButtonVariant.outline,
+                                  onPressed: () {
+                                    _fieldsKey.currentState?.clearFields();
+                                    setState(() => _dynamicData.clear());
+                                  },
+                                ),
+                                AmsButton(
+                                  label: 'Cancel',
+                                  icon: Icons.close_rounded,
+                                  variant: AmsButtonVariant.danger,
+                                  onPressed: () {
+                                    if ([
+                                      'USR-CRT',
+                                      'USR-ROLE',
+                                      'ROLE-CRT',
+                                      'MOD-CRT',
+                                      'MENU-CRT',
+                                      'AUTHCTL'
+                                    ].contains(_selProg)) {
+                                      setState(() {
+                                        _showForm = false;
+                                        _viewRecord = null;
+                                        _isEditMode = false;
+                                      });
+                                    } else {
+                                      widget.onBack();
+                                    }
+                                  },
+                                ),
+                              ],
                             ],
                           ),
-                        );
-                      }(),
+                      ],
                     ),
-                    if (!isAnyList)
-                      AmsSubmitBar(
-                        borderColor: AppColors.border,
-                        actions: [
-                          if (_viewRecord != null && !_isEditMode)
-                            AmsButton(
-                              label: 'Back to List',
-                              icon: Icons.arrow_back_rounded,
-                              variant: AmsButtonVariant.ghost,
-                              onPressed: () {
-                                setState(() {
-                                  _showForm = false;
-                                  _viewRecord = null;
-                                });
-                              },
-                            )
-                          else ...[
-                            AmsButton(
-                              label: _isEditMode
-                                  ? 'Update'
-                                  : (isDirectSave ? 'Save' : 'Submit'),
-                              variant: isDirectSave
-                                  ? AmsButtonVariant.green
-                                  : AmsButtonVariant.primary,
-                              backgroundColor: isDirectSave
-                                  ? const Color(0xFF22C55E)
-                                  : AppColors.sidebar,
-                              onPressed: _doSubmit,
-                            ),
-                            AmsButton(
-                              label: 'Clear',
-                              icon: Icons.clear_all_rounded,
-                              variant: AmsButtonVariant.outline,
-                              onPressed: () {
-                                _fieldsKey.currentState?.clearFields();
-                                setState(() => _dynamicData.clear());
-                              },
-                            ),
-                            AmsButton(
-                              label: 'Cancel',
-                              icon: Icons.close_rounded,
-                              variant: AmsButtonVariant.danger,
-                              onPressed: () {
-                                if ([
-                                  'USR-CRT',
-                                  'USR-ROLE',
-                                  'ROLE-CRT',
-                                  'MOD-CRT',
-                                  'MENU-CRT',
-                                  'AUTHCTL'
-                                ].contains(_selProg)) {
-                                  setState(() {
-                                    _showForm = false;
-                                    _viewRecord = null;
-                                    _isEditMode = false;
-                                  });
-                                } else {
-                                  widget.onBack();
-                                }
-                              },
-                            ),
-                          ],
-                        ],
-                      ),
-                  ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (_isLoading)
+            Positioned.fill(
+              child: Container(
+                color: Colors.black26,
+                child: const Center(
+                  child: CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.tBlue),
+                  ),
                 ),
               ),
             ),
-          ),
         ],
       ),
-      if (_isLoading)
-        Positioned.fill(
-          child: Container(
-            color: Colors.black26,
-            child: const Center(
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(AppColors.tBlue),
-              ),
-            ),
-          ),
-        ),
-    ],
-  ),
-);
+    );
+  }
 }
-}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// List Views (unchanged)
+// ═══════════════════════════════════════════════════════════════════════════════
 
 class _UserListView extends StatefulWidget {
   final void Function(Map<String, dynamic>)? onView;
@@ -1595,7 +1608,8 @@ class _AuthCtrlListViewState extends State<_AuthCtrlListView> {
                             const SizedBox(height: 4),
                             Text(
                                 'Approval Req: ${c.approvalReq ? 'Yes' : 'No'}  |  Levels: ${c.levels}',
-                                style: bodyStyle(color: AppColors.ink3, size: 12)),
+                                style:
+                                    bodyStyle(color: AppColors.ink3, size: 12)),
                           ],
                         ),
                       ),
@@ -1742,6 +1756,10 @@ class _BranchListViewState extends State<_BranchListView> {
   }
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// DynamicNTFields
+// ═══════════════════════════════════════════════════════════════════════════════
+
 class DynamicNTFields extends StatefulWidget {
   final String prog;
   final void Function(String key, dynamic val) onChanged;
@@ -1773,6 +1791,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
     }
   }
 
+  // ── User form controllers ──────────────────────────────────────────────────
   final _uScdCtrl = TextEditingController();
   final _fNameCtrl = TextEditingController();
   final _lNameCtrl = TextEditingController();
@@ -1806,7 +1825,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
 
   final _menuScdCtrl = TextEditingController();
   final _menuNameCtrl = TextEditingController();
-  final _orgCodeCtrl = TextEditingController();
+  final _orgCodeCtrl = TextEditingController(); // kept for MOD-CRT / AUTHCTL
 
   final _authModCtrl = TextEditingController();
   final _authPgmCtrl = TextEditingController();
@@ -1816,9 +1835,18 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
   List<Map<String, dynamic>> _roleList = [];
   List<Map<String, dynamic>> _moduleList = [];
 
-  // ── NEW: Branch dropdown data ──────────────────────────────────────────────
+  // ── Branch dropdown ────────────────────────────────────────────────────────
   List<Map<String, dynamic>> _branchList = [];
   bool _loadingBranches = false;
+
+  // ── Org searchable overlay dropdown (USR-CRT) ──────────────────────────────
+  final _orgDisplayCtrl = TextEditingController(); // shows "50 – Org Name"
+  final _orgSearchCtrl = TextEditingController(); // search text inside overlay
+  final _orgLayerLink = LayerLink();
+  OverlayEntry? _orgOverlay;
+  List<Map<String, dynamic>> _orgList = [];
+  bool _orgLoading = false;
+  int? _selectedOrgCode;
   // ──────────────────────────────────────────────────────────────────────────
 
   String? _selModule;
@@ -1828,6 +1856,8 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
   bool _isValidEmail(String email) {
     return RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email);
   }
+
+  // ── Lifecycle ──────────────────────────────────────────────────────────────
 
   @override
   void didUpdateWidget(DynamicNTFields oldWidget) {
@@ -1839,11 +1869,15 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
       if (widget.prog == 'USR-ROLE' || widget.prog == 'AUTHCTL') {
         _fetchDropdownData();
       }
-      // ── NEW ──
       if (widget.prog == 'USR-CRT') {
         _fetchBranches();
+        _fetchOrgData();
       }
-      // ─────────
+      if (widget.prog == 'ROLE-CRT' ||
+          widget.prog == 'MOD-CRT' ||
+          widget.prog == 'AUTHCTL') {
+        _fetchOrgData();
+      }
     }
   }
 
@@ -1855,11 +1889,15 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
     if (widget.prog == 'USR-ROLE' || widget.prog == 'AUTHCTL') {
       _fetchDropdownData();
     }
-    // ── NEW ──
     if (widget.prog == 'USR-CRT') {
       _fetchBranches();
+      _fetchOrgData();
     }
-    // ─────────
+    if (widget.prog == 'ROLE-CRT' ||
+        widget.prog == 'MOD-CRT' ||
+        widget.prog == 'AUTHCTL') {
+      _fetchOrgData();
+    }
   }
 
   void _notifyDefaults() {
@@ -1880,6 +1918,8 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
     } else if (prog == 'USR-CRT') {
       widget.onChanged('orgCode', 50);
       widget.onChanged('status', 1);
+    } else if (prog == 'ROLE-CRT') {
+      widget.onChanged('orgCode', 50);
     }
   }
 
@@ -1898,7 +1938,6 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
     }
   }
 
-  // ── NEW: Fetch branches for dropdown ───────────────────────────────────────
   Future<void> _fetchBranches() async {
     setState(() => _loadingBranches = true);
     final result = await branchApiService.getBranches(size: 100);
@@ -1909,7 +1948,328 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
       });
     }
   }
-  // ──────────────────────────────────────────────────────────────────────────
+
+  // ── Org fetch ──────────────────────────────────────────────────────────────
+
+  Future<void> _fetchOrgData() async {
+    if (_orgLoading || _orgList.isNotEmpty) return;
+    setState(() => _orgLoading = true);
+    try {
+      final res = await orgApiService.getAllOrganisations(page: 0, size: 200);
+      if (res != null && mounted) {
+        setState(() => _orgList = res.items);
+        _resolveOrgDisplay();
+      }
+    } catch (_) {
+      // silent – field still usable
+    } finally {
+      if (mounted) setState(() => _orgLoading = false);
+    }
+  }
+
+  /// After list loads, update display controller to show "50 – Name".
+  void _resolveOrgDisplay() {
+    if (_selectedOrgCode == null) return;
+    final match = _orgList.firstWhere(
+      (o) =>
+          (o['orgcode'] ?? o['orgCode'] ?? '').toString() ==
+          _selectedOrgCode.toString(),
+      orElse: () => {},
+    );
+    final name = (match['name'] ?? '').toString();
+    if (mounted) {
+      setState(() {
+        _orgDisplayCtrl.text = name.isNotEmpty
+            ? '$_selectedOrgCode – $name'
+            : _selectedOrgCode.toString();
+        if (_orgCodeCtrl.text.isEmpty) {
+          _orgCodeCtrl.text = _selectedOrgCode.toString();
+        }
+      });
+    }
+  }
+
+  // ── Org overlay dropdown (identical pattern to BranchScreen) ──────────────
+
+  void _openOrgDropdown() {
+    if (widget.isViewMode) return;
+    _orgOverlay?.remove();
+    _orgOverlay = null;
+    _orgSearchCtrl.clear();
+
+    _orgOverlay = OverlayEntry(
+      builder: (ctx) {
+        return GestureDetector(
+          behavior: HitTestBehavior.translucent,
+          onTap: () {
+            _orgOverlay?.remove();
+            _orgOverlay = null;
+          },
+          child: Stack(
+            children: [
+              CompositedTransformFollower(
+                link: _orgLayerLink,
+                showWhenUnlinked: false,
+                offset: const Offset(0, 52),
+                child: GestureDetector(
+                  onTap: () {}, // prevent bubble-close
+                  child: Material(
+                    elevation: 8,
+                    borderRadius: BorderRadius.circular(10),
+                    shadowColor: Colors.black26,
+                    child: StatefulBuilder(
+                      builder: (ctx2, setInner) {
+                        final query = _orgSearchCtrl.text.toLowerCase();
+                        final filtered = _orgList.where((o) {
+                          final code =
+                              (o['orgcode'] ?? o['orgCode'] ?? '').toString();
+                          final name =
+                              (o['name'] ?? '').toString().toLowerCase();
+                          return code.contains(query) || name.contains(query);
+                        }).toList();
+
+                        return Container(
+                          width: 360,
+                          constraints: const BoxConstraints(maxHeight: 340),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: AppColors.border),
+                          ),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // ── Search bar ──────────────────────────────
+                              Padding(
+                                padding: const EdgeInsets.all(10),
+                                child: TextField(
+                                  controller: _orgSearchCtrl,
+                                  autofocus: true,
+                                  decoration: InputDecoration(
+                                    hintText: 'Search by code or name…',
+                                    hintStyle: const TextStyle(
+                                        color: AppColors.ink4, fontSize: 13),
+                                    prefixIcon: const Icon(Icons.search,
+                                        size: 18, color: AppColors.ink3),
+                                    suffixIcon: _orgSearchCtrl.text.isNotEmpty
+                                        ? IconButton(
+                                            icon: const Icon(Icons.clear,
+                                                size: 16,
+                                                color: AppColors.ink3),
+                                            onPressed: () {
+                                              _orgSearchCtrl.clear();
+                                              setInner(() {});
+                                            },
+                                          )
+                                        : null,
+                                    isDense: true,
+                                    contentPadding: const EdgeInsets.symmetric(
+                                        vertical: 10, horizontal: 12),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                      borderSide: const BorderSide(
+                                          color: AppColors.border),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                      borderSide: const BorderSide(
+                                          color: AppColors.tBlue, width: 1.5),
+                                    ),
+                                    filled: true,
+                                    fillColor: AppColors.bg,
+                                  ),
+                                  onChanged: (_) => setInner(() {}),
+                                ),
+                              ),
+                              const Divider(height: 1, color: AppColors.border),
+
+                              // ── List ────────────────────────────────────
+                              Flexible(
+                                child: _orgLoading
+                                    ? const Padding(
+                                        padding: EdgeInsets.all(24),
+                                        child: Center(
+                                          child: Column(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              CircularProgressIndicator(
+                                                  strokeWidth: 2,
+                                                  color: AppColors.tBlue),
+                                              SizedBox(height: 8),
+                                              Text('Loading organisations…',
+                                                  style: TextStyle(
+                                                      fontSize: 13,
+                                                      color: AppColors.ink3)),
+                                            ],
+                                          ),
+                                        ),
+                                      )
+                                    : filtered.isEmpty
+                                        ? Padding(
+                                            padding: const EdgeInsets.all(24),
+                                            child: Text(
+                                              'No organisations found',
+                                              style: bodyStyle(
+                                                  color: AppColors.ink4),
+                                            ),
+                                          )
+                                        : ListView.builder(
+                                            shrinkWrap: true,
+                                            itemCount: filtered.length,
+                                            itemBuilder: (_, idx) {
+                                              final org = filtered[idx];
+                                              final code = (org['orgcode'] ??
+                                                      org['orgCode'] ??
+                                                      '')
+                                                  .toString();
+                                              final name = (org['name'] ?? '')
+                                                  .toString();
+                                              final isSelected =
+                                                  _selectedOrgCode
+                                                          ?.toString() ==
+                                                      code;
+
+                                              return InkWell(
+                                                onTap: () {
+                                                  _selectOrg(org);
+                                                  _orgSearchCtrl.clear();
+                                                  _orgOverlay?.remove();
+                                                  _orgOverlay = null;
+                                                },
+                                                child: Container(
+                                                  padding: const EdgeInsets
+                                                      .symmetric(
+                                                      horizontal: 16,
+                                                      vertical: 11),
+                                                  decoration: BoxDecoration(
+                                                    color: isSelected
+                                                        ? AppColors.tBlueLt
+                                                            .withValues(
+                                                                alpha: 0.15)
+                                                        : Colors.transparent,
+                                                    border: idx <
+                                                            filtered.length - 1
+                                                        ? const Border(
+                                                            bottom: BorderSide(
+                                                                color: AppColors
+                                                                    .border,
+                                                                width: 0.5))
+                                                        : null,
+                                                  ),
+                                                  child: Row(
+                                                    children: [
+                                                      // Code badge
+                                                      Container(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .symmetric(
+                                                                horizontal: 8,
+                                                                vertical: 3),
+                                                        decoration:
+                                                            BoxDecoration(
+                                                          color: isSelected
+                                                              ? AppColors.tBlue
+                                                              : AppColors
+                                                                  .tBlueLt,
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(6),
+                                                        ),
+                                                        child: Text(
+                                                          code,
+                                                          style: TextStyle(
+                                                            fontSize: 12,
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                            color: isSelected
+                                                                ? Colors.white
+                                                                : AppColors
+                                                                    .tBlue,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                      const SizedBox(width: 10),
+                                                      Expanded(
+                                                        child: Text(
+                                                          name,
+                                                          style: bodyStyle(
+                                                              size: 13),
+                                                          overflow: TextOverflow
+                                                              .ellipsis,
+                                                        ),
+                                                      ),
+                                                      if (isSelected)
+                                                        const Icon(
+                                                            Icons.check_rounded,
+                                                            size: 16,
+                                                            color: AppColors
+                                                                .tBlue),
+                                                    ],
+                                                  ),
+                                                ),
+                                              );
+                                            },
+                                          ),
+                              ),
+
+                              // ── Footer count ────────────────────────────
+                              if (!_orgLoading && _orgList.isNotEmpty)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 16, vertical: 8),
+                                  decoration: const BoxDecoration(
+                                    color: AppColors.bg,
+                                    border: Border(
+                                        top: BorderSide(
+                                            color: AppColors.border,
+                                            width: 0.5)),
+                                    borderRadius: BorderRadius.vertical(
+                                        bottom: Radius.circular(10)),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      const Icon(Icons.info_outline_rounded,
+                                          size: 13, color: AppColors.ink3),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        '${filtered.length} of ${_orgList.length} organisations',
+                                        style: const TextStyle(
+                                            fontSize: 11,
+                                            color: AppColors.ink3),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+    Overlay.of(context).insert(_orgOverlay!);
+  }
+
+  void _selectOrg(Map<String, dynamic> org) {
+    final code = (org['orgcode'] ?? org['orgCode'] ?? '').toString();
+    final name = (org['name'] ?? '').toString();
+    setState(() {
+      _selectedOrgCode = int.tryParse(code);
+      _orgDisplayCtrl.text = name.isNotEmpty ? '$code – $name' : code;
+      // keep _orgCodeCtrl in sync for MOD-CRT / AUTHCTL validation
+      _orgCodeCtrl.text = code;
+      _errors['orgCode'] = null;
+    });
+    widget.onChanged('orgCode', int.tryParse(code) ?? 0);
+  }
+
+  // ── Load initial data ──────────────────────────────────────────────────────
 
   void _loadInitialData() {
     if (widget.initialData == null) {
@@ -1926,15 +2286,28 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
       return;
     }
 
-    // ─── Normalize all keys to lowercase for safe access ───
-    final data = widget.initialData?.map((k, v) => MapEntry(k.toLowerCase(), v)) ?? {};
-    final prog = (widget.prog ?? '').replaceAll(' ', '-').toUpperCase();
+    final data =
+        widget.initialData?.map((k, v) => MapEntry(k.toLowerCase(), v)) ?? {};
+    final prog = (widget.prog).replaceAll(' ', '-').toUpperCase();
 
     if (prog == 'USR-CRT') {
-      _orgCodeCtrl.text = (data['orgcode'] ?? '50').toString();
-      _uScdCtrl.text =
-          (data['userscd'] ?? data['userscd'] ?? data['usercd'] ?? '')
-              .toString();
+      // ── Org code: seed _selectedOrgCode; display resolves after list loads ─
+      final orgCodeRaw =
+          (data['orgcode'] ?? data['orgCode'] ?? '50').toString();
+      _selectedOrgCode = int.tryParse(orgCodeRaw);
+      if (_orgList.isNotEmpty && _selectedOrgCode != null) {
+        final match = _orgList.firstWhere(
+          (o) => (o['orgcode'] ?? o['orgCode'] ?? '').toString() == orgCodeRaw,
+          orElse: () => {},
+        );
+        final orgName = (match['name'] ?? '').toString();
+        _orgDisplayCtrl.text =
+            orgName.isNotEmpty ? '$orgCodeRaw – $orgName' : orgCodeRaw;
+      } else {
+        _orgDisplayCtrl.text = orgCodeRaw;
+      }
+
+      _uScdCtrl.text = (data['userscd'] ?? data['usercd'] ?? '').toString();
       _fNameCtrl.text = (data['fname'] ?? data['firstname'] ?? '').toString();
       _lNameCtrl.text = (data['lname'] ?? data['lastname'] ?? '').toString();
       _uRegDateCtrl.text = _formatDisplayDate((data['regdate'] ??
@@ -1974,7 +2347,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
       } else {
         _countryCtrl.text = '';
       }
-      
+
       _mobileCtrl.text =
           (data['mobile'] ?? data['mobileno'] ?? data['phone'] ?? '')
               .toString();
@@ -1997,6 +2370,22 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
           ? data['title'].toString()
           : null;
     } else if (prog == 'ROLE-CRT') {
+      // ── Org code: seed _selectedOrgCode; display resolves after list loads ─
+      final orgCodeRaw =
+          (data['orgcode'] ?? data['orgCode'] ?? '50').toString();
+      _selectedOrgCode = int.tryParse(orgCodeRaw);
+      if (_orgList.isNotEmpty && _selectedOrgCode != null) {
+        final match = _orgList.firstWhere(
+          (o) => (o['orgcode'] ?? o['orgCode'] ?? '').toString() == orgCodeRaw,
+          orElse: () => {},
+        );
+        final orgName = (match['name'] ?? '').toString();
+        _orgDisplayCtrl.text =
+            orgName.isNotEmpty ? '$orgCodeRaw – $orgName' : orgCodeRaw;
+      } else {
+        _orgDisplayCtrl.text = orgCodeRaw;
+      }
+
       _rScdCtrl.text =
           (data['accesscd'] ?? data['access_cd'] ?? data['rolecd'] ?? '')
               .toString();
@@ -2005,13 +2394,23 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
               .toString();
       _rTypeCtrl.text =
           (data['accesstype'] ?? data['access_type'] ?? '').toString();
-      _rSubtypeCtrl.text = (data['accesssubtype'] ??
-              data['access_sub_type'] ??
-              data['accesssubtype'] ??
-              '')
-          .toString();
+      _rSubtypeCtrl.text =
+          (data['accesssubtype'] ?? data['access_sub_type'] ?? '').toString();
     } else if (prog == 'MOD-CRT') {
-      _orgCodeCtrl.text = (data['orgcode'] ?? '50').toString();
+      final orgCodeRaw = (data['orgcode'] ?? '50').toString();
+      _orgCodeCtrl.text = orgCodeRaw;
+      _selectedOrgCode = int.tryParse(orgCodeRaw);
+      if (_orgList.isNotEmpty && _selectedOrgCode != null) {
+        final match = _orgList.firstWhere(
+          (o) => (o['orgcode'] ?? o['orgCode'] ?? '').toString() == orgCodeRaw,
+          orElse: () => {},
+        );
+        final orgName = (match['name'] ?? '').toString();
+        _orgDisplayCtrl.text =
+            orgName.isNotEmpty ? '$orgCodeRaw – $orgName' : orgCodeRaw;
+      } else {
+        _orgDisplayCtrl.text = orgCodeRaw;
+      }
       _mScdCtrl.text = (data['modcd'] ??
               data['module_id'] ??
               data['moduleid'] ??
@@ -2046,14 +2445,28 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
       _menuNameCtrl.text =
           (data['menuname'] ?? data['menu_name'] ?? '').toString();
     } else if (prog == 'AUTHCTL') {
-      _orgCodeCtrl.text = (data['orgcode'] ?? data['org_code'] ?? '50').toString();
+      final orgCodeRaw =
+          (data['orgcode'] ?? data['org_code'] ?? '50').toString();
+      _orgCodeCtrl.text = orgCodeRaw;
+      _selectedOrgCode = int.tryParse(orgCodeRaw);
+      if (_orgList.isNotEmpty && _selectedOrgCode != null) {
+        final match = _orgList.firstWhere(
+          (o) => (o['orgcode'] ?? o['orgCode'] ?? '').toString() == orgCodeRaw,
+          orElse: () => {},
+        );
+        final orgName = (match['name'] ?? '').toString();
+        _orgDisplayCtrl.text =
+            orgName.isNotEmpty ? '$orgCodeRaw – $orgName' : orgCodeRaw;
+      } else {
+        _orgDisplayCtrl.text = orgCodeRaw;
+      }
       _authModCtrl.text =
-          (data['modcd'] ?? data['moduleid'] ?? data['module_id'] ?? '').toString();
+          (data['modcd'] ?? data['moduleid'] ?? data['module_id'] ?? '')
+              .toString();
       _authPgmCtrl.text =
           (data['programid'] ?? data['program_id'] ?? data['pgmcd'] ?? '')
               .toString();
 
-      // ✅ FIX: bool helper that handles int 1, string '1', and true
       bool parseBool(String key) {
         final variants = [
           key.toLowerCase(),
@@ -2087,6 +2500,8 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
     }
     if (mounted) setState(() {});
   }
+
+  // ── Validate ───────────────────────────────────────────────────────────────
 
   bool validate() {
     bool isValid = true;
@@ -2182,6 +2597,8 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
     return isValid;
   }
 
+  // ── Clear ──────────────────────────────────────────────────────────────────
+
   void clearFields() {
     _uScdCtrl.clear();
     _fNameCtrl.clear();
@@ -2199,6 +2616,10 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
     _menuNameCtrl.clear();
     _authModCtrl.clear();
     _authPgmCtrl.clear();
+    // Org overlay fields
+    _orgDisplayCtrl.clear();
+    _orgSearchCtrl.clear();
+    _selectedOrgCode = null;
     setState(() {
       _gender = null;
       _menuType = null;
@@ -2209,8 +2630,13 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
     });
   }
 
+  // ── Dispose ────────────────────────────────────────────────────────────────
+
   @override
   void dispose() {
+    _orgOverlay?.remove();
+    _orgDisplayCtrl.dispose();
+    _orgSearchCtrl.dispose();
     _uScdCtrl.dispose();
     _fNameCtrl.dispose();
     _lNameCtrl.dispose();
@@ -2229,8 +2655,13 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
     _menuNameCtrl.dispose();
     _authModCtrl.dispose();
     _authPgmCtrl.dispose();
+    _orgCodeCtrl.dispose();
+    _mobileCtrl.dispose();
+    _callCodeCtrl.dispose();
     super.dispose();
   }
+
+  // ── Build ──────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
@@ -2248,20 +2679,34 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
           ),
           child: AmsFormGrid(
             children: [
+              // ── ORGANISATION CODE – searchable overlay dropdown ────────────
               AmsField(
                 label: 'Organisation Code',
                 labelAbove: true,
-                tooltip: 'Unique organization code assigned to this user.',
-                child: AmsTextInput(
-                  controller: _orgCodeCtrl,
-                  readOnly: widget.isViewMode,
-                  textInputAction: TextInputAction.next,
-                  onChanged: (v) =>
-                      widget.onChanged('orgCode', int.tryParse(v) ?? 50),
+                tooltip: 'Select the parent organisation.',
+                child: CompositedTransformTarget(
+                  link: _orgLayerLink,
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: widget.isViewMode ? null : _openOrgDropdown,
+                    child: AbsorbPointer(
+                      child: AmsTextInput(
+                        controller: _orgDisplayCtrl,
+                        readOnly: true,
+                        placeholder: _orgLoading
+                            ? 'Loading organisations…'
+                            : 'Select Organisation',
+                        icon: _orgLoading
+                            ? Icons.hourglass_empty_rounded
+                            : Icons.business_rounded,
+                      ),
+                    ),
+                  ),
                 ),
               ),
+              // ─────────────────────────────────────────────────────────────
 
-              // ── BRANCH CODE DROPDOWN (NEW) ─────────────────────────────────
+              // ── BRANCH CODE DROPDOWN ──────────────────────────────────────
               AmsField(
                 label: 'Branch Code',
                 labelAbove: true,
@@ -2611,11 +3056,11 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                         onTap: widget.isViewMode
                             ? null
                             : () {
-                          setFieldState(() {
-                            _uStatusCtrl.text = isActive ? '0' : '1';
-                          });
-                          widget.onChanged('status', isActive ? 0 : 1);
-                        },
+                                setFieldState(() {
+                                  _uStatusCtrl.text = isActive ? '0' : '1';
+                                });
+                                widget.onChanged('status', isActive ? 0 : 1);
+                              },
                         child: MouseRegion(
                           cursor: widget.isViewMode
                               ? SystemMouseCursors.basic
@@ -2841,20 +3286,33 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
           ),
           child: AmsFormGrid(
             children: [
+              // ── ORGANISATION CODE – searchable overlay dropdown ────────────
               AmsField(
-                label: 'Organization Code',
+                label: 'Organisation Code',
+                required: true,
                 labelAbove: true,
-                tooltip: 'Unique organization code for this access role.',
-                child: AmsTextInput(
-                  initialValue: data['orgcode']?.toString() ?? '50',
-                  readOnly: widget.isViewMode,
-                  textInputAction: TextInputAction.next,
-                  onChanged: widget.isViewMode
-                      ? null
-                      : (v) =>
-                          widget.onChanged('orgCode', int.tryParse(v) ?? 50),
+                tooltip: 'Select the parent organisation.',
+                child: CompositedTransformTarget(
+                  link: _orgLayerLink,
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: widget.isViewMode ? null : _openOrgDropdown,
+                    child: AbsorbPointer(
+                      child: AmsTextInput(
+                        controller: _orgDisplayCtrl,
+                        readOnly: true,
+                        placeholder: _orgLoading
+                            ? 'Loading organisations…'
+                            : 'Select Organisation',
+                        icon: _orgLoading
+                            ? Icons.hourglass_empty_rounded
+                            : Icons.business_rounded,
+                      ),
+                    ),
+                  ),
                 ),
               ),
+              // ─────────────────────────────────────────────────────────────
               AmsField(
                 label: 'Access Code',
                 required: true,
@@ -2959,18 +3417,35 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
             children: [
               AmsFormGrid(
                 children: [
+                  // ── ORGANISATION CODE – searchable overlay dropdown ────────
                   AmsField(
-                    label: 'Organization Code',
+                    label: 'Organisation Code',
+                    required: true,
                     labelAbove: true,
-                    tooltip: 'Unique organization code for this module.',
-                    child: AmsTextInput(
-                      controller: _orgCodeCtrl,
-                      readOnly: widget.isViewMode || widget.initialData != null,
-                      textInputAction: TextInputAction.next,
-                      onChanged: (v) => widget.onChanged(
-                          'orgCode', int.tryParse(v) ?? 50),
+                    tooltip: 'Select the parent organisation for this module.',
+                    child: CompositedTransformTarget(
+                      link: _orgLayerLink,
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: (widget.isViewMode || widget.initialData != null)
+                            ? null
+                            : _openOrgDropdown,
+                        child: AbsorbPointer(
+                          child: AmsTextInput(
+                            controller: _orgDisplayCtrl,
+                            readOnly: true,
+                            placeholder: _orgLoading
+                                ? 'Loading organisations…'
+                                : 'Select Organisation',
+                            icon: _orgLoading
+                                ? Icons.hourglass_empty_rounded
+                                : Icons.business_rounded,
+                          ),
+                        ),
+                      ),
                     ),
                   ),
+                  // ─────────────────────────────────────────────────────────
                   AmsField(
                     label: 'Module Code',
                     required: true,
@@ -3155,28 +3630,36 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
             children: [
               AmsFormGrid(
                 children: [
+                  // ── ORGANISATION CODE – searchable overlay dropdown ────────
                   AmsField(
-                    label: 'Organization Code',
+                    label: 'Organisation Code',
                     required: true,
                     labelAbove: true,
-                    child: AmsTextInput(
-                      controller: _orgCodeCtrl,
-                      readOnly: widget.isViewMode || widget.initialData != null,
-                      placeholder: 'e.g. 50',
-                      textInputAction: TextInputAction.next,
-                      errorText: _errors['orgCode'],
-                      isValid: _errors['orgCode'] == null &&
-                          _orgCodeCtrl.text.isNotEmpty,
-                      onChanged: (v) {
-                        setState(() {
-                          _errors['orgCode'] = v.trim().isEmpty
-                              ? 'Organization Code required'
-                              : null;
-                        });
-                        widget.onChanged('orgCode', v);
-                      },
+                    tooltip: 'Select the parent organisation.',
+                    child: CompositedTransformTarget(
+                      link: _orgLayerLink,
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: (widget.isViewMode || widget.initialData != null)
+                            ? null
+                            : _openOrgDropdown,
+                        child: AbsorbPointer(
+                          child: AmsTextInput(
+                            controller: _orgDisplayCtrl,
+                            readOnly: true,
+                            placeholder: _orgLoading
+                                ? 'Loading organisations…'
+                                : 'Select Organisation',
+                            icon: _orgLoading
+                                ? Icons.hourglass_empty_rounded
+                                : Icons.business_rounded,
+                            errorText: _errors['orgCode'],
+                          ),
+                        ),
+                      ),
                     ),
                   ),
+                  // ─────────────────────────────────────────────────────────
                   AmsField(
                     label: 'Program Id',
                     required: true,
@@ -3643,13 +4126,14 @@ class _Auth102LevelGridState extends State<_Auth102LevelGrid> {
                                       if (_levels[i]['roleCd'] == null ||
                                           widget.roleList.isEmpty) return null;
                                       final seek =
-                                          _levels[i]['roleCd']?.toString() ?? '';
+                                          _levels[i]['roleCd']?.toString() ??
+                                              '';
                                       if (seek.isEmpty) return null;
-                                      final matches = widget.roleList.where((r) =>
-                                          (r['roleCd']?.toString() ??
-                                              r['ROLECD']?.toString()) ==
-                                          seek);
-
+                                      final matches = widget.roleList.where(
+                                          (r) =>
+                                              (r['roleCd']?.toString() ??
+                                                  r['ROLECD']?.toString()) ==
+                                              seek);
                                       if (matches.isEmpty) return null;
                                       final r = matches.first;
                                       final cd =
@@ -3703,17 +4187,18 @@ class _Auth102LevelGridState extends State<_Auth102LevelGrid> {
                                       if (_levels[i]['userId'] == null ||
                                           widget.userList.isEmpty) return null;
                                       final seek =
-                                          _levels[i]['userId']?.toString() ?? '';
+                                          _levels[i]['userId']?.toString() ??
+                                              '';
                                       if (seek.isEmpty) return null;
-                                      final matches = widget.userList.where((u) =>
-                                          (u['usersCd'] ??
-                                              u['users_cd'] ??
-                                              u['userScd'] ??
-                                              u['USERSCD'] ??
-                                              '')
-                                          .toString() ==
-                                          seek);
-
+                                      final matches = widget.userList.where(
+                                          (u) =>
+                                              (u['usersCd'] ??
+                                                      u['users_cd'] ??
+                                                      u['userScd'] ??
+                                                      u['USERSCD'] ??
+                                                      '')
+                                                  .toString() ==
+                                              seek);
                                       if (matches.isEmpty) return null;
                                       final u = matches.first;
                                       final scd = u['usersCd'] ??

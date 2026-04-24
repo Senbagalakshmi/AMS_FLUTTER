@@ -4,7 +4,8 @@ import 'package:intl/intl.dart';
 import '../theme.dart';
 import '../widgets/widgets.dart';
 import '../services/api_service.dart';
-import '../services/user_mapping_service.dart'; // ← NEW
+import '../services/user_mapping_service.dart';
+import '../services/org_api_service.dart'; // ← NEW
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // UserAccessScreen  (Table: USER004)
@@ -40,14 +41,12 @@ class _UserAccessScreenState extends State<UserAccessScreen> {
   final GlobalKey<UserAccessFieldsState> _fieldsKey =
       GlobalKey<UserAccessFieldsState>();
 
-  // ── Load all records from backend ─────────────────────────────────────────
   Future<void> _loadRecords() async {
     setState(() => _isLoading = true);
     try {
       final items = await userMappingService.getAll();
       if (mounted) {
         setState(() {
-          // Convert UserMappingModel → screen Map
           _records = items.map((m) => m.toScreenMap()).toList();
           _isLoading = false;
         });
@@ -58,24 +57,20 @@ class _UserAccessScreenState extends State<UserAccessScreen> {
     }
   }
 
-  // ── API: Create ───────────────────────────────────────────────────────────
   Future<bool> _apiCreate(Map<String, dynamic> payload) async {
     final model = _payloadToModel(payload);
     return userMappingService.create(model, currentUser: widget.userName);
   }
 
-  // ── API: Update ───────────────────────────────────────────────────────────
   Future<bool> _apiUpdate(Map<String, dynamic> payload) async {
     final model = _payloadToModel(payload);
     return userMappingService.update(model, currentUser: widget.userName);
   }
 
-  // ── API: Delete ───────────────────────────────────────────────────────────
   Future<bool> _apiDelete(String userScd) async {
     return userMappingService.delete(userScd);
   }
 
-  // ── Helper: Convert form payload → UserMappingModel ───────────────────────
   UserMappingModel _payloadToModel(Map<String, dynamic> p) {
     final now = DateFormat('yyyy-MM-dd').format(DateTime.now());
     return UserMappingModel(
@@ -89,14 +84,12 @@ class _UserAccessScreenState extends State<UserAccessScreen> {
     );
   }
 
-  // ── Lifecycle ─────────────────────────────────────────────────────────────
   @override
   void initState() {
     super.initState();
     _loadRecords();
   }
 
-  // ── Mode helpers ──────────────────────────────────────────────────────────
   void _enterViewMode(Map<String, dynamic> record, {bool viewOnly = true}) {
     setState(() {
       _selectedRecord = record;
@@ -129,7 +122,6 @@ class _UserAccessScreenState extends State<UserAccessScreen> {
     });
   }
 
-  // ── Save ──────────────────────────────────────────────────────────────────
   Future<void> _handleSave() async {
     if (_isSaving) return;
     if (_fieldsKey.currentState?.validate() == false) return;
@@ -166,7 +158,6 @@ class _UserAccessScreenState extends State<UserAccessScreen> {
     }
   }
 
-  // ── Delete ────────────────────────────────────────────────────────────────
   void _confirmDelete(Map<String, dynamic> r) async {
     final userCode = r['userCode']?.toString() ?? '';
 
@@ -204,7 +195,6 @@ class _UserAccessScreenState extends State<UserAccessScreen> {
     }
   }
 
-  // ── Snackbar helper ───────────────────────────────────────────────────────
   void _showSnack(String msg, {bool isError = false}) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -215,7 +205,6 @@ class _UserAccessScreenState extends State<UserAccessScreen> {
     );
   }
 
-  // ── Build ─────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -234,7 +223,6 @@ class _UserAccessScreenState extends State<UserAccessScreen> {
     );
   }
 
-  // ── Identity Header ───────────────────────────────────────────────────────
   Widget _buildIdentityHeader() {
     return AmsIdentityHeader(
       icon: const Icon(Icons.assignment_ind_rounded,
@@ -256,7 +244,6 @@ class _UserAccessScreenState extends State<UserAccessScreen> {
     );
   }
 
-  // ── List View ─────────────────────────────────────────────────────────────
   Widget _buildFullListView() {
     final filtered = _records.where((r) {
       final q = _searchQuery.toLowerCase();
@@ -426,7 +413,6 @@ class _UserAccessScreenState extends State<UserAccessScreen> {
     );
   }
 
-  // ── Entry / Form View ─────────────────────────────────────────────────────
   Widget _buildEntryView() {
     return Container(
       decoration: BoxDecoration(
@@ -436,7 +422,6 @@ class _UserAccessScreenState extends State<UserAccessScreen> {
       ),
       child: Column(
         children: [
-          // Form header bar
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             decoration: const BoxDecoration(
@@ -520,7 +505,6 @@ class _UserAccessScreenState extends State<UserAccessScreen> {
     );
   }
 
-  // ── Helpers ───────────────────────────────────────────────────────────────
   Widget _actionIcon({
     required IconData icon,
     required Color color,
@@ -562,7 +546,7 @@ class _UserAccessScreenState extends State<UserAccessScreen> {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// UserAccessFields  — form body widget (unchanged logic, kept in same file)
+// UserAccessFields
 // ═══════════════════════════════════════════════════════════════════════════════
 
 class UserAccessFields extends StatefulWidget {
@@ -584,8 +568,16 @@ class UserAccessFields extends StatefulWidget {
 }
 
 class UserAccessFieldsState extends State<UserAccessFields> {
-  final _orgCodeCtrl = TextEditingController(text: '50');
+  // ── Org-code searchable overlay ──────────────────────────────────────────
+  final _orgCodeCtrl = TextEditingController(); // displays "50 – Org Name"
+  final _orgSearchCtrl = TextEditingController();
+  final _orgLayerLink = LayerLink();
+  OverlayEntry? _orgOverlay;
+  List<Map<String, dynamic>> _orgList = [];
+  bool _orgLoading = false;
+  int? _selectedOrgCode;
 
+  // ── Other field state ────────────────────────────────────────────────────
   int _status = 1;
   final Map<String, String?> _errors = {};
 
@@ -598,12 +590,12 @@ class UserAccessFieldsState extends State<UserAccessFields> {
   String? _selectedUserDisplay;
   String? _selectedAccessDisplay;
 
-  // ── productCode is stored as plain text ───────────────────────────────────
   final _productCodeCtrl = TextEditingController();
 
   @override
   void initState() {
     super.initState();
+    _loadOrganisations();
     _fetchDropdownData();
   }
 
@@ -615,12 +607,303 @@ class UserAccessFieldsState extends State<UserAccessFields> {
 
   @override
   void dispose() {
+    _removeOrgOverlay();
     _orgCodeCtrl.dispose();
+    _orgSearchCtrl.dispose();
     _productCodeCtrl.dispose();
     super.dispose();
   }
 
-  // ── Fetch dropdowns ───────────────────────────────────────────────────────
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ORG CODE – fetch + searchable overlay
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  Future<void> _loadOrganisations() async {
+    if (_orgLoading || _orgList.isNotEmpty) return;
+    setState(() => _orgLoading = true);
+    try {
+      final res = await orgApiService.getAllOrganisations(page: 0, size: 200);
+      if (res != null && mounted) {
+        setState(() => _orgList = res.items);
+        // Re-resolve display label now that list is loaded
+        _applyInitialData();
+      }
+    } catch (_) {
+    } finally {
+      if (mounted) setState(() => _orgLoading = false);
+    }
+  }
+
+  void _removeOrgOverlay() {
+    _orgOverlay?.remove();
+    _orgOverlay = null;
+  }
+
+  void _openOrgDropdown() {
+    if (widget.isViewMode) return;
+    _removeOrgOverlay();
+    _orgSearchCtrl.text = '';
+
+    _orgOverlay = OverlayEntry(
+      builder: (ctx) => GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: _removeOrgOverlay,
+        child: Stack(
+          children: [
+            CompositedTransformFollower(
+              link: _orgLayerLink,
+              showWhenUnlinked: false,
+              offset: const Offset(0, 52),
+              child: GestureDetector(
+                onTap: () {},
+                child: Material(
+                  elevation: 8,
+                  borderRadius: BorderRadius.circular(10),
+                  shadowColor: Colors.black26,
+                  child: StatefulBuilder(
+                    builder: (ctx2, setInner) {
+                      final query = _orgSearchCtrl.text.toLowerCase();
+                      final filtered = _orgList.where((o) {
+                        final code =
+                            (o['orgcode'] ?? o['orgCode'] ?? '').toString();
+                        final name = (o['name'] ?? '').toString().toLowerCase();
+                        return code.contains(query) || name.contains(query);
+                      }).toList();
+
+                      return Container(
+                        width: 360,
+                        constraints: const BoxConstraints(maxHeight: 340),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: AppColors.border),
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // ── Search bar ─────────────────────────────────
+                            Padding(
+                              padding: const EdgeInsets.all(10),
+                              child: TextField(
+                                controller: _orgSearchCtrl,
+                                autofocus: true,
+                                decoration: InputDecoration(
+                                  hintText: 'Search by code or name…',
+                                  hintStyle: const TextStyle(
+                                      color: AppColors.ink4, fontSize: 13),
+                                  prefixIcon: const Icon(Icons.search,
+                                      size: 18, color: AppColors.ink3),
+                                  suffixIcon: _orgSearchCtrl.text.isNotEmpty
+                                      ? IconButton(
+                                          icon: const Icon(Icons.clear,
+                                              size: 16, color: AppColors.ink3),
+                                          onPressed: () {
+                                            _orgSearchCtrl.clear();
+                                            setInner(() {});
+                                          },
+                                        )
+                                      : null,
+                                  isDense: true,
+                                  contentPadding: const EdgeInsets.symmetric(
+                                      vertical: 10, horizontal: 12),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: const BorderSide(
+                                        color: AppColors.border),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: const BorderSide(
+                                        color: AppColors.tBlue, width: 1.5),
+                                  ),
+                                  filled: true,
+                                  fillColor: AppColors.bg,
+                                ),
+                                onChanged: (_) => setInner(() {}),
+                              ),
+                            ),
+                            const Divider(height: 1, color: AppColors.border),
+
+                            // ── List ───────────────────────────────────────
+                            Flexible(
+                              child: _orgLoading
+                                  ? const Padding(
+                                      padding: EdgeInsets.all(24),
+                                      child: Center(
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                                color: AppColors.tBlue),
+                                            SizedBox(height: 8),
+                                            Text('Loading organisations…',
+                                                style: TextStyle(
+                                                    fontSize: 13,
+                                                    color: AppColors.ink3)),
+                                          ],
+                                        ),
+                                      ),
+                                    )
+                                  : filtered.isEmpty
+                                      ? Padding(
+                                          padding: const EdgeInsets.all(24),
+                                          child: Text(
+                                            'No organisations found',
+                                            style: bodyStyle(
+                                                color: AppColors.ink4),
+                                          ),
+                                        )
+                                      : ListView.builder(
+                                          shrinkWrap: true,
+                                          itemCount: filtered.length,
+                                          itemBuilder: (_, idx) {
+                                            final org = filtered[idx];
+                                            final code = (org['orgcode'] ??
+                                                    org['orgCode'] ??
+                                                    '')
+                                                .toString();
+                                            final name =
+                                                (org['name'] ?? '').toString();
+                                            final isSelected =
+                                                _selectedOrgCode?.toString() ==
+                                                    code;
+
+                                            return InkWell(
+                                              onTap: () {
+                                                _selectOrg(org);
+                                                _orgSearchCtrl.clear();
+                                                _removeOrgOverlay();
+                                              },
+                                              child: Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                        horizontal: 16,
+                                                        vertical: 11),
+                                                decoration: BoxDecoration(
+                                                  color: isSelected
+                                                      ? AppColors.tBlueLt
+                                                          .withValues(
+                                                              alpha: 0.15)
+                                                      : Colors.transparent,
+                                                  border: idx <
+                                                          filtered.length - 1
+                                                      ? const Border(
+                                                          bottom: BorderSide(
+                                                              color: AppColors
+                                                                  .border,
+                                                              width: 0.5))
+                                                      : null,
+                                                ),
+                                                child: Row(
+                                                  children: [
+                                                    // Code badge
+                                                    Container(
+                                                      padding: const EdgeInsets
+                                                          .symmetric(
+                                                          horizontal: 8,
+                                                          vertical: 3),
+                                                      decoration: BoxDecoration(
+                                                        color: isSelected
+                                                            ? AppColors.tBlue
+                                                            : AppColors.tBlueLt,
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(6),
+                                                      ),
+                                                      child: Text(
+                                                        code,
+                                                        style: TextStyle(
+                                                          fontSize: 12,
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                          color: isSelected
+                                                              ? Colors.white
+                                                              : AppColors.tBlue,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    const SizedBox(width: 10),
+                                                    Expanded(
+                                                      child: Text(
+                                                        name,
+                                                        style:
+                                                            bodyStyle(size: 13),
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
+                                                      ),
+                                                    ),
+                                                    if (isSelected)
+                                                      const Icon(
+                                                          Icons.check_rounded,
+                                                          size: 16,
+                                                          color:
+                                                              AppColors.tBlue),
+                                                  ],
+                                                ),
+                                              ),
+                                            );
+                                          },
+                                        ),
+                            ),
+
+                            // ── Footer count ───────────────────────────────
+                            if (!_orgLoading && _orgList.isNotEmpty)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 8),
+                                decoration: const BoxDecoration(
+                                  color: AppColors.bg,
+                                  border: Border(
+                                      top: BorderSide(
+                                          color: AppColors.border, width: 0.5)),
+                                  borderRadius: BorderRadius.vertical(
+                                      bottom: Radius.circular(10)),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.info_outline_rounded,
+                                        size: 13, color: AppColors.ink3),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      '${filtered.length} of ${_orgList.length} organisations',
+                                      style: const TextStyle(
+                                          fontSize: 11, color: AppColors.ink3),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    Overlay.of(context).insert(_orgOverlay!);
+  }
+
+  void _selectOrg(Map<String, dynamic> org) {
+    final code = (org['orgcode'] ?? org['orgCode'] ?? '').toString();
+    final name = (org['name'] ?? '').toString();
+    setState(() {
+      _selectedOrgCode = int.tryParse(code);
+      _orgCodeCtrl.text = name.isNotEmpty ? '$code – $name' : code;
+      _errors['orgCode'] = null;
+    });
+    widget.onChanged('orgCode', int.tryParse(code) ?? 50);
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Dropdowns: users + access roles
+  // ═══════════════════════════════════════════════════════════════════════════
+
   Future<void> _fetchDropdownData() async {
     setState(() => _loadingDropdowns = true);
     try {
@@ -639,7 +922,6 @@ class UserAccessFieldsState extends State<UserAccessFields> {
     }
   }
 
-  // ── Apply initial data ────────────────────────────────────────────────────
   void _applyInitialData() {
     final d = widget.initialData;
     if (d == null || d.isEmpty) {
@@ -647,10 +929,21 @@ class UserAccessFieldsState extends State<UserAccessFields> {
       return;
     }
 
-    _orgCodeCtrl.text = (d['orgCode'] ?? d['orgcode'] ?? 50).toString();
+    // Org code
+    final rawOrg = (d['orgCode'] ?? d['orgcode'] ?? 50).toString();
+    _selectedOrgCode = int.tryParse(rawOrg);
+    if (_orgList.isNotEmpty && _selectedOrgCode != null) {
+      final match = _orgList.firstWhere(
+          (o) => (o['orgcode'] ?? o['orgCode'] ?? '').toString() == rawOrg,
+          orElse: () => {});
+      final orgName = (match['name'] ?? '').toString();
+      _orgCodeCtrl.text = orgName.isNotEmpty ? '$rawOrg – $orgName' : rawOrg;
+    } else {
+      _orgCodeCtrl.text = rawOrg;
+    }
+
     _status = int.tryParse((d['status'] ?? 1).toString()) ?? 1;
 
-    // productCode — stored as numeric in DB (prodCode) but shown as string
     final rawProd =
         (d['productCode'] ?? d['prodCode'] ?? d['prodcode'] ?? '').toString();
     _productCodeCtrl.text = rawProd;
@@ -717,9 +1010,9 @@ class UserAccessFieldsState extends State<UserAccessFields> {
       .toList()
     ..sort();
 
-  // ── Clear ─────────────────────────────────────────────────────────────────
   void clear() {
-    _orgCodeCtrl.text = '50';
+    _orgCodeCtrl.text = '';
+    _selectedOrgCode = null;
     _productCodeCtrl.text = '';
     _selectedUserCode = null;
     _selectedUserDisplay = null;
@@ -730,13 +1023,13 @@ class UserAccessFieldsState extends State<UserAccessFields> {
     if (mounted) setState(() {});
   }
 
-  // ── Validate ──────────────────────────────────────────────────────────────
   bool validate() {
     bool ok = true;
     setState(() {
-      _errors['orgCode'] = _orgCodeCtrl.text.trim().isEmpty
-          ? 'Organisation Code is required'
-          : null;
+      _errors['orgCode'] =
+          (_selectedOrgCode == null && _orgCodeCtrl.text.trim().isEmpty)
+              ? 'Organisation Code is required'
+              : null;
       if (_errors['orgCode'] != null) ok = false;
 
       _errors['userCode'] =
@@ -756,7 +1049,6 @@ class UserAccessFieldsState extends State<UserAccessFields> {
     return ok;
   }
 
-  // ── Build ─────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -774,30 +1066,33 @@ class UserAccessFieldsState extends State<UserAccessFields> {
           const SizedBox(height: 16),
           AmsFormGrid(
             children: [
-              // Organisation Code
+              // ── ORGANISATION CODE – searchable overlay dropdown ────────────
               AmsField(
                 label: 'Organisation Code',
                 required: true,
                 labelAbove: true,
-                tooltip: 'Numeric organisation code (e.g. 50).',
-                child: AmsTextInput(
-                  controller: _orgCodeCtrl,
-                  readOnly: widget.isViewMode,
-                  placeholder: 'e.g. 50',
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  textInputAction: TextInputAction.next,
-                  errorText: _errors['orgCode'],
-                  isValid: _errors['orgCode'] == null &&
-                      _orgCodeCtrl.text.isNotEmpty,
-                  onChanged: (v) {
-                    setState(() {
-                      _errors['orgCode'] = v.trim().isEmpty
-                          ? 'Organisation Code is required'
-                          : null;
-                    });
-                    widget.onChanged('orgCode', int.tryParse(v) ?? 50);
-                  },
+                tooltip: 'Select the parent organisation.',
+                child: CompositedTransformTarget(
+                  link: _orgLayerLink,
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: widget.isViewMode ? null : _openOrgDropdown,
+                    child: AbsorbPointer(
+                      child: AmsTextInput(
+                        controller: _orgCodeCtrl,
+                        readOnly: true,
+                        placeholder: _orgLoading
+                            ? 'Loading organisations…'
+                            : 'Select Organisation',
+                        icon: _orgLoading
+                            ? Icons.hourglass_empty_rounded
+                            : Icons.business_rounded,
+                        errorText: _errors['orgCode'],
+                        isValid: _errors['orgCode'] == null &&
+                            _orgCodeCtrl.text.isNotEmpty,
+                      ),
+                    ),
+                  ),
                 ),
               ),
 
@@ -846,7 +1141,7 @@ class UserAccessFieldsState extends State<UserAccessFields> {
           const SizedBox(height: 16),
           AmsFormGrid(
             children: [
-              // Product Code — numeric (maps to PRODCODE in DB)
+              // Product Code
               AmsField(
                 label: 'Product Code',
                 required: true,
@@ -872,7 +1167,7 @@ class UserAccessFieldsState extends State<UserAccessFields> {
                 ),
               ),
 
-              // Access Code — dropdown (maps to ACCESSCD in DB)
+              // Access Code — dropdown
               AmsField(
                 label: 'Access Code',
                 required: true,
