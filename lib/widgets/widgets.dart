@@ -1581,6 +1581,7 @@ class _AmsSidebarState extends State<AmsSidebar> {
     } else if ([
       'GL-CAT',
       'GL-MST',
+      'GL-MAT',
       'GL-SUB',
       'GL-CUR',
       'GL-BRN',
@@ -1752,7 +1753,7 @@ class _AmsSidebarState extends State<AmsSidebar> {
                     label: 'GL Master',
                     isCollapsed: widget.isCollapsed,
                     icon: Icons.account_balance_wallet_rounded,
-                    isSelected: widget.selectedProg == 'GL-MST',
+                    isSelected: widget.selectedProg == 'GL-MST' || widget.selectedProg == 'GL-MAT',
                     onTap: () => widget.onNavigate('nontran', 'GL-MST'),
                   ),
                   AmsSubSidebarItem(

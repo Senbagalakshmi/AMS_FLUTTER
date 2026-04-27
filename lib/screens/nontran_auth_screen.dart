@@ -390,7 +390,7 @@ class _NonTranAuthScreenState extends State<NonTranAuthScreen> {
                                 isViewMode: true,
                                 onChanged: (k, v) {},
                               );
-                            } else if (record.programId == 'GL-MST') {
+                            } else if (record.programId == 'GL-MST' || record.programId == 'GL-MAT') {
                               return GLMasterFields(
                                 initialData: block.data,
                                 isViewMode: true,

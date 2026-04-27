@@ -149,6 +149,7 @@ class _AmsRootState extends State<AmsRoot> {
       final newCounts = {
         'GL-CAT': catsRes?.totalElements ?? 0,
         'GL-MST': mastsRes?.totalElements ?? 0,
+        'GL-MAT': mastsRes?.totalElements ?? 0,
         'GL-CUR': curs?.length ?? 0,
         'GL-BRN': brns?.length ?? 0,
         'GL-SEG': segs?.length ?? 0,
@@ -471,7 +472,7 @@ class _AmsRootState extends State<AmsRoot> {
             onBackToModule: () => _handleProceed('GL'),
             userName: _state.userName,
           );
-        } else if (_state.selectedProg == 'GL-MST') {
+        } else if (_state.selectedProg == 'GL-MST' || _state.selectedProg == 'GL-MAT') {
           body = GLMasterScreen(
             onBack: () => _navigate('list'),
             onBackToModule: () => _handleProceed('GL'),
@@ -619,7 +620,7 @@ class _AmsRootState extends State<AmsRoot> {
 
             if (item.programId == 'GL-CAT')
               metric = '$count Cat';
-            else if (item.programId == 'GL-MST')
+            else if (item.programId == 'GL-MST' || item.programId == 'GL-MAT')
               metric = '$count Mast';
             else if (item.programId == 'GL-SUB')
               metric = '4 Modules';
@@ -666,7 +667,7 @@ class _AmsRootState extends State<AmsRoot> {
 
               if (item.programId == 'GL-CAT')
                 metric = '$count Cat';
-              else if (item.programId == 'GL-MST')
+              else if (item.programId == 'GL-MST' || item.programId == 'GL-MAT')
                 metric = '$count Mast';
               else if (item.programId == 'GL-SUB')
                 metric = '4 Modules';

@@ -256,7 +256,7 @@ class _GlDashboardScreenState extends State<GlDashboardScreen> with SingleTicker
   }
 
   Widget _buildMainTable() {
-    final setupItems = widget.items.where((i) => ['GL-CAT', 'GL-MST', 'GL-SEG'].contains(i.programId)).toList();
+    final setupItems = widget.items.where((i) => ['GL-CAT', 'GL-MST', 'GL-MAT', 'GL-SEG'].contains(i.programId)).toList();
     final controlItems = widget.items.where((i) => !setupItems.contains(i)).toList();
 
     return SingleChildScrollView(

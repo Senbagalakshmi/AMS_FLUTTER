@@ -83,6 +83,12 @@ final Map<String, Auth101Config> auth101 = {
       approvalReq: true,
       isTran: false,
       levels: 1),
+  'GL-MAT': const Auth101Config(
+      id: 'GL-MAT',
+      name: 'GL Master',
+      approvalReq: true,
+      isTran: false,
+      levels: 1),
   'GL-CUR': const Auth101Config(
       id: 'GL-CUR',
       name: 'Allowed Currency',
@@ -191,6 +197,7 @@ final Map<String, String> nonTranProgPkPrefix = {
   'nontranauth': 'NTA',
   'GL-CAT': 'GLC',
   'GL-MST': 'GLM',
+  'GL-MAT': 'GLM',
   'GL-CUR': 'GLCU',
   'GL-BRN': 'GLB',
   'GL-SEG': 'GLS',
