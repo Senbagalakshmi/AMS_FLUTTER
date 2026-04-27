@@ -1201,11 +1201,13 @@ class _GLMasterFieldsState extends State<GLMasterFields> {
     if (widget.initialData == null) return;
     final d = widget.initialData!.map((k, v) => MapEntry(k.toLowerCase(), v));
 
-    _orgCtrl.text = d['orgcode']?.toString() ?? d['org']?.toString() ?? '50';
-    _glNoCtrl.text = d['glno']?.toString() ?? d['no']?.toString() ?? '';
-    _glNameCtrl.text = d['glname']?.toString() ?? d['name']?.toString() ?? '';
-    _glCatCd = int.tryParse(d['glcatcd']?.toString() ?? '');
-    _status = (d['status'] == 1 || d['status'] == '1' || d['status'] == true) 
+    _orgCtrl.text = (d['orgcode'] ?? d['org_code'] ?? d['org'] ?? '50').toString();
+    _glNoCtrl.text = (d['glno'] ?? d['gl_no'] ?? d['no'] ?? d['gl_number'] ?? '').toString();
+    _glNameCtrl.text = (d['glname'] ?? d['gl_name'] ?? d['name'] ?? '').toString();
+    _glCatCd = int.tryParse((d['glcatcd'] ?? d['gl_cat_cd'] ?? d['category_code'] ?? '').toString());
+    
+    final statusVal = d['status'];
+    _status = (statusVal == 1 || statusVal == '1' || statusVal == true || statusVal == 'Active') 
         ? 'Active' : 'Inactive';
   }
 

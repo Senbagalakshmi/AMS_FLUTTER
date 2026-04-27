@@ -1116,3 +1116,90 @@ class _GLAttributeScreenState extends State<GLAttributeScreen> {
     );
   }
 }
+
+// ─── GLAttributeFields Widget ─────────────────────────────────────────────────
+class GLAttributeFields extends StatefulWidget {
+  final Map<String, dynamic>? initialData;
+  final bool isViewMode;
+  final void Function(String key, dynamic val) onChanged;
+
+  const GLAttributeFields({
+    super.key,
+    this.initialData,
+    this.isViewMode = false,
+    required this.onChanged,
+  });
+
+  @override
+  State<GLAttributeFields> createState() => _GLAttributeFieldsState();
+}
+
+class _GLAttributeFieldsState extends State<GLAttributeFields> {
+  final _orgCtrl = TextEditingController();
+  final _glNoCtrl = TextEditingController();
+  final _attrIdCtrl = TextEditingController();
+  final _attrValCtrl = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  @override
+  void didUpdateWidget(covariant GLAttributeFields oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialData != widget.initialData) {
+      _loadData();
+    }
+  }
+
+  void _loadData() {
+    if (widget.initialData == null) return;
+    final d = widget.initialData!.map((k, v) => MapEntry(k.toLowerCase(), v));
+
+    _orgCtrl.text = (d['orgcode'] ?? d['org_code'] ?? d['org'] ?? '50').toString();
+    _glNoCtrl.text = (d['glno'] ?? d['gl_no'] ?? d['no'] ?? '').toString();
+    _attrIdCtrl.text = (d['glattrid'] ?? d['gl_attrid'] ?? d['attrid'] ?? d['attr_id'] ?? d['id'] ?? '').toString();
+    _attrValCtrl.text = (d['glattrvalue'] ?? d['gl_attrvalue'] ?? d['attrvalue'] ?? d['attr_value'] ?? d['value'] ?? '').toString();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.isViewMode) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildInfoRow('Organisation Code', _orgCtrl.text),
+          const SizedBox(height: 12),
+          _buildInfoRow('GL Number', _glNoCtrl.text),
+          const SizedBox(height: 12),
+          _buildInfoRow('Attribute ID', _attrIdCtrl.text),
+          const SizedBox(height: 12),
+          _buildInfoRow('Attribute Value', _attrValCtrl.text),
+        ],
+      );
+    }
+    return const SizedBox.shrink();
+  }
+
+  Widget _buildInfoRow(String label, String value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: const TextStyle(fontSize: 12, color: Color(0xFF64748B), fontWeight: FontWeight.w600)),
+        const SizedBox(height: 4),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF8FAFC),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+          ),
+          child: Text(value, style: const TextStyle(fontSize: 14, color: Color(0xFF1E293B))),
+        ),
+      ],
+    );
+  }
+}

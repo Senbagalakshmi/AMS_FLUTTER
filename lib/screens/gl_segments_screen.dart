@@ -1435,3 +1435,96 @@ class _AddEditFormState extends State<_AddEditForm> {
     );
   }
 }
+
+// ─── GLSegmentFields Widget ───────────────────────────────────────────────────
+class GLSegmentFields extends StatefulWidget {
+  final Map<String, dynamic>? initialData;
+  final bool isViewMode;
+  final void Function(String key, dynamic val) onChanged;
+
+  const GLSegmentFields({
+    super.key,
+    this.initialData,
+    this.isViewMode = false,
+    required this.onChanged,
+  });
+
+  @override
+  State<GLSegmentFields> createState() => _GLSegmentFieldsState();
+}
+
+class _GLSegmentFieldsState extends State<GLSegmentFields> {
+  final _orgCtrl = TextEditingController();
+  final _glNoCtrl = TextEditingController();
+  final _segIdCtrl = TextEditingController();
+  final _segValCtrl = TextEditingController();
+  String? _level;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  @override
+  void didUpdateWidget(covariant GLSegmentFields oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialData != widget.initialData) {
+      _loadData();
+    }
+  }
+
+  void _loadData() {
+    if (widget.initialData == null) return;
+    final d = widget.initialData!.map((k, v) => MapEntry(k.toLowerCase(), v));
+
+    _orgCtrl.text = (d['orgcode'] ?? d['org_code'] ?? d['org'] ?? '50').toString();
+    _glNoCtrl.text = (d['glno'] ?? d['gl_no'] ?? d['no'] ?? '').toString();
+    _segIdCtrl.text = (d['segid'] ?? d['seg_id'] ?? d['id'] ?? '').toString();
+    _segValCtrl.text = (d['segvalue'] ?? d['seg_value'] ?? d['value'] ?? '').toString();
+    
+    final type = d['segtype'] ?? d['seg_type'] ?? d['type'] ?? 1;
+    _level = 'L$type';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.isViewMode) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildInfoRow('Organisation Code', _orgCtrl.text),
+          const SizedBox(height: 12),
+          _buildInfoRow('GL Number', _glNoCtrl.text),
+          const SizedBox(height: 12),
+          _buildInfoRow('Segment ID', _segIdCtrl.text),
+          const SizedBox(height: 12),
+          _buildInfoRow('Segment Value', _segValCtrl.text),
+          const SizedBox(height: 12),
+          _buildInfoRow('Segment Level', _level ?? '—'),
+        ],
+      );
+    }
+    return const SizedBox.shrink(); // Form UI not needed for Auth View
+  }
+
+  Widget _buildInfoRow(String label, String value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: const TextStyle(fontSize: 12, color: Color(0xFF64748B), fontWeight: FontWeight.w600)),
+        const SizedBox(height: 4),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF8FAFC),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+          ),
+          child: Text(value, style: const TextStyle(fontSize: 14, color: Color(0xFF1E293B))),
+        ),
+      ],
+    );
+  }
+}

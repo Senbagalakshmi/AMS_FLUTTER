@@ -51,11 +51,23 @@ class _AllowedBranchScreenState extends State<AllowedBranchScreen> {
 
   Future<void> _loadGlMasters() async {
     setState(() => _loadingGlMasters = true);
-    final data = await apiService.getAllGlMasters();
+    // Fetch more records (size: 200) to ensure we find the matching GL for existing records
+    final data = await apiService.getAllGlMasters(size: 200);
     setState(() {
       _loadingGlMasters = false;
       _glMasters = data?.items ?? [];
     });
+  }
+
+  String _getGlNo(Map<String, dynamic>? item) {
+    if (item == null) return '';
+    return (item['glNo'] ??
+            item['GLNO'] ??
+            item['GlNo'] ??
+            item['glno'] ??
+            item['gl_no'] ??
+            '')
+        .toString();
   }
 
   Future<void> loadSavedBranches() async {
@@ -70,10 +82,10 @@ class _AllowedBranchScreenState extends State<AllowedBranchScreen> {
           // Attempt to find the matching GL master
           String glDisplay = "GL $glNo";
           try {
-            final matched = _glMasters.firstWhere((m) => m['glNo']?.toString() == glNo);
-            final glName = matched['glName']?.toString() ?? '';
+            final matched = _glMasters.firstWhere((m) => _getGlNo(m) == glNo);
+            final glName = matched['glName'] ?? matched['GLNAME'] ?? matched['glname'] ?? '';
             glDisplay = "GL $glNo — $glName";
-          } catch(e) {
+          } catch (e) {
             // keep default
           }
           
@@ -311,10 +323,10 @@ Widget _buildListView() {
                                     showForm = true;
                                     _isViewOnly = true;
                                     _isEditMode = false;
-                                    // Match the GL master from the list
-                                    final glNo = item["glNo"]?.toString();
+                                    // Match the GL master from the list using robust matching
+                                    final glNo = _getGlNo(item);
                                     try {
-                                      _selectedGlMaster = _glMasters.firstWhere((m) => m['glNo']?.toString() == glNo);
+                                      _selectedGlMaster = _glMasters.firstWhere((m) => _getGlNo(m) == glNo);
                                     } catch (_) {
                                       _selectedGlMaster = null;
                                     }
@@ -336,10 +348,10 @@ Widget _buildListView() {
                                     showForm = true;
                                     _isEditMode = true;
                                     _isViewOnly = false;
-                                    // Match the GL master from the list
-                                    final glNo = item["glNo"]?.toString();
+                                    // Match the GL master from the list using robust matching
+                                    final glNo = _getGlNo(item);
                                     try {
-                                      _selectedGlMaster = _glMasters.firstWhere((m) => m['glNo']?.toString() == glNo);
+                                      _selectedGlMaster = _glMasters.firstWhere((m) => _getGlNo(m) == glNo);
                                     } catch (_) {
                                       _selectedGlMaster = null;
                                     }

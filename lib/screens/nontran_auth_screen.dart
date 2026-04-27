@@ -5,6 +5,8 @@ import '../models/models.dart';
 import 'nontran_entry_screen.dart';
 import 'gl_category_screen.dart';
 import 'gl_master_screen.dart';
+import 'gl_segments_screen.dart';
+import 'gl_attribute_screen.dart';
 import 'organisation_screen.dart';
 import 'program_master_screen.dart';
 
@@ -401,6 +403,18 @@ class _NonTranAuthScreenState extends State<NonTranAuthScreen> {
                               return OrganisationFields(
                                 isViewMode: true,
                                 initialData: block.data,
+                                onChanged: (k, v) {},
+                              );
+                            } else if (record.programId == 'GL-SEG') {
+                              return GLSegmentFields(
+                                initialData: block.data,
+                                isViewMode: true,
+                                onChanged: (k, v) {},
+                              );
+                            } else if (record.programId == 'GL-ATT' || record.programId == 'GL-ATR' || record.programId == 'GL-ATTR') {
+                              return GLAttributeFields(
+                                initialData: block.data,
+                                isViewMode: true,
                                 onChanged: (k, v) {},
                               );
                             } else if (record.programId == 'PRM_CRT' || record.programId == 'PROG-CRT') {
