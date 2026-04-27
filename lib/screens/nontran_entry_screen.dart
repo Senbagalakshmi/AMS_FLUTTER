@@ -7,7 +7,7 @@ import '../models/models.dart';
 import '../widgets/widgets.dart';
 import '../services/api_service.dart';
 import '../services/branch_api_service.dart';
-import '../services/org_api_service.dart'; // ← ADD THIS IMPORT
+import '../services/org_api_service.dart';
 import '../data.dart';
 
 import 'branch_screen.dart';
@@ -816,7 +816,7 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// List Views (unchanged)
+// List Views
 // ═══════════════════════════════════════════════════════════════════════════════
 
 class _UserListView extends StatefulWidget {
@@ -1825,7 +1825,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
 
   final _menuScdCtrl = TextEditingController();
   final _menuNameCtrl = TextEditingController();
-  final _orgCodeCtrl = TextEditingController(); // kept for MOD-CRT / AUTHCTL
+  final _orgCodeCtrl = TextEditingController();
 
   final _authModCtrl = TextEditingController();
   final _authPgmCtrl = TextEditingController();
@@ -1836,12 +1836,13 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
   List<Map<String, dynamic>> _moduleList = [];
 
   // ── Branch dropdown ────────────────────────────────────────────────────────
+  // _branchList holds ALL branches fetched from API (unfiltered)
   List<Map<String, dynamic>> _branchList = [];
   bool _loadingBranches = false;
 
-  // ── Org searchable overlay dropdown (USR-CRT) ──────────────────────────────
-  final _orgDisplayCtrl = TextEditingController(); // shows "50 – Org Name"
-  final _orgSearchCtrl = TextEditingController(); // search text inside overlay
+  // ── Org searchable overlay dropdown ───────────────────────────────────────
+  final _orgDisplayCtrl = TextEditingController();
+  final _orgSearchCtrl = TextEditingController();
   final _orgLayerLink = LayerLink();
   OverlayEntry? _orgOverlay;
   List<Map<String, dynamic>> _orgList = [];
@@ -1856,6 +1857,17 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
   bool _isValidEmail(String email) {
     return RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email);
   }
+
+  // ── Filtered branches: only those matching selected org code ───────────────
+  List<Map<String, dynamic>> get _filteredBranchList {
+    if (_selectedOrgCode == null) return _branchList;
+    return _branchList.where((b) {
+      final branchOrg =
+          (b['orgCode'] ?? b['orgcode'] ?? b['org_code'] ?? '').toString();
+      return branchOrg == _selectedOrgCode.toString();
+    }).toList();
+  }
+  // ──────────────────────────────────────────────────────────────────────────
 
   // ── Lifecycle ──────────────────────────────────────────────────────────────
 
@@ -1938,9 +1950,11 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
     }
   }
 
+  // ── Fetch ALL branches (no org filter at API level) ────────────────────────
+  // Filtering is done client-side via _filteredBranchList getter
   Future<void> _fetchBranches() async {
     setState(() => _loadingBranches = true);
-    final result = await branchApiService.getBranches(size: 100);
+    final result = await branchApiService.getBranches(size: 1000);
     if (mounted) {
       setState(() {
         _branchList = result?.items ?? [];
@@ -1948,6 +1962,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
       });
     }
   }
+  // ──────────────────────────────────────────────────────────────────────────
 
   // ── Org fetch ──────────────────────────────────────────────────────────────
 
@@ -1961,13 +1976,12 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
         _resolveOrgDisplay();
       }
     } catch (_) {
-      // silent – field still usable
+      // silent
     } finally {
       if (mounted) setState(() => _orgLoading = false);
     }
   }
 
-  /// After list loads, update display controller to show "50 – Name".
   void _resolveOrgDisplay() {
     if (_selectedOrgCode == null) return;
     final match = _orgList.firstWhere(
@@ -1989,7 +2003,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
     }
   }
 
-  // ── Org overlay dropdown (identical pattern to BranchScreen) ──────────────
+  // ── Org overlay dropdown ───────────────────────────────────────────────────
 
   void _openOrgDropdown() {
     if (widget.isViewMode) return;
@@ -2012,7 +2026,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                 showWhenUnlinked: false,
                 offset: const Offset(0, 52),
                 child: GestureDetector(
-                  onTap: () {}, // prevent bubble-close
+                  onTap: () {},
                   child: Material(
                     elevation: 8,
                     borderRadius: BorderRadius.circular(10),
@@ -2039,7 +2053,6 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              // ── Search bar ──────────────────────────────
                               Padding(
                                 padding: const EdgeInsets.all(10),
                                 child: TextField(
@@ -2082,8 +2095,6 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                                 ),
                               ),
                               const Divider(height: 1, color: AppColors.border),
-
-                              // ── List ────────────────────────────────────
                               Flexible(
                                 child: _orgLoading
                                     ? const Padding(
@@ -2158,7 +2169,6 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                                                   ),
                                                   child: Row(
                                                     children: [
-                                                      // Code badge
                                                       Container(
                                                         padding:
                                                             const EdgeInsets
@@ -2211,8 +2221,6 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                                             },
                                           ),
                               ),
-
-                              // ── Footer count ────────────────────────────
                               if (!_orgLoading && _orgList.isNotEmpty)
                                 Container(
                                   padding: const EdgeInsets.symmetric(
@@ -2256,18 +2264,23 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
     Overlay.of(context).insert(_orgOverlay!);
   }
 
+  // ── UPDATED: _selectOrg now resets branch selection ────────────────────────
   void _selectOrg(Map<String, dynamic> org) {
     final code = (org['orgcode'] ?? org['orgCode'] ?? '').toString();
     final name = (org['name'] ?? '').toString();
     setState(() {
       _selectedOrgCode = int.tryParse(code);
       _orgDisplayCtrl.text = name.isNotEmpty ? '$code – $name' : code;
-      // keep _orgCodeCtrl in sync for MOD-CRT / AUTHCTL validation
       _orgCodeCtrl.text = code;
       _errors['orgCode'] = null;
+      // ── Reset branch when org changes ─────────────────────────────────────
+      _uBranchCdCtrl.clear();
     });
     widget.onChanged('orgCode', int.tryParse(code) ?? 0);
+    // ── Notify parent that branch is cleared ──────────────────────────────
+    widget.onChanged('branchCd', '');
   }
+  // ──────────────────────────────────────────────────────────────────────────
 
   // ── Load initial data ──────────────────────────────────────────────────────
 
@@ -2291,7 +2304,6 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
     final prog = (widget.prog).replaceAll(' ', '-').toUpperCase();
 
     if (prog == 'USR-CRT') {
-      // ── Org code: seed _selectedOrgCode; display resolves after list loads ─
       final orgCodeRaw =
           (data['orgcode'] ?? data['orgCode'] ?? '50').toString();
       _selectedOrgCode = int.tryParse(orgCodeRaw);
@@ -2370,7 +2382,6 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
           ? data['title'].toString()
           : null;
     } else if (prog == 'ROLE-CRT') {
-      // ── Org code: seed _selectedOrgCode; display resolves after list loads ─
       final orgCodeRaw =
           (data['orgcode'] ?? data['orgCode'] ?? '50').toString();
       _selectedOrgCode = int.tryParse(orgCodeRaw);
@@ -2616,7 +2627,6 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
     _menuNameCtrl.clear();
     _authModCtrl.clear();
     _authPgmCtrl.clear();
-    // Org overlay fields
     _orgDisplayCtrl.clear();
     _orgSearchCtrl.clear();
     _selectedOrgCode = null;
@@ -2679,7 +2689,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
           ),
           child: AmsFormGrid(
             children: [
-              // ── ORGANISATION CODE – searchable overlay dropdown ────────────
+              // ── ORGANISATION CODE ─────────────────────────────────────────
               AmsField(
                 label: 'Organisation Code',
                 labelAbove: true,
@@ -2704,9 +2714,8 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                   ),
                 ),
               ),
-              // ─────────────────────────────────────────────────────────────
 
-              // ── BRANCH CODE DROPDOWN ──────────────────────────────────────
+              // ── BRANCH CODE – filtered by selected org ────────────────────
               AmsField(
                 label: 'Branch Code',
                 labelAbove: true,
@@ -2720,11 +2729,13 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                     : _loadingBranches
                         ? const LinearProgressIndicator()
                         : AmsDropdown(
+                            // ── KEY: use filtered list based on selected org ─
+                            key: ValueKey('branch_${_selectedOrgCode}'),
                             initialValue: () {
-                              if (_branchList.isEmpty) return null;
+                              if (_filteredBranchList.isEmpty) return null;
                               final seek = _uBranchCdCtrl.text;
                               if (seek.isEmpty) return null;
-                              final matches = _branchList.where((b) =>
+                              final matches = _filteredBranchList.where((b) =>
                                   (b['brnCd'] ??
                                           b['branchcd'] ??
                                           b['brncd'] ??
@@ -2735,8 +2746,12 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                               final b = matches.first;
                               return '${b['brnCd'] ?? b['branchcd'] ?? ''} - ${b['brnName'] ?? b['branchname'] ?? ''}';
                             }(),
-                            placeholder: 'Select Branch',
-                            items: _branchList
+                            placeholder: _selectedOrgCode == null
+                                ? 'Select Organisation first'
+                                : _filteredBranchList.isEmpty
+                                    ? 'No branches for this org'
+                                    : 'Select Branch',
+                            items: _filteredBranchList
                                 .map((b) {
                                   final cd = b['brnCd'] ??
                                       b['branchcd'] ??
@@ -3286,7 +3301,6 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
           ),
           child: AmsFormGrid(
             children: [
-              // ── ORGANISATION CODE – searchable overlay dropdown ────────────
               AmsField(
                 label: 'Organisation Code',
                 required: true,
@@ -3312,7 +3326,6 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                   ),
                 ),
               ),
-              // ─────────────────────────────────────────────────────────────
               AmsField(
                 label: 'Access Code',
                 required: true,
@@ -3417,7 +3430,6 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
             children: [
               AmsFormGrid(
                 children: [
-                  // ── ORGANISATION CODE – searchable overlay dropdown ────────
                   AmsField(
                     label: 'Organisation Code',
                     required: true,
@@ -3445,7 +3457,6 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                       ),
                     ),
                   ),
-                  // ─────────────────────────────────────────────────────────
                   AmsField(
                     label: 'Module Code',
                     required: true,
@@ -3630,7 +3641,6 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
             children: [
               AmsFormGrid(
                 children: [
-                  // ── ORGANISATION CODE – searchable overlay dropdown ────────
                   AmsField(
                     label: 'Organisation Code',
                     required: true,
@@ -3659,7 +3669,6 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                       ),
                     ),
                   ),
-                  // ─────────────────────────────────────────────────────────
                   AmsField(
                     label: 'Program Id',
                     required: true,

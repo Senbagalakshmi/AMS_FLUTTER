@@ -5,7 +5,7 @@ import '../theme.dart';
 import '../widgets/widgets.dart';
 import '../services/api_service.dart';
 import '../services/user_mapping_service.dart';
-import '../services/org_api_service.dart'; // ← NEW
+import '../services/org_api_service.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // UserAccessScreen  (Table: USER004)
@@ -569,7 +569,7 @@ class UserAccessFields extends StatefulWidget {
 
 class UserAccessFieldsState extends State<UserAccessFields> {
   // ── Org-code searchable overlay ──────────────────────────────────────────
-  final _orgCodeCtrl = TextEditingController(); // displays "50 – Org Name"
+  final _orgCodeCtrl = TextEditingController();
   final _orgSearchCtrl = TextEditingController();
   final _orgLayerLink = LayerLink();
   OverlayEntry? _orgOverlay;
@@ -581,8 +581,14 @@ class UserAccessFieldsState extends State<UserAccessFields> {
   int _status = 1;
   final Map<String, String?> _errors = {};
 
+  // ── ALL users + roles fetched once (unfiltered master lists) ─────────────
+  List<Map<String, dynamic>> _allUserList = [];
+  List<Map<String, dynamic>> _allAccessList = [];
+
+  // ── Filtered by selected org (what dropdowns actually show) ──────────────
   List<Map<String, dynamic>> _userList = [];
   List<Map<String, dynamic>> _accessList = [];
+
   bool _loadingDropdowns = true;
 
   String? _selectedUserCode;
@@ -596,7 +602,7 @@ class UserAccessFieldsState extends State<UserAccessFields> {
   void initState() {
     super.initState();
     _loadOrganisations();
-    _fetchDropdownData();
+    _fetchDropdownData(); // fetch all users + roles once
   }
 
   @override
@@ -625,7 +631,6 @@ class UserAccessFieldsState extends State<UserAccessFields> {
       final res = await orgApiService.getAllOrganisations(page: 0, size: 200);
       if (res != null && mounted) {
         setState(() => _orgList = res.items);
-        // Re-resolve display label now that list is loaded
         _applyInitialData();
       }
     } catch (_) {
@@ -681,7 +686,6 @@ class UserAccessFieldsState extends State<UserAccessFields> {
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            // ── Search bar ─────────────────────────────────
                             Padding(
                               padding: const EdgeInsets.all(10),
                               child: TextField(
@@ -723,8 +727,6 @@ class UserAccessFieldsState extends State<UserAccessFields> {
                               ),
                             ),
                             const Divider(height: 1, color: AppColors.border),
-
-                            // ── List ───────────────────────────────────────
                             Flexible(
                               child: _orgLoading
                                   ? const Padding(
@@ -797,7 +799,6 @@ class UserAccessFieldsState extends State<UserAccessFields> {
                                                 ),
                                                 child: Row(
                                                   children: [
-                                                    // Code badge
                                                     Container(
                                                       padding: const EdgeInsets
                                                           .symmetric(
@@ -846,8 +847,6 @@ class UserAccessFieldsState extends State<UserAccessFields> {
                                           },
                                         ),
                             ),
-
-                            // ── Footer count ───────────────────────────────
                             if (!_orgLoading && _orgList.isNotEmpty)
                               Container(
                                 padding: const EdgeInsets.symmetric(
@@ -889,19 +888,51 @@ class UserAccessFieldsState extends State<UserAccessFields> {
     Overlay.of(context).insert(_orgOverlay!);
   }
 
+  // ── CHANGED: org select → client-side filter dependent dropdowns ──────────
   void _selectOrg(Map<String, dynamic> org) {
     final code = (org['orgcode'] ?? org['orgCode'] ?? '').toString();
     final name = (org['name'] ?? '').toString();
+    final newOrgCode = int.tryParse(code);
+
     setState(() {
-      _selectedOrgCode = int.tryParse(code);
+      _selectedOrgCode = newOrgCode;
       _orgCodeCtrl.text = name.isNotEmpty ? '$code – $name' : code;
       _errors['orgCode'] = null;
+
+      // Reset dependent selections when org changes
+      _selectedUserCode = null;
+      _selectedUserDisplay = null;
+      _selectedAccessCode = null;
+      _selectedAccessDisplay = null;
+
+      // Client-side filter: show only records whose orgcode matches
+      _applyOrgFilter(newOrgCode);
     });
-    widget.onChanged('orgCode', int.tryParse(code) ?? 50);
+
+    widget.onChanged('orgCode', newOrgCode ?? 50);
+  }
+
+  // ── NEW: filter _allUserList and _allAccessList by orgCode ────────────────
+  void _applyOrgFilter(int? orgCode) {
+    if (orgCode == null) {
+      // No org selected → show nothing (or all, your choice)
+      _userList = [];
+      _accessList = [];
+      return;
+    }
+    final orgStr = orgCode.toString();
+    _userList = _allUserList.where((u) {
+      final uOrg = (u['orgcode'] ?? u['orgCode'] ?? '').toString();
+      return uOrg == orgStr;
+    }).toList();
+    _accessList = _allAccessList.where((a) {
+      final aOrg = (a['orgcode'] ?? a['orgCode'] ?? '').toString();
+      return aOrg == orgStr;
+    }).toList();
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // Dropdowns: users + access roles
+  // Dropdowns: fetch ALL users + roles once, filter client-side by org
   // ═══════════════════════════════════════════════════════════════════════════
 
   Future<void> _fetchDropdownData() async {
@@ -911,9 +942,13 @@ class UserAccessFieldsState extends State<UserAccessFields> {
       final rolesResult = await apiService.getRoles(size: 200);
       if (mounted) {
         setState(() {
-          _userList = usersResult?.items ?? [];
-          _accessList = rolesResult?.items ?? [];
+          // Store full master lists
+          _allUserList = usersResult?.items ?? [];
+          _allAccessList = rolesResult?.items ?? [];
           _loadingDropdowns = false;
+
+          // Apply filter if an org is already selected (edit/view mode)
+          _applyOrgFilter(_selectedOrgCode);
         });
         _applyInitialData();
       }
@@ -942,6 +977,9 @@ class UserAccessFieldsState extends State<UserAccessFields> {
       _orgCodeCtrl.text = rawOrg;
     }
 
+    // Apply org filter so dropdowns show correct items for this org
+    _applyOrgFilter(_selectedOrgCode);
+
     _status = int.tryParse((d['status'] ?? 1).toString()) ?? 1;
 
     final rawProd =
@@ -962,7 +1000,9 @@ class UserAccessFieldsState extends State<UserAccessFields> {
 
   String? _resolveUserDisplay(String? code) {
     if (code == null || code.isEmpty) return null;
-    final match = _userList.firstWhere(
+    // Search in filtered list first, fallback to full list
+    final list = _userList.isNotEmpty ? _userList : _allUserList;
+    final match = list.firstWhere(
       (u) => (u['usersCd'] ?? u['userScd'] ?? '').toString() == code,
       orElse: () => {},
     );
@@ -976,7 +1016,9 @@ class UserAccessFieldsState extends State<UserAccessFields> {
 
   String? _resolveAccessDisplay(String? code) {
     if (code == null || code.isEmpty) return null;
-    final match = _accessList.firstWhere(
+    // Search in filtered list first, fallback to full list
+    final list = _accessList.isNotEmpty ? _accessList : _allAccessList;
+    final match = list.firstWhere(
       (a) =>
           (a['accessCd'] ?? a['accesscd'] ?? a['roleCd'] ?? '').toString() ==
           code,
@@ -988,6 +1030,7 @@ class UserAccessFieldsState extends State<UserAccessFields> {
     return '$cd${name.isNotEmpty ? ' - $name' : ''}';
   }
 
+  // Dropdown items come from org-filtered list
   List<String> get _userDropdownItems => _userList
       .map((u) {
         final cd = (u['usersCd'] ?? u['userScd'] ?? '').toString();
@@ -1018,6 +1061,8 @@ class UserAccessFieldsState extends State<UserAccessFields> {
     _selectedUserDisplay = null;
     _selectedAccessCode = null;
     _selectedAccessDisplay = null;
+    _userList = [];
+    _accessList = [];
     _status = 1;
     _errors.clear();
     if (mounted) setState(() {});
@@ -1061,12 +1106,11 @@ class UserAccessFieldsState extends State<UserAccessFields> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── Section: Identification ────────────────────────────────────────
           sectionTitle('Identification', color: AppColors.tBlue),
           const SizedBox(height: 16),
           AmsFormGrid(
             children: [
-              // ── ORGANISATION CODE – searchable overlay dropdown ────────────
+              // ── ORGANISATION CODE ─────────────────────────────────────────
               AmsField(
                 label: 'Organisation Code',
                 required: true,
@@ -1096,7 +1140,7 @@ class UserAccessFieldsState extends State<UserAccessFields> {
                 ),
               ),
 
-              // User Code — dropdown
+              // ── USER CODE – filtered by selected org ──────────────────────
               AmsField(
                 label: 'User Code',
                 required: true,
@@ -1112,7 +1156,11 @@ class UserAccessFieldsState extends State<UserAccessFields> {
                           )
                         : AmsDropdown(
                             initialValue: _selectedUserDisplay,
-                            placeholder: 'Select User',
+                            placeholder: _selectedOrgCode == null
+                                ? 'Select Organisation first'
+                                : _userList.isEmpty
+                                    ? 'No users for this org'
+                                    : 'Select User',
                             items: _userDropdownItems,
                             errorText: _errors['userCode'],
                             isValid: _errors['userCode'] == null &&
@@ -1133,10 +1181,7 @@ class UserAccessFieldsState extends State<UserAccessFields> {
               ),
             ],
           ),
-
           const SizedBox(height: 24),
-
-          // ── Section: Product & Access ──────────────────────────────────────
           sectionTitle('Product & Access', color: AppColors.tBlue),
           const SizedBox(height: 16),
           AmsFormGrid(
@@ -1167,7 +1212,7 @@ class UserAccessFieldsState extends State<UserAccessFields> {
                 ),
               ),
 
-              // Access Code — dropdown
+              // ── ACCESS CODE – filtered by selected org ────────────────────
               AmsField(
                 label: 'Access Code',
                 required: true,
@@ -1184,7 +1229,11 @@ class UserAccessFieldsState extends State<UserAccessFields> {
                           )
                         : AmsDropdown(
                             initialValue: _selectedAccessDisplay,
-                            placeholder: 'Select Access',
+                            placeholder: _selectedOrgCode == null
+                                ? 'Select Organisation first'
+                                : _accessList.isEmpty
+                                    ? 'No roles for this org'
+                                    : 'Select Access',
                             items: _accessDropdownItems,
                             errorText: _errors['accessCode'],
                             isValid: _errors['accessCode'] == null &&
