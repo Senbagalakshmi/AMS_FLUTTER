@@ -34,6 +34,7 @@ import 'screens/program_master_screen.dart';
 import 'screens/menu_master_screen.dart';
 import 'screens/splash_screen.dart';
 import 'screens/journal_entry_screen.dart';
+import 'screens/gl_balance_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -502,6 +503,12 @@ class _AmsRootState extends State<AmsRoot> {
           );
         } else if (_state.selectedProg == 'GL-SEG') {
           body = GlSegmentsScreen(
+            onBack: () => _navigate('list'),
+            onBackToModule: () => _handleProceed('GL'),
+            userName: _state.userName,
+          );
+        } else if (_state.selectedProg == 'GL-BAL') {
+          body = GLBalanceScreen(
             onBack: () => _navigate('list'),
             onBackToModule: () => _handleProceed('GL'),
             userName: _state.userName,

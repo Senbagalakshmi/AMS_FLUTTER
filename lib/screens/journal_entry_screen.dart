@@ -69,6 +69,32 @@ class _JournalEntryScreenState extends State<JournalEntryScreen> {
     return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
   }
 
+  Future<void> _selectDate() async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2101),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: AppColors.tBlue,
+              onPrimary: Colors.white,
+              onSurface: AppColors.ink,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null) {
+      setState(() {
+        _dateController.text = _formatDate(picked);
+      });
+    }
+  }
+
   @override
   void dispose() {
     _dateController.dispose();
@@ -167,10 +193,15 @@ class _JournalEntryScreenState extends State<JournalEntryScreen> {
                               Expanded(
                                 child: AmsField(
                                   label: 'Date',
-                                  child: AmsTextInput(
-                                    controller: _dateController,
-                                    readOnly: true,
-                                    icon: Icons.calendar_today_rounded,
+                                  child: GestureDetector(
+                                    onTap: _selectDate,
+                                    child: AbsorbPointer(
+                                      child: AmsTextInput(
+                                        controller: _dateController,
+                                        readOnly: true,
+                                        icon: Icons.calendar_today_rounded,
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ),

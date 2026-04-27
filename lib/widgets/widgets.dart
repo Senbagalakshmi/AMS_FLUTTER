@@ -1756,6 +1756,13 @@ class _AmsSidebarState extends State<AmsSidebar> {
                     onTap: () => widget.onNavigate('nontran', 'GL-MST'),
                   ),
                   AmsSubSidebarItem(
+                    label: 'GL Balance',
+                    isCollapsed: widget.isCollapsed,
+                    icon: Icons.account_balance_rounded,
+                    isSelected: widget.selectedProg == 'GL-BAL',
+                    onTap: () => widget.onNavigate('nontran', 'GL-BAL'),
+                  ),
+                  AmsSubSidebarItem(
                     label: 'Configuration',
                     isCollapsed: widget.isCollapsed,
                     icon: Icons.folder_open_rounded,
