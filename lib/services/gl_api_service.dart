@@ -111,7 +111,7 @@ class GLApiService {
   Future<bool> deleteAllowedBranch(int orgCode, int glNo) async {
   try {
     final response = await http.delete(
-      Uri.parse("${ApiService.baseUrl}/gl-branch/$glNo"),
+      Uri.parse("${ApiService.baseUrl}/gl-branch/$orgCode/$glNo"),
       headers: apiService.headers,
     );
     return response.statusCode == 200 || response.statusCode == 204;
@@ -379,7 +379,7 @@ Future<List<Map<String, dynamic>>?> getGl103List() async {
   Future<bool> deleteAllowedCurrency(int orgCode, int glNo) async {
     try {
       final response = await http.delete(
-        Uri.parse("${ApiService.baseUrl}/gl-transcation/$glNo"),
+        Uri.parse("${ApiService.baseUrl}/gl-transcation/$orgCode/$glNo"),
         headers: apiService.headers,
       );
       return response.statusCode == 200 || response.statusCode == 204;

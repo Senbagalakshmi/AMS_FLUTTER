@@ -4,6 +4,7 @@ import '../theme.dart';
 import '../widgets/widgets.dart';
 import '../services/api_service.dart';
 import '../services/gl_api_service.dart';
+import '../services/org_api_service.dart';
 
 // ─── Entry widget ─────────────────────────────────────────────────────────────
 
@@ -928,6 +929,14 @@ class _AddEditFormState extends State<_AddEditForm> {
   String? _selectedLevel;
   bool? _selectedActive;
 
+  // ── Org-code searchable dropdown ───────────────────────────────────────────
+  final _orgSearchCtrl = TextEditingController(); // search text inside overlay
+  final _orgLayerLink = LayerLink();
+  OverlayEntry? _orgOverlay;
+  List<Map<String, dynamic>> _orgList = [];
+  bool _orgLoading = false;
+  int? _selectedOrgCode;
+
   bool? _orgCodeValid;
   bool? _glNoValid;
   bool? _segIdValid;
@@ -943,6 +952,7 @@ class _AddEditFormState extends State<_AddEditForm> {
   @override
   void initState() {
     super.initState();
+    _loadOrganisations();
     final seg = widget.editingSegment;
 
     if (seg != null) {
@@ -960,6 +970,7 @@ class _AddEditFormState extends State<_AddEditForm> {
       _selectedActive = seg.isActive;
       _orgCodeValid = _glNoValid =
           _segIdValid = _segValueValid = _levelValid = _activeValid = true;
+      _refreshOrgDisplay(seg.orgCode?.toString() ?? '');
     } else {
       _selectedGlMaster = widget.preselectedGlMaster;
       _orgCodeCtrl = TextEditingController();
@@ -975,6 +986,8 @@ class _AddEditFormState extends State<_AddEditForm> {
     _orgCodeCtrl.dispose();
     _segIdCtrl.dispose();
     _segValueCtrl.dispose();
+    _orgSearchCtrl.dispose();
+    _orgOverlay?.remove();
     super.dispose();
   }
 
@@ -982,6 +995,297 @@ class _AddEditFormState extends State<_AddEditForm> {
     setState(() {
       _selectedGlMaster = gl;
       _glNoValid = gl != null;
+    });
+  }
+
+  // ── Organisation logic ──────────────────────────────────────────────────────
+  Future<void> _loadOrganisations() async {
+    if (_orgLoading || _orgList.isNotEmpty) return;
+    setState(() => _orgLoading = true);
+    try {
+      final res = await orgApiService.getAllOrganisations(page: 0, size: 200);
+      if (res != null && mounted) {
+        setState(() {
+          _orgList = res.items;
+          final cur = _orgCodeCtrl.text.trim();
+          if (cur.isNotEmpty) _refreshOrgDisplay(cur);
+        });
+      }
+    } catch (_) {
+    } finally {
+      if (mounted) setState(() => _orgLoading = false);
+    }
+  }
+
+  void _refreshOrgDisplay(String orgCodeRaw) {
+    if (orgCodeRaw.isEmpty) {
+      _orgCodeCtrl.clear();
+      return;
+    }
+    if (_orgList.isNotEmpty) {
+      try {
+        final match = _orgList.firstWhere(
+          (o) => (o['orgcode'] ?? o['orgCode'] ?? '').toString() == orgCodeRaw,
+        );
+        final name = (match['name'] ?? '').toString();
+        _orgCodeCtrl.text = name.isNotEmpty ? '$orgCodeRaw – $name' : orgCodeRaw;
+        _selectedOrgCode = int.tryParse(orgCodeRaw);
+        return;
+      } catch (_) {}
+    }
+    _orgCodeCtrl.text = orgCodeRaw;
+    _selectedOrgCode = int.tryParse(orgCodeRaw);
+  }
+
+  void _openOrgDropdown() {
+    _orgOverlay?.remove();
+    _orgOverlay = null;
+    _orgSearchCtrl.clear();
+
+    _orgOverlay = OverlayEntry(
+      builder: (ctx) => GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: () {
+          _orgOverlay?.remove();
+          _orgOverlay = null;
+        },
+        child: Stack(
+          children: [
+            CompositedTransformFollower(
+              link: _orgLayerLink,
+              showWhenUnlinked: false,
+              offset: const Offset(0, 52),
+              child: GestureDetector(
+                onTap: () {},
+                child: Material(
+                  elevation: 8,
+                  borderRadius: BorderRadius.circular(10),
+                  shadowColor: Colors.black26,
+                  child: StatefulBuilder(
+                    builder: (ctx2, setInner) {
+                      final query = _orgSearchCtrl.text.toLowerCase();
+                      final filtered = _orgList.where((o) {
+                        final code =
+                            (o['orgcode'] ?? o['orgCode'] ?? '').toString();
+                        final name = (o['name'] ?? '').toString().toLowerCase();
+                        return code.contains(query) || name.contains(query);
+                      }).toList();
+
+                      return Container(
+                        width: 360,
+                        constraints: const BoxConstraints(maxHeight: 340),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: kCardBorder),
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.all(10),
+                              child: TextField(
+                                controller: _orgSearchCtrl,
+                                autofocus: true,
+                                decoration: InputDecoration(
+                                  hintText: 'Search by code or name…',
+                                  hintStyle: const TextStyle(
+                                      color: kTextLight, fontSize: 13),
+                                  prefixIcon: const Icon(Icons.search,
+                                      size: 18, color: kTextLight),
+                                  suffixIcon: _orgSearchCtrl.text.isNotEmpty
+                                      ? IconButton(
+                                          icon: const Icon(Icons.clear,
+                                              size: 16, color: kTextLight),
+                                          onPressed: () {
+                                            _orgSearchCtrl.clear();
+                                            setInner(() {});
+                                          },
+                                        )
+                                      : null,
+                                  isDense: true,
+                                  contentPadding: const EdgeInsets.symmetric(
+                                      vertical: 10, horizontal: 12),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: const BorderSide(
+                                        color: kCardBorder),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: const BorderSide(
+                                        color: kNavy, width: 1.5),
+                                  ),
+                                  filled: true,
+                                  fillColor: kBg,
+                                ),
+                                onChanged: (_) => setInner(() {}),
+                              ),
+                            ),
+                            const Divider(height: 1, color: kCardBorder),
+                            Flexible(
+                              child: _orgLoading
+                                  ? const Padding(
+                                      padding: EdgeInsets.all(24),
+                                      child: Center(
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                                color: kNavy),
+                                            SizedBox(height: 8),
+                                            Text('Loading organisations…',
+                                                style: TextStyle(
+                                                    fontSize: 13,
+                                                    color: kTextMid)),
+                                          ],
+                                        ),
+                                      ),
+                                    )
+                                  : filtered.isEmpty
+                                      ? const Padding(
+                                          padding: EdgeInsets.all(24),
+                                          child: Text('No organisations found',
+                                              style: TextStyle(
+                                                  color: kTextLight)),
+                                        )
+                                      : ListView.builder(
+                                          shrinkWrap: true,
+                                          itemCount: filtered.length,
+                                          itemBuilder: (_, idx) {
+                                            final org = filtered[idx];
+                                            final code = (org['orgcode'] ??
+                                                    org['orgCode'] ??
+                                                    '')
+                                                .toString();
+                                            final name =
+                                                (org['name'] ?? '').toString();
+                                            final isSelected =
+                                                _selectedOrgCode?.toString() ==
+                                                    code;
+
+                                            return InkWell(
+                                              onTap: () {
+                                                _selectOrg(org);
+                                                _orgSearchCtrl.clear();
+                                                _orgOverlay?.remove();
+                                                _orgOverlay = null;
+                                              },
+                                              child: Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                        horizontal: 16,
+                                                        vertical: 11),
+                                                decoration: BoxDecoration(
+                                                  color: isSelected
+                                                      ? kBlueMid.withValues(
+                                                              alpha: 0.1)
+                                                      : Colors.transparent,
+                                                  border: idx <
+                                                          filtered.length - 1
+                                                      ? const Border(
+                                                          bottom: BorderSide(
+                                                              color: kCardBorder,
+                                                              width: 0.5))
+                                                      : null,
+                                                ),
+                                                child: Row(
+                                                  children: [
+                                                    Container(
+                                                      padding: const EdgeInsets
+                                                          .symmetric(
+                                                          horizontal: 8,
+                                                          vertical: 3),
+                                                      decoration: BoxDecoration(
+                                                        color: isSelected
+                                                            ? kNavy
+                                                            : const Color(0xFFEFF6FF),
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(6),
+                                                      ),
+                                                      child: Text(
+                                                        code,
+                                                        style: TextStyle(
+                                                          fontSize: 12,
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                          color: isSelected
+                                                              ? Colors.white
+                                                              : kBlueMid,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    const SizedBox(width: 10),
+                                                    Expanded(
+                                                      child: Text(name,
+                                                          style: const TextStyle(
+                                                              fontSize: 13, color: kTextDark),
+                                                          overflow: TextOverflow
+                                                              .ellipsis),
+                                                    ),
+                                                    if (isSelected)
+                                                      const Icon(
+                                                          Icons.check_rounded,
+                                                          size: 16,
+                                                          color:
+                                                              kNavy),
+                                                  ],
+                                                ),
+                                              ),
+                                            );
+                                          },
+                                        ),
+                            ),
+                            if (!_orgLoading && _orgList.isNotEmpty)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 8),
+                                decoration: const BoxDecoration(
+                                  color: kBg,
+                                  border: Border(
+                                      top: BorderSide(
+                                          color: kCardBorder, width: 0.5)),
+                                  borderRadius: BorderRadius.vertical(
+                                      bottom: Radius.circular(10)),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.info_outline_rounded,
+                                        size: 13, color: kTextLight),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      '${filtered.length} of ${_orgList.length} organisations',
+                                      style: const TextStyle(
+                                          fontSize: 11, color: kTextLight),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    Overlay.of(context).insert(_orgOverlay!);
+  }
+
+  void _selectOrg(Map<String, dynamic> org) {
+    final code = (org['orgcode'] ?? org['orgCode'] ?? '').toString();
+    final name = (org['name'] ?? '').toString();
+    setState(() {
+      _selectedOrgCode = int.tryParse(code);
+      _orgCodeCtrl.text = name.isNotEmpty ? '$code – $name' : code;
+      _orgCodeValid = true;
     });
   }
 
@@ -1025,6 +1329,7 @@ class _AddEditFormState extends State<_AddEditForm> {
         _selectedGlMaster = null;
         _selectedLevel = null;
         _selectedActive = null;
+        _selectedOrgCode = null;
         _orgCodeValid = _glNoValid =
             _segIdValid = _segValueValid = _levelValid = _activeValid = null;
         _submitted = false;
@@ -1108,21 +1413,27 @@ class _AddEditFormState extends State<_AddEditForm> {
                   // ✅ FIXED: Organisation Code - readOnly in edit mode, pre-filled, greyed out
                   _field(
                     'Organisation Code',
-                    TextField(
-                      controller: _orgCodeCtrl,
-                      readOnly: _isEditing, // ✅ disabled when editing
-                      onChanged: _isEditing ? null : _validateOrgCode,
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                      ],
-                      style: TextStyle(
-                        // ✅ greyed text when disabled
-                        color: _isEditing ? kTextLight : kTextDark,
-                        fontSize: 14,
+                    CompositedTransformTarget(
+                      link: _orgLayerLink,
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: _isEditing ? null : _openOrgDropdown,
+                        child: AbsorbPointer(
+                          child: TextField(
+                            controller: _orgCodeCtrl,
+                            readOnly: true,
+                            style: TextStyle(
+                              color: _isEditing ? kTextLight : kTextDark,
+                              fontSize: 14,
+                            ),
+                            decoration: dec(
+                              _orgLoading ? 'Loading…' : 'Select Org',
+                              _orgCodeValid,
+                              disabled: _isEditing,
+                            ),
+                          ),
+                        ),
                       ),
-                      decoration:
-                          dec('e.g. 50', _orgCodeValid, disabled: _isEditing),
                     ),
                     info: 'Organization Code',
                     errorWidget: _errorMsg('Organisation Code is required',
@@ -1294,8 +1605,9 @@ class _AddEditFormState extends State<_AddEditForm> {
                                     final glName = _selectedGlMaster!['glName']
                                             ?.toString() ??
                                         '';
-                                    final orgCode = int.tryParse(
-                                            _orgCodeCtrl.text.trim()) ??
+                                    final orgCode = _selectedOrgCode ??
+                                        int.tryParse(_orgCodeCtrl.text
+                                            .split(' – ')[0]) ??
                                         50;
                                     await widget.onSave(
                                       _selectedLevel!,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../theme.dart';
 import '../widgets/widgets.dart';
 import '../services/gl_api_service.dart';
+import '../services/org_api_service.dart';
 import '../services/api_service.dart';
 import 'package:flutter/services.dart';
 
@@ -33,8 +34,16 @@ class _AllowedCurrencyScreenState extends State<AllowedCurrencyScreen> {
   String? _orgError;
   String? _glError;
   String _searchQuery = "";
-  final TextEditingController _orgCodeCtrl = TextEditingController(text: "50");
+  final TextEditingController _orgCodeCtrl = TextEditingController();
   Map<String, dynamic>? _selectedRecord;
+
+  // ── Org-code searchable dropdown ───────────────────────────────────────────
+  final _orgSearchCtrl = TextEditingController(); // search text inside overlay
+  final _orgLayerLink = LayerLink();
+  OverlayEntry? _orgOverlay;
+  List<Map<String, dynamic>> _orgList = [];
+  bool _orgLoading = false;
+  int? _selectedOrgCode;
 
   /// GL Masters (same pattern as GL Segments)
   List<Map<String, dynamic>> _glMasters = [];
@@ -121,6 +130,7 @@ class _AllowedCurrencyScreenState extends State<AllowedCurrencyScreen> {
   }
 
   Future<void> initData() async {
+    await _loadOrganisations();
     await _loadGlMasters();
     await loadSavedCurrencies();
   }
@@ -130,6 +140,308 @@ class _AllowedCurrencyScreenState extends State<AllowedCurrencyScreen> {
   void initState() {
     super.initState();
     initData();
+  }
+
+  @override
+  void dispose() {
+    _orgCodeCtrl.dispose();
+    _orgSearchCtrl.dispose();
+    _orgOverlay?.remove();
+    _currencyCtrl.dispose();
+    super.dispose();
+  }
+
+  // ── Organisation logic ──────────────────────────────────────────────────────
+  Future<void> _loadOrganisations() async {
+    if (_orgLoading || _orgList.isNotEmpty) return;
+    setState(() => _orgLoading = true);
+    try {
+      final res = await orgApiService.getAllOrganisations(page: 0, size: 200);
+      if (res != null && mounted) {
+        setState(() {
+          _orgList = res.items;
+          final cur = _orgCodeCtrl.text.trim();
+          if (cur.isNotEmpty) _refreshOrgDisplay(cur);
+        });
+      }
+    } catch (_) {
+    } finally {
+      if (mounted) setState(() => _orgLoading = false);
+    }
+  }
+
+  void _refreshOrgDisplay(String orgCodeRaw) {
+    if (orgCodeRaw.isEmpty) {
+      _orgCodeCtrl.clear();
+      return;
+    }
+    if (_orgList.isNotEmpty) {
+      try {
+        final match = _orgList.firstWhere(
+          (o) => (o['orgcode'] ?? o['orgCode'] ?? '').toString() == orgCodeRaw,
+        );
+        final name = (match['name'] ?? '').toString();
+        _orgCodeCtrl.text = name.isNotEmpty ? '$orgCodeRaw – $name' : orgCodeRaw;
+        _selectedOrgCode = int.tryParse(orgCodeRaw);
+        return;
+      } catch (_) {}
+    }
+    _orgCodeCtrl.text = orgCodeRaw;
+    _selectedOrgCode = int.tryParse(orgCodeRaw);
+  }
+
+  void _openOrgDropdown() {
+    _orgOverlay?.remove();
+    _orgOverlay = null;
+    _orgSearchCtrl.clear();
+
+    _orgOverlay = OverlayEntry(
+      builder: (ctx) => GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: () {
+          _orgOverlay?.remove();
+          _orgOverlay = null;
+        },
+        child: Stack(
+          children: [
+            CompositedTransformFollower(
+              link: _orgLayerLink,
+              showWhenUnlinked: false,
+              offset: const Offset(0, 52),
+              child: GestureDetector(
+                onTap: () {},
+                child: Material(
+                  elevation: 8,
+                  borderRadius: BorderRadius.circular(10),
+                  shadowColor: Colors.black26,
+                  child: StatefulBuilder(
+                    builder: (ctx2, setInner) {
+                      final query = _orgSearchCtrl.text.toLowerCase();
+                      final filtered = _orgList.where((o) {
+                        final code =
+                            (o['orgcode'] ?? o['orgCode'] ?? '').toString();
+                        final name = (o['name'] ?? '').toString().toLowerCase();
+                        return code.contains(query) || name.contains(query);
+                      }).toList();
+
+                      return Container(
+                        width: 360,
+                        constraints: const BoxConstraints(maxHeight: 340),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: AppColors.border),
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.all(10),
+                              child: TextField(
+                                controller: _orgSearchCtrl,
+                                autofocus: true,
+                                decoration: InputDecoration(
+                                  hintText: 'Search by code or name…',
+                                  hintStyle: const TextStyle(
+                                      color: AppColors.ink4, fontSize: 13),
+                                  prefixIcon: const Icon(Icons.search,
+                                      size: 18, color: AppColors.ink3),
+                                  suffixIcon: _orgSearchCtrl.text.isNotEmpty
+                                      ? IconButton(
+                                          icon: const Icon(Icons.clear,
+                                              size: 16, color: AppColors.ink3),
+                                          onPressed: () {
+                                            _orgSearchCtrl.clear();
+                                            setInner(() {});
+                                          },
+                                        )
+                                      : null,
+                                  isDense: true,
+                                  contentPadding: const EdgeInsets.symmetric(
+                                      vertical: 10, horizontal: 12),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: const BorderSide(
+                                        color: AppColors.border),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: const BorderSide(
+                                        color: AppColors.tBlue, width: 1.5),
+                                  ),
+                                  filled: true,
+                                  fillColor: AppColors.bg,
+                                ),
+                                onChanged: (_) => setInner(() {}),
+                              ),
+                            ),
+                            const Divider(height: 1, color: AppColors.border),
+                            Flexible(
+                              child: _orgLoading
+                                  ? const Padding(
+                                      padding: EdgeInsets.all(24),
+                                      child: Center(
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                                color: AppColors.tBlue),
+                                            SizedBox(height: 8),
+                                            Text('Loading organisations…',
+                                                style: TextStyle(
+                                                    fontSize: 13,
+                                                    color: AppColors.ink3)),
+                                          ],
+                                        ),
+                                      ),
+                                    )
+                                  : filtered.isEmpty
+                                      ? Padding(
+                                          padding: const EdgeInsets.all(24),
+                                          child: Text('No organisations found',
+                                              style: bodyStyle(
+                                                  color: AppColors.ink4)),
+                                        )
+                                      : ListView.builder(
+                                          shrinkWrap: true,
+                                          itemCount: filtered.length,
+                                          itemBuilder: (_, idx) {
+                                            final org = filtered[idx];
+                                            final code = (org['orgcode'] ??
+                                                    org['orgCode'] ??
+                                                    '')
+                                                .toString();
+                                            final name =
+                                                (org['name'] ?? '').toString();
+                                            final isSelected =
+                                                _selectedOrgCode?.toString() ==
+                                                    code;
+
+                                            return InkWell(
+                                              onTap: () {
+                                                _selectOrg(org);
+                                                _orgSearchCtrl.clear();
+                                                _orgOverlay?.remove();
+                                                _orgOverlay = null;
+                                              },
+                                              child: Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                        horizontal: 16,
+                                                        vertical: 11),
+                                                decoration: BoxDecoration(
+                                                  color: isSelected
+                                                      ? AppColors.tBlueLt
+                                                          .withValues(
+                                                              alpha: 0.15)
+                                                      : Colors.transparent,
+                                                  border: idx <
+                                                          filtered.length - 1
+                                                      ? const Border(
+                                                          bottom: BorderSide(
+                                                              color: AppColors
+                                                                  .border,
+                                                              width: 0.5))
+                                                      : null,
+                                                ),
+                                                child: Row(
+                                                  children: [
+                                                    Container(
+                                                      padding: const EdgeInsets
+                                                          .symmetric(
+                                                          horizontal: 8,
+                                                          vertical: 3),
+                                                      decoration: BoxDecoration(
+                                                        color: isSelected
+                                                            ? AppColors.tBlue
+                                                            : AppColors.tBlueLt,
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(6),
+                                                      ),
+                                                      child: Text(
+                                                        code,
+                                                        style: TextStyle(
+                                                          fontSize: 12,
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                          color: isSelected
+                                                              ? Colors.white
+                                                              : AppColors.tBlue,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    const SizedBox(width: 10),
+                                                    Expanded(
+                                                      child: Text(name,
+                                                          style: bodyStyle(
+                                                              size: 13),
+                                                          overflow: TextOverflow
+                                                              .ellipsis),
+                                                    ),
+                                                    if (isSelected)
+                                                      const Icon(
+                                                          Icons.check_rounded,
+                                                          size: 16,
+                                                          color:
+                                                              AppColors.tBlue),
+                                                  ],
+                                                ),
+                                              ),
+                                            );
+                                          },
+                                        ),
+                            ),
+                            if (!_orgLoading && _orgList.isNotEmpty)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 8),
+                                decoration: const BoxDecoration(
+                                  color: AppColors.bg,
+                                  border: Border(
+                                      top: BorderSide(
+                                          color: AppColors.border, width: 0.5)),
+                                  borderRadius: BorderRadius.vertical(
+                                      bottom: Radius.circular(10)),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.info_outline_rounded,
+                                        size: 13, color: AppColors.ink3),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      '${filtered.length} of ${_orgList.length} organisations',
+                                      style: const TextStyle(
+                                          fontSize: 11, color: AppColors.ink3),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    Overlay.of(context).insert(_orgOverlay!);
+  }
+
+  void _selectOrg(Map<String, dynamic> org) {
+    final code = (org['orgcode'] ?? org['orgCode'] ?? '').toString();
+    final name = (org['name'] ?? '').toString();
+    setState(() {
+      _selectedOrgCode = int.tryParse(code);
+      _orgCodeCtrl.text = name.isNotEmpty ? '$code – $name' : code;
+      _orgError = null;
+    });
   }
   Widget build(BuildContext context) {
     return Scaffold(
@@ -226,7 +538,8 @@ class _AllowedCurrencyScreenState extends State<AllowedCurrencyScreen> {
                       _selectedRecord = null;
                       _orgError = null;
                       _glError = null;
-                      _orgCodeCtrl.text = "50";
+                      _orgCodeCtrl.clear();
+                      _selectedOrgCode = null;
                       _selectedGlMaster = null;
                       currencies = ["INR", "USD", "GBP", "EUR", "SGD"];
                       _currencyCtrl.clear();
@@ -322,8 +635,7 @@ class _AllowedCurrencyScreenState extends State<AllowedCurrencyScreen> {
                                     _isEditMode = false;
                                     _isViewOnly = true;
                                     _selectedRecord = item;
-                                    _orgCodeCtrl.text =
-                                        item["orgCode"].toString();
+                                    _refreshOrgDisplay(item["orgCode"].toString());
                                     final glNo = item["glNo"]?.toString();
                                     try {
                                       _selectedGlMaster = _glMasters.firstWhere((m) => m['glNo']?.toString() == glNo);
@@ -349,8 +661,7 @@ class _AllowedCurrencyScreenState extends State<AllowedCurrencyScreen> {
                                     _isEditMode = true;
                                     _isViewOnly = false;
                                     _selectedRecord = item;
-                                    _orgCodeCtrl.text =
-                                        item["orgCode"].toString();
+                                    _refreshOrgDisplay(item["orgCode"].toString());
 
                                     final glNo = item["glNo"]?.toString();
                                     try {
@@ -526,11 +837,27 @@ class _AllowedCurrencyScreenState extends State<AllowedCurrencyScreen> {
                   return;
                 }
 
-                final parsedGlNo = _selectedGlMaster!['glNo'] as int? ?? 0;
+                final int parsedGlNo = _selectedGlMaster!['glNo'] as int? ?? 0;
+                final targetOrg = _selectedOrgCode ?? int.tryParse(_orgCodeCtrl.text.split(' – ')[0]) ?? 50;
+                final targetGl = parsedGlNo;
+
+                // Check for duplicates before saving a NEW record
+                if (!_isEditMode) {
+                  final exists = savedList.any((item) =>
+                      item["orgCode"]?.toString() == targetOrg.toString() &&
+                      item["glNo"]?.toString() == targetGl.toString());
+                  if (exists) {
+                    setState(() {
+                      _orgError = "Org Code already exists.";
+                    });
+                    showAmsSnack(context, "Org Code configuration already exists.", type: 'e');
+                    return;
+                  }
+                }
 
                 final payload = {
-                  "orgCode": int.parse(_orgCodeCtrl.text),
-                  "glNo": parsedGlNo,
+                  "orgCode": targetOrg,
+                  "glNo": targetGl,
                   "allowedCurr": currencies.join(","),
                   "eUser": "SYSTEM"
                 };
@@ -568,6 +895,8 @@ class _AllowedCurrencyScreenState extends State<AllowedCurrencyScreen> {
               onPressed: () {
                 setState(() {
                   currencies.clear();
+                  _orgCodeCtrl.clear();
+                  _selectedOrgCode = null;
                   _currencyCtrl.clear();
                   _orgError = null;
                   _glError = null;
@@ -599,20 +928,21 @@ class _AllowedCurrencyScreenState extends State<AllowedCurrencyScreen> {
         AmsField(
           label: "Organisation Code",
           labelAbove: true,
-          child: AmsTextInput(
-            placeholder: "Enter Organisation Code",
-            controller: _orgCodeCtrl,
-            readOnly: _isViewOnly || _isEditMode,
-            keyboardType: TextInputType.number,
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            errorText: _orgError,
-            onChanged: (v) {
-              if (v.trim().isNotEmpty && _orgError != null) {
-                setState(() {
-                  _orgError = null;
-                });
-              }
-            },
+          child: CompositedTransformTarget(
+            link: _orgLayerLink,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: _isViewOnly || _isEditMode ? null : _openOrgDropdown,
+              child: AbsorbPointer(
+                child: AmsTextInput(
+                  placeholder: _orgLoading ? "Loading…" : "Select Organisation",
+                  controller: _orgCodeCtrl,
+                  readOnly: true,
+                  icon: _orgLoading ? Icons.hourglass_empty : Icons.business,
+                  errorText: _orgError,
+                ),
+              ),
+            ),
           ),
         ),
         const SizedBox(height: 16),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../theme.dart';
 import '../widgets/widgets.dart';
 import '../services/gl_api_service.dart';
+import '../services/org_api_service.dart';
 import '../services/api_service.dart';
 import 'package:flutter/services.dart';
 
@@ -31,8 +32,16 @@ class _AllowedBranchScreenState extends State<AllowedBranchScreen> {
   bool _isEditMode = false;
   bool _isViewOnly = false;
   String _searchQuery = '';
-  final TextEditingController orgCodeController = TextEditingController(text: "50");
+  final TextEditingController orgCodeController = TextEditingController();
   String? _orgError;
+
+  // ── Org-code searchable dropdown ───────────────────────────────────────────
+  final _orgSearchCtrl = TextEditingController(); // search text inside overlay
+  final _orgLayerLink = LayerLink();
+  OverlayEntry? _orgOverlay;
+  List<Map<String, dynamic>> _orgList = [];
+  bool _orgLoading = false;
+  int? _selectedOrgCode;
   List<Map<String, dynamic>> savedList = [];
 
   /// GL Masters (same pattern as GL Segments)
@@ -108,6 +117,7 @@ class _AllowedBranchScreenState extends State<AllowedBranchScreen> {
   }
 
   Future<void> initData() async {
+    await _loadOrganisations();
     await _loadGlMasters();
     await loadSavedBranches();
   }
@@ -115,6 +125,8 @@ class _AllowedBranchScreenState extends State<AllowedBranchScreen> {
   @override
   void dispose() {
     orgCodeController.dispose();
+    _orgSearchCtrl.dispose();
+    _orgOverlay?.remove();
     super.dispose();
   }
 
@@ -122,6 +134,299 @@ class _AllowedBranchScreenState extends State<AllowedBranchScreen> {
   void initState() {
     super.initState();
     initData();
+  }
+
+  // ── Organisation logic ──────────────────────────────────────────────────────
+  Future<void> _loadOrganisations() async {
+    if (_orgLoading || _orgList.isNotEmpty) return;
+    setState(() => _orgLoading = true);
+    try {
+      final res = await orgApiService.getAllOrganisations(page: 0, size: 200);
+      if (res != null && mounted) {
+        setState(() {
+          _orgList = res.items;
+          final cur = orgCodeController.text.trim();
+          if (cur.isNotEmpty) _refreshOrgDisplay(cur);
+        });
+      }
+    } catch (_) {
+    } finally {
+      if (mounted) setState(() => _orgLoading = false);
+    }
+  }
+
+  void _refreshOrgDisplay(String orgCodeRaw) {
+    if (orgCodeRaw.isEmpty) {
+      orgCodeController.clear();
+      return;
+    }
+    if (_orgList.isNotEmpty) {
+      try {
+        final match = _orgList.firstWhere(
+          (o) => (o['orgcode'] ?? o['orgCode'] ?? '').toString() == orgCodeRaw,
+        );
+        final name = (match['name'] ?? '').toString();
+        orgCodeController.text = name.isNotEmpty ? '$orgCodeRaw – $name' : orgCodeRaw;
+        _selectedOrgCode = int.tryParse(orgCodeRaw);
+        return;
+      } catch (_) {}
+    }
+    orgCodeController.text = orgCodeRaw;
+    _selectedOrgCode = int.tryParse(orgCodeRaw);
+  }
+
+  void _openOrgDropdown() {
+    _orgOverlay?.remove();
+    _orgOverlay = null;
+    _orgSearchCtrl.clear();
+
+    _orgOverlay = OverlayEntry(
+      builder: (ctx) => GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: () {
+          _orgOverlay?.remove();
+          _orgOverlay = null;
+        },
+        child: Stack(
+          children: [
+            CompositedTransformFollower(
+              link: _orgLayerLink,
+              showWhenUnlinked: false,
+              offset: const Offset(0, 52),
+              child: GestureDetector(
+                onTap: () {},
+                child: Material(
+                  elevation: 8,
+                  borderRadius: BorderRadius.circular(10),
+                  shadowColor: Colors.black26,
+                  child: StatefulBuilder(
+                    builder: (ctx2, setInner) {
+                      final query = _orgSearchCtrl.text.toLowerCase();
+                      final filtered = _orgList.where((o) {
+                        final code =
+                            (o['orgcode'] ?? o['orgCode'] ?? '').toString();
+                        final name = (o['name'] ?? '').toString().toLowerCase();
+                        return code.contains(query) || name.contains(query);
+                      }).toList();
+
+                      return Container(
+                        width: 360,
+                        constraints: const BoxConstraints(maxHeight: 340),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: AppColors.border),
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.all(10),
+                              child: TextField(
+                                controller: _orgSearchCtrl,
+                                autofocus: true,
+                                decoration: InputDecoration(
+                                  hintText: 'Search by code or name…',
+                                  hintStyle: const TextStyle(
+                                      color: AppColors.ink4, fontSize: 13),
+                                  prefixIcon: const Icon(Icons.search,
+                                      size: 18, color: AppColors.ink3),
+                                  suffixIcon: _orgSearchCtrl.text.isNotEmpty
+                                      ? IconButton(
+                                          icon: const Icon(Icons.clear,
+                                              size: 16, color: AppColors.ink3),
+                                          onPressed: () {
+                                            _orgSearchCtrl.clear();
+                                            setInner(() {});
+                                          },
+                                        )
+                                      : null,
+                                  isDense: true,
+                                  contentPadding: const EdgeInsets.symmetric(
+                                      vertical: 10, horizontal: 12),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: const BorderSide(
+                                        color: AppColors.border),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: const BorderSide(
+                                        color: AppColors.tBlue, width: 1.5),
+                                  ),
+                                  filled: true,
+                                  fillColor: AppColors.bg,
+                                ),
+                                onChanged: (_) => setInner(() {}),
+                              ),
+                            ),
+                            const Divider(height: 1, color: AppColors.border),
+                            Flexible(
+                              child: _orgLoading
+                                  ? const Padding(
+                                      padding: EdgeInsets.all(24),
+                                      child: Center(
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                                color: AppColors.tBlue),
+                                            SizedBox(height: 8),
+                                            Text('Loading organisations…',
+                                                style: TextStyle(
+                                                    fontSize: 13,
+                                                    color: AppColors.ink3)),
+                                          ],
+                                        ),
+                                      ),
+                                    )
+                                  : filtered.isEmpty
+                                      ? Padding(
+                                          padding: const EdgeInsets.all(24),
+                                          child: Text('No organisations found',
+                                              style: bodyStyle(
+                                                  color: AppColors.ink4)),
+                                        )
+                                      : ListView.builder(
+                                          shrinkWrap: true,
+                                          itemCount: filtered.length,
+                                          itemBuilder: (_, idx) {
+                                            final org = filtered[idx];
+                                            final code = (org['orgcode'] ??
+                                                    org['orgCode'] ??
+                                                    '')
+                                                .toString();
+                                            final name =
+                                                (org['name'] ?? '').toString();
+                                            final isSelected =
+                                                _selectedOrgCode?.toString() ==
+                                                    code;
+
+                                            return InkWell(
+                                              onTap: () {
+                                                _selectOrg(org);
+                                                _orgSearchCtrl.clear();
+                                                _orgOverlay?.remove();
+                                                _orgOverlay = null;
+                                              },
+                                              child: Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                        horizontal: 16,
+                                                        vertical: 11),
+                                                decoration: BoxDecoration(
+                                                  color: isSelected
+                                                      ? AppColors.tBlueLt
+                                                          .withValues(
+                                                              alpha: 0.15)
+                                                      : Colors.transparent,
+                                                  border: idx <
+                                                          filtered.length - 1
+                                                      ? const Border(
+                                                          bottom: BorderSide(
+                                                              color: AppColors
+                                                                  .border,
+                                                              width: 0.5))
+                                                      : null,
+                                                ),
+                                                child: Row(
+                                                  children: [
+                                                    Container(
+                                                      padding: const EdgeInsets
+                                                          .symmetric(
+                                                          horizontal: 8,
+                                                          vertical: 3),
+                                                      decoration: BoxDecoration(
+                                                        color: isSelected
+                                                            ? AppColors.tBlue
+                                                            : AppColors.tBlueLt,
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(6),
+                                                      ),
+                                                      child: Text(
+                                                        code,
+                                                        style: TextStyle(
+                                                          fontSize: 12,
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                          color: isSelected
+                                                              ? Colors.white
+                                                              : AppColors.tBlue,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    const SizedBox(width: 10),
+                                                    Expanded(
+                                                      child: Text(name,
+                                                          style: bodyStyle(
+                                                              size: 13),
+                                                          overflow: TextOverflow
+                                                              .ellipsis),
+                                                    ),
+                                                    if (isSelected)
+                                                      const Icon(
+                                                          Icons.check_rounded,
+                                                          size: 16,
+                                                          color:
+                                                              AppColors.tBlue),
+                                                  ],
+                                                ),
+                                              ),
+                                            );
+                                          },
+                                        ),
+                            ),
+                            if (!_orgLoading && _orgList.isNotEmpty)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 8),
+                                decoration: const BoxDecoration(
+                                  color: AppColors.bg,
+                                  border: Border(
+                                      top: BorderSide(
+                                          color: AppColors.border, width: 0.5)),
+                                  borderRadius: BorderRadius.vertical(
+                                      bottom: Radius.circular(10)),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.info_outline_rounded,
+                                        size: 13, color: AppColors.ink3),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      '${filtered.length} of ${_orgList.length} organisations',
+                                      style: const TextStyle(
+                                          fontSize: 11, color: AppColors.ink3),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    Overlay.of(context).insert(_orgOverlay!);
+  }
+
+  void _selectOrg(Map<String, dynamic> org) {
+    final code = (org['orgcode'] ?? org['orgCode'] ?? '').toString();
+    final name = (org['name'] ?? '').toString();
+    setState(() {
+      _selectedOrgCode = int.tryParse(code);
+      orgCodeController.text = name.isNotEmpty ? '$code – $name' : code;
+      _orgError = null;
+    });
   }
   @override
   Widget build(BuildContext context) {
@@ -222,7 +527,8 @@ Widget _buildListView() {
                     _isEditMode = false;
                     _isViewOnly = false;
                     _selectedGlMaster = null;
-                    orgCodeController.text = "50";
+                    orgCodeController.clear();
+                    _selectedOrgCode = null;
                     _orgError = null;
                     for (var b in branches) {
                       b["enabled"] = false;
@@ -330,7 +636,7 @@ Widget _buildListView() {
                                     } catch (_) {
                                       _selectedGlMaster = null;
                                     }
-                                    orgCodeController.text = item["orgCode"]?.toString() ?? "50";
+                                    _refreshOrgDisplay(item["orgCode"]?.toString() ?? "");
                                     final savedBranches = item["branches"] as List;
                                     for (var b in branches) {
                                       b["enabled"] = savedBranches.contains(b["name"]);
@@ -355,7 +661,7 @@ Widget _buildListView() {
                                     } catch (_) {
                                       _selectedGlMaster = null;
                                     }
-                                    orgCodeController.text = item["orgCode"]?.toString() ?? "50";
+                                    _refreshOrgDisplay(item["orgCode"]?.toString() ?? "");
                                     final savedBranches = item["branches"] as List;
                                     for (var b in branches) {
                                       b["enabled"] = savedBranches.contains(b["name"]);
@@ -537,15 +843,30 @@ Widget _buildListView() {
                   return;
                 }
 
+                final targetOrg = _selectedOrgCode ?? int.tryParse(orgCodeController.text.split(' – ')[0]) ?? 50;
+                final targetGl = _selectedGlMaster!['glNo'] as int?;
+
+                // Check for duplicates before saving a NEW record
+                if (!_isEditMode) {
+                  final exists = savedList.any((item) =>
+                      item["orgCode"]?.toString() == targetOrg.toString() &&
+                      item["glNo"]?.toString() == targetGl.toString());
+                  if (exists) {
+                    setState(() {
+                      _orgError = "Org Code  already exists.";
+                    });
+                    showAmsSnack(context, "This Org Code  already exists.", type: 'e');
+                    return;
+                  }
+                }
+
                 setState(() {
                   _isLoading = true;
                 });
 
-                final parsedGlNo = _selectedGlMaster!['glNo'] as int?;
-
                 final payload = {
-                  "orgCode": int.tryParse(orgCodeController.text) ?? 50,
-                  "glNo": parsedGlNo,
+                  "orgCode": targetOrg,
+                  "glNo": targetGl,
                   "allowedBrn": selectedBranches.join(",")
                 };
 
@@ -581,6 +902,8 @@ Widget _buildListView() {
               onPressed: () {
                 setState(() {
                   _orgError = null;
+                  orgCodeController.clear();
+                  _selectedOrgCode = null;
                   for (var b in branches) {
                     b["enabled"] = false;
                   }
@@ -611,20 +934,21 @@ Widget _buildListView() {
         AmsField(
           label: "Organisation Code",
           labelAbove: true,
-          child: AmsTextInput(
-            placeholder: "Enter Organisation Code",
-            controller: orgCodeController,
-            readOnly: _isViewOnly || _isEditMode,
-            keyboardType: TextInputType.number,
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            errorText: _orgError,
-            onChanged: (v) {
-              if (v.trim().isNotEmpty && _orgError != null) {
-                setState(() {
-                  _orgError = null;
-                });
-              }
-            },
+          child: CompositedTransformTarget(
+            link: _orgLayerLink,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: _isViewOnly || _isEditMode ? null : _openOrgDropdown,
+              child: AbsorbPointer(
+                child: AmsTextInput(
+                  placeholder: _orgLoading ? "Loading…" : "Select Organisation",
+                  controller: orgCodeController,
+                  readOnly: true,
+                  icon: _orgLoading ? Icons.hourglass_empty : Icons.business,
+                  errorText: _orgError,
+                ),
+              ),
+            ),
           ),
         ),
         const SizedBox(height: 20),
