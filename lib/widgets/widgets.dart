@@ -1840,7 +1840,7 @@ class _AmsSidebarState extends State<AmsSidebar> {
 
                 if (openMenu == 'transactions') ...[
                   AmsSubSidebarItem(
-                    label: 'Journal Entry',
+                    label: 'Journals',
                     isCollapsed: widget.isCollapsed,
                     icon: Icons.description_rounded,
                     isSelected: widget.selectedProg == 'GL-JRN',

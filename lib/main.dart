@@ -34,6 +34,7 @@ import 'screens/program_master_screen.dart';
 import 'screens/menu_master_screen.dart';
 import 'screens/splash_screen.dart';
 import 'screens/journal_entry_screen.dart';
+import 'screens/journal_list_screen.dart';
 import 'screens/gl_balance_screen.dart';
 
 void main() async {
@@ -77,6 +78,7 @@ class _AmsRootState extends State<AmsRoot> {
   Auth101Config? _modalCfg;
   String? _modalAuthsl;
   String? _modalAmount;
+  bool _showJournalEntry = false;
 
   void _navigate(String screen) {
     setState(() {
@@ -213,6 +215,9 @@ class _AmsRootState extends State<AmsRoot> {
           selectedType: isTran ? 'T' : 'N',
           selectedProg: prog,
         ));
+    if (prog == 'GL-JRN') {
+      setState(() => _showJournalEntry = false);
+    }
   }
 
   void _handleTranSubmit(
@@ -485,11 +490,20 @@ class _AmsRootState extends State<AmsRoot> {
             userName: _state.userName,
           );
         } else if (_state.selectedProg == 'GL-JRN') {
-          body = JournalEntryScreen(
-            onBack: () => _navigate('list'),
-            onBackToModule: () => _handleProceed('GL'),
-            userName: _state.userName,
-          );
+          if (_showJournalEntry) {
+            body = JournalEntryScreen(
+              onBack: () => setState(() => _showJournalEntry = false),
+              onBackToModule: () => _handleProceed('GL'),
+              userName: _state.userName,
+            );
+          } else {
+            body = JournalListScreen(
+              onNew: () => setState(() => _showJournalEntry = true),
+              onBack: () => _navigate('list'),
+              onBackToModule: () => _handleProceed('GL'),
+              userName: _state.userName,
+            );
+          }
         } else if (_state.selectedProg == 'GL-CUR') {
           body = AllowedCurrencyScreen(
             onBack: () => _navigate('list'),

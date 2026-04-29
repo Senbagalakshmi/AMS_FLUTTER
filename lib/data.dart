@@ -115,7 +115,7 @@ final Map<String, Auth101Config> auth101 = {
       levels: 1),
   'GL-JRN': const Auth101Config(
       id: 'GL-JRN',
-      name: 'Journal Entry',
+      name: 'Journals',
       approvalReq: true,
       isTran: true,
       levels: 2),
@@ -489,7 +489,7 @@ final List<SubmenuItem> glSubmenus = [
 
 final List<SubmenuItem> transactionSubmenus = [
   SubmenuItem(
-    label: 'Journal Entry',
+    label: 'Journals',
     icon: Icons.description_rounded,
     programId: 'GL-JRN',
     subtitle: 'Create and manage ledger journal entries.',

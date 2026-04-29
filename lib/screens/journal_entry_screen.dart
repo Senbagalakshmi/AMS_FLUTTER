@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 import '../theme.dart';
 import '../widgets/widgets.dart';
 import '../services/gl_api_service.dart';
+import '../services/org_api_service.dart';
+import '../services/branch_api_service.dart';
+import '../services/journal_api_service.dart';
 
 class JournalEntryScreen extends StatefulWidget {
   final VoidCallback onBack;
@@ -23,6 +27,8 @@ class JournalEntryScreen extends StatefulWidget {
 class _JournalEntryScreenState extends State<JournalEntryScreen> {
   final _dateController = TextEditingController(text: _formatDate(DateTime.now()));
   final _journalNoController = TextEditingController(text: 'Auto Generated');
+  final _orgCodeController = TextEditingController(text: '50');
+  final _branchCodeController = TextEditingController(text: '1001');
   final _descriptionController = TextEditingController();
   final _currencyController = TextEditingController(text: 'INR - Indian Rupee');
   final _referenceController = TextEditingController();
@@ -32,14 +38,68 @@ class _JournalEntryScreenState extends State<JournalEntryScreen> {
   ];
 
   final GLApiService _glApiService = GLApiService();
+  final OrgApiService _orgApiService = OrgApiService();
+  final BranchApiService _branchApiService = BranchApiService();
+  final JournalApiService _journalApiService = JournalApiService();
+
   List<Map<String, dynamic>> _accounts = [];
   List<String> _accountOptions = [];
   bool _isLoadingAccounts = true;
+
+  List<Map<String, dynamic>> _orgList = [];
+  bool _isLoadingOrgs = false;
+  int? _selectedOrgCode = 50;
+  final _orgSearchCtrl = TextEditingController();
+
+  List<Map<String, dynamic>> _branchList = [];
+  bool _isLoadingBranches = false;
+  int? _selectedBranchCode = 1001;
+
+  List<Map<String, dynamic>> get _filteredBranches {
+    if (_selectedOrgCode == null) return _branchList;
+    return _branchList.where((b) {
+      final bOrg = (b['orgCode'] ?? b['orgcode'] ?? b['ORGCODE'] ?? b['org_code'] ?? '').toString().trim();
+      final selOrg = _selectedOrgCode?.toString().trim() ?? '';
+      return bOrg == selOrg && bOrg.isNotEmpty;
+    }).toList();
+  }
 
   @override
   void initState() {
     super.initState();
     _fetchAccounts();
+    _fetchOrgs();
+    _fetchBranches();
+  }
+
+  Future<void> _fetchOrgs() async {
+    setState(() => _isLoadingOrgs = true);
+    try {
+      final res = await _orgApiService.getAllOrganisations(size: 200);
+      if (res != null && mounted) {
+        setState(() {
+          _orgList = res.items;
+          _isLoadingOrgs = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isLoadingOrgs = false);
+    }
+  }
+
+  Future<void> _fetchBranches() async {
+    setState(() => _isLoadingBranches = true);
+    try {
+      final res = await _branchApiService.getBranches(size: 1000);
+      if (res != null && mounted) {
+        setState(() {
+          _branchList = res.items;
+          _isLoadingBranches = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isLoadingBranches = false);
+    }
   }
 
   Future<void> _fetchAccounts() async {
@@ -99,6 +159,9 @@ class _JournalEntryScreenState extends State<JournalEntryScreen> {
   void dispose() {
     _dateController.dispose();
     _journalNoController.dispose();
+    _orgCodeController.dispose();
+    _branchCodeController.dispose();
+    _orgSearchCtrl.dispose();
     _descriptionController.dispose();
     _currencyController.dispose();
     _referenceController.dispose();
@@ -122,6 +185,77 @@ class _JournalEntryScreenState extends State<JournalEntryScreen> {
   double get _totalDebit => _rows.fold(0, (sum, row) => sum + row.debit);
   double get _totalCredit => _rows.fold(0, (sum, row) => sum + row.credit);
 
+  Future<void> _submitJournal() async {
+    // Basic Validation
+    if (_orgCodeController.text.isEmpty || _branchCodeController.text.isEmpty) {
+      showAmsSnack(context, 'Please select Organization and Branch', type: 'e');
+      return;
+    }
+
+    if (_rows.isEmpty || _rows.any((r) => r.accountNo.isEmpty)) {
+      showAmsSnack(context, 'Please add account numbers for all rows', type: 'e');
+      return;
+    }
+
+    if (_totalDebit != _totalCredit) {
+      showAmsSnack(context, 'Total Debit must equal Total Credit', type: 'e');
+      return;
+    }
+
+    if (_totalDebit <= 0) {
+      showAmsSnack(context, 'Journal amount must be greater than zero', type: 'e');
+      return;
+    }
+
+    // Show loading
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      final header = {
+        'orgcode': int.tryParse(_orgCodeController.text),
+        'brncd': int.tryParse(_branchCodeController.text),
+        'trandate': DateFormat('dd/MM/yyyy').parse(_dateController.text).toIso8601String(),
+        'tranid': 0, // Backend will generate
+        'narr': _descriptionController.text,
+        'basecurr': _currencyController.text.split(' - ').first,
+        'transtatus': 'P',
+      };
+
+      final details = _rows.map((r) => {
+        'acnum': int.tryParse(r.accountNo.replaceAll(RegExp(r'[^0-9]'), '')),
+        'trandbamt': r.debit,
+        'trancramt': r.credit,
+        'extrefno': _referenceController.text,
+      }).toList();
+
+      final payload = {
+        'header': header,
+        'details': details,
+      };
+
+      final success = await _journalApiService.saveJournal(payload);
+      
+      if (mounted) {
+        Navigator.pop(context); // Remove loading
+        if (success) {
+          showAmsSnack(context, 'Journal Saved Successfully', type: 's');
+          widget.onBack(); // Go back to list
+        } else {
+          showAmsSnack(context, 'Failed to save Journal', type: 'e');
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context); // Remove loading
+        showAmsSnack(context, 'Error: $e', type: 'e');
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -130,7 +264,7 @@ class _JournalEntryScreenState extends State<JournalEntryScreen> {
         children: [
           AmsIdentityHeader(
             icon: const Icon(Icons.description_rounded, size: 28, color: AppColors.tBlue),
-            title: 'Journal Entry',
+            title: 'Journals',
             subtitle: 'Create and manage ledger journal entries',
             badges: const [],
             accentColor: AppColors.tBlue,
@@ -140,7 +274,7 @@ class _JournalEntryScreenState extends State<JournalEntryScreen> {
             breadcrumbs: [
               HeaderBreadcrumb(label: 'Home', onTap: widget.onBack),
               HeaderBreadcrumb(label: 'GL Module', onTap: widget.onBackToModule),
-              HeaderBreadcrumb(label: 'Journal Entry'),
+              HeaderBreadcrumb(label: 'Journals'),
             ],
           ),
           Expanded(
@@ -186,6 +320,89 @@ class _JournalEntryScreenState extends State<JournalEntryScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          // Org and Branch Code
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: AmsField(
+                                  label: 'Organization Code',
+                                  tooltip: 'Select your organization',
+                                  child: _isLoadingOrgs
+                                      ? const LinearProgressIndicator()
+                                      : AmsSearchableDropdown(
+                                          items: _orgList.map((o) {
+                                            final code = (o['orgcode'] ?? o['orgCode'] ?? '').toString();
+                                            final name = (o['name'] ?? '').toString();
+                                            return name.isNotEmpty ? '$code – $name' : code;
+                                          }).toList(),
+                                          placeholder: 'Select Organization',
+                                          initialValue: () {
+                                            if (_selectedOrgCode == null) return null;
+                                            final match = _orgList.firstWhere(
+                                              (o) => (o['orgcode'] ?? o['orgCode'] ?? '').toString() == _selectedOrgCode.toString(),
+                                              orElse: () => {},
+                                            );
+                                            if (match.isEmpty) return _selectedOrgCode.toString();
+                                            final code = _selectedOrgCode.toString();
+                                            final name = (match['name'] ?? '').toString();
+                                            return name.isNotEmpty ? '$code – $name' : code;
+                                          }(),
+                                          onChanged: (v) {
+                                            if (v == null) return;
+                                            final codeStr = v.contains(' – ') ? v.split(' – ').first : v;
+                                            setState(() {
+                                              _selectedOrgCode = int.tryParse(codeStr);
+                                              _orgCodeController.text = codeStr;
+                                              // Reset branch when org changes
+                                              _selectedBranchCode = null;
+                                              _branchCodeController.text = '';
+                                            });
+                                          },
+                                        ),
+                                ),
+                              ),
+                              const SizedBox(width: 32),
+                              Expanded(
+                                child: AmsField(
+                                  label: 'Branch Code',
+                                  tooltip: 'Select your branch',
+                                  child: _isLoadingBranches
+                                      ? const LinearProgressIndicator()
+                                      : AmsDropdown(
+                                          key: ValueKey('branch_dropdown_$_selectedOrgCode'),
+                                          items: _filteredBranches.map((b) {
+                                            final code = (b['brnCd'] ?? b['brncd'] ?? b['branchCd'] ?? b['branchcd'] ?? b['BRNCD'] ?? b['BRANCHCD'] ?? '').toString();
+                                            final name = (b['brnName'] ?? b['brnname'] ?? b['branchName'] ?? b['branchname'] ?? b['BRNNAME'] ?? b['BRANCHNAME'] ?? '').toString();
+                                            return name.isNotEmpty ? '$code – $name' : code;
+                                          }).toList(),
+                                          placeholder: 'Select Branch',
+                                          initialValue: () {
+                                            if (_selectedBranchCode == null) return null;
+                                            final match = _filteredBranches.firstWhere(
+                                              (b) => (b['brnCd'] ?? b['brncd'] ?? b['branchCd'] ?? b['branchcd'] ?? b['BRNCD'] ?? b['BRANCHCD'] ?? '').toString() == _selectedBranchCode.toString(),
+                                              orElse: () => {},
+                                            );
+                                            if (match.isEmpty) return null;
+                                            final code = _selectedBranchCode.toString();
+                                            final name = (match['brnName'] ?? match['brnname'] ?? match['branchName'] ?? match['branchname'] ?? match['BRNNAME'] ?? match['BRANCHNAME'] ?? '').toString();
+                                            return name.isNotEmpty ? '$code – $name' : code;
+                                          }(),
+                                          onChanged: (v) {
+                                            if (v == null) return;
+                                            final codeStr = v.contains(' – ') ? v.split(' – ').first : v;
+                                            setState(() {
+                                              _selectedBranchCode = int.tryParse(codeStr);
+                                              _branchCodeController.text = codeStr;
+                                            });
+                                          },
+                                        ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 20),
+
                           // Header Fields
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -193,6 +410,7 @@ class _JournalEntryScreenState extends State<JournalEntryScreen> {
                               Expanded(
                                 child: AmsField(
                                   label: 'Date',
+                                  tooltip: 'Transaction posting date',
                                   child: GestureDetector(
                                     onTap: _selectDate,
                                     child: AbsorbPointer(
@@ -209,6 +427,7 @@ class _JournalEntryScreenState extends State<JournalEntryScreen> {
                               Expanded(
                                 child: AmsField(
                                   label: 'Journal No',
+                                  tooltip: 'System generated unique journal number',
                                   child: AmsTextInput(
                                     controller: _journalNoController,
                                     readOnly: true,
@@ -221,6 +440,7 @@ class _JournalEntryScreenState extends State<JournalEntryScreen> {
                           const SizedBox(height: 20),
                           AmsField(
                             label: 'Journal Description',
+                            tooltip: 'Narrative describing the purpose of this entry',
                             child: AmsTextInput(
                               controller: _descriptionController,
                               maxLines: 2,
@@ -234,6 +454,7 @@ class _JournalEntryScreenState extends State<JournalEntryScreen> {
                               Expanded(
                                 child: AmsField(
                                   label: 'Currency',
+                                  tooltip: 'Default currency of the organization',
                                   child: AmsTextInput(
                                     controller: _currencyController,
                                     placeholder: 'Load default currency of the organization',
@@ -244,6 +465,7 @@ class _JournalEntryScreenState extends State<JournalEntryScreen> {
                               Expanded(
                                 child: AmsField(
                                   label: 'Reference No (Optional)',
+                                  tooltip: 'External reference or document number',
                                   child: AmsTextInput(
                                     controller: _referenceController,
                                     placeholder: 'Enter reference number',
@@ -328,10 +550,7 @@ class _JournalEntryScreenState extends State<JournalEntryScreen> {
                                 label: 'Save',
                                 variant: AmsButtonVariant.primary,
                                 backgroundColor: const Color(0xFF27AE60), // Green from image
-                                onPressed: () {
-                                  // Implementation for save
-                                  showAmsSnack(context, 'Journal Entry Saved Successfully', type: 's');
-                                },
+                                onPressed: _submitJournal,
                               ),
                               const SizedBox(width: 16),
                               AmsButton(
