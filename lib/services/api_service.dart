@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 // ignore: avoid_web_libraries_in_flutter
 import 'dart:html' as html;
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 import '../models/models.dart';
 import '../config/app_config.dart';
 
@@ -462,10 +463,19 @@ class ApiService {
         request.headers['Authorization'] = 'Bearer $_token';
       }
       
+      String mimeType = 'image/jpeg';
+      final ext = filename.toLowerCase();
+      if (ext.endsWith('.png')) mimeType = 'image/png';
+      else if (ext.endsWith('.gif')) mimeType = 'image/gif';
+      else if (ext.endsWith('.webp')) mimeType = 'image/webp';
+      
+      final splitMime = mimeType.split('/');
+
       request.files.add(http.MultipartFile.fromBytes(
         'file', // Assuming standard parameter name 'file'
         bytes,
         filename: filename,
+        contentType: MediaType(splitMime[0], splitMime[1]),
       ));
 
       final streamedResponse = await request.send();
