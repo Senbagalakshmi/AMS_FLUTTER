@@ -13,6 +13,7 @@ dependencies:
   http: ^1.6.0
   intl: ^0.20.2
   fl_chart: ^0.70.2
+  phone_numbers_parser: ^9.0.21
 
 dev_dependencies:
   flutter_test:

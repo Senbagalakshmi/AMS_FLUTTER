@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/foundation.dart' show kIsWeb;
 // ignore: avoid_web_libraries_in_flutter
 import 'dart:html' as html;
@@ -397,9 +398,7 @@ class ApiService {
 
   Future<bool> createUser(Map<String, dynamic> data) async {
     try {
-      if (data['isUpdate'] == true ||
-          data.containsKey('usersCd') ||
-          data.containsKey('userScd')) {
+      if (data['isUpdate'] == true) {
         return updateUser(data);
       }
       final res = await http.post(
@@ -415,7 +414,7 @@ class ApiService {
 
   Future<bool> createRole(Map<String, dynamic> data) async {
     try {
-      if (data['isUpdate'] == true || data.containsKey('accessCd')) {
+      if (data['isUpdate'] == true) {
         return updateRole(data);
       }
       final res = await http.post(
@@ -455,12 +454,43 @@ class ApiService {
     }
   }
 
+  Future<String?> uploadUserPicture(String usersCd, String filename, Uint8List bytes) async {
+    try {
+      final uri = Uri.parse('$baseUrl/users/$usersCd/picture');
+      final request = http.MultipartRequest('POST', uri);
+      if (_token != null) {
+        request.headers['Authorization'] = 'Bearer $_token';
+      }
+      
+      request.files.add(http.MultipartFile.fromBytes(
+        'file', // Assuming standard parameter name 'file'
+        bytes,
+        filename: filename,
+      ));
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final body = response.body.trim();
+        if (body.startsWith('{')) {
+          final decoded = jsonDecode(body);
+          return decoded['picture'] ?? decoded['url'] ?? decoded['pictureUrl'] ?? decoded['path'] ?? body;
+        }
+        return body; 
+      } else {
+        print('Upload failed: ${response.statusCode} - ${response.body}');
+        return null;
+      }
+    } catch (e) {
+      print('Upload error: $e');
+      return null;
+    }
+  }
+
   Future<bool> createModule(Map<String, dynamic> data) async {
     try {
-      if (data['isUpdate'] == true ||
-          data.containsKey('moduleId') ||
-          data.containsKey('module_id') ||
-          data.containsKey('moduleid')) {
+      if (data['isUpdate'] == true) {
         return updateModule(data);
       }
       final res = await http.post(

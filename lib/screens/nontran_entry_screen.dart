@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:phone_numbers_parser/phone_numbers_parser.dart';
 import '../theme.dart';
 import '../models/models.dart';
 import '../widgets/widgets.dart';
@@ -2346,12 +2347,12 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
       final rawCountry = (data['country'] ?? '').toString();
       if (rawCountry.isNotEmpty) {
         if (_kAllCountries.containsKey(rawCountry)) {
-          _countryCtrl.text = "$rawCountry, ${_kAllCountries[rawCountry]}";
+          _countryCtrl.text = rawCountry;
         } else {
           final revMap = <String, String>{};
           _kAllCountries.forEach((name, code) => revMap[code] = name);
           if (revMap.containsKey(rawCountry)) {
-            _countryCtrl.text = "${revMap[rawCountry]}, $rawCountry";
+            _countryCtrl.text = revMap[rawCountry]!;
           } else {
             _countryCtrl.text = rawCountry;
           }
@@ -2543,6 +2544,27 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
         if (_gender == null) {
           _errors['gender'] = 'Gender required';
           isValid = false;
+        }
+        if (_mobileCtrl.text.trim().isNotEmpty) {
+          final mobileStr = _mobileCtrl.text.trim();
+          final callCodeStr = _callCodeCtrl.text.trim();
+          if (callCodeStr.isNotEmpty) {
+            try {
+              final phone = PhoneNumber.parse('+$callCodeStr$mobileStr');
+              if (!phone.isValid()) {
+                _errors['mobile'] = 'Invalid mobile number for selected country';
+                isValid = false;
+              }
+            } catch (e) {
+              _errors['mobile'] = 'Invalid mobile number format';
+              isValid = false;
+            }
+          } else {
+            if (mobileStr.length < 5) {
+               _errors['mobile'] = 'Invalid mobile number length';
+               isValid = false;
+            }
+          }
         }
       } else if (prog == 'ROLE-CRT') {
         if (_rScdCtrl.text.trim().isEmpty) {
@@ -2974,19 +2996,23 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                         controller: _countryCtrl,
                         readOnly: true,
                       )
-                    : AmsDropdown(
+                    : AmsSearchableDropdown(
                         initialValue: _countryCtrl.text.isNotEmpty
                             ? _countryCtrl.text
                             : null,
                         placeholder: 'Select Country',
-                        items: _kAllCountries.entries
-                            .map((e) => "${e.key}, ${e.value}")
-                            .toList(),
+                        items: _kAllCountries.keys.toList(),
                         onChanged: (v) {
-                          if (v == null) return;
-                          final parts = v.split(', ');
-                          if (parts.length < 2) return;
-                          final code = parts.last;
+                          if (v == null || v.isEmpty) {
+                            setState(() {
+                               _countryCtrl.text = '';
+                               _callCodeCtrl.text = '';
+                            });
+                            widget.onChanged('country', 0);
+                            widget.onChanged('callCode', 0);
+                            return;
+                          }
+                          final code = _kAllCountries[v] ?? '';
                           setState(() {
                             _countryCtrl.text = v;
                             _callCodeCtrl.text = code;
@@ -3005,8 +3031,17 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                   readOnly: widget.isViewMode,
                   placeholder: 'e.g. 9876543210',
                   keyboardType: TextInputType.phone,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   textInputAction: TextInputAction.next,
-                  onChanged: (v) => widget.onChanged('mobile', v),
+                  errorText: _errors['mobile'],
+                  onChanged: (v) {
+                    setState(() {
+                      if (_errors['mobile'] != null) {
+                        _errors.remove('mobile');
+                      }
+                    });
+                    widget.onChanged('mobile', v);
+                  },
                 ),
               ),
               AmsField(
@@ -3153,11 +3188,32 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                 child: AmsFilePicker(
                   initialValue:
                       _uPictureCtrl.text.isNotEmpty ? _uPictureCtrl.text : null,
-                  onFileSelected: (name, bytes) {
-                    setState(() {
-                      _uPictureCtrl.text = name;
-                    });
-                    widget.onChanged('picture', name);
+                  onFileSelected: (name, bytes) async {
+                    if (bytes != null) {
+                      final userscd = _uScdCtrl.text.trim();
+                      if (userscd.isEmpty) {
+                        showAmsSnack(context, 'Please enter User Code first to upload picture.', type: 'e');
+                        return;
+                      }
+                      
+                      showAmsSnack(context, 'Uploading picture...', type: 'i');
+                      final url = await apiService.uploadUserPicture(userscd, name, bytes);
+                      
+                      if (url != null) {
+                        setState(() {
+                          _uPictureCtrl.text = url;
+                        });
+                        widget.onChanged('picture', url);
+                        showAmsSnack(context, 'Picture uploaded successfully!', type: 's');
+                      } else {
+                        showAmsSnack(context, 'Failed to upload picture.', type: 'e');
+                      }
+                    } else {
+                      setState(() {
+                        _uPictureCtrl.text = name;
+                      });
+                      widget.onChanged('picture', name);
+                    }
                   },
                 ),
               ),
