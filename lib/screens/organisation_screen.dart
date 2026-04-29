@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import '../theme.dart';
 import '../widgets/widgets.dart';
 import '../services/org_api_service.dart';
@@ -105,6 +108,9 @@ class _OrganisationScreenState extends State<OrganisationScreen> {
   final _addr3Ctrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
+  bool _pincodeLoading = false;
+
+  final GlobalKey<OrganisationFieldsState> _fieldsKey = GlobalKey<OrganisationFieldsState>();
 
   @override
   void initState() {
@@ -138,7 +144,26 @@ class _OrganisationScreenState extends State<OrganisationScreen> {
     _addr3Ctrl.dispose();
     _phoneCtrl.dispose();
     _emailCtrl.dispose();
-  super.dispose();
+    super.dispose();
+  }
+
+
+  bool _isValidEmail(String email) {
+    if (email.isEmpty) return true;
+    return RegExp(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$").hasMatch(email);
+  }
+
+  bool _isValidPhone(String phone) {
+    if (phone.isEmpty) return true;
+    return RegExp(r"^[+0-9\s-]{7,15}$").hasMatch(phone.replaceAll(RegExp(r'\s+'), ''));
+  }
+
+  void _clearErrors() {
+    setState(() {
+      _orgCodeError = null;
+      _orgNameError = null;
+      _emailError = null;
+    });
   }
 
   Future<void> _save() async {
@@ -152,8 +177,12 @@ class _OrganisationScreenState extends State<OrganisationScreen> {
         _orgNameError = 'Organisation Name is mandatory';
         hasError = true;
       }
-      if (!_isValidEmail(_emailCtrl.text)) {
+      if (_emailCtrl.text.isNotEmpty && !_isValidEmail(_emailCtrl.text)) {
         _emailError = 'Invalid email format';
+        hasError = true;
+      }
+      if (_phoneCtrl.text.isNotEmpty && !_isValidPhone(_phoneCtrl.text)) {
+        // We'll show a snackbar or just a generic error since we don't have _phoneError state yet
         hasError = true;
       }
     });
@@ -320,21 +349,13 @@ class _OrganisationScreenState extends State<OrganisationScreen> {
     _addr3Ctrl.clear();
     _phoneCtrl.clear();
     _emailCtrl.clear();
+    
+    // Clear the child fields via key
+    _fieldsKey.currentState?.clear();
+    
     _clearErrors();
   }
 
-  void _clearErrors() {
-    setState(() {
-      _orgCodeError = null;
-      _orgNameError = null;
-      _emailError = null;
-    });
-  }
-
-  bool _isValidEmail(String email) {
-    if (email.isEmpty) return true;
-    return RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email);
-  }
 
   void _showTopNotification(String message, {bool isError = false}) {
     final overlay = Overlay.of(context);
@@ -404,67 +425,6 @@ class _OrganisationScreenState extends State<OrganisationScreen> {
     }
   }
 
-  Future<void> _selectCountry() async {
-    if (_isViewOnly) return;
-    final countries = _countryInfo.keys.toList();
-    final s = await showDialog<String>(
-        context: context,
-        builder: (ctx) =>
-            _SearchPicker(title: 'Select Country', items: countries));
-    if (s != null) {
-      setState(() {
-        final info = _countryInfo[s]!;
-        _countryCtrl.text = "${info['flag']} $s";
-        _phoneCtrl.text = "${info['flag']} ${info['code']} ";
-        _stateCtrl.clear();
-        _districtCtrl.clear();
-        _pincodeCtrl.clear();
-      });
-    }
-  }
-
-  Future<void> _selectState() async {
-    if (_isViewOnly) return;
-    if (_countryCtrl.text.isEmpty) {
-      _showTopNotification('Please select a Country first', isError: true);
-      return;
-    }
-    String country = _countryCtrl.text.split(' ').last;
-    final states = _countryStates[country] ?? [];
-    if (states.isEmpty) {
-      _showTopNotification('No states mapped for $country', isError: true);
-      return;
-    }
-    final s = await showDialog<String>(
-        context: context,
-        builder: (ctx) => _SearchPicker(title: 'Select State', items: states));
-    if (s != null) {
-      setState(() {
-        _stateCtrl.text = s;
-        _districtCtrl.clear();
-        _pincodeCtrl.clear();
-      });
-    }
-  }
-
-  Future<void> _selectDistrict() async {
-    if (_isViewOnly) return;
-    if (_stateCtrl.text.isEmpty) {
-      _showTopNotification('Please select a State first', isError: true);
-      return;
-    }
-    final s = await showDialog<String>(
-        context: context,
-        builder: (ctx) => _SearchPicker(
-            title: 'Select District',
-            items: _stateDistricts[_stateCtrl.text] ?? []));
-    if (s != null) {
-      setState(() {
-        _districtCtrl.text = s;
-        _pincodeCtrl.text = _pincodeMap[s] ?? '';
-      });
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -678,6 +638,7 @@ class _OrganisationScreenState extends State<OrganisationScreen> {
               child: SingleChildScrollView(
                   padding: const EdgeInsets.all(0),
                   child: OrganisationFields(
+                    key: _fieldsKey,
                     isViewMode: _isViewOnly,
                     initialData: _isEditMode || _isViewOnly ? _organisations.firstWhere((o) => (o['orgcode'] ?? o['orgCode'])?.toString() == _orgCodeCtrl.text, orElse: () => {}) : null,
                     onChanged: (k, v) {
@@ -710,26 +671,7 @@ class _OrganisationScreenState extends State<OrganisationScreen> {
           variant: AmsButtonVariant.primary,
           backgroundColor: AppColors.sidebar,
           onPressed: () {
-            bool hasError = false;
-            setState(() {
-              if (_orgCodeCtrl.text.isEmpty) {
-                _orgCodeError = 'Organisation Code is mandatory';
-                hasError = true;
-              }
-              if (_nameCtrl.text.isEmpty) {
-                _orgNameError = 'Organisation Name is mandatory';
-                hasError = true;
-              }
-              if (!_isValidEmail(_emailCtrl.text)) {
-                _emailError = 'Invalid email format';
-                hasError = true;
-              }
-            });
-            if (hasError) {
-              _showTopNotification('Please correct the highlighted errors',
-                  isError: true);
-              return;
-            }
+            if (_fieldsKey.currentState?.validate() == false) return;
             _save();
           },
           loading: _isSaving,
@@ -809,6 +751,12 @@ class OrganisationFieldsState extends State<OrganisationFields> {
   String? _orgCodeError;
   String? _orgNameError;
   String? _emailError;
+  String? _phoneError;
+  String? _openDateError;
+  String? _countryError;
+  String? _stateError;
+  String? _districtError;
+  String? _addr1Error;
 
   static const Map<String, Map<String, String>> _countryInfo = {
     'India': {'flag': '🇮🇳', 'code': '+91', 'iso': 'IN'},
@@ -836,6 +784,7 @@ class OrganisationFieldsState extends State<OrganisationFields> {
   void initState() {
     super.initState();
     _loadInitialData();
+    _loadCountries(); // Pre-load countries on init
   }
 
   @override
@@ -888,6 +837,429 @@ class OrganisationFieldsState extends State<OrganisationFields> {
     _emailCtrl.text = (d['email'] ?? '').toString();
   }
 
+  // --- Smart Search (Overlays) ---
+  final _countryLayerLink = LayerLink();
+  final _stateLayerLink = LayerLink();
+  final _districtLayerLink = LayerLink();
+  
+  OverlayEntry? _countryOverlay;
+  OverlayEntry? _stateOverlay;
+  OverlayEntry? _districtOverlay;
+
+  final _countrySearchCtrl = TextEditingController();
+  final _stateSearchCtrl = TextEditingController();
+  final _districtSearchCtrl = TextEditingController();
+
+  static List<String> _cachedCountries = [];
+  static Map<String, String> _cachedIsoMap = {};
+  
+  List<String> _countriesList = _cachedCountries;
+  final Map<String, String> _countryIsoMap = Map.from(_cachedIsoMap);
+  List<String> _statesList = [];
+  List<String> _districtsList = [];
+  
+  bool _countriesLoading = false;
+  bool _statesLoading = false;
+  bool _districtsLoading = false;
+  bool _pincodeLoading = false;
+
+  String? _selectedCountryIso;
+
+  @override
+  void dispose() {
+    _removeAllOverlays();
+    _orgCodeCtrl.dispose();
+    _nameCtrl.dispose();
+    _openDateCtrl.dispose();
+    _countryCtrl.dispose();
+    _stateCtrl.dispose();
+    _districtCtrl.dispose();
+    _pincodeCtrl.dispose();
+    _addr1Ctrl.dispose();
+    _addr2Ctrl.dispose();
+    _addr3Ctrl.dispose();
+    _phoneCtrl.dispose();
+    _emailCtrl.dispose();
+    _countrySearchCtrl.dispose();
+    _stateSearchCtrl.dispose();
+    _districtSearchCtrl.dispose();
+    super.dispose();
+  }
+
+  void _removeAllOverlays() {
+    _countryOverlay?.remove();
+    _countryOverlay = null;
+    _stateOverlay?.remove();
+    _stateOverlay = null;
+    _districtOverlay?.remove();
+    _districtOverlay = null;
+  }
+
+  bool _isValidEmail(String email) {
+    if (email.isEmpty) return true;
+    return RegExp(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$").hasMatch(email);
+  }
+
+  bool _isValidPhone(String phone) {
+    if (phone.isEmpty) return true;
+    return RegExp(r"^[+0-9\s-]{7,15}$").hasMatch(phone.replaceAll(RegExp(r'\s+'), ''));
+  }
+
+  bool validate() {
+    bool hasError = false;
+    setState(() {
+      _orgCodeError = null;
+      _orgNameError = null;
+      _emailError = null;
+      _phoneError = null;
+      _openDateError = null;
+      _countryError = null;
+      _stateError = null;
+      _districtError = null;
+      _addr1Error = null;
+
+      if (_orgCodeCtrl.text.isEmpty) {
+        _orgCodeError = 'Organisation Code is mandatory';
+        hasError = true;
+      }
+      if (_nameCtrl.text.isEmpty) {
+        _orgNameError = 'Organisation Name is mandatory';
+        hasError = true;
+      }
+      if (_openDateCtrl.text.isEmpty) {
+        _openDateError = 'Open Date is mandatory';
+        hasError = true;
+      }
+      if (_countryCtrl.text.isEmpty) {
+        _countryError = 'Country is mandatory';
+        hasError = true;
+      }
+      if (_stateCtrl.text.isEmpty) {
+        _stateError = 'State is mandatory';
+        hasError = true;
+      }
+      if (_districtCtrl.text.isEmpty) {
+        _districtError = 'District is mandatory';
+        hasError = true;
+      }
+      if (_emailCtrl.text.isEmpty) {
+        _emailError = 'Email Address is mandatory';
+        hasError = true;
+      } else if (!_isValidEmail(_emailCtrl.text)) {
+        _emailError = 'Invalid email format (e.g. user@example.com)';
+        hasError = true;
+      }
+      if (_phoneCtrl.text.isEmpty) {
+        _phoneError = 'Telephone is mandatory';
+        hasError = true;
+      } else if (!_isValidPhone(_phoneCtrl.text)) {
+        _phoneError = 'Invalid phone number (min 7 digits)';
+        hasError = true;
+      }
+      if (_addr1Ctrl.text.isEmpty) {
+        _addr1Error = 'Address Line 1 is mandatory';
+        hasError = true;
+      }
+    });
+    return !hasError;
+  }
+
+  void clear() {
+    setState(() {
+      _orgCodeCtrl.clear();
+      _nameCtrl.clear();
+      _openDateCtrl.clear();
+      _countryCtrl.clear();
+      _stateCtrl.clear();
+      _districtCtrl.clear();
+      _pincodeCtrl.clear();
+      _addr1Ctrl.clear();
+      _addr2Ctrl.clear();
+      _addr3Ctrl.clear();
+      _phoneCtrl.clear();
+      _emailCtrl.clear();
+
+      _orgCodeError = null;
+      _orgNameError = null;
+      _emailError = null;
+      _phoneError = null;
+      _openDateError = null;
+      _countryError = null;
+      _stateError = null;
+      _districtError = null;
+      _addr1Error = null;
+    });
+  }
+
+  // --- External APIs for Addresses ---
+
+  Future<void> _loadCountries() async {
+    if (_countriesLoading || _countriesList.isNotEmpty) return;
+    
+    // Add default common countries immediately to avoid empty list
+    if (_countriesList.isEmpty) {
+      setState(() {
+        _countriesList = ['India', 'USA', 'UK', 'Singapore', 'Canada', 'Australia', 'Germany', 'Japan'];
+        _countryIsoMap.addAll({'India': 'IN', 'USA': 'US', 'UK': 'GB', 'Singapore': 'SG', 'Canada': 'CA', 'Australia': 'AU', 'Germany': 'DE', 'Japan': 'JP'});
+      });
+    }
+
+    setState(() => _countriesLoading = true);
+    try {
+      final res = await http.get(Uri.parse('https://countriesnow.space/api/v0.1/countries')).timeout(const Duration(seconds: 8));
+      if (res.statusCode == 200) {
+        final decoded = jsonDecode(res.body);
+        final List data = decoded['data'] ?? [];
+        final names = data.map<String>((e) => e['country'] as String).toList()..sort();
+        final isoMap = <String, String>{};
+        for (final entry in data) {
+          final name = entry['country'] as String? ?? '';
+          final iso = entry['iso2'] as String? ?? '';
+          if (name.isNotEmpty && iso.isNotEmpty) isoMap[name] = iso.toUpperCase();
+        }
+        
+        // Update cache
+        _cachedCountries = names;
+        _cachedIsoMap = isoMap;
+
+        if (mounted) {
+          setState(() {
+            _countriesList = names;
+            _countryIsoMap.clear();
+            _countryIsoMap.addAll(isoMap);
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint("Country Load Error: $e");
+    } finally {
+      if (mounted) setState(() => _countriesLoading = false);
+    }
+  }
+
+  Future<void> _loadStates(String countryName) async {
+    setState(() {
+      _statesLoading = true;
+      _statesList = [];
+      _districtsList = [];
+    });
+    try {
+      final res = await http.post(
+        Uri.parse('https://countriesnow.space/api/v0.1/countries/states'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'country': countryName}),
+      ).timeout(const Duration(seconds: 10));
+      if (res.statusCode == 200) {
+        final decoded = jsonDecode(res.body);
+        final List stateList = decoded['data']?['states'] ?? [];
+        final names = stateList.map<String>((s) => s['name'] as String).toList()..sort();
+        if (mounted) setState(() => _statesList = names);
+      }
+    } catch (_) {} finally {
+      if (mounted) setState(() => _statesLoading = false);
+    }
+  }
+
+  Future<void> _loadDistricts(String countryName, String stateName) async {
+    setState(() {
+      _districtsLoading = true;
+      _districtsList = [];
+    });
+    try {
+      final res = await http.post(
+        Uri.parse('https://countriesnow.space/api/v0.1/countries/state/cities'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'country': countryName, 'state': stateName}),
+      ).timeout(const Duration(seconds: 10));
+      if (res.statusCode == 200) {
+        final decoded = jsonDecode(res.body);
+        final List cities = decoded['data'] ?? [];
+        final names = cities.cast<String>()..sort();
+        if (mounted) setState(() => _districtsList = names);
+      }
+    } catch (_) {} finally {
+      if (mounted) setState(() => _districtsLoading = false);
+    }
+  }
+
+  Future<void> _loadPincode(String cityName) async {
+    if (!mounted) return;
+    setState(() => _pincodeLoading = true);
+    try {
+      final res = await http.get(Uri.parse('https://api.postalpincode.in/postoffice/${Uri.encodeComponent(cityName)}')).timeout(const Duration(seconds: 8));
+      if (res.statusCode == 200) {
+        final List data = jsonDecode(res.body);
+        if (data.isNotEmpty && data[0]['Status'] == 'Success') {
+          final postOffices = data[0]['PostOffice'] as List;
+          if (postOffices.isNotEmpty) {
+            final pincode = postOffices[0]['Pincode']?.toString() ?? '';
+            if (pincode.isNotEmpty && mounted) {
+              setState(() => _pincodeCtrl.text = pincode);
+              widget.onChanged('pincode', pincode);
+            }
+          }
+        }
+      }
+    } catch (_) {} finally {
+      if (mounted) setState(() => _pincodeLoading = false);
+    }
+  }
+
+  OverlayEntry _buildDropdownOverlay({
+    required LayerLink link,
+    required List<String> items,
+    required bool isLoading,
+    required TextEditingController searchCtrl,
+    required Function(String) onSelect,
+    required VoidCallback onClose,
+  }) {
+    return OverlayEntry(
+      builder: (context) => GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: onClose,
+        child: Stack(
+          children: [
+            CompositedTransformFollower(
+              link: link,
+              showWhenUnlinked: false,
+              offset: const Offset(0, 50),
+              child: Material(
+                elevation: 8,
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  width: 300,
+                  constraints: const BoxConstraints(maxHeight: 300),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: AmsTextInput(
+                          controller: searchCtrl,
+                          placeholder: 'Search...',
+                          icon: Icons.search,
+                          onChanged: (v) => (context as Element).markNeedsBuild(),
+                        ),
+                      ),
+                      if (isLoading)
+                        const Padding(
+                          padding: EdgeInsets.all(16.0),
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      else
+                        Flexible(
+                          child: Builder(builder: (ctx) {
+                            final query = searchCtrl.text.toLowerCase();
+                            final filtered = items.where((i) => i.toLowerCase().contains(query)).toList();
+                            if (filtered.isEmpty) {
+                              return const Padding(
+                                padding: EdgeInsets.all(16.0),
+                                child: Text('No results found'),
+                              );
+                            }
+                            return ListView.builder(
+                              shrinkWrap: true,
+                              padding: EdgeInsets.zero,
+                              itemCount: filtered.length,
+                              itemBuilder: (ctx, idx) => ListTile(
+                                title: Text(filtered[idx], style: bodyStyle(size: 13)),
+                                dense: true,
+                                onTap: () => onSelect(filtered[idx]),
+                              ),
+                            );
+                          }),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _openCountryDropdown() {
+    if (widget.isViewMode) return;
+    _removeAllOverlays();
+    _loadCountries();
+    _countrySearchCtrl.clear();
+    _countryOverlay = _buildDropdownOverlay(
+      link: _countryLayerLink,
+      items: _countriesList,
+      isLoading: _countriesLoading,
+      searchCtrl: _countrySearchCtrl,
+      onSelect: (val) {
+        setState(() {
+          _countryCtrl.text = val;
+          _selectedCountryIso = _countryIsoMap[val];
+          _stateCtrl.clear();
+          _districtCtrl.clear();
+          _pincodeCtrl.clear();
+        });
+        widget.onChanged('country', val);
+        _loadStates(val);
+        _removeAllOverlays();
+      },
+      onClose: _removeAllOverlays,
+    );
+    Overlay.of(context).insert(_countryOverlay!);
+  }
+
+  void _openStateDropdown() {
+    if (widget.isViewMode || _countryCtrl.text.isEmpty) return;
+    _removeAllOverlays();
+    _stateSearchCtrl.clear();
+    _stateOverlay = _buildDropdownOverlay(
+      link: _stateLayerLink,
+      items: _statesList,
+      isLoading: _statesLoading,
+      searchCtrl: _stateSearchCtrl,
+      onSelect: (val) {
+        setState(() {
+          _stateCtrl.text = val;
+          _districtCtrl.clear();
+          _pincodeCtrl.clear();
+        });
+        widget.onChanged('state', val);
+        _loadDistricts(_countryCtrl.text, val);
+        _removeAllOverlays();
+      },
+      onClose: _removeAllOverlays,
+    );
+    Overlay.of(context).insert(_stateOverlay!);
+  }
+
+  void _openDistrictDropdown() {
+    if (widget.isViewMode || _stateCtrl.text.isEmpty) return;
+    _removeAllOverlays();
+    _districtSearchCtrl.clear();
+    _districtOverlay = _buildDropdownOverlay(
+      link: _districtLayerLink,
+      items: _districtsList,
+      isLoading: _districtsLoading,
+      searchCtrl: _districtSearchCtrl,
+      onSelect: (val) {
+        setState(() {
+          _districtCtrl.text = val;
+          _pincodeCtrl.clear();
+        });
+        widget.onChanged('district', val);
+        _loadPincode(val);
+        _removeAllOverlays();
+      },
+      onClose: _removeAllOverlays,
+    );
+    Overlay.of(context).insert(_districtOverlay!);
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -902,21 +1274,43 @@ class OrganisationFieldsState extends State<OrganisationFields> {
             mandatory: true,
             errorText: _orgNameError,
             onChanged: (v) => widget.onChanged('name', v)),
-        _buildPickerField('Open Date', _openDateCtrl, _selectDate,
-            Icons.calendar_today_rounded),
-        _buildPickerField('Country', _countryCtrl, _selectCountry,
-            Icons.public_rounded),
-        _buildPickerField('State Code', _stateCtrl, _selectState,
-            Icons.map_rounded),
-        _buildPickerField('District Code', _districtCtrl,
-            _selectDistrict, Icons.location_city_rounded),
-        _field('Pincode', _pincodeCtrl, enabled: false),
-        _field('Email Address', _emailCtrl,
+        _buildPickerField('Open Date*', _openDateCtrl, _selectDate,
+            Icons.calendar_today_rounded, errorText: _openDateError),
+        
+        CompositedTransformTarget(
+          link: _countryLayerLink,
+          child: _buildPickerField('Country*', _countryCtrl, _openCountryDropdown,
+              Icons.public_rounded, errorText: _countryError),
+        ),
+        CompositedTransformTarget(
+          link: _stateLayerLink,
+          child: _buildPickerField('State Code*', _stateCtrl, _openStateDropdown,
+              Icons.map_rounded, errorText: _stateError),
+        ),
+        CompositedTransformTarget(
+          link: _districtLayerLink,
+          child: _buildPickerField('District Code*', _districtCtrl,
+              _openDistrictDropdown, Icons.location_city_rounded, errorText: _districtError),
+        ),
+        
+        _field('Pincode*', _pincodeCtrl, enabled: false),
+        _field('Email Address*', _emailCtrl,
+            mandatory: true,
             errorText: _emailError,
-            onChanged: (v) => widget.onChanged('email', v)),
-        _field('Telephone', _phoneCtrl, icon: Icons.phone_rounded,
-            onChanged: (v) => widget.onChanged('telephone', v)),
-        _field('Address Line 1', _addr1Ctrl,
+            onChanged: (v) {
+              setState(() => _emailError = _isValidEmail(v) ? null : 'Invalid email format');
+              widget.onChanged('email', v);
+            }),
+        _field('Telephone*', _phoneCtrl, icon: Icons.phone_rounded,
+            mandatory: true,
+            errorText: _phoneError,
+            onChanged: (v) {
+              setState(() => _phoneError = _isValidPhone(v) ? null : 'Invalid phone format');
+              widget.onChanged('telephone', v);
+            }),
+        _field('Address Line 1*', _addr1Ctrl,
+            mandatory: true,
+            errorText: _addr1Error,
             onChanged: (v) => widget.onChanged('addrline1', v)),
         _field('Address Line 2', _addr2Ctrl,
             onChanged: (v) => widget.onChanged('addrline2', v)),
@@ -945,16 +1339,18 @@ class OrganisationFieldsState extends State<OrganisationFields> {
                 : 'Auto-populated',
             borderColor: AppColors.tBlue,
             keyboardType: isNum ? TextInputType.number : TextInputType.text,
+            inputFormatters: isNum ? [FilteringTextInputFormatter.digitsOnly] : null,
             errorText: errorText,
             icon: icon,
             onChanged: onChanged));
   }
 
   Widget _buildPickerField(String label, TextEditingController ctrl,
-      VoidCallback onTap, IconData icon) {
+      VoidCallback onTap, IconData icon, {String? errorText}) {
     return AmsField(
         label: label,
         labelAbove: true,
+        required: label.contains('*'),
         child: GestureDetector(
             onTap: onTap,
             child: AbsorbPointer(
@@ -963,6 +1359,7 @@ class OrganisationFieldsState extends State<OrganisationFields> {
                     readOnly: widget.isViewMode,
                     placeholder: 'Select $label',
                     borderColor: AppColors.tBlue,
+                    errorText: errorText,
                     icon: icon))));
   }
 
@@ -983,104 +1380,5 @@ class OrganisationFieldsState extends State<OrganisationFields> {
       setState(() => _openDateCtrl.text = fmt);
       widget.onChanged('openDate', fmt);
     }
-  }
-
-  Future<void> _selectCountry() async {
-    if (widget.isViewMode) return;
-    final countries = _countryInfo.keys.toList();
-    final s = await showDialog<String>(
-        context: context,
-        builder: (ctx) =>
-            _SearchPicker(title: 'Select Country', items: countries));
-    if (s != null) {
-      final info = _countryInfo[s]!;
-      setState(() {
-        _countryCtrl.text = "${info['flag']} $s";
-        _phoneCtrl.text = "${info['flag']} ${info['code']} ";
-      });
-      widget.onChanged('country', s);
-    }
-  }
-
-  Future<void> _selectState() async {
-    if (widget.isViewMode) return;
-    if (_countryCtrl.text.isEmpty) return;
-    String country = _countryCtrl.text.split(' ').last;
-    final states = _countryStates[country] ?? [];
-    final s = await showDialog<String>(
-        context: context,
-        builder: (ctx) => _SearchPicker(title: 'Select State', items: states));
-    if (s != null) {
-      setState(() => _stateCtrl.text = s);
-      widget.onChanged('state', s);
-    }
-  }
-
-  Future<void> _selectDistrict() async {
-    if (widget.isViewMode) return;
-    if (_stateCtrl.text.isEmpty) return;
-    final s = await showDialog<String>(
-        context: context,
-        builder: (ctx) => _SearchPicker(
-            title: 'Select District',
-            items: _stateDistricts[_stateCtrl.text] ?? []));
-    if (s != null) {
-      setState(() {
-        _districtCtrl.text = s;
-        _pincodeCtrl.text = _pincodeMap[s] ?? '';
-      });
-      widget.onChanged('district', s);
-      widget.onChanged('pincode', _pincodeCtrl.text);
-    }
-  }
-}
-
-class _SearchPicker extends StatefulWidget {
-  final String title;
-  final List<String> items;
-  const _SearchPicker({required this.title, required this.items});
-  @override
-  State<_SearchPicker> createState() => _SearchPickerState();
-}
-
-class _SearchPickerState extends State<_SearchPicker> {
-  String _query = '';
-  @override
-  Widget build(BuildContext context) {
-    final filtered = widget.items
-        .where((i) => i.toLowerCase().contains(_query.toLowerCase()))
-        .toList();
-    return AlertDialog(
-      title: Text(widget.title, style: bodyStyle(weight: FontWeight.bold)),
-      content: SizedBox(
-          width: 400,
-          height: 500,
-          child: Column(children: [
-            AmsTextInput(
-                placeholder: 'Search...',
-                icon: Icons.search,
-                borderColor: AppColors.tBlue,
-                onChanged: (v) => setState(() => _query = v)),
-            const SizedBox(height: 16),
-            Expanded(
-                child: filtered.isEmpty
-                    ? Center(
-                        child: Text('No results',
-                            style: bodyStyle(color: AppColors.ink4)))
-                    : ListView.builder(
-                        itemCount: filtered.length,
-                        itemBuilder: (ctx, idx) => ListTile(
-                            title: Text(filtered[idx], style: bodyStyle()),
-                            onTap: () =>
-                                Navigator.pop(context, filtered[idx])))),
-          ])),
-      actions: [
-        AmsButton(
-            label: 'Close',
-            variant: AmsButtonVariant.ghost,
-            onPressed: () => Navigator.pop(context))
-      ],
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-    );
   }
 }
