@@ -5,7 +5,7 @@ import 'dart:convert';
 import '../theme.dart';
 import '../widgets/widgets.dart';
 import '../services/branch_api_service.dart';
-import '../services/org_api_service.dart';   // ← NEW import
+import '../services/org_api_service.dart'; // ← NEW import
 import 'package:intl/intl.dart';
 
 class BranchScreen extends StatefulWidget {
@@ -429,6 +429,7 @@ class _BranchScreenState extends State<BranchScreen> {
               child: BranchScreenFields(
                 key: _fieldsKey,
                 isViewMode: _isViewOnly,
+                isEditMode: _isEditMode, // ← NEW: pass edit mode flag
                 initialData: _selectedRecord,
                 pgmStatus: _pgmStatus,
                 onChanged: (k, v) => _formData[k] = v,
@@ -516,6 +517,7 @@ class _BranchScreenState extends State<BranchScreen> {
 
 class BranchScreenFields extends StatefulWidget {
   final bool isViewMode;
+  final bool isEditMode; // ← NEW parameter
   final Map<String, dynamic>? initialData;
   final int pgmStatus;
   final void Function(String, dynamic) onChanged;
@@ -525,6 +527,7 @@ class BranchScreenFields extends StatefulWidget {
   const BranchScreenFields({
     super.key,
     required this.isViewMode,
+    required this.isEditMode, // ← NEW required param
     this.initialData,
     required this.pgmStatus,
     required this.onChanged,
@@ -538,7 +541,7 @@ class BranchScreenFields extends StatefulWidget {
 
 class BranchScreenFieldsState extends State<BranchScreenFields> {
   // ── Text Controllers ────────────────────────────────────────────────────────
-  final _brnOrgCtrl = TextEditingController();       // shows "50 – Org Name"
+  final _brnOrgCtrl = TextEditingController(); // shows "50 – Org Name"
   final _brnCdCtrl = TextEditingController();
   final _brnNameCtrl = TextEditingController();
   final _brnOpenDateCtrl = TextEditingController();
@@ -557,12 +560,12 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
   final _brnDistrictCtrl = TextEditingController();
 
   // ── Org-code searchable dropdown ────────────────────────────────────────────
-  final _orgSearchCtrl = TextEditingController();       // search text inside overlay
+  final _orgSearchCtrl = TextEditingController();
   final _orgLayerLink = LayerLink();
   OverlayEntry? _orgOverlay;
-  List<Map<String, dynamic>> _orgList = [];             // [{orgcode, name}, ...]
+  List<Map<String, dynamic>> _orgList = [];
   bool _orgLoading = false;
-  int? _selectedOrgCode;                                // numeric code sent to DB
+  int? _selectedOrgCode;
 
   // ── Country / State / District overlay controllers ──────────────────────────
   final _countrySearchCtrl = TextEditingController();
@@ -636,7 +639,6 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
     super.dispose();
   }
 
-  // ── Remove all overlays ──────────────────────────────────────────────────────
   void _removeAllOverlays() {
     _orgOverlay?.remove();
     _orgOverlay = null;
@@ -652,30 +654,24 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
   // ORGANISATION CODE – fetch + searchable overlay dropdown
   // ═══════════════════════════════════════════════════════════════════════════
 
-  /// Fetch all organisations from the API (page 0, large size to get all).
   Future<void> _loadOrganisations() async {
     if (_orgLoading || _orgList.isNotEmpty) return;
     setState(() => _orgLoading = true);
     try {
-      // Use orgApiService just like OrganisationScreen does.
-      // We ask for page 0 with a large page size so we get everything.
       final res = await orgApiService.getAllOrganisations(page: 0, size: 200);
       if (res != null && mounted) {
         setState(() => _orgList = res.items);
       }
     } catch (_) {
-      // silent – user can still type the code manually
+      // silent
     } finally {
       if (mounted) setState(() => _orgLoading = false);
     }
   }
 
-  /// Build the org-code overlay dropdown.
   void _openOrgDropdown() {
     if (widget.isViewMode) return;
     _removeAllOverlays();
-    // Seed the search box with whatever the user has typed so far,
-    // stripping the "– Name" suffix if present.
     _orgSearchCtrl.text = '';
 
     _orgOverlay = OverlayEntry(
@@ -693,7 +689,7 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
                 showWhenUnlinked: false,
                 offset: const Offset(0, 52),
                 child: GestureDetector(
-                  onTap: () {}, // prevent bubble
+                  onTap: () {},
                   child: Material(
                     elevation: 8,
                     borderRadius: BorderRadius.circular(10),
@@ -701,8 +697,6 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
                     child: StatefulBuilder(
                       builder: (ctx2, setInner) {
                         final query = _orgSearchCtrl.text.toLowerCase();
-
-                        // Filter by code OR name
                         final filtered = _orgList.where((o) {
                           final code =
                               (o['orgcode'] ?? o['orgCode'] ?? '').toString();
@@ -722,7 +716,6 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              // ── Search bar ────────────────────────────────
                               Padding(
                                 padding: const EdgeInsets.all(10),
                                 child: TextField(
@@ -746,9 +739,8 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
                                           )
                                         : null,
                                     isDense: true,
-                                    contentPadding:
-                                        const EdgeInsets.symmetric(
-                                            vertical: 10, horizontal: 12),
+                                    contentPadding: const EdgeInsets.symmetric(
+                                        vertical: 10, horizontal: 12),
                                     border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(8),
                                       borderSide: const BorderSide(
@@ -766,8 +758,6 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
                                 ),
                               ),
                               const Divider(height: 1, color: AppColors.border),
-
-                              // ── List ──────────────────────────────────────
                               Flexible(
                                 child: _orgLoading
                                     ? const Padding(
@@ -806,10 +796,11 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
                                                       org['orgCode'] ??
                                                       '')
                                                   .toString();
-                                              final name =
-                                                  (org['name'] ?? '').toString();
+                                              final name = (org['name'] ?? '')
+                                                  .toString();
                                               final isSelected =
-                                                  _selectedOrgCode?.toString() ==
+                                                  _selectedOrgCode
+                                                          ?.toString() ==
                                                       code;
 
                                               return InkWell(
@@ -820,10 +811,10 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
                                                   _orgOverlay = null;
                                                 },
                                                 child: Container(
-                                                  padding:
-                                                      const EdgeInsets.symmetric(
-                                                          horizontal: 16,
-                                                          vertical: 11),
+                                                  padding: const EdgeInsets
+                                                      .symmetric(
+                                                      horizontal: 16,
+                                                      vertical: 11),
                                                   decoration: BoxDecoration(
                                                     color: isSelected
                                                         ? AppColors.tBlueLt
@@ -841,13 +832,14 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
                                                   ),
                                                   child: Row(
                                                     children: [
-                                                      // Code badge
                                                       Container(
-                                                        padding: const EdgeInsets
-                                                            .symmetric(
-                                                            horizontal: 8,
-                                                            vertical: 3),
-                                                        decoration: BoxDecoration(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .symmetric(
+                                                                horizontal: 8,
+                                                                vertical: 3),
+                                                        decoration:
+                                                            BoxDecoration(
                                                           color: isSelected
                                                               ? AppColors.tBlue
                                                               : AppColors
@@ -870,7 +862,6 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
                                                         ),
                                                       ),
                                                       const SizedBox(width: 10),
-                                                      // Org name
                                                       Expanded(
                                                         child: Text(
                                                           name,
@@ -884,8 +875,8 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
                                                         const Icon(
                                                             Icons.check_rounded,
                                                             size: 16,
-                                                            color:
-                                                                AppColors.tBlue),
+                                                            color: AppColors
+                                                                .tBlue),
                                                     ],
                                                   ),
                                                 ),
@@ -893,8 +884,6 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
                                             },
                                           ),
                               ),
-
-                              // ── Footer: total count ───────────────────────
                               if (!_orgLoading && _orgList.isNotEmpty)
                                 Container(
                                   padding: const EdgeInsets.symmetric(
@@ -939,13 +928,11 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
     Overlay.of(context).insert(_orgOverlay!);
   }
 
-  /// Called when user selects an org from the overlay.
   void _selectOrg(Map<String, dynamic> org) {
     final code = (org['orgcode'] ?? org['orgCode'] ?? '').toString();
     final name = (org['name'] ?? '').toString();
     setState(() {
       _selectedOrgCode = int.tryParse(code);
-      // Show "50 – Main Organisation" in the field
       _brnOrgCtrl.text = name.isNotEmpty ? '$code – $name' : code;
       _errors['orgCode'] = null;
     });
@@ -953,7 +940,7 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // COUNTRY / STATE / DISTRICT overlay (unchanged logic, same helper)
+  // COUNTRY / STATE / DISTRICT overlay
   // ═══════════════════════════════════════════════════════════════════════════
 
   OverlayEntry _buildDropdownOverlay({
@@ -1011,9 +998,8 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
                                     prefixIcon: const Icon(Icons.search,
                                         size: 18, color: AppColors.ink3),
                                     isDense: true,
-                                    contentPadding:
-                                        const EdgeInsets.symmetric(
-                                            vertical: 10, horizontal: 12),
+                                    contentPadding: const EdgeInsets.symmetric(
+                                        vertical: 10, horizontal: 12),
                                     border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(8),
                                       borderSide: const BorderSide(
@@ -1063,34 +1049,31 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
                                         : ListView.builder(
                                             shrinkWrap: true,
                                             itemCount: filtered.length,
-                                            itemBuilder: (_, idx) =>
-                                                InkWell(
-                                                  onTap: () {
-                                                    onSelect(filtered[idx]);
-                                                    searchCtrl.clear();
-                                                    onClose();
-                                                  },
-                                                  child: Container(
-                                                    padding: const EdgeInsets
-                                                        .symmetric(
+                                            itemBuilder: (_, idx) => InkWell(
+                                              onTap: () {
+                                                onSelect(filtered[idx]);
+                                                searchCtrl.clear();
+                                                onClose();
+                                              },
+                                              child: Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
                                                         horizontal: 16,
                                                         vertical: 11),
-                                                    decoration: BoxDecoration(
-                                                      border: idx <
-                                                              filtered.length -
-                                                                  1
-                                                          ? const Border(
-                                                              bottom: BorderSide(
-                                                                  color: AppColors
-                                                                      .border,
-                                                                  width: 0.5))
-                                                          : null,
-                                                    ),
-                                                    child: Text(filtered[idx],
-                                                        style:
-                                                            bodyStyle(size: 13)),
-                                                  ),
+                                                decoration: BoxDecoration(
+                                                  border: idx <
+                                                          filtered.length - 1
+                                                      ? const Border(
+                                                          bottom: BorderSide(
+                                                              color: AppColors
+                                                                  .border,
+                                                              width: 0.5))
+                                                      : null,
                                                 ),
+                                                child: Text(filtered[idx],
+                                                    style: bodyStyle(size: 13)),
+                                              ),
+                                            ),
                                           ),
                               ),
                             ],
@@ -1223,7 +1206,7 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
     Overlay.of(context).insert(_districtOverlay!);
   }
 
-  // ── API: Countries ──────────────────────────────────────────────────────────
+  // ── API: Countries / States / Districts / Pincode ───────────────────────────
   Future<void> _loadCountries() async {
     if (_countriesLoading || _countries.isNotEmpty) return;
     setState(() => _countriesLoading = true);
@@ -1234,8 +1217,8 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
       if (res.statusCode == 200) {
         final decoded = jsonDecode(res.body);
         final List data = decoded['data'] ?? [];
-        final names =
-            data.map<String>((e) => e['country'] as String).toList()..sort();
+        final names = data.map<String>((e) => e['country'] as String).toList()
+          ..sort();
         final isoMap = <String, String>{};
         for (final entry in data) {
           final name = entry['country'] as String? ?? '';
@@ -1264,8 +1247,7 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
     try {
       final res = await http
           .post(
-            Uri.parse(
-                'https://countriesnow.space/api/v0.1/countries/states'),
+            Uri.parse('https://countriesnow.space/api/v0.1/countries/states'),
             headers: {'Content-Type': 'application/json'},
             body: jsonEncode({'country': countryName}),
           )
@@ -1273,8 +1255,8 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
       if (res.statusCode == 200) {
         final decoded = jsonDecode(res.body);
         final List stateList = decoded['data']?['states'] ?? [];
-        final names =
-            stateList.map<String>((s) => s['name'] as String).toList()..sort();
+        final names = stateList.map<String>((s) => s['name'] as String).toList()
+          ..sort();
         if (mounted) setState(() => _states = names);
       }
     } catch (_) {
@@ -1344,14 +1326,13 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
       return;
     }
 
-    // Org code – show "50 – Org Name" if we already have the list
     final orgCodeRaw =
-        (data['orgcode'] ?? data['ORGCODE'] ?? data['orgCode'] ?? '').toString();
+        (data['orgcode'] ?? data['ORGCODE'] ?? data['orgCode'] ?? '')
+            .toString();
     _selectedOrgCode = int.tryParse(orgCodeRaw);
     if (_orgList.isNotEmpty && _selectedOrgCode != null) {
       final match = _orgList.firstWhere(
-          (o) =>
-              (o['orgcode'] ?? o['orgCode'] ?? '').toString() == orgCodeRaw,
+          (o) => (o['orgcode'] ?? o['orgCode'] ?? '').toString() == orgCodeRaw,
           orElse: () => {});
       final orgName = (match['name'] ?? '').toString();
       _brnOrgCtrl.text =
@@ -1462,7 +1443,6 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
   bool validate() {
     bool isValid = true;
     setState(() {
-      // Org code
       if (_selectedOrgCode == null && _brnOrgCtrl.text.trim().isEmpty) {
         _errors['orgCode'] = 'Organisation Code required';
         isValid = false;
@@ -1509,7 +1489,7 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
         children: [
           AmsFormGrid(
             children: [
-              // ── ORGANISATION CODE – searchable dropdown ─────────────────────
+              // ── ORGANISATION CODE ──────────────────────────────────────────
               AmsField(
                 label: 'Organisation Code',
                 required: true,
@@ -1539,6 +1519,10 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
                 ),
               ),
 
+              // ── BRANCH CODE ────────────────────────────────────────────────
+              // Create mode  → editable
+              // Edit mode    → disabled (readOnly = true)
+              // View mode    → disabled (readOnly = true)
               AmsField(
                 label: 'Branch Code',
                 required: true,
@@ -1546,7 +1530,8 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
                 tooltip: 'Unique branch identification code.',
                 child: AmsTextInput(
                   controller: _brnCdCtrl,
-                  readOnly: widget.isViewMode,
+                  readOnly:
+                      widget.isViewMode || widget.isEditMode, // ← KEY CHANGE
                   keyboardType: TextInputType.number,
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   placeholder: 'e.g. 101',
@@ -1555,6 +1540,7 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
                   isValid:
                       _errors['brnCd'] == null && _brnCdCtrl.text.isNotEmpty,
                   onChanged: (v) {
+                    // onChanged fires only in create mode since readOnly=true in edit/view
                     setState(() {
                       _errors['brnCd'] =
                           v.trim().isEmpty ? 'Branch Code required' : null;
@@ -1563,6 +1549,7 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
                   },
                 ),
               ),
+
               AmsField(
                 label: 'Branch name',
                 required: true,
@@ -1624,8 +1611,18 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
                       final formattedDataDate =
                           "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
                       const monthNames = [
-                        "Jan","Feb","Mar","Apr","May","Jun",
-                        "Jul","Aug","Sep","Oct","Nov","Dec"
+                        "Jan",
+                        "Feb",
+                        "Mar",
+                        "Apr",
+                        "May",
+                        "Jun",
+                        "Jul",
+                        "Aug",
+                        "Sep",
+                        "Oct",
+                        "Nov",
+                        "Dec"
                       ];
                       final displayDate =
                           '${picked.day.toString().padLeft(2, '0')}-${monthNames[picked.month - 1]}-${picked.year}';
@@ -1671,11 +1668,9 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
               ),
             ],
           ),
-
           const SizedBox(height: 24),
           sectionTitle('Address & Contact', color: AppColors.tBlue),
           const SizedBox(height: 16),
-
           AmsFormGrid(
             children: [
               AmsField(
@@ -1689,7 +1684,6 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
                   onChanged: (v) => widget.onChanged('address', v),
                 ),
               ),
-
               AmsField(
                 label: 'Country',
                 labelAbove: true,
@@ -1714,7 +1708,6 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
                   ),
                 ),
               ),
-
               AmsField(
                 label: 'State code',
                 labelAbove: true,
@@ -1739,7 +1732,6 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
                   ),
                 ),
               ),
-
               AmsField(
                 label: 'Distric code',
                 labelAbove: true,
@@ -1764,7 +1756,6 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
                   ),
                 ),
               ),
-
               AmsField(
                 label: 'Pincode',
                 labelAbove: true,
@@ -1794,7 +1785,6 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
                   ],
                 ),
               ),
-
               AmsField(
                 label: 'Address line',
                 labelAbove: true,

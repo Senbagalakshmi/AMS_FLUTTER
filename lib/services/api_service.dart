@@ -803,7 +803,7 @@ class ApiService {
   Future<bool> deleteUser(int orgCode, String usersCd) async {
     try {
       final res = await http.delete(
-        Uri.parse('$baseUrl/users/$orgCode/$usersCd'),
+        Uri.parse('$baseUrl/users/$usersCd?orgcode=$orgCode'),
         headers: _headers,
       );
       return res.statusCode >= 200 && res.statusCode < 300;
