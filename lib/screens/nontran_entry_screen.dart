@@ -2545,6 +2545,13 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
           _errors['gender'] = 'Gender required';
           isValid = false;
         }
+        if (_emailCtrl.text.trim().isEmpty) {
+          _errors['emailid'] = 'Email Id required';
+          isValid = false;
+        } else if (!_isValidEmail(_emailCtrl.text.trim())) {
+          _errors['emailid'] = 'Invalid email format';
+          isValid = false;
+        }
         if (_mobileCtrl.text.trim().isNotEmpty) {
           final mobileStr = _mobileCtrl.text.trim();
           final callCodeStr = _callCodeCtrl.text.trim();
@@ -2905,6 +2912,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
               ),
               AmsField(
                 label: 'Email Id',
+                required: true,
                 labelAbove: true,
                 tooltip: 'Official email address for communication.',
                 child: AmsTextInput(
@@ -2916,7 +2924,9 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                   errorText: _errors['emailid'],
                   onChanged: (v) {
                     setState(() {
-                      if (v.isNotEmpty && !_isValidEmail(v)) {
+                      if (v.trim().isEmpty) {
+                        _errors['emailid'] = 'Email Id required';
+                      } else if (!_isValidEmail(v)) {
                         _errors['emailid'] = 'Invalid email format';
                       } else {
                         _errors['emailid'] = null;
