@@ -3195,7 +3195,12 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                 label: 'Picture',
                 labelAbove: true,
                 tooltip: 'User profile picture reference or URL.',
-                child: AmsFilePicker(
+                child: widget.isViewMode
+                    ? AmsTextInput(
+                        controller: _uPictureCtrl,
+                        readOnly: true,
+                      )
+                    : AmsFilePicker(
                   initialValue:
                       _uPictureCtrl.text.isNotEmpty ? _uPictureCtrl.text : null,
                   onFileSelected: (name, bytes) async {
