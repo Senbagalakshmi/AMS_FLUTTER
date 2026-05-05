@@ -4441,6 +4441,7 @@ class _ModSubModuleGridState extends State<_ModSubModuleGrid> {
                         child: AmsTextInput(
                           initialValue: (_list[i]['subModuleId'] ??
                                   _list[i]['sub_module_id'] ??
+                                  _list[i]['sub_moduleid'] ??
                                   _list[i]['submoduleid'] ??
                                   '')
                               .toString(),
