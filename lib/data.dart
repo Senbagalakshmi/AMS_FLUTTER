@@ -137,6 +137,24 @@ final Map<String, Auth101Config> auth101 = {
       approvalReq: true,
       isTran: false,
       levels: 1),
+  'RPT-PL': const Auth101Config(
+      id: 'RPT-PL',
+      name: 'Profit and Loss',
+      approvalReq: false,
+      isTran: false,
+      levels: 0),
+  'RPT-TB': const Auth101Config(
+      id: 'RPT-TB',
+      name: 'Trial Balance',
+      approvalReq: false,
+      isTran: false,
+      levels: 0),
+  'RPT-BS': const Auth101Config(
+      id: 'RPT-BS',
+      name: 'Balance Sheet',
+      approvalReq: false,
+      isTran: false,
+      levels: 0),
 };
 
 final Map<String, List<Auth103Limit>> auth103 = {
@@ -206,6 +224,9 @@ final Map<String, String> nonTranProgPkPrefix = {
   'PROG-CRT': 'PRG',
   'MENU-MST': 'MNU',
   'BRN-CRT': 'BRN',
+  'RPT-PL': 'RPL',
+  'RPT-TB': 'RTB',
+  'RPT-BS': 'RBS',
 };
 
 List<QueueEntry> seedQueue() => [

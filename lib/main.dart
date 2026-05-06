@@ -36,6 +36,7 @@ import 'screens/splash_screen.dart';
 import 'screens/journal_entry_screen.dart';
 import 'screens/journal_list_screen.dart';
 import 'screens/gl_balance_screen.dart';
+import 'screens/trial_balance_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -533,6 +534,14 @@ class _AmsRootState extends State<AmsRoot> {
             onBackToModule: () => _handleProceed('GL'),
             userName: _state.userName,
           );
+            //trial balance - add
+        } else if (_state.selectedProg == 'RPT-TB') {
+          body = TrialBalanceScreen(
+            onBack: () => _navigate('list'),
+            onBackToModule: () => _handleProceed('TRANSACTIONS'),
+            userName: _state.userName,
+          );
+           //trial balance - end
         } else if (_state.selectedProg == 'ORG-CRT') {
           body = OrganisationScreen(
             onBack: () => _navigate('list'),

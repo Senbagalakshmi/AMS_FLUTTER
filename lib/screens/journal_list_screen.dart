@@ -231,9 +231,9 @@ class _JournalListScreenState extends State<JournalListScreen> {
   }
 
   void _showJournalDetails(Map<String, dynamic> header) async {
-    final orgCode = header['orgcode'] as int;
-    final dateStr = header['trandate'].toString().split('T').first;
-    final tranId = header['tranid'] as int;
+    final orgCode = header['orgcode'] ?? header['ORGCODE'] ?? 50;
+    final dateStr = (header['trandate'] ?? header['TRANDATE']).toString().split('T').first;
+    final tranId = header['tranid'] ?? header['TRANID'] ?? 0;
 
     showDialog(
       context: context,
@@ -310,16 +310,26 @@ class _JournalListScreenState extends State<JournalListScreen> {
         headingRowColor: MaterialStateProperty.all(const Color(0xFFF8FAFC)),
         columns: const [
           DataColumn(label: Text('Line#')),
-          DataColumn(label: Text('Account No')),
+          DataColumn(label: Text('Account')),
+          DataColumn(label: Text('Account Name')),
           DataColumn(label: Text('Debit')),
           DataColumn(label: Text('Credit')),
         ],
-        rows: details.map((d) => DataRow(cells: [
-          DataCell(Text(d['lfgid']?.toString() ?? '-')),
-          DataCell(Text(d['acnum']?.toString() ?? '-')),
-          DataCell(Text(NumberFormat('#,##,##0.00').format(d['trandbamt'] ?? 0))),
-          DataCell(Text(NumberFormat('#,##,##0.00').format(d['trancramt'] ?? 0))),
-        ])).toList(),
+        rows: details.map((d) {
+          final legid = d['legid'] ?? d['LEGID'] ?? '-';
+          final acnum = d['acnum'] ?? d['ACNUM'] ?? '-';
+          final accname = d['accname'] ?? d['ACCNAME'] ?? '-';
+          final debit = d['trandbamt'] ?? d['TRANDBAMT'] ?? 0;
+          final credit = d['trancramt'] ?? d['TRANCRAMT'] ?? 0;
+          
+          return DataRow(cells: [
+            DataCell(Text(legid.toString())),
+            DataCell(Text(acnum.toString())),
+            DataCell(Text(accname.toString())),
+            DataCell(Text(NumberFormat('#,##,##0.00').format(debit))),
+            DataCell(Text(NumberFormat('#,##,##0.00').format(credit))),
+          ]);
+        }).toList(),
       ),
     );
   }

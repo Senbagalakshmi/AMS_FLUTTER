@@ -1562,6 +1562,7 @@ class AmsSidebar extends StatefulWidget {
 class _AmsSidebarState extends State<AmsSidebar> {
   String openMenu = ''; // 'masters', 'gl', 'config', 'auth'
   bool openGlSubCategory = false;
+  bool openReportsSubCategory = false;
 
   @override
   void initState() {
@@ -1597,8 +1598,9 @@ class _AmsSidebarState extends State<AmsSidebar> {
       openMenu = 'config';
     } else if (widget.currentScreen == 'nontranauth') {
       openMenu = 'auth';
-    } else if (['GL-JRN'].contains(widget.selectedProg)) {
+    }  else if (['GL-JRN', 'RPT-PL', 'RPT-TB', 'RPT-BS'].contains(widget.selectedProg)) {
       openMenu = 'transactions';
+      openReportsSubCategory = ['RPT-PL', 'RPT-TB', 'RPT-BS'].contains(widget.selectedProg);
     }
   }
 
@@ -1824,7 +1826,7 @@ class _AmsSidebarState extends State<AmsSidebar> {
 
                 // 🔹 TRANSACTIONS
                 AmsSidebarItem(
-                  label: widget.isCollapsed ? '' : 'Transactions',
+                  label: widget.isCollapsed ? '' : 'Accountant Desk',
                   icon: openMenu == 'transactions'
                       ? Icons.receipt_long_rounded
                       : Icons.receipt_long_outlined,
@@ -1847,6 +1849,54 @@ class _AmsSidebarState extends State<AmsSidebar> {
                     isSelected: widget.selectedProg == 'GL-JRN',
                     onTap: () => widget.onNavigate('nontran', 'GL-JRN'),
                   ),
+                   AmsSubSidebarItem(
+                    label: 'Reports',
+                    isCollapsed: widget.isCollapsed,
+                    icon: Icons.pie_chart_rounded,
+                    isSelected: [
+                      'RPT-PL',
+                      'RPT-TB',
+                      'RPT-BS'
+                    ].contains(widget.selectedProg),
+                    trailingIcon: openReportsSubCategory
+                        ? Icons.keyboard_arrow_down_rounded
+                        : Icons.keyboard_arrow_right_rounded,
+                    onTap: () {
+                      setState(() {
+                        openReportsSubCategory = !openReportsSubCategory;
+                      });
+                    },
+                  ),
+                  if (openReportsSubCategory) ...[
+                    AmsSubSidebarItem(
+                      label: 'Profit and Loss',
+                      isCollapsed: widget.isCollapsed,
+                      icon: Icons.trending_up_rounded,
+                      indentLevel: 1,
+                      isSelected: widget.selectedProg == 'RPT-PL',
+                      onTap: () => widget.onNavigate('nontran', 'RPT-PL'),
+                    ),
+                    AmsSubSidebarItem(
+                      label: 'Trial Balance',
+                      isCollapsed: widget.isCollapsed,
+                      icon: Icons.balance_rounded,
+                      indentLevel: 1,
+                      isSelected: widget.selectedProg == 'RPT-TB',
+                      onTap: () => widget.onNavigate('nontran', 'RPT-TB'),
+                    ),
+                    AmsSubSidebarItem(
+                      label: 'Balance Sheet',
+                      isCollapsed: widget.isCollapsed,
+                      icon: Icons.account_balance_wallet_rounded,
+                      indentLevel: 1,
+                      isSelected: widget.selectedProg == 'RPT-BS',
+                      onTap: () => widget.onNavigate('nontran', 'RPT-BS'),
+                    ),
+                  ],
+
+
+
+
                 ],
 
                 const SizedBox(height: 16),
