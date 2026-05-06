@@ -100,20 +100,37 @@ class UserMappingService {
   Map<String, String> get _headers => apiService.headers;
 
   // ── GET all  →  GET /api/user-mapping ────────────────────────────────────
-  Future<List<UserMappingModel>> getAll() async {
+  Future<PaginatedResult<UserMappingModel>?> getAll(
+      {int page = 0, int size = 10}) async {
     try {
-      final res = await http.get(Uri.parse(_baseUrl), headers: _headers);
+      final res = await http.get(
+        Uri.parse('$_baseUrl?page=$page&size=$size'),
+        headers: _headers,
+      );
       if (res.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(res.body);
-        return data
-            .map((e) => UserMappingModel.fromJson(e as Map<String, dynamic>))
-            .toList();
+        final dynamic decoded = jsonDecode(res.body);
+        if (decoded is List) {
+          return PaginatedResult(
+            items: decoded
+                .map((e) => UserMappingModel.fromJson(e as Map<String, dynamic>))
+                .toList(),
+            totalElements: decoded.length,
+          );
+        } else if (decoded is Map && decoded.containsKey('content')) {
+          final List<dynamic> content = decoded['content'] ?? [];
+          return PaginatedResult(
+            items: content
+                .map((e) => UserMappingModel.fromJson(e as Map<String, dynamic>))
+                .toList(),
+            totalElements: decoded['totalElements'] ?? content.length,
+          );
+        }
       }
       _log('getAll', res);
-      return [];
+      return null;
     } catch (e) {
       _err('getAll', e);
-      return [];
+      return null;
     }
   }
 

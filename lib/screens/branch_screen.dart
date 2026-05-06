@@ -33,6 +33,7 @@ class _BranchScreenState extends State<BranchScreen> {
   bool _isLoading = true;
   int _totalItems = 0;
   String _searchQuery = '';
+  int _currentPage = 1;
   int _pgmStatus = 1;
   bool _isSaving = false;
   final Map<String, dynamic> _formData = {};
@@ -46,7 +47,10 @@ class _BranchScreenState extends State<BranchScreen> {
   }
 
   Future<void> _loadBranches(int page) async {
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _currentPage = page;
+    });
     final result = await branchApiService.getBranches(page: page - 1, size: 10);
     if (mounted) {
       setState(() {
@@ -313,11 +317,14 @@ class _BranchScreenState extends State<BranchScreen> {
             ),
           ),
           Expanded(
-            child: _isLoading
-                ? const AmsListSkeleton()
-                : _buildListTable(filtered),
+            child: AmsPaginatedView<Map<String, dynamic>>(
+              items: filtered,
+              totalRecords: _totalItems,
+              currentPage: _currentPage,
+              onPageChanged: (page) => _loadBranches(page),
+              builder: (ctx, currentItems) => _buildListTable(currentItems),
+            ),
           ),
-          _buildPaginationFooter(filtered.length),
         ],
       ),
     );
@@ -494,21 +501,7 @@ class _BranchScreenState extends State<BranchScreen> {
             child: Icon(icon, size: 16, color: color)));
   }
 
-  Widget _buildPaginationFooter(int total) {
-    return Padding(
-        padding: const EdgeInsets.all(16),
-        child:
-            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          Text('Showing 1–$total of $total',
-              style: bodyStyle(size: 13, color: AppColors.ink3)),
-          Row(children: [
-            IconButton(
-                icon: const Icon(Icons.chevron_left_rounded), onPressed: null),
-            IconButton(
-                icon: const Icon(Icons.chevron_right_rounded), onPressed: null)
-          ]),
-        ]));
-  }
+
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════

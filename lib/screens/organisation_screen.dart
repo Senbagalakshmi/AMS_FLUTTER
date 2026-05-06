@@ -89,6 +89,7 @@ class _OrganisationScreenState extends State<OrganisationScreen> {
   String _searchQuery = '';
   List<Map<String, dynamic>> _organisations = [];
   int _totalRecords = 0;
+  int _currentPage = 1;
 
   // Error States
   String? _orgCodeError;
@@ -119,7 +120,10 @@ class _OrganisationScreenState extends State<OrganisationScreen> {
   }
 
   Future<void> _fetchOrganisations(int page) async {
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _currentPage = page;
+    });
     final res = await orgApiService.getAllOrganisations(page: page - 1);
     if (res != null) {
       setState(() {
@@ -510,6 +514,7 @@ class _OrganisationScreenState extends State<OrganisationScreen> {
       child: AmsPaginatedView<Map<String, dynamic>>(
         items: _organisations,
         totalRecords: _totalRecords,
+        currentPage: _currentPage,
         onPageChanged: (page) => _fetchOrganisations(page),
         builder: (context, items) {
           final q = _searchQuery.toLowerCase();

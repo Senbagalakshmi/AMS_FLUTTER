@@ -32,22 +32,27 @@ class _UserAccessScreenState extends State<UserAccessScreen> {
   bool _showForm = false;
   bool _isViewOnly = false;
   bool _isEditMode = false;
-  Map<String, dynamic>? _selectedRecord;
+  int _currentPage = 1;
+  int _totalItems = 0;
+  bool _isLoading = false;
   List<Map<String, dynamic>> _records = [];
-  bool _isLoading = true;
   String _searchQuery = '';
-  bool _isSaving = false;
+  final _fieldsKey = GlobalKey<UserAccessFieldsState>();
+  Map<String, dynamic>? _selectedRecord;
   final Map<String, dynamic> _formData = {};
-  final GlobalKey<UserAccessFieldsState> _fieldsKey =
-      GlobalKey<UserAccessFieldsState>();
+  bool _isSaving = false;
 
-  Future<void> _loadRecords() async {
-    setState(() => _isLoading = true);
+  Future<void> _loadRecords({int page = 1}) async {
+    setState(() {
+      _isLoading = true;
+      _currentPage = page;
+    });
     try {
-      final items = await userMappingService.getAll();
+      final res = await userMappingService.getAll(page: page - 1, size: 10);
       if (mounted) {
         setState(() {
-          _records = items.map((m) => m.toScreenMap()).toList();
+          _records = res?.items.map((m) => m.toScreenMap()).toList() ?? [];
+          _totalItems = res?.totalElements ?? 0;
           _isLoading = false;
         });
       }
@@ -87,7 +92,7 @@ class _UserAccessScreenState extends State<UserAccessScreen> {
   @override
   void initState() {
     super.initState();
-    _loadRecords();
+    _loadRecords(page: 1);
   }
 
   void _enterViewMode(Map<String, dynamic> record, {bool viewOnly = true}) {
@@ -275,7 +280,7 @@ class _UserAccessScreenState extends State<UserAccessScreen> {
                 const SizedBox(width: 16),
                 IconButton(
                   icon: const Icon(Icons.refresh_rounded),
-                  onPressed: _loadRecords,
+                  onPressed: () => _loadRecords(page: 1),
                   tooltip: 'Refresh',
                 ),
                 const SizedBox(width: 16),
@@ -288,11 +293,14 @@ class _UserAccessScreenState extends State<UserAccessScreen> {
             ),
           ),
           Expanded(
-            child: _isLoading
-                ? const AmsListSkeleton()
-                : _buildListTable(filtered),
+            child: AmsPaginatedView<Map<String, dynamic>>(
+              items: filtered,
+              totalRecords: _totalItems,
+              currentPage: _currentPage,
+              onPageChanged: (page) => _loadRecords(page: page),
+              builder: (ctx, items) => _buildListTable(items),
+            ),
           ),
-          _buildPaginationFooter(filtered.length),
         ],
       ),
     );
@@ -521,25 +529,6 @@ class _UserAccessScreenState extends State<UserAccessScreen> {
           border: Border.all(color: AppColors.border),
         ),
         child: Icon(icon, size: 16, color: color),
-      ),
-    );
-  }
-
-  Widget _buildPaginationFooter(int total) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text('Showing 1–$total of $total',
-              style: bodyStyle(size: 13, color: AppColors.ink3)),
-          Row(children: [
-            IconButton(
-                icon: const Icon(Icons.chevron_left_rounded), onPressed: null),
-            IconButton(
-                icon: const Icon(Icons.chevron_right_rounded), onPressed: null),
-          ]),
-        ],
       ),
     );
   }

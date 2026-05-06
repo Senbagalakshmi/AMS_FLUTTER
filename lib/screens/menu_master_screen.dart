@@ -429,20 +429,27 @@ class _MenuHierarchyViewState extends State<_MenuHierarchyView> {
   List<Map<String, dynamic>> _subs = [];
   List<Map<String, dynamic>> _items = [];
   bool _loading = false;
+  int _totalItems = 0;
+  int _currentPage = 1;
 
   @override
   void initState() {
     super.initState();
-    _loadAll();
+    _loadAll(1);
   }
 
-  Future<void> _loadAll() async {
-    setState(() => _loading = true);
-    final pRes = await menuApiService.getParentMenus(size: 100);
-    final sRes = await menuApiService.getSubMenus(size: 500);
+  Future<void> _loadAll(int page) async {
+    setState(() {
+      _loading = true;
+      _currentPage = page;
+    });
+    // We paginate parents, but for now we fetch all subs/items for simplicity in building the tree
+    final pRes = await menuApiService.getParentMenus(page: page - 1, size: 10);
+    final sRes = await menuApiService.getSubMenus(size: 1000);
     final iRes = await menuApiService.getMenuPrograms(size: 1000);
     setState(() {
       _parents = pRes?.items ?? [];
+      _totalItems = pRes?.totalElements ?? 0;
       _subs = sRes?.items ?? [];
       _items = iRes?.items ?? [];
       _loading = false;
@@ -454,33 +461,39 @@ class _MenuHierarchyViewState extends State<_MenuHierarchyView> {
     if (_loading) return const Center(child: CircularProgressIndicator());
     if (_parents.isEmpty) return const Center(child: Text('No menu structure found. Click "New Menu Path" to start.'));
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(8),
-      itemCount: _parents.length,
-      itemBuilder: (context, idx) {
-        final p = _parents[idx];
-        final pCode = (p['menuCode'] ?? p['Menucode']).toString();
-        final pName = (p['menu_Descn'] ?? p['menuDescn'] ?? p['MENU_DESCN'] ?? 'Untitled Parent').toString();
-        final hasSub = (p['subMenuReq'] == 1 || p['SUBMENUREQ'] == 1);
+    return AmsPaginatedView<Map<String, dynamic>>(
+      items: _parents,
+      totalRecords: _totalItems,
+      currentPage: _currentPage,
+      onPageChanged: (page) => _loadAll(page),
+      builder: (context, currentParents) => ListView.builder(
+        padding: const EdgeInsets.all(8),
+        itemCount: currentParents.length,
+        itemBuilder: (context, idx) {
+          final p = currentParents[idx];
+          final pCode = (p['menuCode'] ?? p['Menucode']).toString();
+          final pName = (p['menu_Descn'] ?? p['menuDescn'] ?? p['MENU_DESCN'] ?? 'Untitled Parent').toString();
+          final hasSub = (p['subMenuReq'] == 1 || p['SUBMENUREQ'] == 1);
 
-        final pSubs = _subs.where((s) => (s['menuCode'] ?? s['Menucode']).toString() == pCode).toList();
+          final pSubs = _subs.where((s) => (s['menuCode'] ?? s['Menucode']).toString() == pCode).toList();
 
-        return ExpansionTile(
-          leading: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(color: AppColors.tBlueLt, borderRadius: BorderRadius.circular(4)),
-            child: Text(pCode, style: bodyStyle(weight: FontWeight.w700, color: AppColors.tBlue, size: 12)),
-          ),
-          title: Text(pName, style: bodyStyle(weight: FontWeight.w700, size: 14)),
-          subtitle: Text(hasSub ? '${pSubs.length} Submenus' : 'Direct Link', style: bodyStyle(size: 11, color: AppColors.ink3)),
-          children: [
-            if (!hasSub)
-               _buildDirectProgram(pCode)
-            else
-               ...pSubs.map((s) => _buildSubMenuTile(pCode, s)).toList(),
-          ],
-        );
-      },
+          return ExpansionTile(
+            leading: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(color: AppColors.tBlueLt, borderRadius: BorderRadius.circular(4)),
+              child: Text(pCode, style: bodyStyle(weight: FontWeight.w700, color: AppColors.tBlue, size: 12)),
+            ),
+            title: Text(pName, style: bodyStyle(weight: FontWeight.w700, size: 14)),
+            subtitle: Text(hasSub ? '${pSubs.length} Submenus' : 'Direct Link', style: bodyStyle(size: 11, color: AppColors.ink3)),
+            children: [
+              if (!hasSub)
+                 _buildDirectProgram(pCode)
+              else
+                 ...pSubs.map((s) => _buildSubMenuTile(pCode, s)).toList(),
+            ],
+          );
+        },
+      ),
     );
   }
 

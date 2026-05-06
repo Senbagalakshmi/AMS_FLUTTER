@@ -41,6 +41,7 @@ class _GLMasterScreenState extends State<GLMasterScreen> {
   // ── Data ─────────────────────────────────────────────────────────────
   List<Map<String, dynamic>> _accounts = [];
   List<Map<String, dynamic>> _categoryList = []; // [{glCatCd, glCatName, ...}]
+  int _totalItems = 0;
 
   // ── Controllers & Focus ──────────────────────────────────────────────
   final _orgCodeController = TextEditingController();
@@ -115,12 +116,14 @@ class _GLMasterScreenState extends State<GLMasterScreen> {
     setState(() {
       _loadingList = true;
       _listError = null;
+      _currentPage = page;
     });
     final result = await apiService.getAllGlMasters(page: page - 1, size: _pageSize);
     setState(() {
       _loadingList = false;
       if (result != null) {
         _accounts = result.items.reversed.toList();
+        _totalItems = result.totalElements;
       } else {
         _listError = 'Failed to load GL Master records.';
       }
@@ -747,8 +750,16 @@ class _GLMasterScreenState extends State<GLMasterScreen> {
               ],
             ),
           ),
-          Expanded(child: _buildTable()),
-          _buildPaginationFooter(),
+          Expanded(
+            child: AmsPaginatedView<Map<String, dynamic>>(
+              items: _accounts,
+              itemsPerPage: _pageSize,
+              currentPage: _currentPage,
+              totalRecords: _totalItems,
+              onPageChanged: (page) => _loadGlMasters(page: page),
+              builder: (context, paginatedItems) => _buildTable(paginatedItems),
+            ),
+          ),
         ],
       ),
     );
@@ -758,7 +769,7 @@ class _GLMasterScreenState extends State<GLMasterScreen> {
   // Table
   // ─────────────────────────────────────────────────────────────────────
 
-  Widget _buildTable() {
+  Widget _buildTable(List<Map<String, dynamic>> items) {
     if (_loadingList && _accounts.isEmpty) {
       return const Padding(
         padding: EdgeInsets.all(16.0),
@@ -779,27 +790,19 @@ class _GLMasterScreenState extends State<GLMasterScreen> {
             AmsButton(
               label: 'Retry',
               variant: AmsButtonVariant.outline,
-              onPressed: _loadGlMasters,
+              onPressed: () => _loadGlMasters(page: _currentPage),
             ),
           ],
         ),
       );
     }
 
-    final filtered = _accounts.where((c) {
+    final filtered = items.where((c) {
       if (_searchQuery.isEmpty) return true;
       final q = _searchQuery.toLowerCase();
       return c['glName'].toString().toLowerCase().contains(q) ||
           c['glNo'].toString().toLowerCase().contains(q);
     }).toList();
-
-    final startIndex = (_currentPage - 1) * _pageSize;
-    final paginated = filtered.skip(startIndex).take(_pageSize).toList();
-
-    if (paginated.isEmpty && filtered.isNotEmpty) {
-      WidgetsBinding.instance
-          .addPostFrameCallback((_) => setState(() => _currentPage = 1));
-    }
 
     if (filtered.isEmpty) {
       return Center(
@@ -828,10 +831,10 @@ class _GLMasterScreenState extends State<GLMasterScreen> {
 
     return ListView.separated(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      itemCount: paginated.length,
+      itemCount: filtered.length,
       separatorBuilder: (_, __) => const SizedBox(height: 12),
       itemBuilder: (_, idx) {
-        final c = paginated[idx];
+        final c = filtered[idx];
         final catName = _catName(c['glCatCd']);
         final statusLbl = _statusLabel(c['status']);
         final isActive = statusLbl == 'Active';

@@ -835,6 +835,7 @@ class _UserListViewState extends State<_UserListView> {
   int _totalItems = 0;
   bool _loading = true;
   String _searchQuery = '';
+  int _currentPage = 1;
 
   @override
   void initState() {
@@ -843,7 +844,10 @@ class _UserListViewState extends State<_UserListView> {
   }
 
   Future<void> _loadUsers(int page) async {
-    setState(() => _loading = true);
+    setState(() {
+      _loading = true;
+      _currentPage = page;
+    });
     final result = await apiService.getUsers(page: page - 1, size: 10);
     if (mounted) {
       setState(() {
@@ -921,7 +925,8 @@ class _UserListViewState extends State<_UserListView> {
           child: AmsPaginatedView<Map<String, dynamic>>(
             items: filteredItems.reversed.toList(),
             totalRecords: _totalItems,
-            onPageChanged: _loadUsers,
+            currentPage: _currentPage,
+            onPageChanged: (page) => _loadUsers(page),
             builder: (ctx, currentItems) => ListView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
               itemCount: currentItems.length,
@@ -1052,6 +1057,7 @@ class _RoleListViewState extends State<_RoleListView> {
   int _totalItems = 0;
   bool _loading = true;
   String _searchQuery = '';
+  int _currentPage = 1;
 
   @override
   void initState() {
@@ -1060,7 +1066,10 @@ class _RoleListViewState extends State<_RoleListView> {
   }
 
   Future<void> _loadRoles(int page) async {
-    setState(() => _loading = true);
+    setState(() {
+      _loading = true;
+      _currentPage = page;
+    });
     final result = await apiService.getRoles(page: page - 1, size: 10);
     if (mounted) {
       setState(() {
@@ -1124,7 +1133,8 @@ class _RoleListViewState extends State<_RoleListView> {
           child: AmsPaginatedView<Map<String, dynamic>>(
             items: filteredItems.reversed.toList(),
             totalRecords: _totalItems,
-            onPageChanged: _loadRoles,
+            currentPage: _currentPage,
+            onPageChanged: (page) => _loadRoles(page),
             builder: (ctx, currentItems) => ListView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
               itemCount: currentItems.length,
@@ -1256,6 +1266,7 @@ class _UserRoleListViewState extends State<_UserRoleListView> {
   List<Map<String, dynamic>>? _data;
   int _totalItems = 0;
   bool _loading = true;
+  int _currentPage = 1;
 
   @override
   void initState() {
@@ -1264,7 +1275,10 @@ class _UserRoleListViewState extends State<_UserRoleListView> {
   }
 
   Future<void> _load(int page) async {
-    setState(() => _loading = true);
+    setState(() {
+      _loading = true;
+      _currentPage = page;
+    });
     final result =
         await apiService.getUserRoleAssigns(page: page - 1, size: 10);
     if (mounted) {
@@ -1284,7 +1298,8 @@ class _UserRoleListViewState extends State<_UserRoleListView> {
     return AmsPaginatedView<Map<String, dynamic>>(
       items: (_data ?? []).reversed.toList(),
       totalRecords: _totalItems,
-      onPageChanged: _load,
+      currentPage: _currentPage,
+      onPageChanged: (page) => _load(page),
       builder: (ctx, currentItems) => ListView.builder(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
         itemCount: currentItems.length,
@@ -1332,6 +1347,7 @@ class _ModuleListViewState extends State<_ModuleListView> {
   int _totalItems = 0;
   bool _loading = true;
   String _searchQuery = '';
+  int _currentPage = 1;
 
   @override
   void initState() {
@@ -1340,7 +1356,10 @@ class _ModuleListViewState extends State<_ModuleListView> {
   }
 
   Future<void> _load(int page) async {
-    setState(() => _loading = true);
+    setState(() {
+      _loading = true;
+      _currentPage = page;
+    });
     final result = await apiService.getModules(page: page - 1, size: 10);
     if (mounted) {
       setState(() {
@@ -1405,7 +1424,8 @@ class _ModuleListViewState extends State<_ModuleListView> {
           child: AmsPaginatedView<Map<String, dynamic>>(
             items: filteredItems.reversed.toList(),
             totalRecords: _totalItems,
-            onPageChanged: _load,
+            currentPage: _currentPage,
+            onPageChanged: (page) => _load(page),
             builder: (ctx, currentItems) => ListView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               itemCount: currentItems.length,

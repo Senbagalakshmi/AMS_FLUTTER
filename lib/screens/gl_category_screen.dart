@@ -32,6 +32,7 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
   List<Map<String, dynamic>> _categories = [];
   bool _isLoading = false;
   String? _loadError;
+  int _totalItems = 0;
 
   final _orgCodeController = TextEditingController();
 
@@ -79,6 +80,7 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
     setState(() {
       _isLoading = true;
       _loadError = null;
+      _currentPage = page;
     });
 
     final result =
@@ -88,6 +90,7 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
       _isLoading = false;
       if (result != null) {
         _categories = result.items;
+        _totalItems = result.totalElements;
         // 🔥 SORT BY glCatCd DESCENDING (LATEST ON TOP)
         _categories.sort((a, b) {
           final idA = int.tryParse(_getCode(a)) ?? 0;
@@ -689,8 +692,16 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
               ],
             ),
           ),
-          Expanded(child: _buildTable()),
-          _buildPaginationFooter(),
+          Expanded(
+            child: AmsPaginatedView<Map<String, dynamic>>(
+              items: _categories,
+              itemsPerPage: _pageSize,
+              currentPage: _currentPage,
+              totalRecords: _totalItems,
+              onPageChanged: (page) => _loadCategories(page: page),
+              builder: (context, paginatedItems) => _buildTable(paginatedItems),
+            ),
+          ),
         ],
       ),
     );
@@ -1113,53 +1124,41 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
 
   // ─── TABLE ────────────────────────────────────────────────────────────────
 
-  Widget _buildTable() {
-    // Show error state
+  Widget _buildTable(List<Map<String, dynamic>> items) {
+    if (_isLoading && _categories.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.all(16.0),
+        child: AmsTableSkeleton(rows: 8),
+      );
+    }
+
     if (_loadError != null) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.cloud_off_rounded, size: 40, color: AppColors.red),
-            const SizedBox(height: 16),
-            Text(_loadError!,
-                style: bodyStyle(
-                    size: 14, color: AppColors.red, weight: FontWeight.w600)),
+            const Icon(Icons.error_outline_rounded,
+                size: 40, color: AppColors.red),
+            const SizedBox(height: 12),
+            Text(_loadError!, style: bodyStyle(size: 14, color: AppColors.red)),
             const SizedBox(height: 16),
             AmsButton(
               label: 'Retry',
-              icon: Icons.refresh_rounded,
               variant: AmsButtonVariant.outline,
-              onPressed: _loadCategories,
+              onPressed: () => _loadCategories(page: _currentPage),
             ),
           ],
         ),
       );
     }
 
-    // Show loading skeleton
-    if (_isLoading && _categories.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.all(16.0),
-        child: AmsTableSkeleton(rows: 10),
-      );
-    }
-
-    final filtered = _categories.where((c) {
+    final filtered = items.where((c) {
       if (_searchQuery.isEmpty) return true;
       final q = _searchQuery.toLowerCase();
-      return _getName(c).toLowerCase().contains(q) ||
-          _getCode(c).toLowerCase().contains(q);
+      final name = _getName(c).toLowerCase();
+      final code = _getCode(c).toLowerCase();
+      return name.contains(q) || code.contains(q);
     }).toList();
-
-    final startIndex = (_currentPage - 1) * _pageSize;
-    final paginated = filtered.skip(startIndex).take(_pageSize).toList();
-
-    if (paginated.isEmpty && filtered.isNotEmpty) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        setState(() => _currentPage = 1);
-      });
-    }
 
     if (filtered.isEmpty) {
       return Center(
@@ -1177,7 +1176,7 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
                   size: 32, color: AppColors.ink4),
             ),
             const SizedBox(height: 16),
-            Text('No data available',
+            Text('No categories found',
                 style: bodyStyle(
                     size: 14, color: AppColors.ink3, weight: FontWeight.w600)),
             const SizedBox(height: 80),
@@ -1188,10 +1187,10 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
 
     return ListView.separated(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      itemCount: paginated.length,
+      itemCount: filtered.length,
       separatorBuilder: (ctx, idx) => const SizedBox(height: 12),
       itemBuilder: (ctx, idx) {
-        final c = paginated[idx];
+        final c = filtered[idx];
         final type = _getType(c);
         final name = _getName(c);
         final code = _getCode(c);
@@ -1351,53 +1350,6 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
     );
   }
 
-  // ─── PAGINATION FOOTER ────────────────────────────────────────────────────
-
-  Widget _buildPaginationFooter() {
-    final start = ((_currentPage - 1) * _pageSize) + 1;
-    final end = (start + _categories.length - 1);
-
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text('Showing $start–$end',
-              style: bodyStyle(size: 13, color: AppColors.ink3)),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              IconButton(
-                icon: Icon(Icons.chevron_left_rounded,
-                    size: 20,
-                    color:
-                        _currentPage > 1 ? AppColors.ink3 : AppColors.border),
-                onPressed: _currentPage > 1
-                    ? () {
-                        setState(() => _currentPage--);
-                        _loadCategories(page: _currentPage);
-                      }
-                    : null,
-              ),
-              IconButton(
-                icon: Icon(Icons.chevron_right_rounded,
-                    size: 20,
-                    color: _categories.length == _pageSize
-                        ? AppColors.ink3
-                        : AppColors.border),
-                onPressed: _categories.length == _pageSize
-                    ? () {
-                        setState(() => _currentPage++);
-                        _loadCategories(page: _currentPage);
-                      }
-                    : null,
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
 
   // ─── ROW ACTIONS ──────────────────────────────────────────────────────────
 

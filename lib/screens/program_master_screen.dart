@@ -1139,6 +1139,7 @@ class _ProgramListViewState extends State<_ProgramListView> {
   int _totalItems = 0;
   bool _loading = false;
   String _searchQuery = '';
+  int _currentPage = 1;
 
   @override
   void initState() {
@@ -1147,7 +1148,10 @@ class _ProgramListViewState extends State<_ProgramListView> {
   }
 
   Future<void> _load(int page) async {
-    setState(() => _loading = true);
+    setState(() {
+      _loading = true;
+      _currentPage = page;
+    });
     final result =
         await prm.apiService.getProgramMaster(page: page - 1, size: 10);
     if (mounted) {
@@ -1240,137 +1244,116 @@ class _ProgramListViewState extends State<_ProgramListView> {
             ),
           ),
           Expanded(
-            child: (_loading == true && _data == null)
-                ? const Center(child: CircularProgressIndicator())
-                : ListView.builder(
-                    itemCount: _data?.length ?? 0,
-                    itemBuilder: (context, idx) {
-                      final d = _data![idx];
-                      final pName = (d['descn'] ??
-                              d['programName'] ??
-                              d['programname'] ??
-                              d['program_description'] ??
-                              d['program_name'] ??
-                              d['description'] ??
-                              'Unknown')
-                          .toString();
-                      final pId = (d['pgm_id'] ??
-                              d['pgmId'] ??
-                              d['programId'] ??
-                              d['programid'] ??
-                              d['program_id'] ??
-                              d['pgmid'] ??
-                              '—')
-                          .toString();
-                      final modId = (d['module'] ??
-                              d['moduleid'] ??
-                              d['modcd'] ??
-                              d['module_id'] ??
-                              '—')
-                          .toString();
-                      final isEnabled =
-                          (d['status'] == 1 || d['status'] == '1') == true;
+            child: AmsPaginatedView<Map<String, dynamic>>(
+              items: _data ?? [],
+              totalRecords: _totalItems,
+              currentPage: _currentPage,
+              onPageChanged: (page) => _load(page),
+              builder: (context, paginatedItems) => ListView.builder(
+                itemCount: paginatedItems.length,
+                itemBuilder: (context, idx) {
+                  final d = paginatedItems[idx];
+                  final pName = (d['descn'] ??
+                          d['programName'] ??
+                          d['programname'] ??
+                          d['program_description'] ??
+                          d['program_name'] ??
+                          d['description'] ??
+                          'Unknown')
+                      .toString();
+                  final pId = (d['pgm_id'] ??
+                          d['pgmId'] ??
+                          d['programId'] ??
+                          d['programid'] ??
+                          d['program_id'] ??
+                          d['pgmid'] ??
+                          '—')
+                      .toString();
+                  final modId = (d['module'] ??
+                          d['moduleid'] ??
+                          d['modcd'] ??
+                          d['module_id'] ??
+                          '—')
+                      .toString();
+                  final isEnabled =
+                      (d['status'] == 1 || d['status'] == '1') == true;
 
-                      return Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 8),
-                        decoration: const BoxDecoration(
-                          border: Border(
-                              bottom: BorderSide(color: AppColors.border)),
-                        ),
-                        child: Row(
-                          children: [
-                            Expanded(
-                                flex: 2,
-                                child: Text(pId,
-                                    style: monoStyle(
-                                        size: 12, weight: FontWeight.w600))),
-                            Expanded(
-                                flex: 4,
-                                child: Text(pName,
-                                    style: bodyStyle(
-                                        size: 13, weight: FontWeight.w500))),
-                            Expanded(
-                                flex: 2,
-                                child: Text(modId, style: bodyStyle(size: 13))),
-                            Expanded(
-                              flex: 2,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 8, vertical: 4),
-                                decoration: BoxDecoration(
+                  return Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 8),
+                    decoration: const BoxDecoration(
+                      border: Border(
+                          bottom: BorderSide(color: AppColors.border)),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                            flex: 2,
+                            child: Text(pId,
+                                style: monoStyle(
+                                    size: 12, weight: FontWeight.w600))),
+                        Expanded(
+                            flex: 4,
+                            child: Text(pName,
+                                style: bodyStyle(
+                                    size: 13, weight: FontWeight.w500))),
+                        Expanded(
+                            flex: 2,
+                            child: Text(modId, style: bodyStyle(size: 13))),
+                        Expanded(
+                          flex: 2,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: isEnabled
+                                  ? AppColors.greenLt
+                                  : AppColors.redLt,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              isEnabled ? 'Enable' : 'Disable',
+                              style: bodyStyle(
+                                  size: 11,
+                                  weight: FontWeight.w700,
                                   color: isEnabled
-                                      ? AppColors.greenLt
-                                      : AppColors.redLt,
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: Text(
-                                  isEnabled ? 'Enable' : 'Disable',
-                                  style: bodyStyle(
-                                      size: 11,
-                                      weight: FontWeight.w700,
-                                      color: isEnabled
-                                          ? AppColors.green
-                                          : AppColors.red),
-                                ),
-                              ),
+                                      ? AppColors.green
+                                      : AppColors.red),
                             ),
-                            SizedBox(
-                              width: 150,
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  IconButton(
-                                      icon: const Icon(Icons.visibility_rounded,
-                                          size: 20, color: AppColors.tBlue),
-                                      onPressed: () => widget.onView(d),
-                                      tooltip: 'View'),
-                                  IconButton(
-                                      icon: const Icon(Icons.edit_rounded,
-                                          size: 20, color: AppColors.ink3),
-                                      onPressed: () => widget.onEdit(d),
-                                      tooltip: 'Edit'),
-                                  IconButton(
-                                      icon: const Icon(
-                                          Icons.delete_outline_rounded,
-                                          size: 20,
-                                          color: AppColors.red),
-                                      onPressed: () => widget.onDelete(d),
-                                      tooltip: 'Delete'),
-                                ],
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
-                      );
-                    },
-                  ),
-          ),
-          if (_data != null)
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('Total Records: $_totalItems',
-                      style: bodyStyle(size: 12, color: AppColors.ink3)),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                          icon:
-                              const Icon(Icons.chevron_left_rounded, size: 20),
-                          onPressed: null),
-                      IconButton(
-                          icon:
-                              const Icon(Icons.chevron_right_rounded, size: 20),
-                          onPressed:
-                              (_totalItems > 10) ? () => _load(2) : null),
-                    ],
-                  ),
-                ],
+                        SizedBox(
+                          width: 150,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              IconButton(
+                                  icon: const Icon(Icons.visibility_rounded,
+                                      size: 20, color: AppColors.tBlue),
+                                  onPressed: () => widget.onView(d),
+                                  tooltip: 'View'),
+                              IconButton(
+                                  icon: const Icon(Icons.edit_rounded,
+                                      size: 20, color: AppColors.ink3),
+                                  onPressed: () => widget.onEdit(d),
+                                  tooltip: 'Edit'),
+                              IconButton(
+                                  icon: const Icon(
+                                      Icons.delete_outline_rounded,
+                                      size: 20,
+                                      color: AppColors.red),
+                                  onPressed: () => widget.onDelete(d),
+                                  tooltip: 'Delete'),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
               ),
             ),
+          ),
         ],
       ),
     );
