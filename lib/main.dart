@@ -139,6 +139,7 @@ class _AmsRootState extends State<AmsRoot> {
         glApi.getGl104List(),
         glApi.getAllGlSegments(),
         GLApiService.getAllGlAttributes(),
+        apiService.getUsers(size: 1), // fetch total users count
       ]);
 
       final catsRes = results[0] as PaginatedResult<Map<String, dynamic>>?;
@@ -147,6 +148,7 @@ class _AmsRootState extends State<AmsRoot> {
       final brns = results[3] as List<dynamic>?;
       final segs = results[4] as List<dynamic>?;
       final atts = results[5] as List<dynamic>?;
+      final usersRes = results[6] as PaginatedResult<Map<String, dynamic>>?;
 
       final newCounts = {
         'GL-CAT': catsRes?.totalElements ?? 0,
@@ -160,7 +162,10 @@ class _AmsRootState extends State<AmsRoot> {
 
       if (mounted) {
         setState(() {
-          _state = _state.copyWith(counts: newCounts);
+          _state = _state.copyWith(
+            counts: newCounts,
+            totalUsers: usersRes?.totalElements ?? 0,
+          );
         });
       }
     } catch (e) {
@@ -581,6 +586,10 @@ class _AmsRootState extends State<AmsRoot> {
           onProceed: _handleProceed,
           onBack: () => _navigate('login'),
           userName: _state.userName,
+          authQueueCount: _state.authQueueTotal > 0
+              ? _state.authQueueTotal
+              : _state.authQueue.length,
+          totalUsers: _state.totalUsers,
         );
       case 'queue':
         body = QueueScreen(

@@ -12,6 +12,8 @@ class ProgramListScreen extends StatefulWidget {
   final void Function(String route) onProceed;
   final VoidCallback onBack;
   final String? userName;
+  final int authQueueCount;
+  final int totalUsers;
 
   const ProgramListScreen({
     super.key,
@@ -22,6 +24,8 @@ class ProgramListScreen extends StatefulWidget {
     required this.onProceed,
     required this.onBack,
     this.userName,
+    this.authQueueCount = 0,
+    this.totalUsers = 0,
   });
 
   @override
@@ -103,7 +107,8 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
           children: [
             Text(
               'Hi, $displayName!',
-              style: bodyStyle(size: 26, weight: FontWeight.w900, color: AppColors.ink),
+              style: bodyStyle(
+                  size: 26, weight: FontWeight.w900, color: AppColors.ink),
             ),
             const SizedBox(height: 6),
             Text(
@@ -121,11 +126,13 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
           ),
           child: Row(
             children: [
-              const Icon(Icons.calendar_today_rounded, size: 16, color: AppColors.ink2),
+              const Icon(Icons.calendar_today_rounded,
+                  size: 16, color: AppColors.ink2),
               const SizedBox(width: 10),
               Text(
                 '$dayStr, $dateStr',
-                style: bodyStyle(size: 13, weight: FontWeight.w700, color: AppColors.ink2),
+                style: bodyStyle(
+                    size: 13, weight: FontWeight.w700, color: AppColors.ink2),
               ),
             ],
           ),
@@ -135,25 +142,49 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
   }
 
   Widget _buildKPIRow() {
+    final String pendingTrend =
+        widget.authQueueCount > 0 ? 'Pending' : 'All clear';
+
     return SizedBox(
       width: double.infinity,
       child: Wrap(
         spacing: 24,
         runSpacing: 24,
         children: [
-          _kpiCard('Pending Approvals', '12', Icons.pending_actions_rounded, AppColors.tBlue, '+2 today'),
-          _kpiCard('System Security', '98%', Icons.security_rounded, AppColors.green, 'Healthy'),
-          _kpiCard('Active Sessions', '45', Icons.people_alt_rounded, AppColors.amber, '-5% vs yesterday'),
-          _kpiCard('Queue Status', 'Normal', Icons.sync_rounded, AppColors.ink3, 'All synced'),
-          _kpiCard('Total Users', '342', Icons.groups_rounded, AppColors.tBlue, '+15 this week'),
+          _kpiCard(
+            'Pending Approvals',
+            widget.authQueueCount.toString(),
+            Icons.pending_actions_rounded,
+            AppColors.tBlue,
+            pendingTrend,
+          ),
+          _kpiCard('System Security', '98%', Icons.security_rounded,
+              AppColors.green, 'Healthy'),
+          _kpiCard('Active Sessions', '45', Icons.people_alt_rounded,
+              AppColors.amber, '-5% vs yesterday'),
+          _kpiCard('Queue Status', 'Normal', Icons.sync_rounded, AppColors.ink3,
+              'All synced'),
+          _kpiCard('Total Users', widget.totalUsers > 0 ? widget.totalUsers.toString() : '-',
+              Icons.groups_rounded, AppColors.tBlue, 'Registered'),
         ],
       ),
     );
   }
 
-  Widget _kpiCard(String title, String val, IconData icon, Color color, String trend) {
+  Widget _kpiCard(
+      String title, String val, IconData icon, Color color, String trend) {
+    // Determine trend text color
+    Color trendColor;
+    if (trend.contains('+')) {
+      trendColor = AppColors.green;
+    } else if (trend == 'Healthy' || trend == 'All clear') {
+      trendColor = AppColors.green;
+    } else {
+      trendColor = AppColors.ink4;
+    }
+
     return SizedBox(
-      width: 210, // Decreased to fit 5 cards inline
+      width: 210,
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -175,13 +206,26 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Icon(icon, color: color, size: 24),
-                Text(trend, style: bodyStyle(size: 10, weight: FontWeight.w800, color: trend.contains('+') ? AppColors.green : (trend == 'Healthy' ? AppColors.green : AppColors.ink4))),
+                Text(
+                  trend,
+                  style: bodyStyle(
+                      size: 10, weight: FontWeight.w800, color: trendColor),
+                ),
               ],
             ),
             const SizedBox(height: 16),
-            Text(val, style: bodyStyle(size: 28, weight: FontWeight.w900, color: AppColors.ink)),
+            Text(
+              val,
+              style: bodyStyle(
+                size: 28,
+                weight: FontWeight.w900,
+                color: AppColors.ink,
+              ),
+            ),
             const SizedBox(height: 4),
-            Text(title, style: bodyStyle(size: 13, color: AppColors.ink3, weight: FontWeight.w600)),
+            Text(title,
+                style: bodyStyle(
+                    size: 13, color: AppColors.ink3, weight: FontWeight.w600)),
           ],
         ),
       ),
@@ -198,7 +242,8 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Authorization Volume (Last 7 Days)', style: bodyStyle(size: 16, weight: FontWeight.w800)),
+              Text('Authorization Volume (Last 7 Days)',
+                  style: bodyStyle(size: 16, weight: FontWeight.w800)),
               const Icon(Icons.more_horiz_rounded, color: AppColors.ink3),
             ],
           ),
@@ -233,12 +278,16 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
           height: h * 1.5,
           width: 30,
           decoration: BoxDecoration(
-            color: h > 60 ? AppColors.tBlue : AppColors.tBlue.withValues(alpha: 0.3),
+            color: h > 60
+                ? AppColors.tBlue
+                : AppColors.tBlue.withValues(alpha: 0.3),
             borderRadius: BorderRadius.circular(4),
           ),
         ),
         const SizedBox(height: 12),
-        Text(day, style: monoStyle(size: 10, color: AppColors.ink4, weight: FontWeight.w700)),
+        Text(day,
+            style: monoStyle(
+                size: 10, color: AppColors.ink4, weight: FontWeight.w700)),
       ],
     );
   }
@@ -250,11 +299,18 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Policy Compliance Watchlist', style: bodyStyle(size: 16, weight: FontWeight.w800)),
+          Text('Policy Compliance Watchlist',
+              style: bodyStyle(size: 16, weight: FontWeight.w800)),
           const SizedBox(height: 24),
-          _watchlistTile('User Authorization', 'High priority security audit required', AppColors.red, 'nontranauth'),
-          _watchlistTile('GL Master Entries', '3 new unmapped accounts found', AppColors.amber, 'GL-MST'),
-          _watchlistTile('System Config', 'Version 2.4.1 deployment healthy', AppColors.green, 'AUTHCTL'),
+          _watchlistTile(
+              'User Authorization',
+              'High priority security audit required',
+              AppColors.red,
+              'nontranauth'),
+          _watchlistTile('GL Master Entries', '3 new unmapped accounts found',
+              AppColors.amber, 'GL-MST'),
+          _watchlistTile('System Config', 'Version 2.4.1 deployment healthy',
+              AppColors.green, 'AUTHCTL'),
         ],
       ),
     );
@@ -265,26 +321,33 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
       padding: const EdgeInsets.only(bottom: 16),
       child: Row(
         children: [
-          Container(height: 32, width: 4, decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(2))),
+          Container(
+              height: 32,
+              width: 4,
+              decoration: BoxDecoration(
+                  color: color, borderRadius: BorderRadius.circular(2))),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label, style: bodyStyle(size: 14, weight: FontWeight.w700)),
+                Text(label,
+                    style: bodyStyle(size: 14, weight: FontWeight.w700)),
                 Text(sub, style: bodyStyle(size: 12, color: AppColors.ink3)),
               ],
             ),
           ),
           TextButton(
-             onPressed: () {
-               if (progId == 'nontranauth') {
-                 widget.onProceed('AUTH'); // or specific route if available
-               } else {
-                 widget.onSelect(progId);
-               }
-             },
-             child: Text('View', style: bodyStyle(size: 12, color: AppColors.tBlue, weight: FontWeight.w800)),
+            onPressed: () {
+              if (progId == 'nontranauth') {
+                widget.onProceed('AUTH'); // or specific route if available
+              } else {
+                widget.onSelect(progId);
+              }
+            },
+            child: Text('View',
+                style: bodyStyle(
+                    size: 12, color: AppColors.tBlue, weight: FontWeight.w800)),
           ),
         ],
       ),
@@ -298,13 +361,16 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Quick Actions', style: bodyStyle(size: 16, weight: FontWeight.w800)),
+          Text('Quick Actions',
+              style: bodyStyle(size: 16, weight: FontWeight.w800)),
           const SizedBox(height: 20),
           _actionBtn(Icons.add_moderator_rounded, 'New User Gate', 'MASTERS'),
           _actionBtn(Icons.account_tree_rounded, 'Configure GL', 'GL'),
-          _actionBtn(Icons.receipt_long_rounded, 'Post Transactions', 'TRANSACTIONS'),
+          _actionBtn(
+              Icons.receipt_long_rounded, 'Post Transactions', 'TRANSACTIONS'),
           _actionBtn(Icons.verified_user_rounded, 'Audit Logs', 'AUTH'),
-          _actionBtn(Icons.settings_input_composite_rounded, 'System Settings', 'CONFIG'),
+          _actionBtn(Icons.settings_input_composite_rounded, 'System Settings',
+              'CONFIG'),
         ],
       ),
     );
@@ -327,9 +393,14 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
             children: [
               Icon(icon, size: 18, color: AppColors.tBlue),
               const SizedBox(width: 12),
-              Text(label, style: bodyStyle(size: 13, weight: FontWeight.w700, color: AppColors.ink2)),
+              Text(label,
+                  style: bodyStyle(
+                      size: 13,
+                      weight: FontWeight.w700,
+                      color: AppColors.ink2)),
               const Spacer(),
-              const Icon(Icons.chevron_right_rounded, size: 16, color: AppColors.ink4),
+              const Icon(Icons.chevron_right_rounded,
+                  size: 16, color: AppColors.ink4),
             ],
           ),
         ),
@@ -341,7 +412,10 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        gradient: LinearGradient(colors: [AppColors.tBlue.withValues(alpha: 0.8), AppColors.tBlueDk]),
+        gradient: LinearGradient(colors: [
+          AppColors.tBlue.withValues(alpha: 0.8),
+          AppColors.tBlueDk
+        ]),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -356,11 +430,22 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
         children: [
           const Icon(Icons.cloud_done_rounded, color: Colors.white, size: 32),
           const SizedBox(height: 20),
-          const Text('System Resource', style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500)),
+          const Text('System Resource',
+              style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500)),
           const SizedBox(height: 4),
-          const Text('92.4% Optimal', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w900)),
+          const Text('92.4% Optimal',
+              style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900)),
           const SizedBox(height: 16),
-          LinearProgressIndicator(value: 0.92, backgroundColor: Colors.white24, valueColor: AlwaysStoppedAnimation(Colors.white)),
+          LinearProgressIndicator(
+              value: 0.92,
+              backgroundColor: Colors.white24,
+              valueColor: AlwaysStoppedAnimation(Colors.white)),
         ],
       ),
     );

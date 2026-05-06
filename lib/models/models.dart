@@ -267,6 +267,7 @@ class AppState {
   final String? userName;
   final bool isLoadingAuth;
   final Map<String, int> counts;
+  final int totalUsers;
 
   const AppState({
     required this.screen,
@@ -282,9 +283,10 @@ class AppState {
     this.userName,
     this.isLoadingAuth = false,
     this.counts = const {},
+    this.totalUsers = 0,
   });
 
-    AppState copyWith({
+  AppState copyWith({
     String? screen,
     String? selectedType,
     String? selectedProg,
@@ -298,6 +300,7 @@ class AppState {
     String? userName,
     bool? isLoadingAuth,
     Map<String, int>? counts,
+    int? totalUsers,
     bool clearProg = false,
     bool clearCategory = false,
     bool clearSubmitted = false,
@@ -317,6 +320,7 @@ class AppState {
       userName: userName ?? this.userName,
       isLoadingAuth: isLoadingAuth ?? this.isLoadingAuth,
       counts: counts ?? this.counts,
+      totalUsers: totalUsers ?? this.totalUsers,
     );
   }
 }
