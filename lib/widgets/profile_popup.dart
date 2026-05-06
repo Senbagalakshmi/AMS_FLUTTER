@@ -85,18 +85,18 @@ class _ProfilePopupState extends State<ProfilePopup> {
                   ),
                   child: Center(
                     child: Text(
-                      (user?.username.isNotEmpty == true ? user!.username[0] : (widget.userName?.isNotEmpty == true ? widget.userName![0] : "A")).toUpperCase(),
+                      (user?.username.isNotEmpty == true ? user!.username[0] : (widget.userName?.isNotEmpty == true ? widget.userName![0] : "")).toUpperCase(),
                       style: bodyStyle(size: 26, weight: FontWeight.w800, color: AppColors.tBlue),
                     ),
                   ),
                 ),
                 const SizedBox(height: 14),
                 Text(
-                  user?.username ?? (widget.userName != null && widget.userName!.contains('@') ? widget.userName!.split('@').first : widget.userName) ?? "User",
+                  user?.username ?? (widget.userName != null && widget.userName!.contains('@') ? widget.userName!.split('@').first : widget.userName) ?? "",
                   style: bodyStyle(size: 18, weight: FontWeight.w800),
                 ),
                 Text(
-                  user?.email ?? widget.email ?? "admin@bbots.com",
+                  user?.email ?? widget.email ?? "",
                   style: bodyStyle(size: 13, color: AppColors.ink3),
                 ),
                 const SizedBox(height: 16),
@@ -114,7 +114,7 @@ class _ProfilePopupState extends State<ProfilePopup> {
                       const Icon(Icons.shield_rounded, size: 14, color: AppColors.tBlue),
                       const SizedBox(width: 6),
                       Text(
-                        user?.role ?? "Administrator",
+                        user?.role ?? "",
                         style: bodyStyle(size: 12, weight: FontWeight.w700, color: AppColors.tBlue),
                       ),
                     ],
@@ -226,7 +226,7 @@ class _ProfilePopupState extends State<ProfilePopup> {
           ),
           child: Center(
             child: Text(
-              (user?.username.isNotEmpty == true ? user!.username[0] : (widget.userName?.isNotEmpty == true ? widget.userName![0] : "A")).toUpperCase(),
+              (user?.username.isNotEmpty == true ? user!.username[0] : (widget.userName?.isNotEmpty == true ? widget.userName![0] : "")).toUpperCase(),
               style: bodyStyle(size: 16, weight: FontWeight.w800, color: AppColors.tBlue),
             ),
           ),

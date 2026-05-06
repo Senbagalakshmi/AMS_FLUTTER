@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/services.dart';
 import 'dart:ui' as ui;
 import 'dart:convert';
@@ -2543,7 +2544,7 @@ class _HoverIconButtonState extends State<_HoverIconButton> {
 // ─────────────────────────────────────────────────────────────
 // 🔹 PROFILE MENU
 // ─────────────────────────────────────────────────────────────
-class _PremiumProfileMenu extends StatelessWidget {
+class _PremiumProfileMenu extends StatefulWidget {
   final String? userName;
   final void Function(String, String?) onNavigate;
   final bool isExpanded;
@@ -2555,6 +2556,33 @@ class _PremiumProfileMenu extends StatelessWidget {
   });
 
   @override
+  State<_PremiumProfileMenu> createState() => _PremiumProfileMenuState();
+}
+
+class _PremiumProfileMenuState extends State<_PremiumProfileMenu> {
+  Map<String, dynamic>? user;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUser();
+  }
+
+  Future<void> _loadUser() async {
+    if (kIsWeb) {
+    apiService.updateToken(
+      html.window.sessionStorage['child_token'],
+    );
+  }
+    final fetchedUser = await UserService.getUserProfile();
+    if (mounted && fetchedUser != null) {
+      setState(() {
+        user = fetchedUser;
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return PopupMenuButton(
       tooltip: '', // Disable the default 'Show menu' tooltip
@@ -2562,184 +2590,152 @@ class _PremiumProfileMenu extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(10),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                userName ?? "User@gmail.com",
-                style: bodyStyle(
-                    size: 13, weight: FontWeight.w700, color: Colors.white),
-              ),
-              if (isExpanded) ...[
-                const SizedBox(height: 2),
-                Text(
-                  "Administrator",
-                  style: bodyStyle(size: 11, color: Colors.white),
-                ),
-              ],
-            ],
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: CircleAvatar(
+          radius: 18,
+          backgroundColor: AppColors.tBlueLt,
+          child: Text(
+            (widget.userName ?? 'A')[0].toUpperCase(),
+            style: bodyStyle(
+                size: 14, weight: FontWeight.w800, color: AppColors.tBlue),
           ),
-          const SizedBox(width: 12),
-          GestureDetector(
-            onTap: () async {
-              final user = await UserService.getUserProfile();
-
-              print("USER DATA : $user");
-
-              if (user == null) return;
-
-              showMenu(
-                context: context,
-                position: RelativeRect.fromLTRB(
-                  MediaQuery.of(context).size.width - 300,
-                  60,
-                  20,
-                  0,
+        ),
+      ),
+      itemBuilder: (context) => [
+        PopupMenuItem(
+          enabled: false,
+          padding: EdgeInsets.zero,
+          child: Container(
+            width: 260,
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                /// Avatar
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(
+                    color: AppColors.tBlueLt,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: AppColors.tBlue, width: 2),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.tBlue.withOpacity(0.15),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Center(
+                    child: Text(
+                        (user?['username'] ?? widget.userName ?? 'A')[0].toUpperCase(),
+                      style: bodyStyle(size: 26, weight: FontWeight.w800, color: AppColors.tBlue),
+                    ),
+                  ),
                 ),
-                items: [
-                  PopupMenuItem(
-                    enabled: false,
+                const SizedBox(height: 16),
+
+                /// Username
+                Builder(
+                    builder: (context) {
+                    final displayUser = user?['username'] 
+                    ?? (widget.userName != null && widget.userName!.contains('@') 
+                        ? widget.userName!.split('@').first 
+                        : widget.userName) 
+                        ?? 'User';
+
+                      return Text(
+                       displayUser,
+                       style: const TextStyle(
+                           fontSize: 20,
+                           fontWeight: FontWeight.w800,
+                           color: Colors.black87,
+                           ),
+                           textAlign: TextAlign.center,
+                           );
+                          }
+                        ),
+                const SizedBox(height: 4),
+
+                /// Email
+                Text(
+                  user?['email'] ?? widget.userName ?? 'No Email',
+                  style: const TextStyle(fontSize: 14, color: Colors.black87, fontWeight: FontWeight.bold),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+
+                /// Role Badge
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.tBlueLt.withOpacity(0.4),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.shield_rounded, size: 14, color: AppColors.tBlue),
+                      const SizedBox(width: 6),
+                      Text(
+                        user?['role'] ?? 'Administrator',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: AppColors.tBlue,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+                const Divider(height: 1, thickness: 1, color: Color(0xFFE2E8F0)),
+                const SizedBox(height: 8),
+
+                /// Logout Button
+                Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () async {
+                      Navigator.pop(context);
+                      apiService.updateToken(null);
+                      widget.onNavigate('login', null);
+                    },
+                    borderRadius: BorderRadius.circular(10),
                     child: Container(
-                      width: 280,
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          /// Avatar
-                          Container(
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.blue.withOpacity(.25),
-                                  blurRadius: 12,
-                                )
-                              ],
-                            ),
-                            child: CircleAvatar(
-                              radius: 28,
-                              backgroundColor: AppColors.tBlue,
-                              child: Text(
-                                (user['username'] ?? "A")[0],
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ),
-
-                          const SizedBox(height: 12),
-
-                          /// Username
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: const [
+                          Icon(Icons.logout_rounded, size: 20, color: Colors.red),
+                          SizedBox(width: 8),
                           Text(
-                            user['username'] ?? "",
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 15,
-                              color: Colors.black87,
+                            "Logout",
+                            style: TextStyle(
+                              color: Colors.red,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
                             ),
-                          ),
-
-                          const SizedBox(height: 4),
-
-                          /// Email
-                          Text(
-                            user['email'] ?? "",
-                            style: const TextStyle(
-                              fontSize: 13,
-                              color: Colors.grey,
-                            ),
-                          ),
-
-                          const SizedBox(height: 8),
-
-                          /// Role Badge
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.tBlue.withOpacity(.1),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              "ROLE: ${user['role'] ?? ""}",
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: AppColors.tBlue,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-
-                          const SizedBox(height: 12),
-
-                          const Divider(),
-
-                          /// Logout Button
-                          InkWell(
-                            onTap: () async {
-                              Navigator.pop(context);
-                              apiService.updateToken(null);
-                              onNavigate('login', null);
-                            },
-                            borderRadius: BorderRadius.circular(8),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                vertical: 10,
-                                horizontal: 12,
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: const [
-                                  Icon(Icons.logout,
-                                      size: 18, color: Colors.red),
-                                  SizedBox(width: 6),
-                                  Text(
-                                    "Logout",
-                                    style: TextStyle(
-                                      color: Colors.red,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  )
-                                ],
-                              ),
-                            ),
-                          ),
+                          )
                         ],
                       ),
                     ),
                   ),
-                ],
-              );
-            },
-            child: CircleAvatar(
-              radius: 18,
-              backgroundColor: AppColors.tBlueLt,
-              child: Text(
-                (userName ?? 'A')[0].toUpperCase(),
-                style: bodyStyle(
-                    size: 14, weight: FontWeight.w800, color: AppColors.tBlue),
-              ),
+                ),
+              ],
             ),
           ),
-        ],
-      ),
-
-      itemBuilder: (context) => [
-        PopupMenuItem(
-          child: const Text("Profile"),
-        ),
-        PopupMenuItem(
-          child: const Text("Logout"),
-          onTap: () => onNavigate('login', null),
         ),
       ],
     );
