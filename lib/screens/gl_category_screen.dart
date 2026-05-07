@@ -1093,7 +1093,8 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
                   'Liability',
                   'Capital',
                   'Income',
-                  'Expense'
+                  'Expense',
+                  'Equity'
                 ],
               ),
             ),
