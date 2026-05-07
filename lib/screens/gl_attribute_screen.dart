@@ -620,31 +620,36 @@ class _GLAttributeScreenState extends State<GLAttributeScreen> {
                   child: _loadingAttributes
                       ? const Center(child: CircularProgressIndicator())
                       : filteredSets.isEmpty
-                          ? Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(Icons.search_off_rounded,
-                                      size: 48,
-                                      color: AppColors.ink4
-                                          .withValues(alpha: 0.5)),
-                                  const SizedBox(height: 16),
-                                  Text(
-                                      'No attributes found for this account.',
-                                      style:
-                                          bodyStyle(color: AppColors.ink4)),
-                                ],
-                              ),
-                            )
-                          : ListView.separated(
-                              itemCount: filteredSets.length,
-                              separatorBuilder: (ctx, idx) =>
-                                  const SizedBox(height: 16),
-                              itemBuilder: (ctx, idx) =>
-                                  _buildSetCard(filteredSets[idx]),
-                            ),
-                ),
-                _buildPaginationFooter(filteredSets.length),
+                                      ? Center(
+                                          child: Column(
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              Icon(Icons.search_off_rounded,
+                                                  size: 48,
+                                                  color: AppColors.ink4
+                                                      .withValues(alpha: 0.5)),
+                                              const SizedBox(height: 16),
+                                              Text(
+                                                  'No attributes found for this account.',
+                                                  style:
+                                                      bodyStyle(color: AppColors.ink4)),
+                                            ],
+                                          ),
+                                        )
+                                      : AmsPaginatedView<Map<String, dynamic>>(
+                                          items: filteredSets,
+                                          itemsPerPage: 10,
+                                          // let the paginated view manage space and allow inner list scrolling
+                                          forceShowFooter: true,
+                                          builder: (context, items) => ListView.separated(
+                                            itemCount: items.length,
+                                            separatorBuilder: (ctx, idx) =>
+                                                const SizedBox(height: 16),
+                                            itemBuilder: (ctx, idx) =>
+                                                _buildSetCard(items[idx]),
+                                          ),
+                                        ),
+                      ),
               ],
             ),
           ),

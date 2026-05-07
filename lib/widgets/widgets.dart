@@ -1784,6 +1784,9 @@ class _AmsSidebarState extends State<AmsSidebar> {
                       setState(() {
                         openGlSubCategory = !openGlSubCategory;
                       });
+                      // Navigate to the GL subcategory dashboard so users
+                      // can access the grouped GL configuration modules.
+                      widget.onNavigate('submenu_dashboard', 'GL-SUB');
                     },
                   ),
                   if (openGlSubCategory) ...[
@@ -2974,6 +2977,7 @@ class AmsPaginatedView<T> extends StatefulWidget {
   final Function(int page)? onPageChanged; // New: for server-side
   final Widget Function(BuildContext context, List<T> currentItems) builder;
   final int? currentPage;
+  final bool forceShowFooter;
 
   const AmsPaginatedView({
     super.key,
@@ -2984,6 +2988,7 @@ class AmsPaginatedView<T> extends StatefulWidget {
     this.onPageChanged,
     required this.builder,
     this.currentPage,
+    this.forceShowFooter = false,
   });
 
   @override
@@ -3044,7 +3049,7 @@ class _AmsPaginatedViewState<T> extends State<AmsPaginatedView<T>> {
             : widget.items)
         : widget.items.skip(startIndex).take(widget.itemsPerPage).toList();
 
-    final bool showFooter = hasTrueTotal ? totalPages > 1 : true;
+    final bool showFooter = widget.forceShowFooter || (hasTrueTotal ? totalPages > 1 : true);
     final bool hasPrevPage = _currentPage > 1;
     final bool hasNextPage = hasTrueTotal 
         ? _currentPage < totalPages 

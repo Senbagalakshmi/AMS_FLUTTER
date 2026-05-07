@@ -1609,6 +1609,8 @@ class _AuthCtrlListViewState extends State<_AuthCtrlListView> {
         Expanded(
           child: AmsPaginatedView<Auth101Config>(
             items: cfgList.reversed.toList(),
+            itemsPerPage: 10,
+            forceShowFooter: true,
             builder: (ctx, currentItems) => ListView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
               itemCount: currentItems.length,

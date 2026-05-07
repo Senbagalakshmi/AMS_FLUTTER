@@ -729,37 +729,48 @@ class _GLSegmentPageState extends State<GLSegmentPage> {
                 ),
               )
             else ...[
-              Text(
-                'Showing 1–${filtered.length} of ${filtered.length}',
-                style: const TextStyle(fontSize: 12, color: kTextLight),
-              ),
-              const SizedBox(height: 14),
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: kCardBorder, width: 1.4),
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: filtered.isEmpty
-                      ? const Padding(
-                          padding: EdgeInsets.all(32),
-                          child: Center(
-                            child: Text('No segments found.',
-                                style:
-                                    TextStyle(color: kTextLight, fontSize: 14)),
-                          ),
-                        )
-                      : Column(
-                          children: filtered
-                              .asMap()
-                              .entries
-                              .map((entry) => _hierarchyRow(entry.value,
-                                  entry.key == filtered.length - 1))
-                              .toList(),
+              AmsPaginatedView<Segment>(
+                items: filtered,
+                itemsPerPage: 10,
+                shrinkWrap: true,
+                forceShowFooter: true,
+                builder: (context, currentItems) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 0),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: kCardBorder, width: 1.4),
                         ),
-                ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: currentItems.isEmpty
+                              ? const Padding(
+                                  padding: EdgeInsets.all(32),
+                                  child: Center(
+                                    child: Text('No segments found.',
+                                        style: TextStyle(
+                                            color: kTextLight, fontSize: 14)),
+                                  ),
+                                )
+                              : Column(
+                                  children: currentItems
+                                      .asMap()
+                                      .entries
+                                      .map((entry) => _hierarchyRow(
+                                          entry.value,
+                                          entry.key ==
+                                              currentItems.length - 1))
+                                      .toList(),
+                                ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
               ),
             ],
           ]),

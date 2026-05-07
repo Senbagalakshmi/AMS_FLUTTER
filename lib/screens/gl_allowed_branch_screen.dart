@@ -544,200 +544,179 @@ Widget _buildListView() {
         Expanded(
           child: filteredList.isEmpty
               ? const Center(child: Text("No Records Found"))
-              : ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: filteredList.length,
-                  itemBuilder: (context, index) {
-
-                    final item = filteredList[index];
-                    final branchesText =
-                        (item["branches"] as List).join(", ");
-
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 14),
+                : AmsPaginatedView<Map<String, dynamic>>(
+                  items: filteredList.reversed.toList(),
+                  itemsPerPage: 10,
+                  forceShowFooter: true,
+                  builder: (context, currentItems) {
+                    return ListView.builder(
                       padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: AppColors.border,
-                        ),
-                      ),
-                      child: Row(
-                        children: [
+                      itemCount: currentItems.length,
+                      itemBuilder: (context, index) {
+                        final item = currentItems[index];
+                        final branchesText = (item["branches"] as List).join(", ");
 
-                          /// Avatar
-                          Container(
-                            width: 44,
-                            height: 44,
-                            decoration: BoxDecoration(
-                              color: AppColors.bg,
-                              shape: BoxShape.circle,
-                            ),
-                            child: Center(
-                              child: Text(
-                                (item["gl"] ?? "G")
-                                    .toString()
-                                    .replaceAll("GL ", "")
-                                    .substring(0, 1),
-                                style: bodyStyle(
-                                  weight: FontWeight.bold,
-                                ),
-                              ),
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 14),
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: AppColors.border,
                             ),
                           ),
-
-                          const SizedBox(width: 16),
-
-                          /// Details
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment:
-                                  CrossAxisAlignment.start,
-                              children: [
-
-                                Text(
-                                  item["gl"] ?? "",
-                                  style: bodyStyle(
-                                    weight: FontWeight.w600,
-                                    size: 15,
-                                  ),
-                                ),
-
-                                const SizedBox(height: 6),
-
-                                Text(
-                                  "Branches: $branchesText",
-                                  style: bodyStyle(
-                                    color: AppColors.ink3,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-
-                          /// Actions
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
+                          child: Row(
                             children: [
-                              _actionIcon(
-                                icon: Icons.visibility_outlined,
-                                color: AppColors.green,
-                                bg: Colors.white,
-                                onTap: () {
-                                  setState(() {
-                                    showForm = true;
-                                    _isViewOnly = true;
-                                    _isEditMode = false;
-                                    // Match the GL master from the list using robust matching
-                                    final glNo = _getGlNo(item);
-                                    try {
-                                      _selectedGlMaster = _glMasters.firstWhere((m) => _getGlNo(m) == glNo);
-                                    } catch (_) {
-                                      _selectedGlMaster = null;
-                                    }
-                                    _refreshOrgDisplay(item["orgCode"]?.toString() ?? "");
-                                    final savedBranches = item["branches"] as List;
-                                    for (var b in branches) {
-                                      b["enabled"] = savedBranches.contains(b["name"]);
-                                    }
-                                  });
-                                },
-                              ),
-                              const SizedBox(width: 8),
-                              _actionIcon(
-                                icon: Icons.edit_outlined,
-                                color: AppColors.tBlue,
-                                bg: Colors.white,
-                                onTap: () {
-                                  setState(() {
-                                    showForm = true;
-                                    _isEditMode = true;
-                                    _isViewOnly = false;
-                                    // Match the GL master from the list using robust matching
-                                    final glNo = _getGlNo(item);
-                                    try {
-                                      _selectedGlMaster = _glMasters.firstWhere((m) => _getGlNo(m) == glNo);
-                                    } catch (_) {
-                                      _selectedGlMaster = null;
-                                    }
-                                    _refreshOrgDisplay(item["orgCode"]?.toString() ?? "");
-                                    final savedBranches = item["branches"] as List;
-                                    for (var b in branches) {
-                                      b["enabled"] = savedBranches.contains(b["name"]);
-                                    }
-                                  });
-                                },
-                              ),
-                              const SizedBox(width: 8),
-                              _actionIcon(
-                                icon: Icons.delete_outline_rounded,
-                                color: AppColors.red,
-                                bg: AppColors.redLt,
-                                borderColor: AppColors.red.withOpacity(0.2),
-                                onTap: () {
-                                  showDialog(
-                                    context: context,
-                                    builder: (context) => AlertDialog(
-                                      title: const Text('Confirm Delete'),
-                                      content: const Text('Are you sure you want to delete?'),
-                                      actions: [
-                                        TextButton(
-                                          onPressed: () => Navigator.pop(context),
-                                          child: const Text('No'),
-                                        ),
-                                        TextButton(
-                                          onPressed: () async {
-                                            Navigator.pop(context); // Close the dialog
-                                            
-                                            // Use glNo directly
-                                            final int? parsedGlNo = int.tryParse(item["glNo"]?.toString() ?? '');
-
-                                            print("DELETE ITEM: $item");
-                                            print("DELETE parsedGlNo: $parsedGlNo");
-
-                                            if (parsedGlNo != null) {
-                                              setState(() {
-                                                 _isLoading = true;
-                                              });
-                                              final orgCode = item["orgCode"] ?? 50;
-                                              print("DELETE orgCode: $orgCode (${orgCode.runtimeType})");
-
-                                              final success = await GLApiService()
-                                              .deleteAllowedBranch(orgCode, parsedGlNo);
-
-                                              if (success) {
-                                                showAmsSnack(context, 'Deleted successfully.', type: 's');
-                                                await loadSavedBranches(); // refresh from db
-                                              } else {
-                                                showAmsSnack(context, 'Deletion failed.', type: 'e');
-                                              }
-                                              
-                                              setState(() {
-                                                 _isLoading = false;
-                                              });
-                                            } else {
-                                              // Fallback if formatting failed, just remove locally
-                                              setState(() {
-                                                savedList.remove(item);
-                                              });
-                                            }
-                                          },
-                                          child: const Text(
-                                            'Yes',
-                                            style: TextStyle(color: Colors.red),
-                                          ),
-                                        ),
-                                      ],
+                              /// Avatar
+                              Container(
+                                width: 44,
+                                height: 44,
+                                decoration: BoxDecoration(
+                                  color: AppColors.bg,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    (item["gl"] ?? "G").toString().replaceAll("GL ", "").substring(0, 1),
+                                    style: bodyStyle(
+                                      weight: FontWeight.bold,
                                     ),
-                                  );
-                                },
+                                  ),
+                                ),
                               ),
-                            ],
-                          )
 
-                        ],
-                      ),
+                              const SizedBox(width: 16),
+
+                              /// Details
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      item["gl"] ?? "",
+                                      style: bodyStyle(
+                                        weight: FontWeight.w600,
+                                        size: 15,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      "Branches: $branchesText",
+                                      style: bodyStyle(
+                                        color: AppColors.ink3,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+
+                              /// Actions
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  _actionIcon(
+                                    icon: Icons.visibility_outlined,
+                                    color: AppColors.green,
+                                    bg: Colors.white,
+                                    onTap: () {
+                                      setState(() {
+                                        showForm = true;
+                                        _isViewOnly = true;
+                                        _isEditMode = false;
+                                        final glNo = _getGlNo(item);
+                                        try {
+                                          _selectedGlMaster = _glMasters.firstWhere((m) => _getGlNo(m) == glNo);
+                                        } catch (_) {
+                                          _selectedGlMaster = null;
+                                        }
+                                        _refreshOrgDisplay(item["orgCode"]?.toString() ?? "");
+                                        final savedBranches = item["branches"] as List;
+                                        for (var b in branches) {
+                                          b["enabled"] = savedBranches.contains(b["name"]);
+                                        }
+                                      });
+                                    },
+                                  ),
+                                  const SizedBox(width: 8),
+                                  _actionIcon(
+                                    icon: Icons.edit_outlined,
+                                    color: AppColors.tBlue,
+                                    bg: Colors.white,
+                                    onTap: () {
+                                      setState(() {
+                                        showForm = true;
+                                        _isEditMode = true;
+                                        _isViewOnly = false;
+                                        final glNo = _getGlNo(item);
+                                        try {
+                                          _selectedGlMaster = _glMasters.firstWhere((m) => _getGlNo(m) == glNo);
+                                        } catch (_) {
+                                          _selectedGlMaster = null;
+                                        }
+                                        _refreshOrgDisplay(item["orgCode"]?.toString() ?? "");
+                                        final savedBranches = item["branches"] as List;
+                                        for (var b in branches) {
+                                          b["enabled"] = savedBranches.contains(b["name"]);
+                                        }
+                                      });
+                                    },
+                                  ),
+                                  const SizedBox(width: 8),
+                                  _actionIcon(
+                                    icon: Icons.delete_outline_rounded,
+                                    color: AppColors.red,
+                                    bg: AppColors.redLt,
+                                    borderColor: AppColors.red.withOpacity(0.2),
+                                    onTap: () {
+                                      showDialog(
+                                        context: context,
+                                        builder: (context) => AlertDialog(
+                                          title: const Text('Confirm Delete'),
+                                          content: const Text('Are you sure you want to delete?'),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () => Navigator.pop(context),
+                                              child: const Text('No'),
+                                            ),
+                                            TextButton(
+                                              onPressed: () async {
+                                                Navigator.pop(context);
+                                                final int? parsedGlNo = int.tryParse(item["glNo"]?.toString() ?? '');
+                                                if (parsedGlNo != null) {
+                                                  setState(() {
+                                                    _isLoading = true;
+                                                  });
+                                                  final orgCode = item["orgCode"] ?? 50;
+                                                  final success = await GLApiService().deleteAllowedBranch(orgCode, parsedGlNo);
+                                                  if (success) {
+                                                    showAmsSnack(context, 'Deleted successfully.', type: 's');
+                                                    await loadSavedBranches();
+                                                  } else {
+                                                    showAmsSnack(context, 'Deletion failed.', type: 'e');
+                                                  }
+                                                  setState(() {
+                                                    _isLoading = false;
+                                                  });
+                                                } else {
+                                                  setState(() {
+                                                    savedList.remove(item);
+                                                  });
+                                                }
+                                              },
+                                              child: const Text('Yes', style: TextStyle(color: Colors.red)),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ],
+                              )
+                            ],
+                          ),
+                        );
+                      },
                     );
                   },
                 ),
