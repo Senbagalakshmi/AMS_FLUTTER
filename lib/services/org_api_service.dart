@@ -23,6 +23,9 @@ class OrgApiService {
 
   PaginatedResult<Map<String, dynamic>> _parsePaginated(dynamic decoded) {
     if (decoded is List) {
+      try {
+        print('⚠️ OrgApiService._parsePaginated: received full-array response (non-paginated). length=${decoded.length}');
+      } catch (_) {}
       return PaginatedResult(
         items: decoded.cast<Map<String, dynamic>>(),
         totalElements: decoded.length,

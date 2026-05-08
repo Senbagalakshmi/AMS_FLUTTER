@@ -31,6 +31,9 @@ class _GLMasterScreenState extends State<GLMasterScreen> {
   bool _isEditing = false; // true = Edit mode, false = Create mode
   int _currentPage = 1;
   static const int _pageSize = 10;
+  // When backend returns the full list despite page/size, cache it here so
+  // subsequent page navigation can be served from the cache without extra requests.
+  List<Map<String, dynamic>>? _backendFullGlMasters;
 
   // ── Loading / Error ──────────────────────────────────────────────────
   bool _loadingList = false;
@@ -103,9 +106,9 @@ class _GLMasterScreenState extends State<GLMasterScreen> {
   // API Calls
   // ─────────────────────────────────────────────────────────────────────
 
-  Future<void> _loadCategories() async {
+  Future<void> _loadCategories({int page = 1}) async {
     setState(() => _loadingCategories = true);
-    final result = await apiService.getAllGlCategories(size: 200);
+    final result = await apiService.getAllGlCategories(page: page - 1, size: _pageSize);
     setState(() {
       _loadingCategories = false;
       _categoryList = result?.items ?? [];
@@ -118,12 +121,40 @@ class _GLMasterScreenState extends State<GLMasterScreen> {
       _listError = null;
       _currentPage = page;
     });
+    // If we previously detected the backend returned a full list and cached it,
+    // serve from cache instead of making another network request.
+    if (_backendFullGlMasters != null) {
+      final cache = _backendFullGlMasters!;
+      _loadingList = false;
+      _totalItems = cache.length;
+      final startIndex = (page - 1) * _pageSize;
+      final pageItems = cache.skip(startIndex).take(_pageSize).toList();
+      setState(() {
+        _accounts = pageItems;
+        _loadingList = false;
+      });
+      return;
+    }
+
     final result = await apiService.getAllGlMasters(page: page - 1, size: _pageSize);
     setState(() {
       _loadingList = false;
       if (result != null) {
-        _accounts = result.items.reversed.toList();
+        // Detect backend returning full list ignoring page/size.
+        final bool backendReturnedFullList =
+            result.items.length > _pageSize && result.totalElements == result.items.length;
+
         _totalItems = result.totalElements;
+
+        if (backendReturnedFullList) {
+          // Cache the full list so subsequent page clicks can be served from cache
+          // without re-requesting the API which incorrectly returns all items.
+          _backendFullGlMasters = result.items.reversed.toList();
+          final startIndex = (page - 1) * _pageSize;
+          _accounts = _backendFullGlMasters!.skip(startIndex).take(_pageSize).toList();
+        } else {
+          _accounts = result.items.reversed.toList();
+        }
       } else {
         _listError = 'Failed to load GL Master records.';
       }
@@ -172,7 +203,9 @@ class _GLMasterScreenState extends State<GLMasterScreen> {
       );
       _clearFields();
       setState(() => _showForm = false);
-      await _loadGlMasters(); // Refresh list
+        // Invalidate any cached full-list responses so the next load fetches fresh data.
+        _backendFullGlMasters = null;
+        await _loadGlMasters(page: 1); // Refresh to page 1 (first page only)
     } else {
       _showSnack(
         _isEditing
@@ -487,7 +520,7 @@ class _GLMasterScreenState extends State<GLMasterScreen> {
 
     if (success) {
       _showSnack('${c['glName']} deleted successfully', isError: false);
-      await _loadGlMasters();
+      await _loadGlMasters(page: 1);
     } else {
       _showSnack('Failed to delete ${c['glName']}', isError: true);
     }

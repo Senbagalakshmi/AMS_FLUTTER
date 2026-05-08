@@ -35,6 +35,11 @@ class ApiService {
 
   PaginatedResult<Map<String, dynamic>> _parsePaginated(dynamic decoded) {
     if (decoded is List) {
+      // Backend returned a plain array instead of a paginated object.
+      // Log a warning so developers can spot inconsistent API responses in runtime logs.
+      try {
+        print('⚠️ ApiService._parsePaginated: received full-array response (non-paginated). length=${decoded.length}');
+      } catch (_) {}
       return PaginatedResult(
         items: decoded.cast<Map<String, dynamic>>(),
         totalElements: decoded.length,
@@ -644,7 +649,13 @@ class ApiService {
         headers: _headers,
       );
       if (response.statusCode == 200) {
-        return _parsePaginated(jsonDecode(response.body));
+        final dynamic decoded = jsonDecode(response.body);
+        if (decoded is List) {
+          try {
+            print('⚠️ getAllGlCategories: endpoint returned full array -> /gl-category?page=$page&size=$size');
+          } catch (_) {}
+        }
+        return _parsePaginated(decoded);
       }
       return null;
     } catch (e) {
@@ -722,7 +733,13 @@ class ApiService {
         headers: _headers,
       );
       if (response.statusCode == 200) {
-        return _parsePaginated(jsonDecode(response.body));
+        final dynamic decoded = jsonDecode(response.body);
+        if (decoded is List) {
+          try {
+            print('⚠️ getAllGlMasters: endpoint returned full array -> /gl-master?page=$page&size=$size');
+          } catch (_) {}
+        }
+        return _parsePaginated(decoded);
       }
       return null;
     } catch (e) {
