@@ -3019,9 +3019,10 @@ class _AmsPaginatedViewState<T> extends State<AmsPaginatedView<T>> {
     final totalItems = widget.totalRecords ?? widget.items.length;
     final bool isServerSide = widget.onPageChanged != null;
     
-    // Determine if we can rely on a true total count. If server-side and totalItems <= itemsPerPage,
-    // the backend likely returned a single page without the total count.
-    final bool hasTrueTotal = !isServerSide || totalItems > widget.itemsPerPage;
+    // Determine if we can rely on a true total count.
+    // If `totalRecords` was provided by the caller (server-side), treat it as authoritative
+    // even when it's <= itemsPerPage so we can show "Page X of Y" (e.g. Page 1 of 1).
+    final bool hasTrueTotal = widget.totalRecords != null || !isServerSide || totalItems > widget.itemsPerPage;
     
     int totalPages = (totalItems / widget.itemsPerPage).ceil();
 
@@ -3041,13 +3042,17 @@ class _AmsPaginatedViewState<T> extends State<AmsPaginatedView<T>> {
 
     final startIndex = (_currentPage - 1) * widget.itemsPerPage;
 
-    // If server-side, we use items directly unless the backend returned more items than the page size (ignoring pagination).
-    // In both cases, we must slice the items to ensure we never display more than itemsPerPage.
+    // If server-side, we normally expect the backend to return only the current page.
+    // However some endpoints return the full list ignoring page/size. Detect that case
+    // (backend returned more items than page size AND totalRecords equals the returned length)
+    // and treat it as client-side pagination (slice using startIndex).
+    final bool backendReturnedFullList = isServerSide && widget.items.length > widget.itemsPerPage && (widget.totalRecords == null ? widget.items.length > widget.itemsPerPage : widget.totalRecords == widget.items.length);
+
     final currentItems = isServerSide
-        ? (widget.items.length > widget.itemsPerPage 
-            ? widget.items.take(widget.itemsPerPage).toList() 
-            : widget.items)
-        : widget.items.skip(startIndex).take(widget.itemsPerPage).toList();
+      ? (backendReturnedFullList
+        ? widget.items.skip(startIndex).take(widget.itemsPerPage).toList()
+        : (widget.items.length > widget.itemsPerPage ? widget.items.take(widget.itemsPerPage).toList() : widget.items))
+      : widget.items.skip(startIndex).take(widget.itemsPerPage).toList();
 
     final bool showFooter = widget.forceShowFooter || (hasTrueTotal ? totalPages > 1 : true);
     final bool hasPrevPage = _currentPage > 1;
