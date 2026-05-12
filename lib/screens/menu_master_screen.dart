@@ -465,6 +465,7 @@ class _MenuHierarchyViewState extends State<_MenuHierarchyView> {
       items: _parents,
       totalRecords: _totalItems,
       currentPage: _currentPage,
+      forceShowFooter: true,
       onPageChanged: (page) => _loadAll(page),
       builder: (context, currentParents) => ListView.builder(
         padding: const EdgeInsets.all(8),

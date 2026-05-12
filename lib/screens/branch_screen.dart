@@ -321,6 +321,7 @@ class _BranchScreenState extends State<BranchScreen> {
               items: filtered,
               totalRecords: _totalItems,
               currentPage: _currentPage,
+              forceShowFooter: true,
               onPageChanged: (page) => _loadBranches(page),
               builder: (ctx, currentItems) => _buildListTable(currentItems),
             ),

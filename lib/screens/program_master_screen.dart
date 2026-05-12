@@ -1247,6 +1247,7 @@ class _ProgramListViewState extends State<_ProgramListView> {
             child: AmsPaginatedView<Map<String, dynamic>>(
               items: _data ?? [],
               totalRecords: _totalItems,
+              forceShowFooter: true,
               currentPage: _currentPage,
               onPageChanged: (page) => _load(page),
               builder: (context, paginatedItems) => ListView.builder(

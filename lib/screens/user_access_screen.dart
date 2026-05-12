@@ -296,6 +296,7 @@ class _UserAccessScreenState extends State<UserAccessScreen> {
             child: AmsPaginatedView<Map<String, dynamic>>(
               items: filtered,
               totalRecords: _totalItems,
+              forceShowFooter: true,
               currentPage: _currentPage,
               onPageChanged: (page) => _loadRecords(page: page),
               builder: (ctx, items) => _buildListTable(items),

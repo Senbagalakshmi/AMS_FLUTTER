@@ -64,21 +64,35 @@ class GLApiService {
     return null;
   }
   /// GL104 - ALLOWED BRANCHES 
-  Future<List<Map<String, dynamic>>?> getGl104List() async {
-    try {
-      final response = await http.get(
-        Uri.parse("${ApiService.baseUrl}/gl-branch"),
-        headers: apiService.headers,
-      );
-      if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
-        return data.cast<Map<String, dynamic>>();
-      }
-    } catch (e) {
-      print(e);
+  Future<List<Map<String, dynamic>>> getGl104List() async {
+  try {
+    final response = await http.get(
+      Uri.parse("${ApiService.baseUrl}/gl-branch"),
+      headers: apiService.headers,
+    );
+
+    if (response.statusCode != 200) {
+      return [];
     }
-    return null;
+
+    final dynamic decoded = jsonDecode(response.body);
+
+    // Case 1: API returns List directly
+    if (decoded is List) {
+      return List<Map<String, dynamic>>.from(decoded);
+    }
+
+    // Case 2: API returns paginated response (VERY COMMON)
+    if (decoded is Map && decoded.containsKey("content")) {
+      return List<Map<String, dynamic>>.from(decoded["content"]);
+    }
+
+    return [];
+  } catch (e) {
+    print("getGl104List error: $e");
+    return [];
   }
+}
 
   Future<bool> saveAllowedBranch(Map<String, dynamic> payload) async {
     try {
@@ -139,21 +153,35 @@ class GLApiService {
   // ─────────────────────────────────────────
 
   /// GET /api/gl-segments →
-  Future<List<Map<String, dynamic>>?> getAllGlSegments() async {
-    try {
-      final response = await http.get(
-        Uri.parse('${ApiService.baseUrl}/gl-segments'),
-        headers: apiService.headers,
-      );
-      if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
-        return data.cast<Map<String, dynamic>>();
-      }
-      return null;
-    } catch (e) {
-      return null;
+  Future<List<Map<String, dynamic>>> getAllGlSegments() async {
+  try {
+    final response = await http.get(
+      Uri.parse('${ApiService.baseUrl}/gl-segments'),
+      headers: apiService.headers,
+    );
+
+    if (response.statusCode != 200) {
+      return [];
     }
+
+    final dynamic decoded = jsonDecode(response.body);
+
+    // Case 1: Direct List response
+    if (decoded is List) {
+      return List<Map<String, dynamic>>.from(decoded);
+    }
+
+    // Case 2: Paginated response (VERY common in Spring Boot)
+    if (decoded is Map && decoded.containsKey('content')) {
+      return List<Map<String, dynamic>>.from(decoded['content']);
+    }
+
+    return [];
+  } catch (e) {
+    print("getAllGlSegments error: $e");
+    return [];
   }
+}
 
   /// GET /api/gl-segments/{glNo} →
   Future<List<Map<String, dynamic>>?> getGlSegmentsByGlNo(int glNo) async {
@@ -213,21 +241,35 @@ class GLApiService {
     }
   }
    // ── GET ALL GL ATTRIBUTES ──────────────────────────────────────────────
-  static Future<List<Map<String, dynamic>>?> getAllGlAttributes() async {
-    try {
-      final response = await http.get(
-        Uri.parse(_baseUrl),
-        headers: apiService.headers,
-      );
-      if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
-        return data.cast<Map<String, dynamic>>();
-      }
-      return null;
-    } catch (e) {
-      return null;
+  static Future<List<Map<String, dynamic>>> getAllGlAttributes() async {
+  try {
+    final response = await http.get(
+      Uri.parse(_baseUrl),
+      headers: apiService.headers,
+    );
+
+    if (response.statusCode != 200) {
+      return [];
     }
+
+    final dynamic decoded = jsonDecode(response.body);
+
+    // Case 1: Direct List response
+    if (decoded is List) {
+      return List<Map<String, dynamic>>.from(decoded);
+    }
+
+    // Case 2: Paginated response (Spring Boot common)
+    if (decoded is Map && decoded.containsKey('content')) {
+      return List<Map<String, dynamic>>.from(decoded['content']);
+    }
+
+    return [];
+  } catch (e) {
+    print("getAllGlAttributes error: $e");
+    return [];
   }
+}
 
   // ── GET GL ATTRIBUTES BY GL NO ─────────────────────────────────────────
   static Future<List<Map<String, dynamic>>?> getGlAttributesByGlNo(int glNo) async {
@@ -327,21 +369,34 @@ class GLApiService {
     }
   }
   /// GL103 - ALLOWED CURRENCY /////////////////////////////////////
-Future<List<Map<String, dynamic>>?> getGl103List() async {
+Future<List<Map<String, dynamic>>> getGl103List() async {
   try {
     final response = await http.get(
       Uri.parse("${ApiService.baseUrl}/gl-transcation"),
       headers: apiService.headers,
     );
 
-    if (response.statusCode == 200) {
-      final List<dynamic> data = jsonDecode(response.body);
-      return data.cast<Map<String, dynamic>>();
+    if (response.statusCode != 200) {
+      return [];
     }
+
+    final dynamic decoded = jsonDecode(response.body);
+
+    // Case 1: Direct List response
+    if (decoded is List) {
+      return List<Map<String, dynamic>>.from(decoded);
+    }
+
+    // Case 2: Paginated response (Spring Boot common)
+    if (decoded is Map && decoded.containsKey('content')) {
+      return List<Map<String, dynamic>>.from(decoded['content']);
+    }
+
+    return [];
   } catch (e) {
-    print(e);
+    print("getGl103List error: $e");
+    return [];
   }
-  return null;
 }
 
   Future<bool> saveAllowedCurrency(Map<String, dynamic> payload) async {

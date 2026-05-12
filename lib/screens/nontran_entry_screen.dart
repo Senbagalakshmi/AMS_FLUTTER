@@ -925,6 +925,7 @@ class _UserListViewState extends State<_UserListView> {
           child: AmsPaginatedView<Map<String, dynamic>>(
             items: filteredItems.reversed.toList(),
             totalRecords: _totalItems,
+            forceShowFooter: true,
             currentPage: _currentPage,
             onPageChanged: (page) => _loadUsers(page),
             builder: (ctx, currentItems) => ListView.builder(
@@ -1133,6 +1134,7 @@ class _RoleListViewState extends State<_RoleListView> {
           child: AmsPaginatedView<Map<String, dynamic>>(
             items: filteredItems.reversed.toList(),
             totalRecords: _totalItems,
+            forceShowFooter: true,
             currentPage: _currentPage,
             onPageChanged: (page) => _loadRoles(page),
             builder: (ctx, currentItems) => ListView.builder(
@@ -1298,6 +1300,7 @@ class _UserRoleListViewState extends State<_UserRoleListView> {
     return AmsPaginatedView<Map<String, dynamic>>(
       items: (_data ?? []).reversed.toList(),
       totalRecords: _totalItems,
+      forceShowFooter: true,
       currentPage: _currentPage,
       onPageChanged: (page) => _load(page),
       builder: (ctx, currentItems) => ListView.builder(
@@ -1424,6 +1427,7 @@ class _ModuleListViewState extends State<_ModuleListView> {
           child: AmsPaginatedView<Map<String, dynamic>>(
             items: filteredItems.reversed.toList(),
             totalRecords: _totalItems,
+            forceShowFooter: true,
             currentPage: _currentPage,
             onPageChanged: (page) => _load(page),
             builder: (ctx, currentItems) => ListView.builder(
