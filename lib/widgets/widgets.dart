@@ -2405,6 +2405,7 @@ class _PremiumAppLauncherState extends State<_PremiumAppLauncher> {
             '')
         .replaceAll('"', '');
     final url = motherToken.isEmpty ? homeUrl : '$homeUrl?token=$motherToken';
+    print('🚀 9-Dots Launcher Redirection URL: $url');
     html.window.open(url, '_blank');
   }
 

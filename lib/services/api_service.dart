@@ -81,16 +81,7 @@ class ApiService {
         return null;
       }
 
-      // Store mother_token for SSO nine-dots navigation
-      if (kIsWeb) {
-        html.window.sessionStorage['mother_token'] = motherToken;
-        if (userData != null) {
-          html.window.sessionStorage['user_data'] = jsonEncode(userData);
-        }
-      }
-
       // ── Step 2: POST /am/exchange-token → get child_token ─────────────────
-      // Note: endpoint has no /api prefix
       final host = baseUrl.replaceFirst('/api', '');
       final exchangeRes = await http.post(
         Uri.parse('$host/am/exchange-token'),
@@ -111,11 +102,54 @@ class ApiService {
                            exchangeData['access_token'] as String? ??
                            exchangeData['token']        as String?;
 
-      if (childToken != null && kIsWeb) {
-        html.window.sessionStorage['child_token'] = childToken;
+      if (childToken == null) {
+        print('⚠️ No child_token in exchange response');
+        return null;
       }
 
-      print('✅ child_token: ${childToken?.substring(0, 20)}...');
+      // ── Update ApiService token so Step 3 call is authenticated ──────────
+      updateToken(childToken);
+
+      // ── Step 3: GET /user/get-user → get detailed profile & products ─────
+      Map<String, dynamic>? userDetails;
+      final userScdRaw = userData?['userScd'] ?? userData?['usersCd'];
+      final orgCodeRaw = userData?['orgCode'];
+      if (userScdRaw != null) {
+        final uCode = userScdRaw is int ? userScdRaw : int.tryParse(userScdRaw.toString()) ?? 0;
+        final oCode = orgCodeRaw is int ? orgCodeRaw : int.tryParse(orgCodeRaw?.toString() ?? '0') ?? 0;
+        print('👤 Fetching user details (Step 3) for userCode=$uCode, orgCode=$oCode');
+        userDetails = await getUserDetails(uCode, oCode);
+      } else {
+        print('⚠️ No userScd found in login response to fetch user details');
+      }
+
+      // Store combined session data for SSO nine-dots navigation
+      if (kIsWeb) {
+        html.window.sessionStorage['mother_token'] = motherToken;
+        html.window.sessionStorage['child_token']  = childToken;
+
+        final finalUser = <String, dynamic>{};
+        if (userData != null) {
+          finalUser.addAll(Map<String, dynamic>.from(userData));
+        }
+        if (userDetails != null) {
+          finalUser.addAll(userDetails);
+        }
+
+        // Ensure products are mapped to session user_data so nine dots works
+        if (loginData['products'] != null) {
+          finalUser['products'] = loginData['products'];
+        } else if (exchangeData['products'] != null) {
+          finalUser['products'] = exchangeData['products'];
+        } else if (userDetails != null && userDetails['products'] != null) {
+          finalUser['products'] = userDetails['products'];
+        }
+
+        html.window.sessionStorage['user_data'] = jsonEncode(finalUser);
+        print('💾 Session user_data saved: ${jsonEncode(finalUser)}');
+      }
+
+      print('✅ login complete. child_token: ${childToken.substring(0, 20)}...');
       return childToken;
     } catch (e) {
       print('❌ login error: $e');
@@ -962,16 +996,17 @@ class ApiService {
   }
 
   // ── SSO: Exchange mother token → child token ──────────────────────────────
-  // AM endpoint: POST <amBaseUrl>/exchange/exchange-token  (from config.json)
+  // Endpoint: POST /am/exchange-token (derived from baseUrl)
   //   Header : Authorization: Bearer <mother_token>
   //   Body   : { "productCode": <int> }
   Future<Map<String, dynamic>?> exchangeToken(String motherToken) async {
     try {
-      final amBaseUrl = AppConfig.instance.amBaseUrl;
+      final host = baseUrl.replaceFirst('/api', '');
       final productCode = AppConfig.instance.productCode;
 
+      print('🔄 SSO exchange token calling: $host/am/exchange-token');
       final res = await http.post(
-        Uri.parse('$amBaseUrl/exchange/exchange-token'),
+        Uri.parse('$host/am/exchange-token'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $motherToken',
@@ -990,13 +1025,13 @@ class ApiService {
   }
 
   // ── Get full user profile after SSO exchange ───────────────────────────────
-  // AM endpoint: GET <amBaseUrl>/user/get-user/?userCode=<userCode>&orgCode=<orgCode>
+  // Endpoint: GET /am/get-user?userCode=<userCode>&orgCode=<orgCode> (uses host without /api)
   //   Header: Authorization: Bearer <child_token>
   Future<Map<String, dynamic>?> getUserDetails(int userCode, int orgCode) async {
     try {
-      final amBaseUrl = AppConfig.instance.amBaseUrl;
-      final url = '$amBaseUrl/user/get-user/?userCode=$userCode&orgCode=$orgCode';
-      print('🌐 GET $url');
+      final host = baseUrl.replaceFirst('/api', '');
+      final url = '$host/am/get-user?userCode=$userCode&orgCode=$orgCode';
+      print('🌐 Fetching User Details GET $url');
 
       final res = await http.get(
         Uri.parse(url),
