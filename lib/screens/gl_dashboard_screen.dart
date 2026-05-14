@@ -4,6 +4,7 @@ import '../widgets/widgets.dart';
 import '../theme.dart';
 import '../data.dart';
 import '../screens/submenu_dashboard_screen.dart';
+import '../utils/responsive.dart';
 
 class GlDashboardScreen extends StatefulWidget {
   final List<SubmenuItem> items;
@@ -81,38 +82,61 @@ class _GlDashboardScreenState extends State<GlDashboardScreen> with SingleTicker
   }
 
   Widget _buildHeader() {
+    final isMobile = Responsive.isMobile(context);
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 8), // Reduced padding
+      padding: EdgeInsets.fromLTRB(isMobile ? 12 : 20, 16, isMobile ? 12 : 20, 12),
       decoration: const BoxDecoration(color: Colors.white),
-      child: Row(
+      child: Column(
         children: [
-          IconButton(
-            icon: const Icon(Icons.arrow_back, color: AppColors.ink2, size: 20), // Smaller icon
-            onPressed: widget.onBack,
-          ),
-          const SizedBox(width: 4),
-          _Animated3DIcon(),
-          const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          Row(
             children: [
-              Text(
-                'GL Intelligence Dashboard',
-                style: bodyStyle(size: 20, weight: FontWeight.w800, color: AppColors.ink), // Smaller font
+              IconButton(
+                icon: const Icon(Icons.arrow_back, color: AppColors.ink2, size: 20),
+                onPressed: widget.onBack,
               ),
-              Text(
-                'Real-time financial analysis & ledger control',
-                style: bodyStyle(size: 11, color: AppColors.ink3), // Smaller subtitle
+              const SizedBox(width: 4),
+              _Animated3DIcon(),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'GL Intelligence Dashboard',
+                      style: bodyStyle(size: isMobile ? 16 : 20, weight: FontWeight.w800, color: AppColors.ink),
+                    ),
+                    Text(
+                      isMobile ? 'Financial ledger control' : 'Real-time financial analysis & ledger control',
+                      style: bodyStyle(size: 11, color: AppColors.ink3),
+                    ),
+                  ],
+                ),
               ),
+              if (!isMobile) ...[
+                _HeaderMetric(label: 'Health', value: '${96 + (_selectedScenario % 4)}%'),
+                const SizedBox(width: 16),
+                _HeaderMetric(
+                  label: 'Status', 
+                  value: _selectedScenario % 2 == 0 ? 'Syncing' : 'Optimized'
+                ),
+              ],
             ],
           ),
-          const Spacer(),
-          _HeaderMetric(label: 'Health', value: '${96 + (_selectedScenario % 4)}%'),
-          const SizedBox(width: 16),
-          _HeaderMetric(
-            label: 'Status', 
-            value: _selectedScenario % 2 == 0 ? 'Syncing' : 'Optimized'
-          ),
+          if (isMobile) ...[
+            const SizedBox(height: 12),
+            const Divider(height: 1, color: AppColors.border),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _HeaderMetric(label: 'Health', value: '${96 + (_selectedScenario % 4)}%'),
+                _HeaderMetric(
+                  label: 'Status', 
+                  value: _selectedScenario % 2 == 0 ? 'Syncing' : 'Optimized'
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );
@@ -121,43 +145,47 @@ class _GlDashboardScreenState extends State<GlDashboardScreen> with SingleTicker
   Widget _buildTabNav() {
     return Container(
       color: Colors.white,
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      height: 60, // Increased to match _TabItem height
-      child: Row(
-        children: [
-          _TabItem(
-            label: 'Overview',
-            icon: Icons.dashboard_customize_rounded,
-            isActive: _activeTab == 0,
-            onTap: () => setState(() => _activeTab = 0),
-          ),
-          const SizedBox(width: 8),
-          _TabItem(
-            label: 'Data Grid',
-            icon: Icons.table_chart_rounded,
-            isActive: _activeTab == 1,
-            onTap: () => setState(() => _activeTab = 1),
-          ),
-          const SizedBox(width: 8),
-          _TabItem(
-            label: 'Timeline',
-            icon: Icons.analytics_rounded,
-            isActive: _activeTab == 2,
-            onTap: () => setState(() => _activeTab = 2),
-          ),
-        ],
+      width: double.infinity,
+      height: 60,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Row(
+          children: [
+            _TabItem(
+              label: 'Overview',
+              icon: Icons.dashboard_customize_rounded,
+              isActive: _activeTab == 0,
+              onTap: () => setState(() => _activeTab = 0),
+            ),
+            const SizedBox(width: 8),
+            _TabItem(
+              label: 'Data Grid',
+              icon: Icons.table_chart_rounded,
+              isActive: _activeTab == 1,
+              onTap: () => setState(() => _activeTab = 1),
+            ),
+            const SizedBox(width: 8),
+            _TabItem(
+              label: 'Timeline',
+              icon: Icons.analytics_rounded,
+              isActive: _activeTab == 2,
+              onTap: () => setState(() => _activeTab = 2),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildOverview() {
     final List<SubmenuItem> scenarios = widget.items;
+    final isMobile = Responsive.isMobile(context);
     
     if (scenarios.isEmpty) {
       return Center(child: Text('No GL Scenarios available', style: bodyStyle(size: 16, color: AppColors.ink4)));
     }
 
-    // Defensive clamping
     final int itemsCount = scenarios.length;
     final int safeIndex = (_selectedScenario >= 0 && _selectedScenario < itemsCount) 
         ? _selectedScenario 
@@ -165,72 +193,82 @@ class _GlDashboardScreenState extends State<GlDashboardScreen> with SingleTicker
     
     final selectedItem = scenarios[safeIndex];
 
+    final summaryCards = [
+      _SummaryCard3D(
+        title: 'GL Categories',
+        value: (10 + (safeIndex * 2)).toString(),
+        icon: Icons.category_rounded,
+        color: const Color(0xFF6366F1),
+        delay: 0,
+      ),
+      _SummaryCard3D(
+        title: 'Ledger Masters',
+        value: (70 + (safeIndex * 15)).toString(),
+        icon: Icons.account_balance_rounded,
+        color: const Color(0xFF10B981),
+        delay: 0.05,
+      ),
+      _SummaryCard3D(
+        title: 'Branches',
+        value: (8 + (safeIndex % 4)).toString(),
+        icon: Icons.business_rounded,
+        color: const Color(0xFFEF4444),
+        delay: 0.1,
+      ),
+    ];
+
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16), // Further reduced from 24
+      padding: EdgeInsets.all(isMobile ? 12 : 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 🔹 3D CARDS ROW
-          Row(
-            children: [
-              Expanded(child: _SummaryCard3D(
-                title: 'GL Categories',
-                value: (10 + (safeIndex * 2)).toString(),
-                icon: Icons.category_rounded,
-                color: const Color(0xFF6366F1),
-                delay: 0,
-              )),
-              const SizedBox(width: 16),
-              Expanded(child: _SummaryCard3D(
-                title: 'Ledger Masters',
-                value: (70 + (safeIndex * 15)).toString(),
-                icon: Icons.account_balance_rounded,
-                color: const Color(0xFF10B981),
-                delay: 0.1,
-              )),
-              const SizedBox(width: 16),
-              Expanded(child: _SummaryCard3D(
-                title: 'Branches',
-                value: (8 + (safeIndex % 4)).toString(),
-                icon: Icons.business_rounded,
-                color: const Color(0xFFEF4444),
-                delay: 0.2,
-              )),
-            ],
-          ),
-          const SizedBox(height: 20), // Reduced from 24
+          if (isMobile)
+            ...summaryCards.map((c) => Padding(padding: const EdgeInsets.only(bottom: 12), child: c))
+          else
+            Row(
+              children: summaryCards.map((c) => Expanded(child: Padding(padding: const EdgeInsets.symmetric(horizontal: 8), child: c))).toList(),
+            ),
+          const SizedBox(height: 20),
 
-          // 🔹 DUAL PIE CHARTS ROW
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Distribution Chart
-              Expanded(
-                child: _ChartFrame(
-                  title: 'Ledger Composition: ${selectedItem.label}',
+          if (isMobile)
+            Column(
+              children: [
+                _ChartFrame(
+                  title: 'Ledger Composition',
                   child: _ModernPieChart(items: widget.items, type: PieType.distribution, seed: safeIndex.abs()),
                 ),
-              ),
-              const SizedBox(width: 20),
-              // Authorization Flow Chart
-              Expanded(
-                child: _ChartFrame(
-                  title: 'Authorization Integrity: ${selectedItem.label}',
+                const SizedBox(height: 16),
+                _ChartFrame(
+                  title: 'Authorization Integrity',
                   child: _ModernPieChart(items: widget.items, type: PieType.authorization, seed: (safeIndex + 10).abs()),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20), // Reduced
+              ],
+            )
+          else
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: _ChartFrame(
+                    title: 'Ledger Composition: ${selectedItem.label}',
+                    child: _ModernPieChart(items: widget.items, type: PieType.distribution, seed: safeIndex.abs()),
+                  ),
+                ),
+                const SizedBox(width: 20),
+                Expanded(
+                  child: _ChartFrame(
+                    title: 'Authorization Integrity: ${selectedItem.label}',
+                    child: _ModernPieChart(items: widget.items, type: PieType.authorization, seed: (safeIndex + 10).abs()),
+                  ),
+                ),
+              ],
+            ),
+          const SizedBox(height: 20),
 
-          // 🔹 BOTTOM ROW (Split Pipeline & Auth Summary)
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Scenarios List (Left)
-              Expanded(
-                flex: 7, // Wider left side
-                child: _ChartFrame(
+          if (isMobile)
+            Column(
+              children: [
+                _ChartFrame(
                   title: 'Top GL Scenarios',
                   child: _ScenarioAuthorizationPipeline(
                     items: widget.items.take(5).toList(),
@@ -238,18 +276,38 @@ class _GlDashboardScreenState extends State<GlDashboardScreen> with SingleTicker
                     onSelect: (idx) => setState(() => _selectedScenario = idx),
                   ),
                 ),
-              ),
-              const SizedBox(width: 16), // Reduced from 24
-              // Module Intelligence Sidebar (Right)
-              Expanded(
-                flex: 3,
-                child: _ChartFrame(
+                const SizedBox(height: 16),
+                _ChartFrame(
                   title: 'Module Intelligence',
                   child: _ModuleIntelligencePanel(selectedItem: selectedItem),
                 ),
-              ),
-            ],
-          ),
+              ],
+            )
+          else
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  flex: 7,
+                  child: _ChartFrame(
+                    title: 'Top GL Scenarios',
+                    child: _ScenarioAuthorizationPipeline(
+                      items: widget.items.take(5).toList(),
+                      selectedIndex: safeIndex,
+                      onSelect: (idx) => setState(() => _selectedScenario = idx),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  flex: 3,
+                  child: _ChartFrame(
+                    title: 'Module Intelligence',
+                    child: _ModuleIntelligencePanel(selectedItem: selectedItem),
+                  ),
+                ),
+              ],
+            ),
         ],
       ),
     );
@@ -811,6 +869,7 @@ class _MondayGroup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = Responsive.isMobile(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -824,9 +883,9 @@ class _MondayGroup extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 16),
-        _buildTableHeader(),
+        if (!isMobile) _buildTableHeader(),
         const SizedBox(height: 8),
-        ...items.map((item) => _build3DRow(item)),
+        ...items.map((item) => _build3DRow(context, item)),
       ],
     );
   }
@@ -847,7 +906,73 @@ class _MondayGroup extends StatelessWidget {
     );
   }
 
-  Widget _build3DRow(SubmenuItem item) {
+  Widget _build3DRow(BuildContext context, SubmenuItem item) {
+    final isMobile = Responsive.isMobile(context);
+    
+    if (isMobile) {
+      return _HoverElevation(
+        onTap: () => onNavigate(item.screen, item.programId),
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.border.withValues(alpha: 0.8), width: 1),
+            boxShadow: [
+              BoxShadow(
+                color: color.withValues(alpha: 0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 4,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: color,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(item.label, style: bodyStyle(size: 15, weight: FontWeight.w800, color: AppColors.ink)),
+                    if (item.subtitle != null && item.subtitle!.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(item.subtitle!, style: bodyStyle(size: 11, color: AppColors.ink3), maxLines: 1, overflow: TextOverflow.ellipsis),
+                    ],
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: AppColors.bg,
+                            border: Border.all(color: AppColors.border2),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(item.programId, style: monoStyle(size: 10, color: AppColors.ink3, weight: FontWeight.w700)),
+                        ),
+                        const SizedBox(width: 8),
+                        _buildStatusCell(item),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right_rounded, color: AppColors.ink4),
+            ],
+          ),
+        ),
+      );
+    }
+
     return _HoverElevation(
       onTap: () => onNavigate(item.screen, item.programId),
       child: Container(

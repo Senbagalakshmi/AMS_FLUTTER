@@ -7,6 +7,7 @@ import '../widgets/widgets.dart';
 import '../services/branch_api_service.dart';
 import '../services/org_api_service.dart'; // ← NEW import
 import 'package:intl/intl.dart';
+import '../utils/responsive.dart';
 
 class BranchScreen extends StatefulWidget {
   final VoidCallback onBack;
@@ -296,25 +297,53 @@ class _BranchScreenState extends State<BranchScreen> {
         children: [
           Padding(
             padding: const EdgeInsets.all(16.0),
-            child: Row(
-              children: [
-                Expanded(
-                    child: AmsTextInput(
+            child: LayoutBuilder(builder: (context, constraints) {
+              final isMobile = Responsive.isMobile(context);
+              if (isMobile) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    AmsTextInput(
                         icon: Icons.search_rounded,
                         placeholder: 'Search Branch...',
                         borderColor: AppColors.tBlue,
-                        onChanged: (v) => setState(() => _searchQuery = v))),
-                const SizedBox(width: 16),
-                IconButton(
-                    icon: const Icon(Icons.refresh_rounded),
-                    onPressed: () => _loadBranches(1)),
-                const SizedBox(width: 16),
-                AmsButton(
-                    label: '+ Add New',
-                    variant: AmsButtonVariant.primary,
-                    onPressed: _createNew),
-              ],
-            ),
+                        onChanged: (v) => setState(() => _searchQuery = v)),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        IconButton(
+                            icon: const Icon(Icons.refresh_rounded),
+                            onPressed: () => _loadBranches(1)),
+                        const Spacer(),
+                        AmsButton(
+                            label: '+ Add New',
+                            variant: AmsButtonVariant.primary,
+                            onPressed: _createNew),
+                      ],
+                    ),
+                  ],
+                );
+              }
+              return Row(
+                children: [
+                  Expanded(
+                      child: AmsTextInput(
+                          icon: Icons.search_rounded,
+                          placeholder: 'Search Branch...',
+                          borderColor: AppColors.tBlue,
+                          onChanged: (v) => setState(() => _searchQuery = v))),
+                  const SizedBox(width: 16),
+                  IconButton(
+                      icon: const Icon(Icons.refresh_rounded),
+                      onPressed: () => _loadBranches(1)),
+                  const SizedBox(width: 16),
+                  AmsButton(
+                      label: '+ Add New',
+                      variant: AmsButtonVariant.primary,
+                      onPressed: _createNew),
+                ],
+              );
+            }),
           ),
           Expanded(
             child: AmsPaginatedView<Map<String, dynamic>>(
@@ -338,9 +367,82 @@ class _BranchScreenState extends State<BranchScreen> {
       separatorBuilder: (_, __) => const SizedBox(height: 12),
       itemBuilder: (ctx, idx) {
         final b = items[idx];
+        final isMobile = Responsive.isMobile(context);
         final bName =
             b['branchname'] ?? b['brnName'] ?? b['BRNNAME'] ?? 'Unknown';
         final bCd = b['branchcd'] ?? b['brnCd'] ?? b['BRNCD'] ?? '—';
+
+        if (isMobile) {
+          return Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.border)),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    CircleAvatar(
+                        radius: 18,
+                        backgroundColor: AppColors.nTealLt,
+                        child: Text(bName.isNotEmpty ? bName[0] : 'B',
+                            style: const TextStyle(
+                                color: AppColors.nTeal,
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold))),
+                    const SizedBox(width: 12),
+                    Expanded(
+                        child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                          Text(bName, style: bodyStyle(weight: FontWeight.bold, size: 14)),
+                          Text('Code: $bCd',
+                              style: bodyStyle(color: AppColors.ink3, size: 11)),
+                        ])),
+                    AmsBadge(
+                      label:
+                          (b['status']?.toString() == '0') ? 'Disabled' : 'Enabled',
+                      color: (b['status']?.toString() == '0')
+                          ? AppColors.red
+                          : AppColors.green,
+                      background: (b['status']?.toString() == '0')
+                          ? AppColors.redLt
+                          : AppColors.greenLt,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                const Divider(height: 1, color: AppColors.border),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    _actionIcon(
+                        icon: Icons.visibility_outlined,
+                        color: AppColors.green,
+                        bg: Colors.white,
+                        onTap: () => _enterViewMode(b)),
+                    const SizedBox(width: 8),
+                    _actionIcon(
+                        icon: Icons.edit_outlined,
+                        color: AppColors.tBlue,
+                        bg: Colors.white,
+                        onTap: () => _enterViewMode(b, viewOnly: false)),
+                    const SizedBox(width: 8),
+                    _actionIcon(
+                        icon: Icons.delete_outline_rounded,
+                        color: AppColors.red,
+                        bg: AppColors.redLt,
+                        onTap: () => _confirmDelete(b)),
+                  ],
+                ),
+              ],
+            ),
+          );
+        }
+
         return Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
@@ -1471,8 +1573,9 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
   // ── Build ───────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
+    final isMobile = Responsive.isMobile(context);
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.all(isMobile ? 12 : 24),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(8),

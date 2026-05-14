@@ -99,6 +99,33 @@ class _AmsRootState extends State<AmsRoot> {
     }
   }
 
+  void _handleScreenNavigation(String s, String? p) {
+    if (s == 'login') {
+      _navigate('login');
+      return;
+    }
+
+    // Handle category navigation
+    String? cat;
+    if (s == 'submenu_dashboard') {
+      cat = p; // Category name (e.g. 'GL', 'GL-SUB')
+    }
+
+    setState(() {
+      _state = _state.copyWith(
+        screen: s,
+        selectedProg: p,
+        selectedCategory: cat,
+        clearCategory: cat == null,
+        selectedType: p != null
+            ? (tranPrograms.contains(p) ? 'T' : 'N')
+            : _state.selectedType,
+        clearProg: p == null,
+      );
+    });
+  }
+
+
   Future<void> _refreshData() async {
     if (mounted) {
       setState(() {
@@ -708,36 +735,14 @@ class _AmsRootState extends State<AmsRoot> {
             }).toList(),
             userName: _state.userName,
             onBack: () => _navigate('list'),
-            onNavigate: (s, p) {
-              setState(() {
-                _state = _state.copyWith(
-                  screen: s,
-                  selectedProg: p,
-                  selectedType: p != null
-                      ? (tranPrograms.contains(p) ? 'T' : 'N')
-                      : _state.selectedType,
-                  clearCategory: true,
-                );
-              });
-            },
+            onNavigate: _handleScreenNavigation,
           );
         } else {
           body = SubmenuDashboardScreen(
             title: title,
             items: items,
             onBack: () => _navigate('list'),
-            onNavigate: (s, p) {
-              setState(() {
-                _state = _state.copyWith(
-                  screen: s,
-                  selectedProg: p,
-                  selectedType: p != null
-                      ? (tranPrograms.contains(p) ? 'T' : 'N')
-                      : _state.selectedType,
-                  clearCategory: true,
-                );
-              });
-            },
+            onNavigate: _handleScreenNavigation,
           );
         }
       default:
@@ -769,32 +774,7 @@ class _AmsRootState extends State<AmsRoot> {
           currentScreen: screen,
           selectedProg: _state.selectedProg,
           userName: _state.userName,
-          onNavigate: (s, p) {
-            if (s == 'login') {
-              _navigate('login');
-              return;
-            }
-
-            // Handle category navigation
-            String? cat;
-            if (s == 'submenu_dashboard') {
-              cat = p; // Category name (e.g. 'GL')
-              // Keep p as category ID for sidebar selection logic
-            }
-
-            setState(() {
-              _state = _state.copyWith(
-                screen: s,
-                selectedProg: p,
-                selectedCategory: cat,
-                clearCategory: cat == null,
-                selectedType: p != null
-                    ? (tranPrograms.contains(p) ? 'T' : 'N')
-                    : _state.selectedType,
-                clearProg: p == null,
-              );
-            });
-          },
+          onNavigate: _handleScreenNavigation,
           child: body,
         ),
         if (showModal)

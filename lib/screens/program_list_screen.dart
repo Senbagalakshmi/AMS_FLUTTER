@@ -3,6 +3,7 @@ import '../theme.dart';
 import '../models/models.dart';
 import '../widgets/widgets.dart';
 import 'package:intl/intl.dart';
+import '../utils/responsive.dart';
 
 class ProgramListScreen extends StatefulWidget {
   final Map<String, Auth101Config> authConfigs;
@@ -35,10 +36,32 @@ class ProgramListScreen extends StatefulWidget {
 class _ProgramListScreenState extends State<ProgramListScreen> {
   @override
   Widget build(BuildContext context) {
+    final isMobile = Responsive.isMobile(context);
+    
+    final contentList = [
+      // LEFT SIDE (Charts & Activity)
+      Column(
+        children: [
+          _buildActivityChart(),
+          const SizedBox(height: 24),
+          _buildAuthWatchlist(),
+        ],
+      ),
+      SizedBox(height: isMobile ? 24 : 0, width: isMobile ? 0 : 24),
+      // RIGHT SIDE (Quick Actions & Stats)
+      Column(
+        children: [
+          _buildQuickActions(),
+          const SizedBox(height: 24),
+          _buildResourceStatus(),
+        ],
+      ),
+    ];
+
     return Scaffold(
       backgroundColor: AppColors.bg,
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(32),
+        padding: EdgeInsets.all(isMobile ? 16 : 32),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -51,34 +74,28 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
             const SizedBox(height: 32),
 
             // 🔹 3. MAIN DASHBOARD AREA (Split Layout)
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // LEFT SIDE (Charts & Activity)
-                Expanded(
-                  flex: 7,
-                  child: Column(
+            isMobile
+                ? Column(
                     children: [
-                      _buildActivityChart(),
-                      const SizedBox(height: 24),
-                      _buildAuthWatchlist(),
+                      contentList[0], // Left Side Column
+                      contentList[1], // Spacer
+                      contentList[2], // Right Side Column
+                    ],
+                  )
+                : Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        flex: 7,
+                        child: contentList[0],
+                      ),
+                      contentList[1], // Spacer
+                      Expanded(
+                        flex: 3,
+                        child: contentList[2],
+                      ),
                     ],
                   ),
-                ),
-                const SizedBox(width: 24),
-                // RIGHT SIDE (Quick Actions & Stats)
-                Expanded(
-                  flex: 3,
-                  child: Column(
-                    children: [
-                      _buildQuickActions(),
-                      const SizedBox(height: 24),
-                      _buildResourceStatus(),
-                    ],
-                  ),
-                ),
-              ],
-            ),
           ],
         ),
       ),
@@ -99,45 +116,92 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
       displayName = displayName[0].toUpperCase() + displayName.substring(1);
     }
 
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Hi, $displayName!',
-              style: bodyStyle(
-                  size: 26, weight: FontWeight.w900, color: AppColors.ink),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              'Here is what’s happening in your system today.',
-              style: bodyStyle(size: 14, color: AppColors.ink3),
-            ),
-          ],
-        ),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: Row(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isMobile = Responsive.isMobile(context);
+        
+        if (isMobile) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(Icons.calendar_today_rounded,
-                  size: 16, color: AppColors.ink2),
-              const SizedBox(width: 10),
               Text(
-                '$dayStr, $dateStr',
+                'Hi, $displayName!',
                 style: bodyStyle(
-                    size: 13, weight: FontWeight.w700, color: AppColors.ink2),
+                    size: 24, weight: FontWeight.w900, color: AppColors.ink),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'Here is what’s happening in your system today.',
+                style: bodyStyle(size: 13, color: AppColors.ink3),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.calendar_today_rounded,
+                        size: 16, color: AppColors.ink2),
+                    const SizedBox(width: 10),
+                    Text(
+                      '$dayStr, $dateStr',
+                      style: bodyStyle(
+                          size: 13, weight: FontWeight.w700, color: AppColors.ink2),
+                    ),
+                  ],
+                ),
               ),
             ],
-          ),
-        ),
-      ],
+          );
+        }
+
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Hi, $displayName!',
+                  style: bodyStyle(
+                      size: 26, weight: FontWeight.w900, color: AppColors.ink),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Here is what’s happening in your system today.',
+                  style: bodyStyle(size: 14, color: AppColors.ink3),
+                ),
+              ],
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.calendar_today_rounded,
+                      size: 16, color: AppColors.ink2),
+                  const SizedBox(width: 10),
+                  Text(
+                    '$dayStr, $dateStr',
+                    style: bodyStyle(
+                        size: 13, weight: FontWeight.w700, color: AppColors.ink2),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
+      }
     );
   }
 

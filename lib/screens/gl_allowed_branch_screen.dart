@@ -4,6 +4,7 @@ import '../widgets/widgets.dart';
 import '../services/gl_api_service.dart';
 import '../services/org_api_service.dart';
 import '../services/api_service.dart';
+import '../utils/responsive.dart';
 import 'package:flutter/services.dart';
 
 class AllowedBranchScreen extends StatefulWidget {
@@ -180,6 +181,9 @@ class _AllowedBranchScreenState extends State<AllowedBranchScreen> {
     _orgOverlay = null;
     _orgSearchCtrl.clear();
 
+    final screenWidth = MediaQuery.of(context).size.width;
+    final dropdownWidth = screenWidth < 400 ? (screenWidth - 32) : 360.0;
+
     _orgOverlay = OverlayEntry(
       builder: (ctx) => GestureDetector(
         behavior: HitTestBehavior.translucent,
@@ -210,7 +214,7 @@ class _AllowedBranchScreenState extends State<AllowedBranchScreen> {
                       }).toList();
 
                       return Container(
-                        width: 360,
+                        width: dropdownWidth,
                         constraints: const BoxConstraints(maxHeight: 340),
                         decoration: BoxDecoration(
                           color: Colors.white,
@@ -465,7 +469,10 @@ class _AllowedBranchScreenState extends State<AllowedBranchScreen> {
 
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              padding: EdgeInsets.symmetric(
+                horizontal: Responsive.isMobile(context) ? 12 : 20,
+                vertical: 10,
+              ),
               child: showForm ? _buildFormView() : _buildListView(),
             ),
           ),
@@ -498,46 +505,96 @@ Widget _buildListView() {
         /// Top Search Row
         Padding(
           padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Expanded(
-                child: AmsTextInput(
-                  icon: Icons.search_rounded,
-                  placeholder: 'Search branches...',
-                  onChanged: (v) {
+          child: LayoutBuilder(builder: (context, constraints) {
+            final isMobile = Responsive.isMobile(context);
+            if (isMobile) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  AmsTextInput(
+                    icon: Icons.search_rounded,
+                    placeholder: 'Search branches...',
+                    onChanged: (v) {
+                      setState(() {
+                        _searchQuery = v?.toString() ?? '';
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: AmsButton(
+                          label: '+ Add New',
+                          onPressed: () {
+                            setState(() {
+                              showForm = true;
+                              _isEditMode = false;
+                              _isViewOnly = false;
+                              _selectedGlMaster = null;
+                              orgCodeController.clear();
+                              _selectedOrgCode = null;
+                              _orgError = null;
+                              for (var b in branches) {
+                                b["enabled"] = false;
+                              }
+                            });
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      IconButton(
+                        icon: const Icon(Icons.refresh_rounded),
+                        onPressed: () {
+                          loadSavedBranches();
+                        },
+                      ),
+                    ],
+                  )
+                ],
+              );
+            }
+            return Row(
+              children: [
+                Expanded(
+                  child: AmsTextInput(
+                    icon: Icons.search_rounded,
+                    placeholder: 'Search branches...',
+                    onChanged: (v) {
+                      setState(() {
+                        _searchQuery = v?.toString() ?? '';
+                      });
+                    },
+                  ),
+                ),
+                const SizedBox(width: 16),
+                IconButton(
+                  icon: const Icon(Icons.refresh_rounded),
+                  onPressed: () {
+                    loadSavedBranches();
+                  },
+                ),
+                const SizedBox(width: 16),
+                AmsButton(
+                  label: '+ Add New',
+                  onPressed: () {
                     setState(() {
-                      _searchQuery = v?.toString() ?? '';
+                      showForm = true;
+                      _isEditMode = false;
+                      _isViewOnly = false;
+                      _selectedGlMaster = null;
+                      orgCodeController.clear();
+                      _selectedOrgCode = null;
+                      _orgError = null;
+                      for (var b in branches) {
+                        b["enabled"] = false;
+                      }
                     });
                   },
                 ),
-              ),
-              const SizedBox(width: 16),
-              IconButton(
-                icon: const Icon(Icons.refresh_rounded),
-                onPressed: () {
-                  loadSavedBranches();
-                },
-              ),
-              const SizedBox(width: 16),
-              AmsButton(
-                label: '+ Add New',
-                onPressed: () {
-                  setState(() {
-                    showForm = true;
-                    _isEditMode = false;
-                    _isViewOnly = false;
-                    _selectedGlMaster = null;
-                    orgCodeController.clear();
-                    _selectedOrgCode = null;
-                    _orgError = null;
-                    for (var b in branches) {
-                      b["enabled"] = false;
-                    }
-                  });
-                },
-              ),
-            ],
-          ),
+              ],
+            );
+          }),
         ),
 
         /// List Cards
@@ -555,6 +612,168 @@ Widget _buildListView() {
                       itemBuilder: (context, index) {
                         final item = currentItems[index];
                         final branchesText = (item["branches"] as List).join(", ");
+
+                        final isMobile = Responsive.isMobile(context);
+                        if (isMobile) {
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 14),
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: AppColors.border,
+                              ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Container(
+                                      width: 40,
+                                      height: 40,
+                                      decoration: BoxDecoration(
+                                        color: AppColors.bg,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: Center(
+                                        child: Text(
+                                          (item["gl"] ?? "G").toString().replaceAll("GL ", "").substring(0, 1),
+                                          style: bodyStyle(
+                                            weight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Text(
+                                        item["gl"] ?? "",
+                                        style: bodyStyle(
+                                          weight: FontWeight.w600,
+                                          size: 15,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 12),
+                                Text(
+                                  "Branches: $branchesText",
+                                  style: bodyStyle(
+                                    color: AppColors.ink3,
+                                    size: 13,
+                                  ),
+                                ),
+                                const SizedBox(height: 14),
+                                const Divider(height: 1, color: AppColors.border),
+                                const SizedBox(height: 12),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  children: [
+                                    _actionIcon(
+                                      icon: Icons.visibility_outlined,
+                                      color: AppColors.green,
+                                      bg: Colors.white,
+                                      onTap: () {
+                                        setState(() {
+                                          showForm = true;
+                                          _isViewOnly = true;
+                                          _isEditMode = false;
+                                          final glNo = _getGlNo(item);
+                                          try {
+                                            _selectedGlMaster = _glMasters.firstWhere((m) => _getGlNo(m) == glNo);
+                                          } catch (_) {
+                                            _selectedGlMaster = null;
+                                          }
+                                          _refreshOrgDisplay(item["orgCode"]?.toString() ?? "");
+                                          final savedBranches = item["branches"] as List;
+                                          for (var b in branches) {
+                                            b["enabled"] = savedBranches.contains(b["name"]);
+                                          }
+                                        });
+                                      },
+                                    ),
+                                    const SizedBox(width: 8),
+                                    _actionIcon(
+                                      icon: Icons.edit_outlined,
+                                      color: AppColors.tBlue,
+                                      bg: Colors.white,
+                                      onTap: () {
+                                        setState(() {
+                                          showForm = true;
+                                          _isEditMode = true;
+                                          _isViewOnly = false;
+                                          final glNo = _getGlNo(item);
+                                          try {
+                                            _selectedGlMaster = _glMasters.firstWhere((m) => _getGlNo(m) == glNo);
+                                          } catch (_) {
+                                            _selectedGlMaster = null;
+                                          }
+                                          _refreshOrgDisplay(item["orgCode"]?.toString() ?? "");
+                                          final savedBranches = item["branches"] as List;
+                                          for (var b in branches) {
+                                            b["enabled"] = savedBranches.contains(b["name"]);
+                                          }
+                                        });
+                                      },
+                                    ),
+                                    const SizedBox(width: 8),
+                                    _actionIcon(
+                                      icon: Icons.delete_outline_rounded,
+                                      color: AppColors.red,
+                                      bg: AppColors.redLt,
+                                      borderColor: AppColors.red.withValues(alpha: 0.2),
+                                      onTap: () {
+                                        showDialog(
+                                          context: context,
+                                          builder: (context) => AlertDialog(
+                                            title: const Text('Confirm Delete'),
+                                            content: const Text('Are you sure you want to delete?'),
+                                            actions: [
+                                              TextButton(
+                                                onPressed: () => Navigator.pop(context),
+                                                child: const Text('No'),
+                                              ),
+                                              TextButton(
+                                                onPressed: () async {
+                                                  Navigator.pop(context);
+                                                  final int? parsedGlNo = int.tryParse(item["glNo"]?.toString() ?? '');
+                                                  if (parsedGlNo != null) {
+                                                    setState(() {
+                                                      _isLoading = true;
+                                                    });
+                                                    final orgCode = item["orgCode"] ?? 50;
+                                                    final success = await GLApiService().deleteAllowedBranch(orgCode, parsedGlNo);
+                                                    if (success) {
+                                                      showAmsSnack(context, 'Deleted successfully.', type: 's');
+                                                      await loadSavedBranches();
+                                                    } else {
+                                                      showAmsSnack(context, 'Deletion failed.', type: 'e');
+                                                    }
+                                                    setState(() {
+                                                      _isLoading = false;
+                                                    });
+                                                  } else {
+                                                    setState(() {
+                                                      savedList.remove(item);
+                                                    });
+                                                  }
+                                                },
+                                                child: const Text('Yes', style: TextStyle(color: Colors.red)),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ],
+                                )
+                              ],
+                            ),
+                          );
+                        }
 
                         return Container(
                           margin: const EdgeInsets.only(bottom: 14),
@@ -667,7 +886,7 @@ Widget _buildListView() {
                                     icon: Icons.delete_outline_rounded,
                                     color: AppColors.red,
                                     bg: AppColors.redLt,
-                                    borderColor: AppColors.red.withOpacity(0.2),
+                                    borderColor: AppColors.red.withValues(alpha: 0.2),
                                     onTap: () {
                                       showDialog(
                                         context: context,
@@ -762,7 +981,7 @@ Widget _buildListView() {
           ),
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
+              padding: EdgeInsets.all(Responsive.isMobile(context) ? 16 : 24),
               child: _buildFormContentOnly(),
             ),
           ),
@@ -1020,18 +1239,18 @@ Widget _buildListView() {
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color:
-                  isEnabled ? AppColors.tBlue.withOpacity(0.05) : Colors.white,
+                  isEnabled ? AppColors.tBlue.withValues(alpha: 0.05) : Colors.white,
               borderRadius: BorderRadius.circular(10),
               border: Border.all(
                 color: isEnabled
-                    ? AppColors.tBlue.withOpacity(0.3)
+                    ? AppColors.tBlue.withValues(alpha: 0.3)
                     : AppColors.border,
                 width: 1,
               ),
               boxShadow: isEnabled
                   ? [
                       BoxShadow(
-                        color: AppColors.tBlue.withOpacity(0.1),
+                        color: AppColors.tBlue.withValues(alpha: 0.1),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       )
@@ -1066,7 +1285,7 @@ Widget _buildListView() {
                           borderRadius: BorderRadius.circular(6),
                           border: Border.all(
                             color: isEnabled
-                                ? AppColors.tBlue.withOpacity(0.2)
+                                ? AppColors.tBlue.withValues(alpha: 0.2)
                                 : AppColors.border,
                           ),
                         ),
@@ -1128,7 +1347,7 @@ Widget _buildListView() {
           border: Border.all(color: borderColor ?? AppColors.border, width: 1.5),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.02),
+              color: Colors.black.withValues(alpha: 0.02),
               blurRadius: 4,
               offset: const Offset(0, 2),
             )
@@ -1160,8 +1379,8 @@ class _PremiumToggle extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(13),
           color: value
-              ? AppColors.tBlue.withOpacity(0.8)
-              : Colors.grey.withOpacity(0.3),
+              ? AppColors.tBlue.withValues(alpha: 0.8)
+              : Colors.grey.withValues(alpha: 0.3),
         ),
         padding: const EdgeInsets.all(2),
         child: AnimatedAlign(

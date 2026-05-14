@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../theme.dart';
 import '../widgets/widgets.dart';
 import '../models/models.dart';
+import '../utils/responsive.dart';
 import 'nontran_entry_screen.dart';
 import 'gl_category_screen.dart';
 import 'gl_master_screen.dart';
@@ -89,61 +90,105 @@ class _NonTranAuthScreenState extends State<NonTranAuthScreen> {
   }
 
   Widget _buildQueueScreen() {
+    final isMobile = Responsive.isMobile(context);
     return Scaffold(
       backgroundColor: AppColors.bg,
       body: Column(
         children: [
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(28),
+              padding: EdgeInsets.all(isMobile ? 16 : 28),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // ── Header ────────────────────────────────────────────
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Authorization',
-                            style: bodyStyle(
-                                size: 22,
-                                weight: FontWeight.w700,
-                                color: AppColors.ink),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Select a record from the queue to review and authorize.',
-                            style: bodyStyle(size: 13, color: AppColors.ink3),
-                          ),
-                        ],
-                      ),
-                      Row(
-                        children: [
-                          if (widget.onRefresh != null)
-                            Padding(
-                              padding: const EdgeInsets.only(right: 8),
-                              child: AmsButton(
-                                label: 'Refresh',
-                                variant: AmsButtonVariant.outline,
-                                small: true,
-                                icon: Icons.refresh_rounded,
-                                onPressed: widget.onRefresh!,
-                              ),
+                  if (isMobile)
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Authorization',
+                              style: bodyStyle(
+                                  size: 22,
+                                  weight: FontWeight.w700,
+                                  color: AppColors.ink),
                             ),
-                          AmsButton(
-                            label: 'Back',
-                            variant: AmsButtonVariant.outline,
-                            small: true,
-                            icon: Icons.arrow_back_ios_new_rounded,
-                            onPressed: widget.onBack,
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (widget.onRefresh != null)
+                                  IconButton(
+                                    icon: const Icon(Icons.refresh_rounded, color: AppColors.tBlue, size: 20),
+                                    onPressed: widget.onRefresh!,
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
+                                  ),
+                                if (widget.onRefresh != null) const SizedBox(width: 12),
+                                IconButton(
+                                  icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.tBlue, size: 18),
+                                  onPressed: widget.onBack,
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Select a record from the queue to review and authorize.',
+                          style: bodyStyle(size: 13, color: AppColors.ink3),
+                        ),
+                      ],
+                    )
+                  else
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Authorization',
+                              style: bodyStyle(
+                                  size: 22,
+                                  weight: FontWeight.w700,
+                                  color: AppColors.ink),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Select a record from the queue to review and authorize.',
+                              style: bodyStyle(size: 13, color: AppColors.ink3),
+                            ),
+                          ],
+                        ),
+                        Row(
+                          children: [
+                            if (widget.onRefresh != null)
+                              Padding(
+                                padding: const EdgeInsets.only(right: 8),
+                                child: AmsButton(
+                                  label: 'Refresh',
+                                  variant: AmsButtonVariant.outline,
+                                  small: true,
+                                  icon: Icons.refresh_rounded,
+                                  onPressed: widget.onRefresh!,
+                                ),
+                              ),
+                            AmsButton(
+                              label: 'Back',
+                              variant: AmsButtonVariant.outline,
+                              small: true,
+                              icon: Icons.arrow_back_ios_new_rounded,
+                              onPressed: widget.onBack,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   const SizedBox(height: 24),
 
                   // ── Queue Table ───────────────────────────────────────
@@ -497,98 +542,199 @@ class _AuthQueueTable extends StatelessWidget {
           items: queue,
           totalRecords: totalRecords,
           shrinkWrap: true,
-          builder: (ctx, currentItems) => Table(
-            columnWidths: const {
-              0: FixedColumnWidth(52),
-              1: FlexColumnWidth(2),
-              2: FlexColumnWidth(3),
-              3: FlexColumnWidth(2),
-              4: FlexColumnWidth(2),
-              5: FixedColumnWidth(100),
-            },
-            border: TableBorder.all(color: AppColors.border, width: 0.5),
-            children: [
-              // Header
-              TableRow(
-                decoration: const BoxDecoration(color: AppColors.tBlue),
-                children: [
-                  _th(''),
-                  _th('Program Name'),
-                  _th('Entry Details'),
-                  _th('Entered By'),
-                  _th('Entered On'),
-                  _th('Verify', center: true),
-                ],
-              ),
-              // Data rows
-              ...currentItems.asMap().entries.map((e) {
-                final idx = e.key;
-                final record = e.value;
-                final isSelected = selectedRecord?.authSl == record.authSl;
-                final rowBg = isSelected
-                    ? AppColors.tBlueLt
-                    : (idx % 2 == 0 ? const Color(0xFFF8FAFB) : Colors.white);
-                return TableRow(
-                  decoration: BoxDecoration(color: rowBg),
+          builder: (ctx, currentItems) {
+            final isMobile = Responsive.isMobile(ctx);
+
+            if (isMobile) {
+              return ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: currentItems.length,
+                itemBuilder: (context, idx) {
+                  final record = currentItems[idx];
+                  final isSelected = selectedRecord?.authSl == record.authSl;
+
+                  return InkWell(
+                    onTap: () => onSelect(record),
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: isSelected ? AppColors.tBlue.withValues(alpha: 0.04) : Colors.white,
+                        border: Border.all(
+                          color: isSelected ? AppColors.tBlue : AppColors.border,
+                          width: isSelected ? 1.5 : 1,
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.02),
+                            blurRadius: 8,
+                            offset: const Offset(0, 4),
+                          )
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: AppColors.tBlue.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  record.programId,
+                                  style: monoStyle(
+                                    size: 12,
+                                    weight: FontWeight.w800,
+                                    color: AppColors.tBlue,
+                                  ),
+                                ),
+                              ),
+                              _ViewButton(onTap: () => onView(record)),
+                            ],
+                          ),
+                          const SizedBox(height: 14),
+                          Text(
+                            record.displayRemarks,
+                            style: bodyStyle(
+                              size: 14,
+                              weight: FontWeight.w600,
+                              color: AppColors.ink,
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          Container(height: 1, color: AppColors.border.withValues(alpha: 0.6)),
+                          const SizedBox(height: 12),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('ENTERED BY',
+                                      style: bodyStyle(size: 9, color: AppColors.ink3, weight: FontWeight.w700, letterSpacing: 0.5)),
+                                  const SizedBox(height: 3),
+                                  Text(record.eUser, style: bodyStyle(size: 12, color: AppColors.ink2, weight: FontWeight.w600)),
+                                ],
+                              ),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text('ENTERED ON',
+                                      style: bodyStyle(size: 9, color: AppColors.ink3, weight: FontWeight.w700, letterSpacing: 0.5)),
+                                  const SizedBox(height: 3),
+                                  Text(record.eDate, style: monoStyle(size: 11, color: AppColors.ink2, weight: FontWeight.w600)),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              );
+            }
+
+            return Table(
+              columnWidths: const {
+                0: FixedColumnWidth(52),
+                1: FlexColumnWidth(2),
+                2: FlexColumnWidth(3),
+                3: FlexColumnWidth(2),
+                4: FlexColumnWidth(2),
+                5: FixedColumnWidth(100),
+              },
+              border: TableBorder.all(color: AppColors.border, width: 0.5),
+              children: [
+                // Header
+                TableRow(
+                  decoration: const BoxDecoration(color: AppColors.tBlue),
                   children: [
-                    // Select radio
-                    _tdCenter(
-                      InkWell(
-                        onTap: () => onSelect(record),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          child: Icon(
-                            isSelected
-                                ? Icons.radio_button_checked
-                                : Icons.radio_button_unchecked,
-                            color:
-                                isSelected ? AppColors.tBlue : AppColors.ink3,
-                            size: 18,
+                    _th(''),
+                    _th('Program Name'),
+                    _th('Entry Details'),
+                    _th('Entered By'),
+                    _th('Entered On'),
+                    _th('Verify', center: true),
+                  ],
+                ),
+                // Data rows
+                ...currentItems.asMap().entries.map((e) {
+                  final idx = e.key;
+                  final record = e.value;
+                  final isSelected = selectedRecord?.authSl == record.authSl;
+                  final rowBg = isSelected
+                      ? AppColors.tBlueLt
+                      : (idx % 2 == 0 ? const Color(0xFFF8FAFB) : Colors.white);
+                  return TableRow(
+                    decoration: BoxDecoration(color: rowBg),
+                    children: [
+                      // Select radio
+                      _tdCenter(
+                        InkWell(
+                          onTap: () => onSelect(record),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            child: Icon(
+                              isSelected
+                                  ? Icons.radio_button_checked
+                                  : Icons.radio_button_unchecked,
+                              color:
+                                  isSelected ? AppColors.tBlue : AppColors.ink3,
+                              size: 18,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                    // Program Name
-                    _td(
-                      Text(record.programId,
-                          style: monoStyle(
-                              size: 12,
-                              weight: FontWeight.w700,
-                              color: AppColors.ink)),
-                      onTap: () => onSelect(record),
-                    ),
-                    // Entry Details
-                    _td(
-                      Text(
-                        record.displayRemarks,
-                        style: bodyStyle(size: 13, color: AppColors.tBlue)
-                            .copyWith(
-                                decoration: TextDecoration.underline,
-                                decorationColor: AppColors.tBlue),
+                      // Program Name
+                      _td(
+                        Text(record.programId,
+                            style: monoStyle(
+                                size: 12,
+                                weight: FontWeight.w700,
+                                color: AppColors.ink)),
+                        onTap: () => onSelect(record),
                       ),
-                      onTap: () => onSelect(record),
-                    ),
-                    // Entered By
-                    _td(
-                      Text(record.eUser,
-                          style: bodyStyle(size: 13, color: AppColors.ink2)),
-                      onTap: () => onSelect(record),
-                    ),
-                    // Entered On
-                    _td(
-                      Text(record.eDate,
-                          style: monoStyle(size: 11, color: AppColors.ink2)),
-                      onTap: () => onSelect(record),
-                    ),
-                    // View button
-                    _tdCenter(
-                      _ViewButton(onTap: () => onView(record)),
-                    ),
-                  ],
-                );
-              }),
-            ],
-          ),
+                      // Entry Details
+                      _td(
+                        Text(
+                          record.displayRemarks,
+                          style: bodyStyle(size: 13, color: AppColors.tBlue)
+                              .copyWith(
+                                  decoration: TextDecoration.underline,
+                                  decorationColor: AppColors.tBlue),
+                        ),
+                        onTap: () => onSelect(record),
+                      ),
+                      // Entered By
+                      _td(
+                        Text(record.eUser,
+                            style: bodyStyle(size: 13, color: AppColors.ink2)),
+                        onTap: () => onSelect(record),
+                      ),
+                      // Entered On
+                      _td(
+                        Text(record.eDate,
+                            style: monoStyle(size: 11, color: AppColors.ink2)),
+                        onTap: () => onSelect(record),
+                      ),
+                      // View button
+                      _tdCenter(
+                        _ViewButton(onTap: () => onView(record)),
+                      ),
+                    ],
+                  );
+                }),
+              ],
+            );
+          },
         ),
       ),
     );
@@ -689,123 +835,140 @@ class _AuthDetailPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    final isMobile = Responsive.isMobile(context);
+    return Flex(
+      direction: isMobile ? Axis.vertical : Axis.horizontal,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // ── Left: Auth Levels ──
-        Expanded(
-          child: AmsCard(
-            headLeft: Row(
-              children: [
-                const Icon(Icons.how_to_reg_rounded,
-                    size: 18, color: AppColors.tBlue),
-                const SizedBox(width: 8),
-                Text('Authorization Levels',
-                    style: bodyStyle(
-                        size: 14,
-                        weight: FontWeight.w600,
-                        color: AppColors.tBlue)),
-              ],
-            ),
-            child: Column(
-              children: [
-                if ((authConfigs[record.programId]?.levels ?? 1) >= 1 ||
-                    (authConfigs[record.programId]?.levels ?? 0) == 0) ...[
-                  _levelRow(
-                      '1st Level', record.flUser ?? '', record.flDate ?? ''),
-                  const SizedBox(height: 12),
-                ],
-                if ((authConfigs[record.programId]?.levels ?? 0) >= 2) ...[
-                  _levelRow(
-                      '2nd Level', record.slUser ?? '', record.slDate ?? ''),
-                  const SizedBox(height: 12),
-                ],
-                if ((authConfigs[record.programId]?.levels ?? 0) >= 3) ...[
-                  _levelRow(
-                      '3rd Level', record.tlUser ?? '', record.tlDate ?? ''),
-                  const SizedBox(height: 12),
-                ],
-                _levelRow('Risk Auth', record.rUser ?? '', record.rDate ?? ''),
-                const SizedBox(height: 16),
-                AmsField(
-                  label: 'Approver Remarks',
-                  labelAbove: true,
-                  child: AmsTextInput(
-                    controller: remarksCtrl,
-                    readOnly: readOnly,
-                    placeholder: 'Enter your remarks...',
-                    keyboardType: TextInputType.multiline,
-                  ),
-                ),
-              ],
-            ),
-          ),
+        if (isMobile)
+          _buildLevelsCard()
+        else
+          Expanded(child: _buildLevelsCard()),
+        
+        SizedBox(
+          width: isMobile ? 0 : 20,
+          height: isMobile ? 20 : 0,
         ),
-        const SizedBox(width: 20),
+        
         // ── Right: Exception & Correction info ──
-        Expanded(
-          child: AmsCard(
-            headLeft: Row(
-              children: [
-                const Icon(Icons.info_outline_rounded,
-                    size: 18, color: AppColors.amber),
-                const SizedBox(width: 8),
-                Text('Exception & Correction Info',
-                    style: bodyStyle(
-                        size: 14,
-                        weight: FontWeight.w600,
-                        color: AppColors.amber)),
-              ],
-            ),
-            child: Column(
-              children: [
-                AmsField(
-                  label: 'Exceptional Details',
-                  labelAbove: true,
-                  child: AmsTextInput(
-                    initialValue: record.exceptionalRemarks,
-                    readOnly: true,
-                    keyboardType: TextInputType.multiline,
-                    placeholder: '—',
-                  ),
-                ),
-                const SizedBox(height: 12),
-                AmsField(
-                  label: 'Corrections Info',
-                  labelAbove: true,
-                  child: AmsTextInput(
-                    initialValue: record.correctionDetails,
-                    readOnly: true,
-                    keyboardType: TextInputType.multiline,
-                    placeholder: '—',
-                  ),
-                ),
-                const SizedBox(height: 12),
-                _FormGridSimple(
-                  children: [
-                    AmsField(
-                      label: 'Corrected By',
-                      labelAbove: true,
-                      child: AmsTextInput(
-                          initialValue: record.cUser,
-                          readOnly: true,
-                          placeholder: '—'),
-                    ),
-                    AmsField(
-                      label: 'Corrected On',
-                      labelAbove: true,
-                      child: AmsTextInput(
-                          initialValue: record.cDate,
-                          readOnly: true,
-                          placeholder: '—'),
-                    ),
-                  ],
-                ),
-              ],
+        if (isMobile)
+          _buildInfoCard()
+        else
+          Expanded(child: _buildInfoCard()),
+      ],
+    );
+  }
+
+  Widget _buildLevelsCard() {
+    return AmsCard(
+      headLeft: Row(
+        children: [
+          const Icon(Icons.how_to_reg_rounded,
+              size: 18, color: AppColors.tBlue),
+          const SizedBox(width: 8),
+          Text('Authorization Levels',
+              style: bodyStyle(
+                  size: 14,
+                  weight: FontWeight.w600,
+                  color: AppColors.tBlue)),
+        ],
+      ),
+      child: Column(
+        children: [
+          if ((authConfigs[record.programId]?.levels ?? 1) >= 1 ||
+              (authConfigs[record.programId]?.levels ?? 0) == 0) ...[
+            _levelRow(
+                '1st Level', record.flUser ?? '', record.flDate ?? ''),
+            const SizedBox(height: 12),
+          ],
+          if ((authConfigs[record.programId]?.levels ?? 0) >= 2) ...[
+            _levelRow(
+                '2nd Level', record.slUser ?? '', record.slDate ?? ''),
+            const SizedBox(height: 12),
+          ],
+          if ((authConfigs[record.programId]?.levels ?? 0) >= 3) ...[
+            _levelRow(
+                '3rd Level', record.tlUser ?? '', record.tlDate ?? ''),
+            const SizedBox(height: 12),
+          ],
+          _levelRow('Risk Auth', record.rUser ?? '', record.rDate ?? ''),
+          const SizedBox(height: 16),
+          AmsField(
+            label: 'Approver Remarks',
+            labelAbove: true,
+            child: AmsTextInput(
+              controller: remarksCtrl,
+              readOnly: readOnly,
+              placeholder: 'Enter your remarks...',
+              keyboardType: TextInputType.multiline,
             ),
           ),
-        ),
-      ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoCard() {
+    return AmsCard(
+      headLeft: Row(
+        children: [
+          const Icon(Icons.info_outline_rounded,
+              size: 18, color: AppColors.amber),
+          const SizedBox(width: 8),
+          Text('Exception & Correction Info',
+              style: bodyStyle(
+                  size: 14,
+                  weight: FontWeight.w600,
+                  color: AppColors.amber)),
+        ],
+      ),
+      child: Column(
+        children: [
+          AmsField(
+            label: 'Exceptional Details',
+            labelAbove: true,
+            child: AmsTextInput(
+              initialValue: record.exceptionalRemarks,
+              readOnly: true,
+              keyboardType: TextInputType.multiline,
+              placeholder: '—',
+            ),
+          ),
+          const SizedBox(height: 12),
+          AmsField(
+            label: 'Corrections Info',
+            labelAbove: true,
+            child: AmsTextInput(
+              initialValue: record.correctionDetails,
+              readOnly: true,
+              keyboardType: TextInputType.multiline,
+              placeholder: '—',
+            ),
+          ),
+          const SizedBox(height: 12),
+          _FormGridSimple(
+            children: [
+              AmsField(
+                label: 'Corrected By',
+                labelAbove: true,
+                child: AmsTextInput(
+                    initialValue: record.cUser,
+                    readOnly: true,
+                    placeholder: '—'),
+              ),
+              AmsField(
+                label: 'Corrected On',
+                labelAbove: true,
+                child: AmsTextInput(
+                    initialValue: record.cDate,
+                    readOnly: true,
+                    placeholder: '—'),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -840,6 +1003,18 @@ class _FormGridSimple extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = Responsive.isMobile(context);
+
+    if (isMobile) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: children
+            .expand((c) => [c, const SizedBox(height: 12)])
+            .toList()
+          ..removeLast(),
+      );
+    }
+
     return Row(
       children: children
           .expand((c) => [Expanded(child: c), const SizedBox(width: 12)])

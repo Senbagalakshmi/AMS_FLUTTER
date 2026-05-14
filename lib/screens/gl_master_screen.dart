@@ -4,6 +4,7 @@ import '../theme.dart';
 import '../widgets/widgets.dart';
 import '../services/api_service.dart';
 import '../services/org_api_service.dart';
+import '../utils/responsive.dart';
 
 class GLMasterScreen extends StatefulWidget {
   final VoidCallback onBack;
@@ -742,46 +743,94 @@ class _GLMasterScreenState extends State<GLMasterScreen> {
         children: [
           Padding(
             padding: const EdgeInsets.all(16.0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: AmsTextInput(
-                    icon: Icons.search_rounded,
-                    placeholder: 'Search GL accounts...',
-                    onChanged: (v) => setState(() {
-                      _searchQuery = v;
-                      _currentPage = 1;
-                    }),
+            child: LayoutBuilder(builder: (context, constraints) {
+              final isMobile = Responsive.isMobile(context);
+              if (isMobile) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    AmsTextInput(
+                      icon: Icons.search_rounded,
+                      placeholder: 'Search GL accounts...',
+                      onChanged: (v) => setState(() {
+                        _searchQuery = v;
+                        _currentPage = 1;
+                      }),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        IconButton(
+                          tooltip: 'Refresh',
+                          onPressed: _loadGlMasters,
+                          icon: _loadingList
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : const Icon(Icons.refresh_rounded,
+                                  color: AppColors.ink3),
+                        ),
+                        const Spacer(),
+                        AmsButton(
+                          label: '+ New GL',
+                          variant: AmsButtonVariant.primary,
+                          onPressed: () {
+                            setState(() {
+                              _showForm = true;
+                              _isViewOnly = false;
+                              _isEditing = false;
+                              _clearFields();
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+                  ],
+                );
+              }
+              return Row(
+                children: [
+                  Expanded(
+                    child: AmsTextInput(
+                      icon: Icons.search_rounded,
+                      placeholder: 'Search GL accounts...',
+                      onChanged: (v) => setState(() {
+                        _searchQuery = v;
+                        _currentPage = 1;
+                      }),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                IconButton(
-                  tooltip: 'Refresh',
-                  onPressed: _loadGlMasters,
-                  icon: _loadingList
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.refresh_rounded,
-                          color: AppColors.ink3),
-                ),
-                const SizedBox(width: 8),
-                AmsButton(
-                  label: '+ New GL',
-                  variant: AmsButtonVariant.primary,
-                  onPressed: () {
-                    setState(() {
-                      _showForm = true;
-                      _isViewOnly = false;
-                      _isEditing = false;
-                      _clearFields();
-                    });
-                  },
-                ),
-              ],
-            ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    tooltip: 'Refresh',
+                    onPressed: _loadGlMasters,
+                    icon: _loadingList
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.refresh_rounded,
+                            color: AppColors.ink3),
+                  ),
+                  const SizedBox(width: 8),
+                  AmsButton(
+                    label: '+ New GL',
+                    variant: AmsButtonVariant.primary,
+                    onPressed: () {
+                      setState(() {
+                        _showForm = true;
+                        _isViewOnly = false;
+                        _isEditing = false;
+                        _clearFields();
+                      });
+                    },
+                  ),
+                ],
+              );
+            }),
           ),
           Expanded(
             child: AmsPaginatedView<Map<String, dynamic>>(
@@ -868,9 +917,107 @@ class _GLMasterScreenState extends State<GLMasterScreen> {
       separatorBuilder: (_, __) => const SizedBox(height: 12),
       itemBuilder: (_, idx) {
         final c = filtered[idx];
+        final isMobile = Responsive.isMobile(context);
         final catName = _catName(c['glCatCd']);
         final statusLbl = _statusLabel(c['status']);
         final isActive = statusLbl == 'Active';
+
+        if (isMobile) {
+          return Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.border),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.02),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                )
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: const BoxDecoration(
+                        color: AppColors.tBlueLt,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Center(
+                        child: Text(
+                          (c['glName']?.toString() ?? 'G')
+                              .substring(0, 1)
+                              .toUpperCase(),
+                          style: bodyStyle(
+                              size: 14,
+                              color: AppColors.tBlue,
+                              weight: FontWeight.w800),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(c['glName']?.toString() ?? '—',
+                              style: bodyStyle(size: 14, weight: FontWeight.w700)),
+                          const SizedBox(height: 4),
+                          Text('Category: $catName',
+                              style: bodyStyle(size: 11, color: AppColors.ink3)),
+                        ],
+                      ),
+                    ),
+                    AmsBadge(label: c['glNo']?.toString() ?? '—'),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                const Divider(height: 1, color: AppColors.border),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(statusLbl,
+                        style: bodyStyle(
+                          size: 12,
+                          color: isActive ? AppColors.green : AppColors.red,
+                          weight: FontWeight.w600,
+                        )),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _actionButton(
+                          icon: Icons.visibility_outlined,
+                          color: AppColors.green,
+                          onTap: () => _viewAccount(c),
+                        ),
+                        const SizedBox(width: 8),
+                        _actionButton(
+                          icon: Icons.edit_outlined,
+                          color: AppColors.tBlue,
+                          onTap: () => _editAccount(c),
+                        ),
+                        const SizedBox(width: 8),
+                        _actionButton(
+                          icon: Icons.close_rounded,
+                          color: AppColors.red,
+                          isDanger: true,
+                          onTap: () => _confirmDelete(c),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        }
 
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),

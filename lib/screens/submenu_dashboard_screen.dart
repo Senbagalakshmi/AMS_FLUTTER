@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../widgets/widgets.dart';
 import '../theme.dart';
+import '../utils/responsive.dart';
 
 class SubmenuItem {
   final String label;
@@ -92,16 +93,20 @@ class SubmenuDashboardScreen extends StatelessWidget {
           // 🔹 GRID
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 8),
+              padding: EdgeInsets.symmetric(
+                horizontal: Responsive.isMobile(context) ? 16 : 32,
+                vertical: 8,
+              ),
               child: SizedBox(
                 width: double.infinity, // Ensures left alignment inside scroll view
                 child: Wrap(
                   spacing: 24,
                   runSpacing: 24,
                   children: items.map((item) {
+                    final isMobile = Responsive.isMobile(context);
                     return SizedBox(
-                      width: 260, // Optimized to 280 so 4 cards perfectly fit inline without a huge empty right gap or stretching
-                      height: 260,
+                      width: isMobile ? double.infinity : 260,
+                      height: isMobile ? 220 : 260,
                       child: _MenuCard(
                         item: item,
                         onTap: () => onNavigate(item.screen, item.programId),

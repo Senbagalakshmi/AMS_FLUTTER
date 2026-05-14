@@ -5,6 +5,7 @@ import '../widgets/widgets.dart';
 import '../services/api_service.dart';
 import '../services/gl_api_service.dart';
 import '../services/org_api_service.dart';
+import '../utils/responsive.dart';
 
 // ─── Entry widget ─────────────────────────────────────────────────────────────
 
@@ -784,6 +785,114 @@ class _GLSegmentPageState extends State<GLSegmentPage> {
   Widget _hierarchyRow(Segment seg, bool isLast) {
     final color = _levelColor(seg.level);
     final indent = _levelIndent(seg.level);
+    final isMobile = Responsive.isMobile(context);
+
+    if (isMobile) {
+      return Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: isLast
+              ? null
+              : const Border(
+                  bottom: BorderSide(color: Color(0xFFEEF2FA), width: 1)),
+        ),
+        child: IntrinsicHeight(
+          child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            if (indent > 0)
+              Container(width: indent, color: const Color(0xFFF8FAFF)),
+            Container(width: 5, color: color),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          width: 28,
+                          height: 20,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: color.withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(seg.level,
+                              style: TextStyle(
+                                  color: color,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 0.2)),
+                        ),
+                        const SizedBox(width: 10),
+                        if (seg.glNo != null) ...[
+                          Container(
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFEFF6FF),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text('GL ${seg.glNo}',
+                                style: const TextStyle(
+                                    color: kBlueMid,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700)),
+                          ),
+                          const SizedBox(width: 10),
+                        ],
+                        Expanded(
+                          child: Text(seg.segmentId,
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 13,
+                                  color: kTextDark,
+                                  letterSpacing: 0.1)),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Text(seg.segmentValue,
+                        style: const TextStyle(fontSize: 14, color: kTextDark, fontWeight: FontWeight.w500)),
+                    const SizedBox(height: 4),
+                    Text(seg.type,
+                        style: const TextStyle(fontSize: 12, color: kTextLight)),
+                    const SizedBox(height: 12),
+                    const Divider(height: 1, color: Color(0xFFEEF2FA)),
+                    const SizedBox(height: 10),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        _iconBtn(
+                          icon: Icons.visibility_outlined,
+                          iconColor: const Color(0xFF16A34A),
+                          bgColor: const Color(0xFFDCFCE7),
+                          onTap: () => _goView(seg),
+                        ),
+                        const SizedBox(width: 8),
+                        _iconBtn(
+                          icon: Icons.edit_outlined,
+                          iconColor: kBlueMid,
+                          bgColor: const Color(0xFFEFF6FF),
+                          onTap: () => _goEdit(seg),
+                        ),
+                        const SizedBox(width: 8),
+                        _iconBtn(
+                          icon: Icons.delete_outline,
+                          iconColor: kInvalidRed,
+                          bgColor: const Color(0xFFFEF2F2),
+                          onTap: () => _deleteSegment(seg),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ]),
+        ),
+      );
+    }
 
     return Container(
       decoration: BoxDecoration(

@@ -3,6 +3,7 @@ import '../theme.dart';
 import '../widgets/widgets.dart';
 import '../services/gl_api_service.dart';
 import 'package:intl/intl.dart';
+import '../utils/responsive.dart';
 
 class GLBalanceScreen extends StatefulWidget {
   final VoidCallback onBack;
@@ -95,7 +96,7 @@ class _GLBalanceScreenState extends State<GLBalanceScreen> with SingleTickerProv
           
           Expanded(
             child: Container(
-              margin: const EdgeInsets.all(24),
+              margin: EdgeInsets.all(Responsive.isMobile(context) ? 12 : 24),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
@@ -112,45 +113,87 @@ class _GLBalanceScreenState extends State<GLBalanceScreen> with SingleTickerProv
                 children: [
                   // Tab Bar
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     decoration: BoxDecoration(
                       border: Border(bottom: BorderSide(color: AppColors.border)),
                     ),
-                    child: Row(
-                      children: [
-                        TabBar(
-                          controller: _tabController,
-                          isScrollable: true,
-                          labelColor: AppColors.tBlue,
-                          unselectedLabelColor: AppColors.ink3,
-                          indicatorColor: AppColors.tBlue,
-                          indicatorWeight: 3,
-                          labelStyle: bodyStyle(weight: FontWeight.w700, size: 14),
-                          tabs: const [
-                            Tab(text: 'Current Balance (GL001)'),
-                            Tab(text: 'Date-wise History (GL002)'),
-                            Tab(text: 'Yearly Summary (GL003)'),
+                    child: LayoutBuilder(builder: (context, constraints) {
+                      final isMobile = Responsive.isMobile(context);
+                      if (isMobile) {
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            TabBar(
+                              controller: _tabController,
+                              isScrollable: true,
+                              labelColor: AppColors.tBlue,
+                              unselectedLabelColor: AppColors.ink3,
+                              indicatorColor: AppColors.tBlue,
+                              indicatorWeight: 3,
+                              labelStyle: bodyStyle(weight: FontWeight.w700, size: 13),
+                              tabs: const [
+                                Tab(text: 'Current Balance'),
+                                Tab(text: 'History'),
+                                Tab(text: 'Yearly Summary'),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: AmsTextInput(
+                                    placeholder: 'Search GL No...',
+                                    icon: Icons.search_rounded,
+                                    onChanged: (v) => setState(() => _searchQuery = v),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                AmsButton(
+                                  label: '',
+                                  icon: Icons.refresh_rounded,
+                                  variant: AmsButtonVariant.outline,
+                                  onPressed: _loadData,
+                                ),
+                              ],
+                            ),
                           ],
-                        ),
-                        const Spacer(),
-                        // Search Box
-                        SizedBox(
-                          width: 250,
-                          child: AmsTextInput(
-                            placeholder: 'Search GL No...',
-                            icon: Icons.search_rounded,
-                            onChanged: (v) => setState(() => _searchQuery = v),
+                        );
+                      }
+                      return Row(
+                        children: [
+                          TabBar(
+                            controller: _tabController,
+                            isScrollable: true,
+                            labelColor: AppColors.tBlue,
+                            unselectedLabelColor: AppColors.ink3,
+                            indicatorColor: AppColors.tBlue,
+                            indicatorWeight: 3,
+                            labelStyle: bodyStyle(weight: FontWeight.w700, size: 14),
+                            tabs: const [
+                              Tab(text: 'Current Balance (GL001)'),
+                              Tab(text: 'Date-wise History (GL002)'),
+                              Tab(text: 'Yearly Summary (GL003)'),
+                            ],
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        AmsButton(
-                          label: 'Refresh',
-                          icon: Icons.refresh_rounded,
-                          variant: AmsButtonVariant.outline,
-                          onPressed: _loadData,
-                        ),
-                      ],
-                    ),
+                          const Spacer(),
+                          SizedBox(
+                            width: 250,
+                            child: AmsTextInput(
+                              placeholder: 'Search GL No...',
+                              icon: Icons.search_rounded,
+                              onChanged: (v) => setState(() => _searchQuery = v),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          AmsButton(
+                            label: 'Refresh',
+                            icon: Icons.refresh_rounded,
+                            variant: AmsButtonVariant.outline,
+                            onPressed: _loadData,
+                          ),
+                        ],
+                      );
+                    }),
                   ),
 
                   // Tab Content

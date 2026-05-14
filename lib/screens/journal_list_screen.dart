@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../theme.dart';
 import '../widgets/widgets.dart';
 import '../services/journal_api_service.dart';
+import '../utils/responsive.dart';
 
 class JournalListScreen extends StatefulWidget {
   final VoidCallback onNew;
@@ -74,39 +75,77 @@ class _JournalListScreenState extends State<JournalListScreen> {
   }
 
   Widget _buildHeader() {
+    final isMobile = Responsive.isMobile(context);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 24, vertical: 16),
       decoration: const BoxDecoration(
         color: Colors.white,
         border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
       ),
-      child: Row(
-        children: [
-          IconButton(
-            icon: const Icon(Icons.arrow_back, color: AppColors.ink),
-            onPressed: widget.onBackToModule,
-          ),
-          const SizedBox(width: 8),
-          Text(
-            'Manual Journals',
-            style: bodyStyle(size: 20, weight: FontWeight.w700, color: AppColors.ink),
-          ),
-          const Spacer(),
-          AmsButton(
-            label: 'New Journal',
-            onPressed: widget.onNew,
-            icon: Icons.add,
-            variant: AmsButtonVariant.primary,
-          ),
-        ],
-      ),
+      child: LayoutBuilder(builder: (context, constraints) {
+        if (isMobile) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back, color: AppColors.ink),
+                    onPressed: widget.onBackToModule,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Manual Journals',
+                      style: bodyStyle(size: 18, weight: FontWeight.w700, color: AppColors.ink),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: AmsButton(
+                  label: 'New Journal',
+                  onPressed: widget.onNew,
+                  icon: Icons.add,
+                  variant: AmsButtonVariant.primary,
+                ),
+              ),
+            ],
+          );
+        }
+        return Row(
+          children: [
+            IconButton(
+              icon: const Icon(Icons.arrow_back, color: AppColors.ink),
+              onPressed: widget.onBackToModule,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              'Manual Journals',
+              style: bodyStyle(size: 20, weight: FontWeight.w700, color: AppColors.ink),
+            ),
+            const Spacer(),
+            AmsButton(
+              label: 'New Journal',
+              onPressed: widget.onNew,
+              icon: Icons.add,
+              variant: AmsButtonVariant.primary,
+            ),
+          ],
+        );
+      }),
     );
   }
 
   Widget _buildList() {
+    final isMobile = Responsive.isMobile(context);
     return Container(
-      margin: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
+      margin: EdgeInsets.all(isMobile ? 12 : 24),
+      decoration: isMobile ? null : BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppColors.border),
@@ -120,31 +159,33 @@ class _JournalListScreenState extends State<JournalListScreen> {
       ),
       child: Column(
         children: [
-          // Table Header
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            decoration: const BoxDecoration(
-              color: Color(0xFFF8FAFC),
-              borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-              border: Border(bottom: BorderSide(color: AppColors.border)),
+          // Table Header (Hidden on mobile)
+          if (!isMobile)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              decoration: const BoxDecoration(
+                color: Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+                border: Border(bottom: BorderSide(color: AppColors.border)),
+              ),
+              child: Row(
+                children: [
+                  _buildHeaderCell('TRAN DATE', 100),
+                  _buildHeaderCell('JOURNAL#', 100),
+                  Expanded(child: _buildHeaderCell('NOTES', 0)),
+                  _buildHeaderCell('STATUS', 120),
+                  _buildHeaderCell('AMOUNT', 120, textAlign: TextAlign.right),
+                  _buildHeaderCell('CREATED BY', 120, textAlign: TextAlign.right),
+                  _buildHeaderCell('AUTHORIZED BY', 120, textAlign: TextAlign.right),
+                ],
+              ),
             ),
-            child: Row(
-              children: [
-                _buildHeaderCell('TRAN DATE', 100),
-                _buildHeaderCell('JOURNAL#', 100),
-                Expanded(child: _buildHeaderCell('NOTES', 0)),
-                _buildHeaderCell('STATUS', 120),
-                _buildHeaderCell('AMOUNT', 120, textAlign: TextAlign.right),
-                _buildHeaderCell('CREATED BY', 120, textAlign: TextAlign.right),
-                _buildHeaderCell('AUTHORIZED BY', 120, textAlign: TextAlign.right),
-              ],
-            ),
-          ),
           // Table Body
           Expanded(
             child: ListView.separated(
+              padding: isMobile ? const EdgeInsets.symmetric(vertical: 8) : EdgeInsets.zero,
               itemCount: _journals.length,
-              separatorBuilder: (context, index) => const Divider(height: 1, color: AppColors.border2),
+              separatorBuilder: (context, index) => isMobile ? const SizedBox(height: 12) : const Divider(height: 1, color: AppColors.border2),
               itemBuilder: (context, index) {
                 final j = _journals[index];
                 return _buildJournalRow(j);
@@ -168,9 +209,68 @@ class _JournalListScreenState extends State<JournalListScreen> {
   }
 
   Widget _buildJournalRow(Map<String, dynamic> j) {
+    final isMobile = Responsive.isMobile(context);
     final dateStr = j['trandate']?.toString() ?? '';
     final date = dateStr.isNotEmpty ? DateFormat('dd/MM/yyyy').format(DateTime.parse(dateStr)) : '-';
     final amount = j['totaldebit'] ?? 0.0;
+
+    if (isMobile) {
+      return InkWell(
+        onTap: () => _showJournalDetails(j),
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    "Journal# ${j['tranid']?.toString() ?? '-'}",
+                    style: bodyStyle(size: 14, weight: FontWeight.bold, color: AppColors.tBlue),
+                  ),
+                  _buildStatusChip(j['transtatus'] ?? 'P'),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Text(
+                j['narr'] ?? '-',
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: bodyStyle(size: 13, color: AppColors.ink),
+              ),
+              const SizedBox(height: 14),
+              const Divider(height: 1, color: AppColors.border),
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text("Date: $date", style: bodyStyle(size: 12, color: AppColors.ink3)),
+                      const SizedBox(height: 4),
+                      Text("Created: ${j['euser'] ?? '-'}", style: bodyStyle(size: 11, color: AppColors.ink4)),
+                    ],
+                  ),
+                  Text(
+                    'INR ${NumberFormat('#,##,##0.00').format(amount)}',
+                    style: bodyStyle(size: 14, weight: FontWeight.bold, color: AppColors.ink),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return InkWell(
       onTap: () => _showJournalDetails(j),
       hoverColor: AppColors.tBlueLt.withValues(alpha: 0.3),
@@ -238,6 +338,7 @@ class _JournalListScreenState extends State<JournalListScreen> {
     final orgCode = header['orgcode'] ?? header['ORGCODE'] ?? 50;
     final dateStr = (header['trandate'] ?? header['TRANDATE']).toString().split('T').first;
     final tranId = header['tranid'] ?? header['TRANID'] ?? 0;
+    final isMobile = Responsive.isMobile(context);
 
     showDialog(
       context: context,
@@ -249,29 +350,39 @@ class _JournalListScreenState extends State<JournalListScreen> {
           }
           final details = snapshot.data ?? [];
           return Dialog(
-            insetPadding: const EdgeInsets.all(40),
+            insetPadding: EdgeInsets.all(isMobile ? 12 : 40),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             child: Container(
-              width: 800,
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('Journal Details: ${header['tranid']}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                      IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
-                    ],
-                  ),
-                  const Divider(height: 32),
-                  _buildHeaderInfo(header),
-                  const SizedBox(height: 24),
-                  const Text('Transaction Details (TRAN002)', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.ink4)),
-                  const SizedBox(height: 12),
-                  _buildDetailsTable(details),
-                ],
+              width: isMobile ? double.infinity : 800,
+              padding: EdgeInsets.all(isMobile ? 16 : 24),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Journal Details: ${header['tranid']}',
+                            style: bodyStyle(size: 18, weight: FontWeight.bold),
+                          ),
+                        ),
+                        IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
+                      ],
+                    ),
+                    const Divider(height: 24),
+                    _buildHeaderInfo(header),
+                    const SizedBox(height: 24),
+                    Text(
+                      'Transaction Details (TRAN002)',
+                      style: bodyStyle(weight: FontWeight.bold, color: AppColors.ink4),
+                    ),
+                    const SizedBox(height: 12),
+                    _buildDetailsTable(details),
+                  ],
+                ),
               ),
             ),
           );
@@ -281,6 +392,19 @@ class _JournalListScreenState extends State<JournalListScreen> {
   }
 
   Widget _buildHeaderInfo(Map<String, dynamic> h) {
+    final isMobile = Responsive.isMobile(context);
+    if (isMobile) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _infoItem('Date', DateFormat('dd/MM/yyyy').format(DateTime.parse(h['trandate']))),
+          const SizedBox(height: 12),
+          _infoItem('Description', h['narr'] ?? '-'),
+          const SizedBox(height: 12),
+          _infoItem('Total Amount', 'INR ${NumberFormat('#,##,##0.00').format(h['totaldebit'])}'),
+        ],
+      );
+    }
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -303,6 +427,65 @@ class _JournalListScreenState extends State<JournalListScreen> {
   }
 
   Widget _buildDetailsTable(List<Map<String, dynamic>> details) {
+    final isMobile = Responsive.isMobile(context);
+    if (isMobile) {
+      return Column(
+        children: details.map((d) {
+          final legid = d['legid'] ?? d['LEGID'] ?? '-';
+          final acnum = d['acnum'] ?? d['ACNUM'] ?? '-';
+          final accname = d['accname'] ?? d['ACCNAME'] ?? '-';
+          final debit = d['trandbamt'] ?? d['TRANDBAMT'] ?? 0;
+          final credit = d['trancramt'] ?? d['TRANCRAMT'] ?? 0;
+
+          return Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              border: Border.all(color: AppColors.border),
+              borderRadius: BorderRadius.circular(8),
+              color: AppColors.bg,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text("Line #$legid", style: monoStyle(size: 11, weight: FontWeight.bold)),
+                    Text(acnum.toString(), style: bodyStyle(size: 12, weight: FontWeight.bold, color: AppColors.tBlue)),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text(accname.toString(), style: bodyStyle(size: 13, color: AppColors.ink2)),
+                const SizedBox(height: 10),
+                const Divider(height: 1, color: AppColors.border2),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text("Debit", style: bodyStyle(size: 11, color: AppColors.ink4)),
+                        Text(NumberFormat('#,##,##0.00').format(debit), style: bodyStyle(size: 13, weight: FontWeight.bold)),
+                      ],
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text("Credit", style: bodyStyle(size: 11, color: AppColors.ink4)),
+                        Text(NumberFormat('#,##,##0.00').format(credit), style: bodyStyle(size: 13, weight: FontWeight.bold)),
+                      ],
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        }).toList(),
+      );
+    }
+
     return Container(
       decoration: BoxDecoration(
         border: Border.all(color: AppColors.border),
@@ -380,20 +563,26 @@ class _JournalListScreenState extends State<JournalListScreen> {
   }
 
   Widget _buildStatsBar() {
+    final isMobile = Responsive.isMobile(context);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+      padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 24, vertical: 12),
+      width: double.infinity,
       decoration: const BoxDecoration(
         color: Colors.white,
         border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
       ),
-      child: Row(
-        children: [
-          _buildStatItem('All Journals', _journals.length.toString(), true),
-          _buildStatDivider(),
-          _buildStatItem('Draft', '0', false),
-          _buildStatDivider(),
-          _buildStatItem('Posted', _journals.length.toString(), false),
-        ],
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            _buildStatItem('All Journals', _journals.length.toString(), true),
+            _buildStatDivider(),
+            _buildStatItem('Draft', '0', false),
+            _buildStatDivider(),
+            _buildStatItem('Posted', _journals.length.toString(), false),
+          ],
+        ),
       ),
     );
   }
@@ -414,7 +603,7 @@ class _JournalListScreenState extends State<JournalListScreen> {
     return Container(
       height: 24,
       width: 1,
-      margin: const EdgeInsets.symmetric(horizontal: 24),
+      margin: const EdgeInsets.symmetric(horizontal: 20),
       color: const Color(0xFFE2E8F0),
     );
   }

@@ -7,6 +7,7 @@ import 'package:ams_flutter/services/prm_api_service.dart' as prm;
 import 'package:ams_flutter/services/api_service.dart' as main;
 import 'package:ams_flutter/services/menu_api_service.dart';
 import 'package:ams_flutter/services/org_api_service.dart'; // ← ADD THIS
+import '../utils/responsive.dart';
 
 class ProgramMasterScreen extends StatefulWidget {
   final Map<String, Auth101Config> authConfigs;
@@ -1165,6 +1166,7 @@ class _ProgramListViewState extends State<_ProgramListView> {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = Responsive.isMobile(context);
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -1175,74 +1177,103 @@ class _ProgramListViewState extends State<_ProgramListView> {
         children: [
           Padding(
             padding: const EdgeInsets.all(16.0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: AmsTextInput(
-                    icon: Icons.search_rounded,
-                    placeholder: 'Search programs...',
-                    onChanged: (v) => setState(() => _searchQuery = v),
+            child: isMobile
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      AmsTextInput(
+                        icon: Icons.search_rounded,
+                        placeholder: 'Search programs...',
+                        onChanged: (v) => setState(() => _searchQuery = v),
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          IconButton(
+                            icon: (_loading == true)
+                                ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                        strokeWidth: 2, color: AppColors.tBlue),
+                                  )
+                                : const Icon(Icons.refresh_rounded),
+                            onPressed: (_loading == true) ? null : () => _load(1),
+                          ),
+                        ],
+                      ),
+                    ],
+                  )
+                : Row(
+                    children: [
+                      Expanded(
+                        child: AmsTextInput(
+                          icon: Icons.search_rounded,
+                          placeholder: 'Search programs...',
+                          onChanged: (v) => setState(() => _searchQuery = v),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      IconButton(
+                        icon: (_loading == true)
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                    strokeWidth: 2, color: AppColors.tBlue),
+                              )
+                            : const Icon(Icons.refresh_rounded),
+                        onPressed: (_loading == true) ? null : () => _load(1),
+                      ),
+                    ],
                   ),
-                ),
-                const SizedBox(width: 16),
-                IconButton(
-                  icon: (_loading == true)
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(
-                              strokeWidth: 2, color: AppColors.tBlue),
-                        )
-                      : const Icon(Icons.refresh_rounded),
-                  onPressed: (_loading == true) ? null : () => _load(1),
-                ),
-              ],
-            ),
           ),
-          Container(
-            color: AppColors.bg,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Row(
-              children: [
-                Expanded(
-                    flex: 2,
-                    child: Text('Program Id',
-                        style: bodyStyle(
-                            size: 11,
-                            weight: FontWeight.w700,
-                            color: AppColors.ink3))),
-                Expanded(
-                    flex: 4,
-                    child: Text('Description',
-                        style: bodyStyle(
-                            size: 11,
-                            weight: FontWeight.w700,
-                            color: AppColors.ink3))),
-                Expanded(
-                    flex: 2,
-                    child: Text('Mod Id',
-                        style: bodyStyle(
-                            size: 11,
-                            weight: FontWeight.w700,
-                            color: AppColors.ink3))),
-                Expanded(
-                    flex: 2,
-                    child: Text('Status',
-                        style: bodyStyle(
-                            size: 11,
-                            weight: FontWeight.w700,
-                            color: AppColors.ink3))),
-                SizedBox(
-                    width: 150,
-                    child: Text('Actions',
-                        textAlign: TextAlign.center,
-                        style: bodyStyle(
-                            size: 11,
-                            weight: FontWeight.w700,
-                            color: AppColors.ink3))),
-              ],
+          if (!isMobile)
+            Container(
+              color: AppColors.bg,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                children: [
+                  Expanded(
+                      flex: 2,
+                      child: Text('Program Id',
+                          style: bodyStyle(
+                              size: 11,
+                              weight: FontWeight.w700,
+                              color: AppColors.ink3))),
+                  Expanded(
+                      flex: 4,
+                      child: Text('Description',
+                          style: bodyStyle(
+                              size: 11,
+                              weight: FontWeight.w700,
+                              color: AppColors.ink3))),
+                  Expanded(
+                      flex: 2,
+                      child: Text('Mod Id',
+                          style: bodyStyle(
+                              size: 11,
+                              weight: FontWeight.w700,
+                              color: AppColors.ink3))),
+                  Expanded(
+                      flex: 2,
+                      child: Text('Status',
+                          style: bodyStyle(
+                              size: 11,
+                              weight: FontWeight.w700,
+                              color: AppColors.ink3))),
+                  SizedBox(
+                      width: 150,
+                      child: Text('Actions',
+                          textAlign: TextAlign.center,
+                          style: bodyStyle(
+                              size: 11,
+                              weight: FontWeight.w700,
+                              color: AppColors.ink3))),
+                ],
+              ),
             ),
-          ),
           Expanded(
             child: AmsPaginatedView<Map<String, dynamic>>(
               items: _data ?? [],
@@ -1250,8 +1281,12 @@ class _ProgramListViewState extends State<_ProgramListView> {
               forceShowFooter: true,
               currentPage: _currentPage,
               onPageChanged: (page) => _load(page),
-              builder: (context, paginatedItems) => ListView.builder(
+              builder: (context, paginatedItems) => ListView.separated(
+                padding: EdgeInsets.all(isMobile ? 12 : 0),
                 itemCount: paginatedItems.length,
+                separatorBuilder: (_, __) => isMobile
+                    ? const SizedBox(height: 12)
+                    : const SizedBox.shrink(),
                 itemBuilder: (context, idx) {
                   final d = paginatedItems[idx];
                   final pName = (d['descn'] ??
@@ -1278,6 +1313,82 @@ class _ProgramListViewState extends State<_ProgramListView> {
                       .toString();
                   final isEnabled =
                       (d['status'] == 1 || d['status'] == '1') == true;
+
+                  if (isMobile) {
+                    return Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  pId,
+                                  style: monoStyle(
+                                      size: 13, weight: FontWeight.bold, color: AppColors.tBlue),
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: isEnabled
+                                      ? AppColors.greenLt
+                                      : AppColors.redLt,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  isEnabled ? 'Enable' : 'Disable',
+                                  style: bodyStyle(
+                                      size: 11,
+                                      weight: FontWeight.w700,
+                                      color: isEnabled
+                                          ? AppColors.green
+                                          : AppColors.red),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Text(pName, style: bodyStyle(size: 14, weight: FontWeight.w600)),
+                          const SizedBox(height: 4),
+                          Text('Mod ID: $modId', style: bodyStyle(size: 12, color: AppColors.ink3)),
+                          const SizedBox(height: 12),
+                          const Divider(height: 1, color: AppColors.border),
+                          const SizedBox(height: 8),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              IconButton(
+                                  icon: const Icon(Icons.visibility_rounded,
+                                      size: 20, color: AppColors.tBlue),
+                                  onPressed: () => widget.onView(d),
+                                  tooltip: 'View'),
+                              IconButton(
+                                  icon: const Icon(Icons.edit_rounded,
+                                      size: 20, color: AppColors.ink3),
+                                  onPressed: () => widget.onEdit(d),
+                                  tooltip: 'Edit'),
+                              IconButton(
+                                  icon: const Icon(
+                                      Icons.delete_outline_rounded,
+                                      size: 20,
+                                      color: AppColors.red),
+                                  onPressed: () => widget.onDelete(d),
+                                  tooltip: 'Delete'),
+                            ],
+                          ),
+                        ],
+                      ),
+                    );
+                  }
 
                   return Container(
                     padding: const EdgeInsets.symmetric(

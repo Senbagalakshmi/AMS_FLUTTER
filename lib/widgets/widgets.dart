@@ -10,6 +10,7 @@ import '../services/picker.dart';
 import '../theme.dart';
 import '../services/user_service.dart';
 import '../services/api_service.dart';
+import '../utils/responsive.dart';
 
 // ─── TEXT STYLES ─────────────────────────────────────────────
 TextStyle monoStyle({
@@ -1194,48 +1195,62 @@ class _AmsIdentityHeaderState extends State<AmsIdentityHeader> {
             ),
 
             /// Title Row
-            Row(
-              children: [
-                widget.icon,
-                const SizedBox(width: 10),
-                Text(
-                  widget.title,
-                  style: bodyStyle(
-                    size: 16,
-                    weight: FontWeight.w800,
-                    color: widget.accentColor,
-                  ),
-                ),
-                const Spacer(),
-
-                if (widget.actions != null) ...[
-                  ...widget.actions!,
-                  const SizedBox(width: 12),
-                ],
-
-                /// Back Button
-                GestureDetector(
-                  onTap: widget.onBack,
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: AppColors.red,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      children: const [
-                        Icon(Icons.arrow_back, color: Colors.white, size: 14),
-                        SizedBox(width: 6),
-                        Text(
-                          "Back",
-                          style: TextStyle(color: Colors.white),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final isMobile = Responsive.isMobile(context);
+                return Row(
+                  children: [
+                    widget.icon,
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        widget.title,
+                        style: bodyStyle(
+                          size: isMobile ? 14 : 16,
+                          weight: FontWeight.w800,
+                          color: widget.accentColor,
                         ),
-                      ],
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
                     ),
-                  ),
-                )
-              ],
+                    const SizedBox(width: 8),
+
+                    if (widget.actions != null && !isMobile) ...[
+                      ...widget.actions!,
+                      const SizedBox(width: 12),
+                    ],
+
+                    /// Back Button
+                    GestureDetector(
+                      onTap: widget.onBack,
+                      child: Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: isMobile ? 8 : 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.red,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.arrow_back, color: Colors.white, size: 14),
+                            if (!isMobile) ...[
+                              const SizedBox(width: 6),
+                              const Text(
+                                "Back",
+                                style: TextStyle(color: Colors.white),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    )
+                  ],
+                );
+              }
             ),
           ],
         ),
@@ -1258,6 +1273,7 @@ class AmsSubmitBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -1265,15 +1281,15 @@ class AmsSubmitBar extends StatelessWidget {
           top: BorderSide(color: borderColor.withOpacity(0.2), width: 1.5),
         ),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            children: actions,
-          ),
-        ],
+      child: Align(
+        alignment: Alignment.centerRight,
+        child: Wrap(
+          alignment: WrapAlignment.end,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 12,
+          runSpacing: 12,
+          children: actions,
+        ),
       ),
     );
   }
@@ -2016,9 +2032,54 @@ class AmsShell extends StatefulWidget {
 
 class _AmsShellState extends State<AmsShell> {
   bool _isCollapsed = true;
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = Responsive.isMobile(context);
+
+    if (isMobile) {
+      return Scaffold(
+        key: _scaffoldKey,
+        backgroundColor: AppColors.bg,
+        drawer: Drawer(
+          width: 240,
+          child: Container(
+            color: AppColors.sidebar,
+            child: SafeArea(
+              child: AmsSidebar(
+                currentScreen: widget.currentScreen,
+                selectedProg: widget.selectedProg,
+                onNavigate: (screen, prog) {
+                  final isDashboard = screen == 'submenu_dashboard';
+                  final stayInDrawer = isDashboard &&
+                      ['MASTERS', 'GL', 'GL-SUB', 'TRANSACTIONS', 'CONFIG', 'AUTH'].contains(prog);
+
+                  if (!stayInDrawer) {
+                    Navigator.pop(context);
+                  }
+                  widget.onNavigate(screen, prog);
+                },
+                isCollapsed: false,
+                onToggle: () {},
+              ),
+            ),
+          ),
+        ),
+        body: Column(
+          children: [
+            _HoverTopBar(
+              userName: widget.userName,
+              onNavigate: widget.onNavigate,
+              isMobile: true,
+              onMenuTap: () => _scaffoldKey.currentState?.openDrawer(),
+            ),
+            Expanded(child: widget.child),
+          ],
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: AppColors.bg,
       body: Column(
@@ -2026,6 +2087,7 @@ class _AmsShellState extends State<AmsShell> {
           _HoverTopBar(
             userName: widget.userName,
             onNavigate: widget.onNavigate,
+            isMobile: false,
           ),
           Expanded(
             child: Row(
@@ -2139,10 +2201,14 @@ class _AmsShellState extends State<AmsShell> {
 class _HoverTopBar extends StatefulWidget {
   final String? userName;
   final void Function(String, String?) onNavigate;
+  final bool isMobile;
+  final VoidCallback? onMenuTap;
 
   const _HoverTopBar({
     this.userName,
     required this.onNavigate,
+    this.isMobile = false,
+    this.onMenuTap,
   });
 
   @override
@@ -2154,6 +2220,43 @@ class _HoverTopBarState extends State<_HoverTopBar> {
 
   @override
   Widget build(BuildContext context) {
+    // Mobile View
+    if (widget.isMobile) {
+      return Container(
+        height: 56,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        decoration: const BoxDecoration(
+          color: Color(0xFF1E2B5E),
+          border: Border(bottom: BorderSide(color: Colors.white12)),
+        ),
+        child: Row(
+          children: [
+            IconButton(
+              icon: const Icon(Icons.menu_rounded, color: Colors.white),
+              onPressed: widget.onMenuTap,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              "FINANCE",
+              style: bodyStyle(
+                size: 15,
+                weight: FontWeight.w800,
+                color: Colors.white,
+              ),
+            ),
+            const Spacer(),
+            _PremiumAppLauncher(),
+            const SizedBox(width: 12),
+            _PremiumProfileMenu(
+              userName: widget.userName,
+              onNavigate: widget.onNavigate,
+              isExpanded: false,
+            ),
+          ],
+        ),
+      );
+    }
+
     return MouseRegion(
       onEnter: (_) => setState(() => _hover = true),
       onExit: (_) => setState(() => _hover = false),
@@ -2825,19 +2928,25 @@ class AmsAuthTable extends StatelessWidget {
         ],
       ),
       clipBehavior: Clip.antiAlias,
-      child: Table(
-        columnWidths: columnWidths,
-        children: [
-          // Header Row
-          TableRow(
-            decoration: const BoxDecoration(
-              color: Color(0xFFF8FAFC),
-              border: Border(bottom: BorderSide(color: AppColors.border)),
-            ),
-            children: headers.map((h) => _headerCell(h)).toList(),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: SizedBox(
+          width: 900, // Force minimal width to avoid squished columns
+          child: Table(
+            columnWidths: columnWidths,
+            children: [
+              // Header Row
+              TableRow(
+                decoration: const BoxDecoration(
+                  color: Color(0xFFF8FAFC),
+                  border: Border(bottom: BorderSide(color: AppColors.border)),
+                ),
+                children: headers.map((h) => _headerCell(h)).toList(),
+              ),
+              ...rows,
+            ],
           ),
-          ...rows,
-        ],
+        ),
       ),
     );
   }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../theme.dart';
 import '../models/models.dart';
 import '../widgets/widgets.dart';
+import '../utils/responsive.dart';
 
 class AuthConfigScreen extends StatefulWidget {
   final Map<String, Auth101Config> configs;
@@ -38,31 +39,55 @@ class _AuthConfigScreenState extends State<AuthConfigScreen> {
         children: [
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.all(32),
+              padding: EdgeInsets.all(Responsive.isMobile(context) ? 16 : 32),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
+                  LayoutBuilder(builder: (context, constraints) {
+                    final isMobile = Responsive.isMobile(context);
+                    if (isMobile) {
+                      return Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text('Program Configurations',
-                              style: bodyStyle(size: 24, weight: FontWeight.w800)),
-                          Text('Table: AUTH101 — Capture authorization rules and procedures',
+                              style: bodyStyle(size: 20, weight: FontWeight.w800)),
+                          const SizedBox(height: 4),
+                          Text('AUTH101 — Authorization rules',
                               style: monoStyle(color: AppColors.ink3, size: 12)),
+                          const SizedBox(height: 16),
+                          SizedBox(
+                            width: double.infinity,
+                            child: AmsTextInput(
+                              placeholder: 'Search...',
+                              icon: Icons.search,
+                              onChanged: (v) => setState(() => _filter = v),
+                            ),
+                          ),
                         ],
-                      ),
-                      SizedBox(
-                        width: 300,
-                        child: AmsTextInput(
-                          placeholder: 'Search by ID or Name...',
-                          onChanged: (v) => setState(() => _filter = v),
+                      );
+                    }
+                    return Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Program Configurations',
+                                style: bodyStyle(size: 24, weight: FontWeight.w800)),
+                            Text('Table: AUTH101 — Capture authorization rules and procedures',
+                                style: monoStyle(color: AppColors.ink3, size: 12)),
+                          ],
                         ),
-                      ),
-                    ],
-                  ),
+                        SizedBox(
+                          width: 300,
+                          child: AmsTextInput(
+                            placeholder: 'Search by ID or Name...',
+                            onChanged: (v) => setState(() => _filter = v),
+                          ),
+                        ),
+                      ],
+                    );
+                  }),
                   const SizedBox(height: 32),
                   Expanded(
                     child: Container(
@@ -121,49 +146,135 @@ class _ConfigTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: DataTable(
-        headingRowColor: WidgetStateProperty.all(AppColors.bg),
-        horizontalMargin: 24,
-        columnSpacing: 24,
-        columns: [
-          DataColumn(label: Text('PROGRAM ID', style: monoStyle(weight: FontWeight.w700, size: 11))),
-          DataColumn(label: Text('NAME', style: monoStyle(weight: FontWeight.w700, size: 11))),
-          DataColumn(label: Text('TYPE', style: monoStyle(weight: FontWeight.w700, size: 11))),
-          DataColumn(label: Text('AUTH REQ', style: monoStyle(weight: FontWeight.w700, size: 11))),
-          DataColumn(label: Text('LEVELS', style: monoStyle(weight: FontWeight.w700, size: 11))),
-          DataColumn(label: Text('ACTIONS', style: monoStyle(weight: FontWeight.w700, size: 11))),
-        ],
-        rows: ids.map((id) {
+    final isMobile = Responsive.isMobile(context);
+
+    if (isMobile) {
+      if (ids.isEmpty) {
+        return const Center(child: Padding(
+          padding: EdgeInsets.all(32.0),
+          child: Text('No program configs found.'),
+        ));
+      }
+      return ListView.separated(
+        padding: const EdgeInsets.all(16),
+        itemCount: ids.length,
+        separatorBuilder: (_, __) => const SizedBox(height: 12),
+        itemBuilder: (ctx, idx) {
+          final id = ids[idx];
           final cfg = configs[id]!;
-          return DataRow(cells: [
-            DataCell(Text(id, style: monoStyle(weight: FontWeight.w600, color: cfg.isTran ? AppColors.tBlue : AppColors.nTeal))),
-            DataCell(Text(cfg.name, style: bodyStyle(size: 13, weight: FontWeight.w600))),
-            DataCell(AmsBadge(
-              label: cfg.isTran ? 'TRANSACTION' : 'NON-TRAN',
-              color: cfg.isTran ? AppColors.tBlue : AppColors.nTeal,
-              background: cfg.isTran ? AppColors.tBlueLt : AppColors.nTealLt,
-              fontSize: 9,
-            )),
-            DataCell(
-              Switch(
-                value: cfg.approvalReq,
-                activeThumbColor: AppColors.green,
-                onChanged: (v) {
-                  onUpdate(id, cfg.copyWith(approvalReq: v));
-                },
-              ),
+          return Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.border),
             ),
-            DataCell(Text(cfg.levels.toString(), style: bodyStyle())),
-            DataCell(
-              IconButton(
-                icon: const Icon(Icons.settings_suggest_outlined, color: AppColors.ink2),
-                tooltip: 'Advanced Procedures',
-                onPressed: () => _showAdvancedDialog(context, id, cfg),
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(id, style: monoStyle(weight: FontWeight.bold, color: cfg.isTran ? AppColors.tBlue : AppColors.nTeal, size: 14)),
+                          const SizedBox(height: 4),
+                          Text(cfg.name, style: bodyStyle(weight: FontWeight.bold, size: 14)),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.settings_suggest_outlined, color: AppColors.tBlue),
+                      tooltip: 'Advanced Procedures',
+                      onPressed: () => _showAdvancedDialog(context, id, cfg),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                const Divider(height: 1, color: AppColors.border),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    AmsBadge(
+                      label: cfg.isTran ? 'TRANSACTION' : 'NON-TRAN',
+                      color: cfg.isTran ? AppColors.tBlue : AppColors.nTeal,
+                      background: cfg.isTran ? AppColors.tBlueLt : AppColors.nTealLt,
+                      fontSize: 10,
+                    ),
+                    Text("Levels: ${cfg.levels}", style: bodyStyle(size: 13, weight: FontWeight.w500)),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Approval Required', style: bodyStyle(size: 13, color: AppColors.ink2)),
+                    Switch(
+                      value: cfg.approvalReq,
+                      activeThumbColor: AppColors.green,
+                      onChanged: (v) {
+                        onUpdate(id, cfg.copyWith(approvalReq: v));
+                      },
+                    ),
+                  ],
+                ),
+              ],
             ),
-          ]);
-        }).toList(),
+          );
+        },
+      );
+    }
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.vertical,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: DataTable(
+          headingRowColor: WidgetStateProperty.all(AppColors.bg),
+          horizontalMargin: 24,
+          columnSpacing: 24,
+          columns: [
+            DataColumn(label: Text('PROGRAM ID', style: monoStyle(weight: FontWeight.w700, size: 11))),
+            DataColumn(label: Text('NAME', style: monoStyle(weight: FontWeight.w700, size: 11))),
+            DataColumn(label: Text('TYPE', style: monoStyle(weight: FontWeight.w700, size: 11))),
+            DataColumn(label: Text('AUTH REQ', style: monoStyle(weight: FontWeight.w700, size: 11))),
+            DataColumn(label: Text('LEVELS', style: monoStyle(weight: FontWeight.w700, size: 11))),
+            DataColumn(label: Text('ACTIONS', style: monoStyle(weight: FontWeight.w700, size: 11))),
+          ],
+          rows: ids.map((id) {
+            final cfg = configs[id]!;
+            return DataRow(cells: [
+              DataCell(Text(id, style: monoStyle(weight: FontWeight.w600, color: cfg.isTran ? AppColors.tBlue : AppColors.nTeal))),
+              DataCell(Text(cfg.name, style: bodyStyle(size: 13, weight: FontWeight.w600))),
+              DataCell(AmsBadge(
+                label: cfg.isTran ? 'TRANSACTION' : 'NON-TRAN',
+                color: cfg.isTran ? AppColors.tBlue : AppColors.nTeal,
+                background: cfg.isTran ? AppColors.tBlueLt : AppColors.nTealLt,
+                fontSize: 9,
+              )),
+              DataCell(
+                Switch(
+                  value: cfg.approvalReq,
+                  activeThumbColor: AppColors.green,
+                  onChanged: (v) {
+                    onUpdate(id, cfg.copyWith(approvalReq: v));
+                  },
+                ),
+              ),
+              DataCell(Text(cfg.levels.toString(), style: bodyStyle())),
+              DataCell(
+                IconButton(
+                  icon: const Icon(Icons.settings_suggest_outlined, color: AppColors.ink2),
+                  tooltip: 'Advanced Procedures',
+                  onPressed: () => _showAdvancedDialog(context, id, cfg),
+                ),
+              ),
+            ]);
+          }).toList(),
+        ),
       ),
     );
   }

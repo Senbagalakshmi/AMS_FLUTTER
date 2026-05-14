@@ -6,6 +6,7 @@ import 'dart:convert';
 import '../theme.dart';
 import '../widgets/widgets.dart';
 import '../services/org_api_service.dart';
+import '../utils/responsive.dart';
 
 class OrganisationScreen extends StatefulWidget {
   final VoidCallback onBack;
@@ -476,30 +477,64 @@ class _OrganisationScreenState extends State<OrganisationScreen> {
         children: [
           Padding(
             padding: const EdgeInsets.all(16.0),
-            child: Row(
-              children: [
-                Expanded(
-                    child: AmsTextInput(
+            child: LayoutBuilder(builder: (context, constraints) {
+              final isMobile = Responsive.isMobile(context);
+              if (isMobile) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    AmsTextInput(
                         icon: Icons.search_rounded,
                         placeholder: 'Search...',
                         borderColor: AppColors.tBlue,
-                        onChanged: (v) => setState(() => _searchQuery = v))),
-                IconButton(
-                    icon: const Icon(Icons.refresh_rounded),
-                    onPressed: () => _fetchOrganisations(1)),
-                const SizedBox(width: 16),
-                AmsButton(
-                    label: '+ Add New',
-                    variant: AmsButtonVariant.primary,
-                    onPressed: () {
-                      _clearFields();
-                      setState(() {
-                        _showForm = true;
-                        _isViewOnly = false;
-                      });
-                    }),
-              ],
-            ),
+                        onChanged: (v) => setState(() => _searchQuery = v)),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        IconButton(
+                            icon: const Icon(Icons.refresh_rounded),
+                            onPressed: () => _fetchOrganisations(1)),
+                        const Spacer(),
+                        AmsButton(
+                            label: '+ Add New',
+                            variant: AmsButtonVariant.primary,
+                            onPressed: () {
+                              _clearFields();
+                              setState(() {
+                                _showForm = true;
+                                _isViewOnly = false;
+                              });
+                            }),
+                      ],
+                    ),
+                  ],
+                );
+              }
+              return Row(
+                children: [
+                  Expanded(
+                      child: AmsTextInput(
+                          icon: Icons.search_rounded,
+                          placeholder: 'Search...',
+                          borderColor: AppColors.tBlue,
+                          onChanged: (v) => setState(() => _searchQuery = v))),
+                  IconButton(
+                      icon: const Icon(Icons.refresh_rounded),
+                      onPressed: () => _fetchOrganisations(1)),
+                  const SizedBox(width: 16),
+                  AmsButton(
+                      label: '+ Add New',
+                      variant: AmsButtonVariant.primary,
+                      onPressed: () {
+                        _clearFields();
+                        setState(() {
+                          _showForm = true;
+                          _isViewOnly = false;
+                        });
+                      }),
+                ],
+              );
+            }),
           ),
           _isLoading 
             ? const Expanded(child: AmsListSkeleton())
@@ -538,6 +573,84 @@ class _OrganisationScreenState extends State<OrganisationScreen> {
             separatorBuilder: (_, __) => const SizedBox(height: 12),
             itemBuilder: (ctx, idx) {
               final o = filtered[idx];
+              final isMobile = Responsive.isMobile(context);
+
+              if (isMobile) {
+                return Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.border)),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          CircleAvatar(
+                              backgroundColor: AppColors.tBlueLt,
+                              radius: 18,
+                              child: Text((o['name'] ?? 'U')[0],
+                                  style: const TextStyle(
+                                      color: AppColors.tBlue,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold))),
+                          const SizedBox(width: 12),
+                          Expanded(
+                              child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                Text(o['name'] ?? 'Unknown',
+                                    style: bodyStyle(weight: FontWeight.bold, size: 14)),
+                                Text(
+                                    '${o['district'] ?? o['divisionName'] ?? ''}, ${o['country'] ?? ''}',
+                                    style: bodyStyle(color: AppColors.ink3, size: 11)),
+                              ])),
+                          AmsBadge(label: o['orgcode']?.toString() ?? ''),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      const Divider(height: 1, color: AppColors.border),
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              o['email'] ?? '',
+                              style: bodyStyle(color: AppColors.tBlue, size: 12, weight: FontWeight.w500),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              _actionIcon(
+                                  icon: Icons.visibility_outlined,
+                                  color: AppColors.green,
+                                  bg: Colors.white,
+                                  onTap: () => _enterViewMode(o)),
+                              const SizedBox(width: 8),
+                              _actionIcon(
+                                  icon: Icons.edit_outlined,
+                                  color: AppColors.tBlue,
+                                  bg: Colors.white,
+                                  onTap: () => _enterViewMode(o, viewOnly: false)),
+                              const SizedBox(width: 8),
+                              _actionIcon(
+                                  icon: Icons.delete_outline_rounded,
+                                  color: AppColors.red,
+                                  bg: AppColors.redLt,
+                                  onTap: () => _confirmDelete(o['orgcode'] ?? 0, o['name'] ?? 'Organisation')),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                );
+              }
+
               return Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -1267,8 +1380,9 @@ class OrganisationFieldsState extends State<OrganisationFields> {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = Responsive.isMobile(context);
     return Padding(
-      padding: const EdgeInsets.all(32),
+      padding: EdgeInsets.all(isMobile ? 16 : 32),
       child: AmsFormGrid(cols: 2, children: [
         _field('Organisation Code*', _orgCodeCtrl,
             isNum: true,

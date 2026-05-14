@@ -277,89 +277,96 @@ class _SplashScreenState extends State<SplashScreen>
             ],
           ),
         ),
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Logo
-              Container(
-                width: 90,
-                height: 90,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Color(0x731447E6),
-                      blurRadius: 32,
-                      offset: Offset(0, 8),
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Logo
+                    Container(
+                      width: 90,
+                      height: 90,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Color(0x731447E6),
+                            blurRadius: 32,
+                            offset: Offset(0, 8),
+                          ),
+                        ],
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(20),
+                        child: Image.asset(
+                          'assets/images/logo.jpg',
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // App name
+                    Text(
+                      'FMS',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                        letterSpacing: 2,
+                        fontFamily: 'SpaceGrotesk',
+                        shadows: [
+                          Shadow(
+                            color: AppColors.tBlue.withValues(alpha: 0.6),
+                            blurRadius: 16,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'Finance Management System',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF5D7FA0),
+                        letterSpacing: 1,
+                      ),
+                    ),
+                    const SizedBox(height: 40),
+
+                    // Pulsing loader
+                    AnimatedBuilder(
+                      animation: _pulse,
+                      builder: (_, __) => Opacity(
+                        opacity: 0.5 + _pulse.value * 0.5,
+                        child: const SizedBox(
+                          width: 32,
+                          height: 32,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.5,
+                            color: Color(0xFF60A5FA),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Status text
+                    Text(
+                      _status,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF7FA0C0),
+                        letterSpacing: 0.5,
+                      ),
                     ),
                   ],
                 ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(20),
-                  child: Image.asset(
-                    'assets/images/logo.jpg',
-                    fit: BoxFit.cover,
-                  ),
-                ),
               ),
-              const SizedBox(height: 24),
-
-              // App name
-              Text(
-                'FMS',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w800,
-                  color: Colors.white,
-                  letterSpacing: 2,
-                  fontFamily: 'SpaceGrotesk',
-                  shadows: [
-                    Shadow(
-                      color: AppColors.tBlue.withValues(alpha: 0.6),
-                      blurRadius: 16,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 4),
-              const Text(
-                'Finance Management System',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Color(0xFF5D7FA0),
-                  letterSpacing: 1,
-                ),
-              ),
-              const SizedBox(height: 40),
-
-              // Pulsing loader
-              AnimatedBuilder(
-                animation: _pulse,
-                builder: (_, __) => Opacity(
-                  opacity: 0.5 + _pulse.value * 0.5,
-                  child: const SizedBox(
-                    width: 32,
-                    height: 32,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2.5,
-                      color: Color(0xFF60A5FA),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Status text
-              Text(
-                _status,
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: Color(0xFF7FA0C0),
-                  letterSpacing: 0.5,
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),

@@ -5,6 +5,7 @@ import '../widgets/widgets.dart';
 import '../services/api_service.dart';
 import '../services/gl_api_service.dart';
 import '../services/org_api_service.dart';
+import '../utils/responsive.dart';
 import 'package:flutter/services.dart';
 
 class GLAttributeScreen extends StatefulWidget {
@@ -591,30 +592,56 @@ class _GLAttributeScreenState extends State<GLAttributeScreen> {
             ),
             child: Column(
               children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Expanded(
-                      flex: 4,
-                      child: AmsField(
-                        label: 'Filter by GL Account',
-                        labelAbove: true,
-                        child: _loadingAttributes
-                            ? _glLoadingBox()
-                            : _attributeGroups.isEmpty
-                                ? _glEmptyBox()
-                                : _buildFilterDropdown(),
+                LayoutBuilder(builder: (context, constraints) {
+                  final isMobile = Responsive.isMobile(context);
+                  if (isMobile) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        AmsField(
+                          label: 'Filter by GL Account',
+                          labelAbove: true,
+                          child: _loadingAttributes
+                              ? _glLoadingBox()
+                              : _attributeGroups.isEmpty
+                                  ? _glEmptyBox()
+                                  : _buildFilterDropdown(),
+                        ),
+                        const SizedBox(height: 12),
+                        AmsButton(
+                          label: 'Add New',
+                          icon: Icons.add_rounded,
+                          variant: AmsButtonVariant.primary,
+                          onPressed: _openCreateForm,
+                        ),
+                      ],
+                    );
+                  }
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Expanded(
+                        flex: 4,
+                        child: AmsField(
+                          label: 'Filter by GL Account',
+                          labelAbove: true,
+                          child: _loadingAttributes
+                              ? _glLoadingBox()
+                              : _attributeGroups.isEmpty
+                                  ? _glEmptyBox()
+                                  : _buildFilterDropdown(),
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    AmsButton(
-                      label: 'Add New',
-                      icon: Icons.add_rounded,
-                      variant: AmsButtonVariant.primary,
-                      onPressed: _openCreateForm,
-                    ),
-                  ],
-                ),
+                      const SizedBox(width: 12),
+                      AmsButton(
+                        label: 'Add New',
+                        icon: Icons.add_rounded,
+                        variant: AmsButtonVariant.primary,
+                        onPressed: _openCreateForm,
+                      ),
+                    ],
+                  );
+                }),
                 const SizedBox(height: 24),
                 Expanded(
                   child: _loadingAttributes
@@ -719,12 +746,192 @@ class _GLAttributeScreenState extends State<GLAttributeScreen> {
     final List<Map<String, dynamic>> attrs =
         List<Map<String, dynamic>>.from(item['attrs'] ?? []);
     final isExpanded = _expandedGls.contains(glNo);
+    final isMobile = Responsive.isMobile(context);
 
     Color typeFg =
         type == 'Liability' ? const Color(0xFF7E22CE) : AppColors.tBlue;
     Color typeBg = type == 'Liability'
         ? const Color(0xFFF3E8FF)
         : AppColors.tBlueLt.withValues(alpha: 0.5);
+
+    if (isMobile) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.border),
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black.withValues(alpha: 0.02),
+                blurRadius: 8,
+                offset: const Offset(0, 2))
+          ],
+        ),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: const BoxDecoration(
+                      color: AppColors.tBlueLt, shape: BoxShape.circle),
+                  child: Center(
+                    child: Text(
+                      name.isNotEmpty ? name[0].toUpperCase() : '?',
+                      style: bodyStyle(
+                          size: 14,
+                          color: AppColors.tBlue,
+                          weight: FontWeight.w800),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(name,
+                          style: bodyStyle(size: 14, weight: FontWeight.w700)),
+                      const SizedBox(height: 4),
+                      Text('GL No: $glNo', style: bodyStyle(size: 11, color: AppColors.ink3)),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                      color: typeBg,
+                      borderRadius: BorderRadius.circular(4)),
+                  child: Text(type,
+                      style: bodyStyle(
+                          size: 10,
+                          color: typeFg,
+                          weight: FontWeight.w600)),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            const Divider(height: 1, color: AppColors.border),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    _statusDot(status == 'Active'
+                        ? AppColors.green
+                        : AppColors.red),
+                    const SizedBox(width: 6),
+                    Text(status,
+                        style: bodyStyle(size: 12, color: AppColors.ink2, weight: FontWeight.w600)),
+                  ],
+                ),
+                Row(
+                  children: [
+                    _actionIconButton(Icons.visibility_outlined,
+                        AppColors.green, () => _viewSet(item)),
+                    const SizedBox(width: 8),
+                    _actionIconButton(Icons.edit_outlined, AppColors.tBlue,
+                        () => _editSet(item)),
+                    const SizedBox(width: 8),
+                    _actionIconButton(
+                      Icons.delete_outline_rounded,
+                      AppColors.red,
+                      () => _confirmDelete(glNo),
+                      bg: AppColors.redLt,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            if (attrs.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.bg,
+                  border: Border.all(
+                      color: AppColors.border.withValues(alpha: 0.5)),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  children: [
+                    ...(isExpanded ? attrs : attrs.take(2)).map((a) =>
+                        Padding(
+                          padding:
+                              const EdgeInsets.symmetric(vertical: 6.0),
+                          child: Row(
+                            children: [
+                              const SizedBox(width: 8),
+                              SizedBox(
+                                width: 90,
+                                child: Text(a['id'] ?? '',
+                                    style: bodyStyle(
+                                        size: 11,
+                                        weight: FontWeight.w800,
+                                        color: AppColors.tBlue)),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(a['value'] ?? '—',
+                                    style: bodyStyle(
+                                        size: 12,
+                                        color: AppColors.ink2,
+                                        weight: FontWeight.w600)),
+                              ),
+                            ],
+                          ),
+                        )),
+                    if (attrs.length > 2) ...[
+                      const Divider(height: 24, color: AppColors.border),
+                      InkWell(
+                        onTap: () {
+                          setState(() {
+                            if (isExpanded) {
+                              _expandedGls.remove(glNo);
+                            } else {
+                              _expandedGls.add(glNo);
+                            }
+                          });
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                isExpanded
+                                    ? 'Show Less'
+                                    : 'Show ${attrs.length - 2} More Attributes',
+                                style: bodyStyle(
+                                    size: 11,
+                                    weight: FontWeight.bold,
+                                    color: AppColors.tBlue),
+                              ),
+                              const SizedBox(width: 4),
+                              Icon(
+                                isExpanded
+                                    ? Icons.keyboard_arrow_up_rounded
+                                    : Icons.keyboard_arrow_down_rounded,
+                                size: 16,
+                                color: AppColors.tBlue,
+                              )
+                            ],
+                          ),
+                        ),
+                      )
+                    ]
+                  ],
+                ),
+              )
+            ]
+          ],
+        ),
+      );
+    }
 
     return Container(
       padding: const EdgeInsets.all(16),

@@ -7,6 +7,7 @@ import '../services/gl_api_service.dart';
 import '../services/org_api_service.dart';
 import '../services/branch_api_service.dart';
 import '../services/journal_api_service.dart';
+import '../utils/responsive.dart';
 
 class JournalEntryScreen extends StatefulWidget {
   final VoidCallback onBack;
@@ -165,6 +166,9 @@ class _JournalEntryScreenState extends State<JournalEntryScreen> {
     _descriptionController.dispose();
     _currencyController.dispose();
     _referenceController.dispose();
+    for (var r in _rows) {
+      r.dispose();
+    }
     super.dispose();
   }
 
@@ -177,7 +181,8 @@ class _JournalEntryScreenState extends State<JournalEntryScreen> {
   void _removeRow(int index) {
     if (_rows.length > 1) {
       setState(() {
-        _rows.removeAt(index);
+        final removed = _rows.removeAt(index);
+        removed.dispose();
       });
     }
   }
@@ -279,7 +284,7 @@ class _JournalEntryScreenState extends State<JournalEntryScreen> {
           ),
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
+              padding: EdgeInsets.all(Responsive.isMobile(context) ? 12 : 24),
               child: Container(
                 decoration: BoxDecoration(
                   color: Colors.white,
@@ -316,123 +321,109 @@ class _JournalEntryScreenState extends State<JournalEntryScreen> {
                     ),
 
                     Padding(
-                      padding: const EdgeInsets.all(24),
+                      padding: EdgeInsets.all(Responsive.isMobile(context) ? 16 : 24),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Org and Branch Code
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                          AmsFormGrid(
+                            cols: 2,
                             children: [
-                              Expanded(
-                                child: AmsField(
-                                  label: 'Organization Code',
-                                  tooltip: 'Select your organization',
-                                  child: _isLoadingOrgs
-                                      ? const LinearProgressIndicator()
-                                      : AmsSearchableDropdown(
-                                          items: _orgList.map((o) {
-                                            final code = (o['orgcode'] ?? o['orgCode'] ?? '').toString();
-                                            final name = (o['name'] ?? '').toString();
-                                            return name.isNotEmpty ? '$code – $name' : code;
-                                          }).toList(),
-                                          placeholder: 'Select Organization',
-                                          initialValue: () {
-                                            if (_selectedOrgCode == null) return null;
-                                            final match = _orgList.firstWhere(
-                                              (o) => (o['orgcode'] ?? o['orgCode'] ?? '').toString() == _selectedOrgCode.toString(),
-                                              orElse: () => {},
-                                            );
-                                            if (match.isEmpty) return _selectedOrgCode.toString();
-                                            final code = _selectedOrgCode.toString();
-                                            final name = (match['name'] ?? '').toString();
-                                            return name.isNotEmpty ? '$code – $name' : code;
-                                          }(),
-                                          onChanged: (v) {
-                                            if (v == null) return;
-                                            final codeStr = v.contains(' – ') ? v.split(' – ').first : v;
-                                            setState(() {
-                                              _selectedOrgCode = int.tryParse(codeStr);
-                                              _orgCodeController.text = codeStr;
-                                              // Reset branch when org changes
-                                              _selectedBranchCode = null;
-                                              _branchCodeController.text = '';
-                                            });
-                                          },
-                                        ),
-                                ),
+                              AmsField(
+                                label: 'Organization Code',
+                                tooltip: 'Select your organization',
+                                child: _isLoadingOrgs
+                                    ? const LinearProgressIndicator()
+                                    : AmsSearchableDropdown(
+                                        items: _orgList.map((o) {
+                                          final code = (o['orgcode'] ?? o['orgCode'] ?? '').toString();
+                                          final name = (o['name'] ?? '').toString();
+                                          return name.isNotEmpty ? '$code – $name' : code;
+                                        }).toList(),
+                                        placeholder: 'Select Organization',
+                                        initialValue: () {
+                                          if (_selectedOrgCode == null) return null;
+                                          final match = _orgList.firstWhere(
+                                            (o) => (o['orgcode'] ?? o['orgCode'] ?? '').toString() == _selectedOrgCode.toString(),
+                                            orElse: () => {},
+                                          );
+                                          if (match.isEmpty) return _selectedOrgCode.toString();
+                                          final code = _selectedOrgCode.toString();
+                                          final name = (match['name'] ?? '').toString();
+                                          return name.isNotEmpty ? '$code – $name' : code;
+                                        }(),
+                                        onChanged: (v) {
+                                          if (v == null) return;
+                                          final codeStr = v.contains(' – ') ? v.split(' – ').first : v;
+                                          setState(() {
+                                            _selectedOrgCode = int.tryParse(codeStr);
+                                            _orgCodeController.text = codeStr;
+                                            _selectedBranchCode = null;
+                                            _branchCodeController.text = '';
+                                          });
+                                        },
+                                      ),
                               ),
-                              const SizedBox(width: 32),
-                              Expanded(
-                                child: AmsField(
-                                  label: 'Branch Code',
-                                  tooltip: 'Select your branch',
-                                  child: _isLoadingBranches
-                                      ? const LinearProgressIndicator()
-                                      : AmsDropdown(
-                                          key: ValueKey('branch_dropdown_$_selectedOrgCode'),
-                                          items: _filteredBranches.map((b) {
-                                            final code = (b['brnCd'] ?? b['brncd'] ?? b['branchCd'] ?? b['branchcd'] ?? b['BRNCD'] ?? b['BRANCHCD'] ?? '').toString();
-                                            final name = (b['brnName'] ?? b['brnname'] ?? b['branchName'] ?? b['branchname'] ?? b['BRNNAME'] ?? b['BRANCHNAME'] ?? '').toString();
-                                            return name.isNotEmpty ? '$code – $name' : code;
-                                          }).toList(),
-                                          placeholder: 'Select Branch',
-                                          initialValue: () {
-                                            if (_selectedBranchCode == null) return null;
-                                            final match = _filteredBranches.firstWhere(
-                                              (b) => (b['brnCd'] ?? b['brncd'] ?? b['branchCd'] ?? b['branchcd'] ?? b['BRNCD'] ?? b['BRANCHCD'] ?? '').toString() == _selectedBranchCode.toString(),
-                                              orElse: () => {},
-                                            );
-                                            if (match.isEmpty) return null;
-                                            final code = _selectedBranchCode.toString();
-                                            final name = (match['brnName'] ?? match['brnname'] ?? match['branchName'] ?? match['branchname'] ?? match['BRNNAME'] ?? match['BRANCHNAME'] ?? '').toString();
-                                            return name.isNotEmpty ? '$code – $name' : code;
-                                          }(),
-                                          onChanged: (v) {
-                                            if (v == null) return;
-                                            final codeStr = v.contains(' – ') ? v.split(' – ').first : v;
-                                            setState(() {
-                                              _selectedBranchCode = int.tryParse(codeStr);
-                                              _branchCodeController.text = codeStr;
-                                            });
-                                          },
-                                        ),
-                                ),
+                              AmsField(
+                                label: 'Branch Code',
+                                tooltip: 'Select your branch',
+                                child: _isLoadingBranches
+                                    ? const LinearProgressIndicator()
+                                    : AmsDropdown(
+                                        key: ValueKey('branch_dropdown_$_selectedOrgCode'),
+                                        items: _filteredBranches.map((b) {
+                                          final code = (b['brnCd'] ?? b['brncd'] ?? b['branchCd'] ?? b['branchcd'] ?? b['BRNCD'] ?? b['BRANCHCD'] ?? '').toString();
+                                          final name = (b['brnName'] ?? b['brnname'] ?? b['branchName'] ?? b['branchname'] ?? b['BRNNAME'] ?? b['BRANCHNAME'] ?? '').toString();
+                                          return name.isNotEmpty ? '$code – $name' : code;
+                                        }).toList(),
+                                        placeholder: 'Select Branch',
+                                        initialValue: () {
+                                          if (_selectedBranchCode == null) return null;
+                                          final match = _filteredBranches.firstWhere(
+                                            (b) => (b['brnCd'] ?? b['brncd'] ?? b['branchCd'] ?? b['branchcd'] ?? b['BRNCD'] ?? b['BRANCHCD'] ?? '').toString() == _selectedBranchCode.toString(),
+                                            orElse: () => {},
+                                          );
+                                          if (match.isEmpty) return null;
+                                          final code = _selectedBranchCode.toString();
+                                          final name = (match['brnName'] ?? match['brnname'] ?? match['branchName'] ?? match['branchname'] ?? match['BRNNAME'] ?? match['BRANCHNAME'] ?? '').toString();
+                                          return name.isNotEmpty ? '$code – $name' : code;
+                                        }(),
+                                        onChanged: (v) {
+                                          if (v == null) return;
+                                          final codeStr = v.contains(' – ') ? v.split(' – ').first : v;
+                                          setState(() {
+                                            _selectedBranchCode = int.tryParse(codeStr);
+                                            _branchCodeController.text = codeStr;
+                                          });
+                                        },
+                                      ),
                               ),
                             ],
                           ),
                           const SizedBox(height: 20),
-
-                          // Header Fields
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                          AmsFormGrid(
+                            cols: 2,
                             children: [
-                              Expanded(
-                                child: AmsField(
-                                  label: 'Date',
-                                  tooltip: 'Transaction posting date',
-                                  child: GestureDetector(
-                                    onTap: _selectDate,
-                                    child: AbsorbPointer(
-                                      child: AmsTextInput(
-                                        controller: _dateController,
-                                        readOnly: true,
-                                        icon: Icons.calendar_today_rounded,
-                                      ),
+                              AmsField(
+                                label: 'Date',
+                                tooltip: 'Transaction posting date',
+                                child: GestureDetector(
+                                  onTap: _selectDate,
+                                  child: AbsorbPointer(
+                                    child: AmsTextInput(
+                                      controller: _dateController,
+                                      readOnly: true,
+                                      icon: Icons.calendar_today_rounded,
                                     ),
                                   ),
                                 ),
                               ),
-                              const SizedBox(width: 32),
-                              Expanded(
-                                child: AmsField(
-                                  label: 'Journal No',
-                                  tooltip: 'System generated unique journal number',
-                                  child: AmsTextInput(
-                                    controller: _journalNoController,
-                                    readOnly: true,
-                                    placeholder: 'Auto Generated',
-                                  ),
+                              AmsField(
+                                label: 'Journal No',
+                                tooltip: 'System generated unique journal number',
+                                child: AmsTextInput(
+                                  controller: _journalNoController,
+                                  readOnly: true,
+                                  placeholder: 'Auto Generated',
                                 ),
                               ),
                             ],
@@ -448,28 +439,23 @@ class _JournalEntryScreenState extends State<JournalEntryScreen> {
                             ),
                           ),
                           const SizedBox(height: 20),
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                          AmsFormGrid(
+                            cols: 2,
                             children: [
-                              Expanded(
-                                child: AmsField(
-                                  label: 'Currency',
-                                  tooltip: 'Default currency of the organization',
-                                  child: AmsTextInput(
-                                    controller: _currencyController,
-                                    placeholder: 'Load default currency of the organization',
-                                  ),
+                              AmsField(
+                                label: 'Currency',
+                                tooltip: 'Default currency of the organization',
+                                child: AmsTextInput(
+                                  controller: _currencyController,
+                                  placeholder: 'Load default currency of the organization',
                                 ),
                               ),
-                              const SizedBox(width: 32),
-                              Expanded(
-                                child: AmsField(
-                                  label: 'Reference No (Optional)',
-                                  tooltip: 'External reference or document number',
-                                  child: AmsTextInput(
-                                    controller: _referenceController,
-                                    placeholder: 'Enter reference number',
-                                  ),
+                              AmsField(
+                                label: 'Reference No (Optional)',
+                                tooltip: 'External reference or document number',
+                                child: AmsTextInput(
+                                  controller: _referenceController,
+                                  placeholder: 'Enter reference number',
                                 ),
                               ),
                             ],
@@ -478,23 +464,24 @@ class _JournalEntryScreenState extends State<JournalEntryScreen> {
                           const SizedBox(height: 40),
 
                           // Table Header
-                          Container(
-                            decoration: const BoxDecoration(
-                              color: Color(0xFF3B5998), // Slightly darker blue
-                              borderRadius: BorderRadius.vertical(top: Radius.circular(4)),
+                          if (!Responsive.isMobile(context))
+                            Container(
+                              decoration: const BoxDecoration(
+                                color: Color(0xFF3B5998), // Slightly darker blue
+                                borderRadius: BorderRadius.vertical(top: Radius.circular(4)),
+                              ),
+                              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                              child: const Row(
+                                children: [
+                                  Expanded(flex: 2, child: Text('Account No', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
+                                  SizedBox(width: 24), // Added space
+                                  Expanded(flex: 1, child: Text('Debit', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
+                                  Expanded(flex: 1, child: Text('Credit', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
+                                  Expanded(flex: 4, child: Text('Remarks', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
+                                  SizedBox(width: 40), // Space for action button
+                                ],
+                              ),
                             ),
-                            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                            child: const Row(
-                              children: [
-                                Expanded(flex: 2, child: Text('Account No', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
-                                SizedBox(width: 24), // Added space
-                                Expanded(flex: 1, child: Text('Debit', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
-                                Expanded(flex: 1, child: Text('Credit', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
-                                Expanded(flex: 4, child: Text('Remarks', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
-                                SizedBox(width: 40), // Space for action button
-                              ],
-                            ),
-                          ),
 
                           // Table Rows
                           ListView.builder(
@@ -527,39 +514,87 @@ class _JournalEntryScreenState extends State<JournalEntryScreen> {
                           const SizedBox(height: 40),
 
                           // Totals (Optional but helpful)
+                          // Totals
                           Divider(color: AppColors.border),
                           const SizedBox(height: 10),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              Text('Total Debit: ', style: bodyStyle(weight: FontWeight.w600)),
-                              Text(_totalDebit.toStringAsFixed(2), style: bodyStyle(color: AppColors.green, weight: FontWeight.w700)),
-                              const SizedBox(width: 40),
-                              Text('Total Credit: ', style: bodyStyle(weight: FontWeight.w600)),
-                              Text(_totalCredit.toStringAsFixed(2), style: bodyStyle(color: AppColors.red, weight: FontWeight.w700)),
-                              const SizedBox(width: 40),
-                            ],
-                          ),
+                          LayoutBuilder(builder: (context, constraints) {
+                            final isMobile = Responsive.isMobile(context);
+                            if (isMobile) {
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.end,
+                                    children: [
+                                      Text('Total Debit: ', style: bodyStyle(weight: FontWeight.w600)),
+                                      Text(_totalDebit.toStringAsFixed(2), style: bodyStyle(color: AppColors.green, weight: FontWeight.w700, size: 15)),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.end,
+                                    children: [
+                                      Text('Total Credit: ', style: bodyStyle(weight: FontWeight.w600)),
+                                      Text(_totalCredit.toStringAsFixed(2), style: bodyStyle(color: AppColors.red, weight: FontWeight.w700, size: 15)),
+                                    ],
+                                  ),
+                                ],
+                              );
+                            }
+                            return Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                Text('Total Debit: ', style: bodyStyle(weight: FontWeight.w600)),
+                                Text(_totalDebit.toStringAsFixed(2), style: bodyStyle(color: AppColors.green, weight: FontWeight.w700)),
+                                const SizedBox(width: 40),
+                                Text('Total Credit: ', style: bodyStyle(weight: FontWeight.w600)),
+                                Text(_totalCredit.toStringAsFixed(2), style: bodyStyle(color: AppColors.red, weight: FontWeight.w700)),
+                                const SizedBox(width: 40),
+                              ],
+                            );
+                          }),
                           const SizedBox(height: 40),
 
                           // Bottom Actions
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              AmsButton(
-                                label: 'Save',
-                                variant: AmsButtonVariant.primary,
-                                backgroundColor: const Color(0xFF27AE60), // Green from image
-                                onPressed: _submitJournal,
-                              ),
-                              const SizedBox(width: 16),
-                              AmsButton(
-                                label: 'Cancel',
-                                variant: AmsButtonVariant.outline,
-                                onPressed: widget.onBackToModule,
-                              ),
-                            ],
-                          ),
+                          LayoutBuilder(builder: (context, constraints) {
+                            final isMobile = Responsive.isMobile(context);
+                            if (isMobile) {
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  AmsButton(
+                                    label: 'Save',
+                                    variant: AmsButtonVariant.primary,
+                                    backgroundColor: const Color(0xFF27AE60),
+                                    onPressed: _submitJournal,
+                                  ),
+                                  const SizedBox(height: 12),
+                                  AmsButton(
+                                    label: 'Cancel',
+                                    variant: AmsButtonVariant.outline,
+                                    onPressed: widget.onBackToModule,
+                                  ),
+                                ],
+                              );
+                            }
+                            return Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                AmsButton(
+                                  label: 'Save',
+                                  variant: AmsButtonVariant.primary,
+                                  backgroundColor: const Color(0xFF27AE60), // Green from image
+                                  onPressed: _submitJournal,
+                                ),
+                                const SizedBox(width: 16),
+                                AmsButton(
+                                  label: 'Cancel',
+                                  variant: AmsButtonVariant.outline,
+                                  onPressed: widget.onBackToModule,
+                                ),
+                              ],
+                            );
+                          }),
                         ],
                       ),
                     ),
@@ -575,6 +610,106 @@ class _JournalEntryScreenState extends State<JournalEntryScreen> {
 
   Widget _buildRow(int index) {
     final row = _rows[index];
+    final isMobile = Responsive.isMobile(context);
+
+    if (isMobile) {
+      return Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border.all(color: AppColors.border),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  "Line #${index + 1}",
+                  style: bodyStyle(weight: FontWeight.bold, color: AppColors.tBlue),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.remove_circle_outline, color: AppColors.red, size: 20),
+                  onPressed: () => _removeRow(index),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            AmsField(
+              label: 'Account No',
+              child: _isLoadingAccounts
+                  ? const SizedBox(
+                      height: 20,
+                      child: LinearProgressIndicator(),
+                    )
+                  : AmsSearchableDropdown(
+                      items: _accountOptions,
+                      placeholder: 'Select Account',
+                      initialValue: row.accountNo.isNotEmpty ? _accountOptions.firstWhere((e) => e.startsWith(row.accountNo), orElse: () => '') : null,
+                      onChanged: (v) {
+                        if (v != null && v.contains(' - ')) {
+                          row.accountNo = v.split(' - ').first;
+                        } else {
+                          row.accountNo = v ?? '';
+                        }
+                      },
+                    ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: AmsField(
+                    label: 'Debit',
+                    child: AmsTextInput(
+                      controller: row.debitCtrl,
+                      placeholder: '0.00',
+                      keyboardType: TextInputType.number,
+                      onChanged: (v) {
+                        setState(() {
+                          row.debit = double.tryParse(v) ?? 0.0;
+                        });
+                      },
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: AmsField(
+                    label: 'Credit',
+                    child: AmsTextInput(
+                      controller: row.creditCtrl,
+                      placeholder: '0.00',
+                      keyboardType: TextInputType.number,
+                      onChanged: (v) {
+                        setState(() {
+                          row.credit = double.tryParse(v) ?? 0.0;
+                        });
+                      },
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            AmsField(
+              label: 'Remarks',
+              child: AmsTextInput(
+                controller: row.remarksCtrl,
+                placeholder: 'Enter remarks',
+                onChanged: (v) => row.remarks = v,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Container(
       decoration: BoxDecoration(
         color: index % 2 == 0 ? Colors.white : const Color(0xFFF8F9FA),
@@ -617,6 +752,7 @@ class _JournalEntryScreenState extends State<JournalEntryScreen> {
           Expanded(
             flex: 1,
             child: TextField(
+              controller: row.debitCtrl,
               decoration: const InputDecoration(
                 hintText: '0.00',
                 border: InputBorder.none,
@@ -634,6 +770,7 @@ class _JournalEntryScreenState extends State<JournalEntryScreen> {
           Expanded(
             flex: 1,
             child: TextField(
+              controller: row.creditCtrl,
               decoration: const InputDecoration(
                 hintText: '0.00',
                 border: InputBorder.none,
@@ -651,6 +788,7 @@ class _JournalEntryScreenState extends State<JournalEntryScreen> {
           Expanded(
             flex: 4,
             child: TextField(
+              controller: row.remarksCtrl,
               decoration: const InputDecoration(
                 hintText: 'Remarks',
                 border: InputBorder.none,
@@ -678,11 +816,22 @@ class JournalRow {
   double debit;
   double credit;
   String remarks;
+  final TextEditingController debitCtrl;
+  final TextEditingController creditCtrl;
+  final TextEditingController remarksCtrl;
 
   JournalRow({
     this.accountNo = '',
     this.debit = 0.0,
     this.credit = 0.0,
     this.remarks = '',
-  });
+  })  : debitCtrl = TextEditingController(text: debit > 0 ? debit.toStringAsFixed(2) : ''),
+        creditCtrl = TextEditingController(text: credit > 0 ? credit.toStringAsFixed(2) : ''),
+        remarksCtrl = TextEditingController(text: remarks);
+
+  void dispose() {
+    debitCtrl.dispose();
+    creditCtrl.dispose();
+    remarksCtrl.dispose();
+  }
 }
