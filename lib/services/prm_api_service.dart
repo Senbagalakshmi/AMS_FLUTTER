@@ -131,6 +131,7 @@ class ApiService {
         "pgmClass": data['programClass'] == 'T' ? 2 : 1,
         "status": data['status'],
         "remarks": truncate15(data['remarks']),
+        "primaryKey": truncate15(data['programId']), // Added to identify record
         "cuser": truncate15(user)
       };
         final body = jsonEncode(bodyData);

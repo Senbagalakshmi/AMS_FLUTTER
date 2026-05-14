@@ -238,6 +238,7 @@ class _ProgramMasterScreenState extends State<ProgramMasterScreen> {
       setState(() {
         _showForm = false;
         _viewRecord = null;
+        _listVersion++;
       });
     } else {
       showAmsSnack(context, "Something went wrong ❌", type: 'e');
@@ -979,7 +980,13 @@ class ProgramMasterFieldsState extends State<ProgramMasterFields> {
             _field('Program Id', _pgmIdCtrl,
                 required: true,
                 readOnly: widget.initialData != null &&
-                    widget.initialData!['programId'] != null,
+                    (widget.initialData!['programId'] != null ||
+                     widget.initialData!['pgmId'] != null ||
+                     widget.initialData!['pgm_id'] != null ||
+                     widget.initialData!['programid'] != null),
+                formatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9]'))
+                ],
                 error: _errors['pgmId'],
                 onChanged: (v) => widget.onChanged('programId', v)),
 
@@ -1054,6 +1061,7 @@ class ProgramMasterFieldsState extends State<ProgramMasterFields> {
       bool readOnly = false,
       String? error,
       int maxLines = 1,
+      List<TextInputFormatter>? formatters,
       void Function(String)? onChanged}) {
     return AmsField(
       label: label,
@@ -1065,6 +1073,7 @@ class ProgramMasterFieldsState extends State<ProgramMasterFields> {
         placeholder: 'Enter $label',
         keyboardType: isNum ? TextInputType.number : TextInputType.text,
         maxLines: maxLines,
+        inputFormatters: formatters,
         errorText: error,
         onChanged: onChanged,
       ),
@@ -1145,20 +1154,24 @@ class _ProgramListViewState extends State<_ProgramListView> {
   @override
   void initState() {
     super.initState();
-    _load(1);
+    _load();
   }
 
-  Future<void> _load(int page) async {
+  Future<void> _load([int? page]) async {
     setState(() {
       _loading = true;
-      _currentPage = page;
+      _currentPage = page ?? 1;
     });
+    
+    // Fetch a large page to get all records, then sort locally
     final result =
-        await prm.apiService.getProgramMaster(page: page - 1, size: 10);
+        await prm.apiService.getProgramMaster(page: 0, size: 5000);
+        
     if (mounted) {
       setState(() {
-        _data = result?.items ?? [];
-        _totalItems = result?.totalElements ?? 0;
+        List<Map<String, dynamic>> items = result?.items ?? [];
+        _data = items.toList().reversed.toList();
+        _totalItems = items.length;
         _loading = false;
       });
     }
@@ -1177,57 +1190,29 @@ class _ProgramListViewState extends State<_ProgramListView> {
         children: [
           Padding(
             padding: const EdgeInsets.all(16.0),
-            child: isMobile
-                ? Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      AmsTextInput(
-                        icon: Icons.search_rounded,
-                        placeholder: 'Search programs...',
-                        onChanged: (v) => setState(() => _searchQuery = v),
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          IconButton(
-                            icon: (_loading == true)
-                                ? const SizedBox(
-                                    width: 18,
-                                    height: 18,
-                                    child: CircularProgressIndicator(
-                                        strokeWidth: 2, color: AppColors.tBlue),
-                                  )
-                                : const Icon(Icons.refresh_rounded),
-                            onPressed: (_loading == true) ? null : () => _load(1),
-                          ),
-                        ],
-                      ),
-                    ],
-                  )
-                : Row(
-                    children: [
-                      Expanded(
-                        child: AmsTextInput(
-                          icon: Icons.search_rounded,
-                          placeholder: 'Search programs...',
-                          onChanged: (v) => setState(() => _searchQuery = v),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      IconButton(
-                        icon: (_loading == true)
-                            ? const SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(
-                                    strokeWidth: 2, color: AppColors.tBlue),
-                              )
-                            : const Icon(Icons.refresh_rounded),
-                        onPressed: (_loading == true) ? null : () => _load(1),
-                      ),
-                    ],
+            child: Row(
+              children: [
+                Expanded(
+                  child: AmsTextInput(
+                    icon: Icons.search_rounded,
+                    placeholder: 'Search programs...',
+                    onChanged: (v) => setState(() => _searchQuery = v),
                   ),
+                ),
+                const SizedBox(width: 16),
+                IconButton(
+                  icon: (_loading == true)
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: AppColors.tBlue),
+                        )
+                      : const Icon(Icons.refresh_rounded),
+                  onPressed: (_loading == true) ? null : () => _load(1),
+                ),
+              ],
+            ),
           ),
           if (!isMobile)
             Container(
@@ -1282,7 +1267,6 @@ class _ProgramListViewState extends State<_ProgramListView> {
               currentPage: _currentPage,
               onPageChanged: (page) => _load(page),
               builder: (context, paginatedItems) => ListView.separated(
-                padding: EdgeInsets.all(isMobile ? 12 : 0),
                 itemCount: paginatedItems.length,
                 separatorBuilder: (_, __) => isMobile
                     ? const SizedBox(height: 12)
