@@ -191,26 +191,25 @@ class _TrialBalanceScreenState extends State<TrialBalanceScreen> {
 
                                 // Report Table
                                 Container(
-                                  decoration: const BoxDecoration(
-                                    border: Border(
-                                      top: BorderSide(color: AppColors.ink, width: 1.5),
-                                      bottom: BorderSide(color: AppColors.ink, width: 1.5),
-                                    ),
+                                  decoration: BoxDecoration(
+                                    border: Border.all(color: AppColors.border),
+                                    borderRadius: BorderRadius.circular(8),
                                   ),
+                                  clipBehavior: Clip.antiAlias,
                                   child: Column(
                                     children: [
                                       // Table Header
                                       Container(
-                                        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                                        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
                                         decoration: const BoxDecoration(
-                                          border: Border(bottom: BorderSide(color: AppColors.border, width: 1)),
-                                          color: Color(0xFFF9FAFB),
+                                          border: Border(bottom: BorderSide(color: AppColors.border)),
+                                          color: Color(0xFFF8FAFC),
                                         ),
                                         child: Row(
                                           children: [
-                                            Expanded(flex: 3, child: Text('ACCOUNT', style: bodyStyle(size: 12, weight: FontWeight.w700, color: AppColors.ink2))),
-                                            Expanded(flex: 1, child: Text('DEBIT', textAlign: TextAlign.right, style: bodyStyle(size: 12, weight: FontWeight.w700, color: AppColors.ink2))),
-                                            Expanded(flex: 1, child: Text('CREDIT', textAlign: TextAlign.right, style: bodyStyle(size: 12, weight: FontWeight.w700, color: AppColors.ink2))),
+                                            Expanded(flex: 3, child: Text('ACCOUNT', style: monoStyle(size: 11, weight: FontWeight.w700, color: AppColors.ink3, letterSpacing: 0.5))),
+                                            Expanded(flex: 1, child: Text('DEBIT', textAlign: TextAlign.right, style: monoStyle(size: 11, weight: FontWeight.w700, color: AppColors.ink3, letterSpacing: 0.5))),
+                                            Expanded(flex: 1, child: Text('CREDIT', textAlign: TextAlign.right, style: monoStyle(size: 11, weight: FontWeight.w700, color: AppColors.ink3, letterSpacing: 0.5))),
                                           ],
                                         ),
                                       ),
@@ -287,16 +286,16 @@ class _TrialBalanceScreenState extends State<TrialBalanceScreen> {
                                       
                                       // Grand Total
                                       Container(
-                                        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                                        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
                                         decoration: const BoxDecoration(
-                                          border: Border(top: BorderSide(color: AppColors.ink, width: 1.5)),
-                                          color: Color(0xFFF9FAFB),
+                                          border: Border(top: BorderSide(color: AppColors.border, width: 1.5)),
+                                          color: Color(0xFFF8FAFC),
                                         ),
                                         child: Row(
                                           children: [
-                                            Expanded(flex: 3, child: Text('Total', style: bodyStyle(size: 14, weight: FontWeight.w700, color: AppColors.ink))),
-                                            Expanded(flex: 1, child: Text(_formatAmount(_totalDebit), textAlign: TextAlign.right, style: bodyStyle(size: 14, weight: FontWeight.w700, color: AppColors.ink))),
-                                            Expanded(flex: 1, child: Text(_formatAmount(_totalCredit), textAlign: TextAlign.right, style: bodyStyle(size: 14, weight: FontWeight.w700, color: AppColors.ink))),
+                                            Expanded(flex: 3, child: Text('TOTAL', style: bodyStyle(size: 14, weight: FontWeight.w800, color: AppColors.ink))),
+                                            Expanded(flex: 1, child: Text(_formatAmount(_totalDebit), textAlign: TextAlign.right, style: bodyStyle(size: 14, weight: FontWeight.w800, color: AppColors.ink))),
+                                            Expanded(flex: 1, child: Text(_formatAmount(_totalCredit), textAlign: TextAlign.right, style: bodyStyle(size: 14, weight: FontWeight.w800, color: AppColors.ink))),
                                           ],
                                         ),
                                       ),

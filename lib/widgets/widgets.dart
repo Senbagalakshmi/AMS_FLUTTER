@@ -2405,7 +2405,7 @@ class _PremiumAppLauncherState extends State<_PremiumAppLauncher> {
             '')
         .replaceAll('"', '');
     final url = motherToken.isEmpty ? homeUrl : '$homeUrl?token=$motherToken';
-    print('🚀 9-Dots Launcher Redirection URL: $url');
+	 print('🚀 9-Dots Launcher Redirection URL: $url');
     html.window.open(url, '_blank');
   }
 
@@ -2814,18 +2814,26 @@ class AmsAuthTable extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border.all(color: AppColors.border2),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
+      clipBehavior: Clip.antiAlias,
       child: Table(
         columnWidths: columnWidths,
-        border: TableBorder(
-          horizontalInside: const BorderSide(color: Colors.white, width: 2),
-          verticalInside: const BorderSide(color: Colors.white, width: 2),
-        ),
         children: [
           // Header Row
           TableRow(
-            decoration: const BoxDecoration(color: Color(0xFF1E6381)),
+            decoration: const BoxDecoration(
+              color: Color(0xFFF8FAFC),
+              border: Border(bottom: BorderSide(color: AppColors.border)),
+            ),
             children: headers.map((h) => _headerCell(h)).toList(),
           ),
           ...rows,
@@ -2836,11 +2844,15 @@ class AmsAuthTable extends StatelessWidget {
 
   Widget _headerCell(String text) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Text(
-        text,
-        style:
-            bodyStyle(size: 12, weight: FontWeight.w700, color: Colors.white),
+        text.toUpperCase(),
+        style: monoStyle(
+          size: 11,
+          weight: FontWeight.w700,
+          color: AppColors.ink3,
+          letterSpacing: 0.5,
+        ),
       ),
     );
   }

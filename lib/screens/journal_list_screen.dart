@@ -87,90 +87,15 @@ class _JournalListScreenState extends State<JournalListScreen> {
             onPressed: widget.onBackToModule,
           ),
           const SizedBox(width: 8),
-          const Text(
+          Text(
             'Manual Journals',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: AppColors.ink,
-            ),
+            style: bodyStyle(size: 20, weight: FontWeight.w700, color: AppColors.ink),
           ),
           const Spacer(),
-          ElevatedButton.icon(
-            onPressed: widget.onNew,
-            icon: const Icon(Icons.add, size: 18, color: Colors.white),
-            label: const Text('New Journal', style: TextStyle(color: Colors.white)),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.tBlue,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatsBar() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
-      ),
-      child: Row(
-        children: [
-          _buildStatItem('All Journals', _journals.length.toString(), true),
-          _buildStatDivider(),
-          _buildStatItem('Draft', '0', false),
-          _buildStatDivider(),
-          _buildStatItem('Published', _journals.length.toString(), false),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatItem(String label, String value, bool active) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(label, style: TextStyle(fontSize: 12, color: active ? AppColors.tBlue : AppColors.ink4, fontWeight: active ? FontWeight.bold : FontWeight.normal)),
-        Text(value, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.ink)),
-      ],
-    );
-  }
-
-  Widget _buildStatDivider() {
-    return Container(
-      height: 24,
-      width: 1,
-      margin: const EdgeInsets.symmetric(horizontal: 24),
-      color: const Color(0xFFE2E8F0),
-    );
-  }
-
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: AppColors.tBlue.withOpacity(0.05),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.description_outlined, size: 64, color: AppColors.tBlue),
-          ),
-          const SizedBox(height: 24),
-          const Text('No journals found', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.ink)),
-          const SizedBox(height: 8),
-          Text('Create your first manual journal entry to see it here.', style: bodyStyle(color: AppColors.ink4)),
-          const SizedBox(height: 32),
           AmsButton(
             label: 'New Journal',
             onPressed: widget.onNew,
+            icon: Icons.add,
             variant: AmsButtonVariant.primary,
           ),
         ],
@@ -179,55 +104,134 @@ class _JournalListScreenState extends State<JournalListScreen> {
   }
 
   Widget _buildList() {
-    return Padding(
-      padding: const EdgeInsets.all(24.0),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: const Color(0xFFE2E8F0)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4),
+    return Container(
+      margin: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // Table Header
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            decoration: const BoxDecoration(
+              color: Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+              border: Border(bottom: BorderSide(color: AppColors.border)),
+            ),
+            child: Row(
+              children: [
+                _buildHeaderCell('TRAN DATE', 100),
+                _buildHeaderCell('JOURNAL#', 100),
+                Expanded(child: _buildHeaderCell('NOTES', 0)),
+                _buildHeaderCell('STATUS', 120),
+                _buildHeaderCell('AMOUNT', 120, textAlign: TextAlign.right),
+                _buildHeaderCell('CREATED BY', 120, textAlign: TextAlign.right),
+                _buildHeaderCell('AUTHORIZED BY', 120, textAlign: TextAlign.right),
+              ],
+            ),
+          ),
+          // Table Body
+          Expanded(
+            child: ListView.separated(
+              itemCount: _journals.length,
+              separatorBuilder: (context, index) => const Divider(height: 1, color: AppColors.border2),
+              itemBuilder: (context, index) {
+                final j = _journals[index];
+                return _buildJournalRow(j);
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeaderCell(String label, double width, {TextAlign textAlign = TextAlign.left}) {
+    return Container(
+      width: width > 0 ? width : null,
+      child: Text(
+        label,
+        textAlign: textAlign,
+        style: monoStyle(size: 11, weight: FontWeight.w700, color: AppColors.ink3, letterSpacing: 1.0),
+      ),
+    );
+  }
+
+  Widget _buildJournalRow(Map<String, dynamic> j) {
+    final dateStr = j['trandate']?.toString() ?? '';
+    final date = dateStr.isNotEmpty ? DateFormat('dd/MM/yyyy').format(DateTime.parse(dateStr)) : '-';
+    final amount = j['totaldebit'] ?? 0.0;
+    return InkWell(
+      onTap: () => _showJournalDetails(j),
+      hoverColor: AppColors.tBlueLt.withValues(alpha: 0.3),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        child: Row(
+          children: [
+            Container(width: 100, child: Text(date, style: bodyStyle(size: 13))),
+            Container(
+              width: 100,
+              child: Text(
+                j['tranid']?.toString() ?? '-',
+                style: bodyStyle(size: 13, weight: FontWeight.w700, color: AppColors.tBlue),
+              ),
+            ),
+            Expanded(
+              child: Text(
+                j['narr'] ?? '-',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: bodyStyle(size: 13, color: AppColors.ink2),
+              ),
+            ),
+            Container(width: 120, child: _buildStatusChip(j['transtatus'] ?? 'P')),
+            Container(
+              width: 120,
+              child: Text(
+                'INR ${NumberFormat('#,##,##0.00').format(amount)}',
+                textAlign: TextAlign.right,
+                style: bodyStyle(size: 13, weight: FontWeight.w600),
+              ),
+            ),
+            Container(
+              width: 120,
+              child: Text(
+                j['euser'] ?? '-',
+                textAlign: TextAlign.right,
+                style: bodyStyle(size: 13, color: AppColors.ink3),
+              ),
+            ),
+            Container(
+              width: 120,
+              child: Text(
+                j['auser'] ?? '-',
+                textAlign: TextAlign.right,
+                style: bodyStyle(size: 13, color: AppColors.ink3),
+              ),
             ),
           ],
         ),
-        child: SingleChildScrollView(
-          child: DataTable(
-            showCheckboxColumn: false,
-            horizontalMargin: 24,
-            columnSpacing: 24,
-            headingTextStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.ink4, letterSpacing: 0.5),
-            dataTextStyle: const TextStyle(fontSize: 13, color: AppColors.ink),
-            columns: const [
-              DataColumn(label: Text('DATE')),
-              DataColumn(label: Text('JOURNAL#')),
-              DataColumn(label: Text('NOTES')),
-              DataColumn(label: Text('STATUS')),
-              DataColumn(label: Text('AMOUNT')),
-              DataColumn(label: Text('CREATED BY')),
-            ],
-            rows: _journals.map((j) {
-              final dateStr = j['trandate']?.toString() ?? '';
-              final date = dateStr.isNotEmpty ? DateFormat('dd/MM/yyyy').format(DateTime.parse(dateStr)) : '-';
-              final amount = j['totaldebit'] ?? 0.0;
-              
-              return DataRow(
-                onSelectChanged: (_) => _showJournalDetails(j),
-                cells: [
-                  DataCell(Text(date)),
-                  DataCell(Text(j['tranid']?.toString() ?? '-', style: const TextStyle(color: AppColors.tBlue, fontWeight: FontWeight.bold))),
-                  DataCell(SizedBox(width: 200, child: Text(j['narr'] ?? '-', maxLines: 1, overflow: TextOverflow.ellipsis))),
-                  DataCell(_buildStatusChip(j['transtatus'] ?? 'P')),
-                  DataCell(Text('INR ${NumberFormat('#,##,##0.00').format(amount)}')),
-                  DataCell(Text(j['euser'] ?? '-')),
-                ],
-              );
-            }).toList(),
-          ),
-        ),
       ),
     );
+  }
+
+  Widget _buildStatusChip(String status) {
+    if (status == 'R') {
+      return const AmsBadge(label: 'REVERSED', color: AppColors.red, background: AppColors.redLt);
+    } else if (status == 'C') {
+      return const AmsBadge(label: 'CANCELLED', color: AppColors.amber, background: AppColors.amberLt);
+    }
+    return const AmsBadge(label: 'POSTED', color: AppColors.green, background: AppColors.greenLt);
   }
 
   void _showJournalDetails(Map<String, dynamic> header) async {
@@ -301,64 +305,145 @@ class _JournalListScreenState extends State<JournalListScreen> {
   Widget _buildDetailsTable(List<Map<String, dynamic>> details) {
     return Container(
       decoration: BoxDecoration(
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: AppColors.border),
+        borderRadius: BorderRadius.circular(8),
       ),
-      child: DataTable(
-        headingRowHeight: 40,
-        dataRowHeight: 40,
-        headingRowColor: MaterialStateProperty.all(const Color(0xFFF8FAFC)),
-        columns: const [
-          DataColumn(label: Text('Line#')),
-          DataColumn(label: Text('Account')),
-          DataColumn(label: Text('Account Name')),
-          DataColumn(label: Text('Debit')),
-          DataColumn(label: Text('Credit')),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        children: [
+          // Header
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            color: const Color(0xFFF8FAFC),
+            child: Row(
+              children: [
+                _buildDetailHeaderCell('Line#', 60),
+                _buildDetailHeaderCell('Account', 100),
+                Expanded(child: _buildDetailHeaderCell('Account Name', 0)),
+                _buildDetailHeaderCell('Debit', 100, textAlign: TextAlign.right),
+                _buildDetailHeaderCell('Credit', 100, textAlign: TextAlign.right),
+              ],
+            ),
+          ),
+          // Body
+          ...details.map((d) {
+            final legid = d['legid'] ?? d['LEGID'] ?? '-';
+            final acnum = d['acnum'] ?? d['ACNUM'] ?? '-';
+            final accname = d['accname'] ?? d['ACCNAME'] ?? '-';
+            final debit = d['trandbamt'] ?? d['TRANDBAMT'] ?? 0;
+            final credit = d['trancramt'] ?? d['TRANCRAMT'] ?? 0;
+
+            return Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: const BoxDecoration(
+                border: Border(top: BorderSide(color: AppColors.border2)),
+              ),
+              child: Row(
+                children: [
+                  Container(width: 60, child: Text(legid.toString(), style: monoStyle(size: 12))),
+                  Container(width: 100, child: Text(acnum.toString(), style: bodyStyle(size: 13))),
+                  Expanded(child: Text(accname.toString(), style: bodyStyle(size: 13))),
+                  Container(
+                    width: 100,
+                    child: Text(
+                      NumberFormat('#,##,##0.00').format(debit),
+                      textAlign: TextAlign.right,
+                      style: bodyStyle(size: 13, weight: FontWeight.w600),
+                    ),
+                  ),
+                  Container(
+                    width: 100,
+                    child: Text(
+                      NumberFormat('#,##,##0.00').format(credit),
+                      textAlign: TextAlign.right,
+                      style: bodyStyle(size: 13, weight: FontWeight.w600),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
         ],
-        rows: details.map((d) {
-          final legid = d['legid'] ?? d['LEGID'] ?? '-';
-          final acnum = d['acnum'] ?? d['ACNUM'] ?? '-';
-          final accname = d['accname'] ?? d['ACCNAME'] ?? '-';
-          final debit = d['trandbamt'] ?? d['TRANDBAMT'] ?? 0;
-          final credit = d['trancramt'] ?? d['TRANCRAMT'] ?? 0;
-          
-          return DataRow(cells: [
-            DataCell(Text(legid.toString())),
-            DataCell(Text(acnum.toString())),
-            DataCell(Text(accname.toString())),
-            DataCell(Text(NumberFormat('#,##,##0.00').format(debit))),
-            DataCell(Text(NumberFormat('#,##,##0.00').format(credit))),
-          ]);
-        }).toList(),
       ),
     );
   }
 
-  Widget _buildStatusChip(String status) {
-    Color color = Colors.green;
-    String label = 'PUBLISHED';
-    
-    if (status == 'R') {
-      color = Colors.red;
-      label = 'REVERSED';
-    } else if (status == 'C') {
-      color = Colors.orange;
-      label = 'CANCELLED';
-    }
-
+  Widget _buildDetailHeaderCell(String label, double width, {TextAlign textAlign = TextAlign.left}) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(4),
-      ),
+      width: width > 0 ? width : null,
       child: Text(
-        label,
-        style: TextStyle(
-          color: color,
-          fontSize: 10,
-          fontWeight: FontWeight.bold,
-        ),
+        label.toUpperCase(),
+        textAlign: textAlign,
+        style: monoStyle(size: 10, weight: FontWeight.w700, color: AppColors.ink3),
+      ),
+    );
+  }
+
+  Widget _buildStatsBar() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
+      ),
+      child: Row(
+        children: [
+          _buildStatItem('All Journals', _journals.length.toString(), true),
+          _buildStatDivider(),
+          _buildStatItem('Draft', '0', false),
+          _buildStatDivider(),
+          _buildStatItem('Posted', _journals.length.toString(), false),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatItem(String label, String value, bool active) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(label, style: bodyStyle(size: 11, color: active ? AppColors.tBlue : AppColors.ink4, weight: active ? FontWeight.w700 : FontWeight.w400)),
+        const SizedBox(height: 2),
+        Text(value, style: bodyStyle(size: 16, weight: FontWeight.w700, color: AppColors.ink)),
+      ],
+    );
+  }
+
+  Widget _buildStatDivider() {
+    return Container(
+      height: 24,
+      width: 1,
+      margin: const EdgeInsets.symmetric(horizontal: 24),
+      color: const Color(0xFFE2E8F0),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(32),
+            decoration: BoxDecoration(
+              color: AppColors.tBlue.withValues(alpha: 0.05),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.description_outlined, size: 64, color: AppColors.tBlue),
+          ),
+          const SizedBox(height: 24),
+          Text('No journals found', style: bodyStyle(size: 20, weight: FontWeight.w700, color: AppColors.ink)),
+          const SizedBox(height: 8),
+          Text('Create your first manual journal entry to see it here.', style: bodyStyle(color: AppColors.ink3)),
+          const SizedBox(height: 32),
+          AmsButton(
+            label: 'New Journal',
+            onPressed: widget.onNew,
+            icon: Icons.add,
+            variant: AmsButtonVariant.primary,
+          ),
+        ],
       ),
     );
   }
