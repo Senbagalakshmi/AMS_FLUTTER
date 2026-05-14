@@ -9,6 +9,7 @@ import '../widgets/widgets.dart';
 import '../services/api_service.dart';
 import '../services/branch_api_service.dart';
 import '../services/org_api_service.dart';
+import '../services/prm_api_service.dart' as prm;
 import '../data.dart';
 
 import 'branch_screen.dart';
@@ -1861,6 +1862,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
   List<Map<String, dynamic>> _userList = [];
   List<Map<String, dynamic>> _roleList = [];
   List<Map<String, dynamic>> _moduleList = [];
+  List<Map<String, dynamic>> _programList = [];
 
   // ── Branch dropdown ────────────────────────────────────────────────────────
   // _branchList holds ALL branches fetched from API (unfiltered)
@@ -1964,14 +1966,17 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
 
   Future<void> _fetchDropdownData() async {
     setState(() => _loadingDropdowns = true);
+    prm.apiService.updateToken(apiService.token);
     final usersRaw = await apiService.getUsers(size: 100);
     final rolesRaw = await apiService.getRoles(size: 100);
     final modulesRaw = await apiService.getModules(size: 100);
+    final progsRaw = await prm.apiService.getProgramMaster(size: 1000);
     if (mounted) {
       setState(() {
         _userList = usersRaw?.items ?? [];
         _roleList = rolesRaw?.items ?? [];
         _moduleList = modulesRaw?.items ?? [];
+        _programList = progsRaw?.items ?? [];
         _loadingDropdowns = false;
       });
     }
@@ -3770,22 +3775,76 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                     label: 'Program Id',
                     required: true,
                     labelAbove: true,
-                    child: AmsTextInput(
-                      controller: _authPgmCtrl,
-                      readOnly: widget.isViewMode || widget.initialData != null,
-                      placeholder: 'e.g. USR-ROLE',
-                      textInputAction: TextInputAction.done,
-                      errorText: _errors['authPgm'],
-                      isValid: _errors['authPgm'] == null &&
-                          _authPgmCtrl.text.isNotEmpty,
-                      onChanged: (v) {
-                        setState(() {
-                          _errors['authPgm'] =
-                              v.trim().isEmpty ? 'Program Id required' : null;
-                        });
-                        widget.onChanged('programId', v);
-                      },
-                    ),
+                    child: widget.isViewMode
+                        ? AmsTextInput(
+                            initialValue: () {
+                              try {
+                                if (_authPgmCtrl.text.isEmpty) return '';
+                                final seek = _authPgmCtrl.text;
+                                final matches = _programList.where((p) => (p['pgmId']?.toString() ?? p['programId']?.toString() ?? '') == seek);
+                                if (matches.isNotEmpty) {
+                                  final match = matches.first;
+                                  final name = match['programDescription']?.toString() ?? match['descn']?.toString() ?? '';
+                                  return '$seek - $name';
+                                }
+                                return seek;
+                              } catch (e) {
+                                return _authPgmCtrl.text;
+                              }
+                            }(),
+                            readOnly: true,
+                          )
+                        : AmsDropdown(
+                            initialValue: () {
+                              try {
+                                final seek = _authPgmCtrl.text;
+                                if (seek.isEmpty) return null;
+                                final matches = _programList.where((p) {
+                                  final pId = p['pgm_id']?.toString() ?? p['programid']?.toString() ?? p['pgmid']?.toString() ?? p['programId']?.toString() ?? p['pgmId']?.toString() ?? '';
+                                  return pId == seek;
+                                });
+                                if (matches.isEmpty) return null;
+                                final p = matches.first;
+                                final id = p['pgm_id']?.toString() ?? p['programid']?.toString() ?? p['pgmid']?.toString() ?? p['programId']?.toString() ?? p['pgmId']?.toString() ?? '';
+                                final name = p['programdescription']?.toString() ?? p['descn']?.toString() ?? p['description']?.toString() ?? p['programname']?.toString() ?? p['programDescription']?.toString() ?? '';
+                                final formatted = '$id - $name';
+                                
+                                final allItems = _programList.map((x) {
+                                  final xId = x['pgm_id']?.toString() ?? x['programid']?.toString() ?? x['pgmid']?.toString() ?? x['programId']?.toString() ?? x['pgmId']?.toString() ?? '';
+                                  final xName = x['programdescription']?.toString() ?? x['descn']?.toString() ?? x['description']?.toString() ?? x['programname']?.toString() ?? x['programDescription']?.toString() ?? '';
+                                  return '$xId - $xName';
+                                }).toSet().toList();
+                                if (!allItems.contains(formatted)) return null;
+                                return formatted;
+                              } catch (e) {
+                                return null;
+                              }
+                            }(),
+                            placeholder: 'Select Program',
+                            items: () {
+                              try {
+                                final mapped = _programList.map((p) {
+                                  final id = p['pgm_id']?.toString() ?? p['programid']?.toString() ?? p['pgmid']?.toString() ?? p['programId']?.toString() ?? p['pgmId']?.toString() ?? '';
+                                  final name = p['programdescription']?.toString() ?? p['descn']?.toString() ?? p['description']?.toString() ?? p['programname']?.toString() ?? p['programDescription']?.toString() ?? '';
+                                  return '$id - $name';
+                                }).toSet().toList();
+                                return mapped.isEmpty ? <String>[] : mapped;
+                              } catch (e) {
+                                return <String>[];
+                              }
+                            }(),
+                            errorText: _errors['authPgm'],
+                            isValid: _errors['authPgm'] == null && _authPgmCtrl.text.isNotEmpty,
+                            onChanged: (v) {
+                              final parts = v?.split(' - ') ?? [];
+                              final val = parts.isNotEmpty ? parts[0] : '';
+                              setState(() {
+                                _authPgmCtrl.text = val;
+                                _errors['authPgm'] = val.trim().isEmpty ? 'Program Id required' : null;
+                              });
+                              widget.onChanged('programId', val);
+                            },
+                          ),
                   ),
                   AmsField(
                     label: 'Approval Required',
