@@ -2447,8 +2447,8 @@ class _PremiumAppLauncherState extends State<_PremiumAppLauncher> {
                   ),
                 )
               : SizedBox(
-                  width: 240,
-                  child: Padding(
+                  width: 260,
+                  child: Padding( 
                     padding: const EdgeInsets.all(12),
                     child: Wrap(
                       spacing: 8,
