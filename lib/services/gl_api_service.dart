@@ -38,9 +38,11 @@ class GLApiService {
           final acName = item['acname']?.toString() ??
               item['acName']?.toString() ??
               item['gldesc']?.toString() ??
+              item['glName']?.toString() ??
+              item['glname']?.toString() ??
               '';
 
-          if (acNum.isNotEmpty) {
+          if (acNum.isNotEmpty && acName.isNotEmpty) {
             accountCache[acNum] = acName;
           }
         }
@@ -88,16 +90,26 @@ class GLApiService {
       if (response.statusCode == 200) {
         final dynamic decoded = jsonDecode(response.body);
 
+        List<Map<String, dynamic>> items = [];
         // Handle paginated response (standard in this app)
         if (decoded is Map && decoded.containsKey('content')) {
           final List<dynamic> content = decoded['content'] ?? [];
-          return content.cast<Map<String, dynamic>>();
+          items = content.cast<Map<String, dynamic>>();
         }
 
         // Handle direct list response
-        if (decoded is List) {
-          return decoded.cast<Map<String, dynamic>>();
+        else if (decoded is List) {
+          items = decoded.cast<Map<String, dynamic>>();
         }
+        
+        for (final item in items) {
+          final acNum = (item['acnum'] ?? item['acNum'] ?? item['glNo'] ?? '').toString();
+          final acName = (item['acname'] ?? item['acName'] ?? item['gldesc'] ?? item['glName'] ?? item['glname'] ?? '').toString();
+          if (acNum.isNotEmpty && acName.isNotEmpty) {
+            accountCache[acNum] = acName;
+          }
+        }
+        if (items.isNotEmpty) return items;
       }
 
       // Fallback to the specific gl102 endpoint if above fails or returns nothing
@@ -109,7 +121,15 @@ class GLApiService {
       if (fallbackRes.statusCode == 200) {
         final dynamic decoded = jsonDecode(fallbackRes.body);
         if (decoded is List) {
-          return decoded.cast<Map<String, dynamic>>();
+          final items = decoded.cast<Map<String, dynamic>>();
+          for (final item in items) {
+            final acNum = (item['acnum'] ?? item['acNum'] ?? item['glNo'] ?? '').toString();
+            final acName = (item['acname'] ?? item['acName'] ?? item['gldesc'] ?? item['glName'] ?? item['glname'] ?? '').toString();
+            if (acNum.isNotEmpty && acName.isNotEmpty) {
+              accountCache[acNum] = acName;
+            }
+          }
+          return items;
         }
       }
 

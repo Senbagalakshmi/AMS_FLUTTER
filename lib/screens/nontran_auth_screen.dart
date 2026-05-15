@@ -44,7 +44,6 @@ class NonTranAuthScreen extends StatefulWidget {
 class _NonTranAuthScreenState extends State<NonTranAuthScreen> {
   AuthRecord? _selectedRecord;
   final _remarksCtrl = TextEditingController();
-  bool _showForm = false; // State to toggle between Queue and Detail screen
 
   @override
   void initState() {
@@ -83,9 +82,6 @@ class _NonTranAuthScreenState extends State<NonTranAuthScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_showForm && _selectedRecord != null) {
-      return _buildFullDetailScreen();
-    }
     return _buildQueueScreen();
   }
 
@@ -148,22 +144,24 @@ class _NonTranAuthScreenState extends State<NonTranAuthScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Authorization',
-                              style: bodyStyle(
-                                  size: 22,
-                                  weight: FontWeight.w700,
-                                  color: AppColors.ink),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Select a record from the queue to review and authorize.',
-                              style: bodyStyle(size: 13, color: AppColors.ink3),
-                            ),
-                          ],
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Authorization',
+                                style: bodyStyle(
+                                    size: 22,
+                                    weight: FontWeight.w700,
+                                    color: AppColors.ink),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Select a record from the queue to review and authorize.',
+                                style: bodyStyle(size: 13, color: AppColors.ink3),
+                              ),
+                            ],
+                          ),
                         ),
                         Row(
                           children: [
@@ -208,8 +206,8 @@ class _NonTranAuthScreenState extends State<NonTranAuthScreen> {
                       onView: (r) {
                         setState(() {
                           _selectedRecord = r;
-                          _showForm = true;
                         });
+                        _showDetailPopup(r);
                       },
                     ),
 
@@ -251,7 +249,6 @@ class _NonTranAuthScreenState extends State<NonTranAuthScreen> {
               showAmsSnack(context, 'Record Approved', type: 's');
               _remarksCtrl.clear();
               setState(() {
-                _showForm = false;
                 if (widget.authQueue.isEmpty) _selectedRecord = null;
               });
             }
@@ -298,7 +295,6 @@ class _NonTranAuthScreenState extends State<NonTranAuthScreen> {
                 showAmsSnack(context, 'Record Rejected', type: 'e');
                 _remarksCtrl.clear();
                 setState(() {
-                  _showForm = false;
                 });
               }
             }
@@ -358,7 +354,6 @@ class _NonTranAuthScreenState extends State<NonTranAuthScreen> {
               }
               if (mounted) {
                 setState(() {
-                  _showForm = false;
                   if (widget.authQueue.isEmpty) _selectedRecord = null;
                 });
               }
@@ -375,57 +370,56 @@ class _NonTranAuthScreenState extends State<NonTranAuthScreen> {
     );
   }
 
-  Widget _buildFullDetailScreen() {
-    final record = _selectedRecord!;
-    return Scaffold(
-      backgroundColor: AppColors.bg,
-      body: Column(
-        children: [
-          AmsIdentityHeader(
-            icon: const Icon(Icons.description_rounded,
-                color: AppColors.tBlue, size: 28),
-            title: 'Authorize - ${record.authSl}',
-            subtitle: '${record.programId} Review',
-            badges: [AmsBadge(label: record.primaryKey, color: AppColors.ink)],
-            accentColor: AppColors.tBlue,
-            accentLt: AppColors.tBlueLt,
-            accentMd: AppColors.tBlueMd,
-            breadcrumbs: [
-              HeaderBreadcrumb(label: 'Home', onTap: widget.onBack),
-              HeaderBreadcrumb(
-                  label: 'Auth Queue',
-                  onTap: () => setState(() => _showForm = false)),
-              HeaderBreadcrumb(label: 'Record Details'),
-            ],
-            onBack: () => setState(() => _showForm = false),
-          ),
-          Expanded(
-            child: Container(
-              margin: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.border),
-              ),
-              child: Column(
-                children: [
-                  // Form-like header
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: const BoxDecoration(
-                      color: AppColors.sidebar,
-                      borderRadius:
-                          BorderRadius.vertical(top: Radius.circular(12)),
-                    ),
-                    child: Text(
-                      "Review Record Data (View Only)",
-                      style: bodyStyle(
-                          color: Colors.white, weight: FontWeight.w700),
-                    ),
+  void _showDetailPopup(AuthRecord record) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        final isMobile = Responsive.isMobile(context);
+        return Dialog(
+          insetPadding: EdgeInsets.all(isMobile ? 12 : 40),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          child: Container(
+            width: isMobile ? double.infinity : 900,
+            constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.9),
+            decoration: BoxDecoration(
+              color: AppColors.bg,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Column(
+              children: [
+                // Header
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  decoration: const BoxDecoration(
+                    color: AppColors.tBlue,
                   ),
-                  Expanded(
-                    child: SingleChildScrollView(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Authorize - ${record.authSl} | ${record.programId} Review',
+                          style: bodyStyle(color: Colors.white, weight: FontWeight.w700, size: 18),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close, color: Colors.white),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ],
+                  ),
+                ),
+                // Body
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(24),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.border),
+                      ),
                       padding: const EdgeInsets.all(24),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -443,66 +437,66 @@ class _NonTranAuthScreenState extends State<NonTranAuthScreen> {
                             ),
                           ] else
                             ...record.dataBlocks.map((block) {
-                            if (record.programId == 'GL-CAT') {
-                              return GLCategoryFields(
-                                initialData: block.data,
-                                isViewMode: true,
-                                onChanged: (k, v) {},
-                              );
-                            } else if (record.programId == 'GL-MST' || record.programId == 'GL-MAT') {
-                              return GLMasterFields(
-                                initialData: block.data,
-                                isViewMode: true,
-                                onChanged: (k, v) {},
-                                categoryList: const [],
-                              );
-                            } else if (record.programId == 'ORG-CRT') {
-                              return OrganisationFields(
-                                isViewMode: true,
-                                initialData: block.data,
-                                onChanged: (k, v) {},
-                              );
-                            } else if (record.programId == 'GL-SEG') {
-                              return GLSegmentFields(
-                                initialData: block.data,
-                                isViewMode: true,
-                                onChanged: (k, v) {},
-                              );
-                            } else if (record.programId == 'GL-ATT' || record.programId == 'GL-ATR' || record.programId == 'GL-ATTR') {
-                              return GLAttributeFields(
-                                initialData: block.data,
-                                isViewMode: true,
-                                onChanged: (k, v) {},
-                              );
-                            } else if (record.programId == 'PRM_CRT' || record.programId == 'PROG-CRT') {
-                              return ProgramMasterFields(
-                                isViewMode: true,
-                                initialData: block.data,
-                                onChanged: (k, v) {},
-                              );
-                            }
-                            return Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                DynamicNTFields(
-                                  prog: record.programId,
-                                  onChanged: (k, v) {},
+                              if (record.programId == 'GL-CAT') {
+                                return GLCategoryFields(
                                   initialData: block.data,
                                   isViewMode: true,
-                                ),
-                              ],
-                            );
-                          }),
+                                  onChanged: (k, v) {},
+                                );
+                              } else if (record.programId == 'GL-MST' || record.programId == 'GL-MAT') {
+                                return GLMasterFields(
+                                  initialData: block.data,
+                                  isViewMode: true,
+                                  onChanged: (k, v) {},
+                                  categoryList: const [],
+                                );
+                              } else if (record.programId == 'ORG-CRT') {
+                                return OrganisationFields(
+                                  isViewMode: true,
+                                  initialData: block.data,
+                                  onChanged: (k, v) {},
+                                );
+                              } else if (record.programId == 'GL-SEG') {
+                                return GLSegmentFields(
+                                  initialData: block.data,
+                                  isViewMode: true,
+                                  onChanged: (k, v) {},
+                                );
+                              } else if (record.programId == 'GL-ATT' || record.programId == 'GL-ATR' || record.programId == 'GL-ATTR') {
+                                return GLAttributeFields(
+                                  initialData: block.data,
+                                  isViewMode: true,
+                                  onChanged: (k, v) {},
+                                );
+                              } else if (record.programId == 'PRM_CRT' || record.programId == 'PROG-CRT') {
+                                return ProgramMasterFields(
+                                  isViewMode: true,
+                                  initialData: block.data,
+                                  onChanged: (k, v) {},
+                                );
+                              }
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  DynamicNTFields(
+                                    prog: record.programId,
+                                    onChanged: (k, v) {},
+                                    initialData: block.data,
+                                    isViewMode: true,
+                                  ),
+                                ],
+                              );
+                            }),
                         ],
                       ),
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
