@@ -232,8 +232,11 @@ class _JournalEntryScreenState extends State<JournalEntryScreen> {
 
       final details = _rows.map((r) => {
         'acnum': int.tryParse(r.accountNo.replaceAll(RegExp(r'[^0-9]'), '')),
+        'accname': r.accountName,
+        'glName': r.accountName,
         'trandbamt': r.debit,
         'trancramt': r.credit,
+        'tranrem': r.remarks,
         'extrefno': _referenceController.text,
       }).toList();
 
@@ -275,7 +278,7 @@ class _JournalEntryScreenState extends State<JournalEntryScreen> {
             accentColor: AppColors.tBlue,
             accentLt: AppColors.tBlueLt,
             accentMd: AppColors.tBlueMd,
-            onBack: widget.onBackToModule,
+            onBack: widget.onBack,
             breadcrumbs: [
               HeaderBreadcrumb(label: 'Home', onTap: widget.onBack),
               HeaderBreadcrumb(label: 'GL Module', onTap: widget.onBackToModule),
@@ -572,7 +575,7 @@ class _JournalEntryScreenState extends State<JournalEntryScreen> {
                                   AmsButton(
                                     label: 'Cancel',
                                     variant: AmsButtonVariant.outline,
-                                    onPressed: widget.onBackToModule,
+                                    onPressed: widget.onBack,
                                   ),
                                 ],
                               );
@@ -590,7 +593,7 @@ class _JournalEntryScreenState extends State<JournalEntryScreen> {
                                 AmsButton(
                                   label: 'Cancel',
                                   variant: AmsButtonVariant.outline,
-                                  onPressed: widget.onBackToModule,
+                                  onPressed: widget.onBack,
                                 ),
                               ],
                             );
@@ -741,9 +744,12 @@ class _JournalEntryScreenState extends State<JournalEntryScreen> {
                     initialValue: row.accountNo.isNotEmpty ? _accountOptions.firstWhere((e) => e.startsWith(row.accountNo), orElse: () => '') : null,
                     onChanged: (v) {
                       if (v != null && v.contains(' - ')) {
-                        row.accountNo = v.split(' - ').first;
+                        final idx = v.indexOf(' - ');
+                        row.accountNo = v.substring(0, idx).trim();
+                        row.accountName = v.substring(idx + 3).trim();
                       } else {
-                        row.accountNo = v ?? '';
+                        row.accountNo = v?.trim() ?? '';
+                        row.accountName = '';
                       }
                     },
                   ),
@@ -813,6 +819,7 @@ class _JournalEntryScreenState extends State<JournalEntryScreen> {
 
 class JournalRow {
   String accountNo;
+  String accountName;
   double debit;
   double credit;
   String remarks;
@@ -822,6 +829,7 @@ class JournalRow {
 
   JournalRow({
     this.accountNo = '',
+    this.accountName = '',
     this.debit = 0.0,
     this.credit = 0.0,
     this.remarks = '',

@@ -430,7 +430,19 @@ class _NonTranAuthScreenState extends State<NonTranAuthScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          ...record.dataBlocks.map((block) {
+                          if (record.programId == 'GL-JRN') ...[
+                            JournalDetailsView(
+                              header: record.dataBlocks
+                                  .firstWhere((b) => b.tableName == 'TRAN001',
+                                      orElse: () => record.dataBlocks.first)
+                                  .data,
+                              details: record.dataBlocks
+                                  .where((b) => b.tableName == 'TRAN002')
+                                  .map((b) => b.data)
+                                  .toList(),
+                            ),
+                          ] else
+                            ...record.dataBlocks.map((block) {
                             if (record.programId == 'GL-CAT') {
                               return GLCategoryFields(
                                 initialData: block.data,

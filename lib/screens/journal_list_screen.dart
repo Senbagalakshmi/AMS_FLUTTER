@@ -177,6 +177,7 @@ class _JournalListScreenState extends State<JournalListScreen> {
                   _buildHeaderCell('AMOUNT', 120, textAlign: TextAlign.right),
                   _buildHeaderCell('CREATED BY', 120, textAlign: TextAlign.right),
                   _buildHeaderCell('AUTHORIZED BY', 120, textAlign: TextAlign.right),
+                  _buildHeaderCell('', 60),
                 ],
               ),
             ),
@@ -319,6 +320,15 @@ class _JournalListScreenState extends State<JournalListScreen> {
                 style: bodyStyle(size: 13, color: AppColors.ink3),
               ),
             ),
+            Container(
+              width: 60,
+              alignment: Alignment.center,
+              child: IconButton(
+                icon: const Icon(Icons.visibility_outlined, size: 18, color: AppColors.tBlue),
+                onPressed: () => _showJournalDetails(j),
+                tooltip: 'View Details',
+              ),
+            ),
           ],
         ),
       ),
@@ -353,8 +363,8 @@ class _JournalListScreenState extends State<JournalListScreen> {
             insetPadding: EdgeInsets.all(isMobile ? 12 : 40),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             child: Container(
-              width: isMobile ? double.infinity : 800,
-              padding: EdgeInsets.all(isMobile ? 16 : 24),
+              width: isMobile ? double.infinity : 900,
+              padding: EdgeInsets.all(isMobile ? 16 : 32),
               child: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -363,24 +373,22 @@ class _JournalListScreenState extends State<JournalListScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Expanded(
-                          child: Text(
-                            'Journal Details: ${header['tranid']}',
-                            style: bodyStyle(size: 18, weight: FontWeight.bold),
-                          ),
+                        Text(
+                          'Journal Details',
+                          style: bodyStyle(size: 20, weight: FontWeight.w800),
                         ),
-                        IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
+                        IconButton(
+                          icon: const Icon(Icons.close), 
+                          onPressed: () => Navigator.pop(context),
+                        ),
                       ],
                     ),
-                    const Divider(height: 24),
-                    _buildHeaderInfo(header),
-                    const SizedBox(height: 24),
-                    Text(
-                      'Transaction Details (TRAN002)',
-                      style: bodyStyle(weight: FontWeight.bold, color: AppColors.ink4),
+                    const Divider(height: 32),
+                    JournalDetailsView(
+                      header: header,
+                      details: details,
+                      isModal: true,
                     ),
-                    const SizedBox(height: 12),
-                    _buildDetailsTable(details),
                   ],
                 ),
               ),

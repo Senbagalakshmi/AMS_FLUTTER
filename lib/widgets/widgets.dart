@@ -11,6 +11,7 @@ import '../theme.dart';
 import '../services/user_service.dart';
 import '../services/api_service.dart';
 import '../utils/responsive.dart';
+export 'journal_details_view.dart';
 
 // ─── TEXT STYLES ─────────────────────────────────────────────
 TextStyle monoStyle({
