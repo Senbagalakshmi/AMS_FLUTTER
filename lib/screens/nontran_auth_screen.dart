@@ -10,6 +10,7 @@ import 'gl_segments_screen.dart';
 import 'gl_attribute_screen.dart';
 import 'organisation_screen.dart';
 import 'program_master_screen.dart';
+import 'branch_screen.dart';
 
 class NonTranAuthScreen extends StatefulWidget {
   final List<AuthRecord> authQueue;
@@ -371,6 +372,7 @@ class _NonTranAuthScreenState extends State<NonTranAuthScreen> {
   }
 
   void _showDetailPopup(AuthRecord record) {
+    final cleanProg = record.programId.replaceAll(RegExp(r'[\s\-_]'), '').toUpperCase();
     showDialog(
       context: context,
       builder: (context) {
@@ -424,7 +426,7 @@ class _NonTranAuthScreenState extends State<NonTranAuthScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          if (record.programId == 'GL-JRN') ...[
+                          if (cleanProg == 'GLJRN') ...[
                             JournalDetailsView(
                               header: record.dataBlocks
                                   .firstWhere((b) => b.tableName == 'TRAN001',
@@ -437,42 +439,52 @@ class _NonTranAuthScreenState extends State<NonTranAuthScreen> {
                             ),
                           ] else
                             ...record.dataBlocks.map((block) {
-                              if (record.programId == 'GL-CAT') {
+                              if (cleanProg == 'GLCAT') {
                                 return GLCategoryFields(
                                   initialData: block.data,
                                   isViewMode: true,
                                   onChanged: (k, v) {},
                                 );
-                              } else if (record.programId == 'GL-MST' || record.programId == 'GL-MAT') {
+                              } else if (cleanProg == 'GLMST' || cleanProg == 'GLMAT') {
                                 return GLMasterFields(
                                   initialData: block.data,
                                   isViewMode: true,
                                   onChanged: (k, v) {},
                                   categoryList: const [],
                                 );
-                              } else if (record.programId == 'ORG-CRT') {
+                              } else if (cleanProg == 'ORGCRT') {
                                 return OrganisationFields(
                                   isViewMode: true,
                                   initialData: block.data,
                                   onChanged: (k, v) {},
                                 );
-                              } else if (record.programId == 'GL-SEG') {
+                              } else if (cleanProg == 'GLSEG') {
                                 return GLSegmentFields(
                                   initialData: block.data,
                                   isViewMode: true,
                                   onChanged: (k, v) {},
                                 );
-                              } else if (record.programId == 'GL-ATT' || record.programId == 'GL-ATR' || record.programId == 'GL-ATTR') {
+                              } else if (cleanProg == 'GLATT' || cleanProg == 'GLATR' || cleanProg == 'GLATTR') {
                                 return GLAttributeFields(
                                   initialData: block.data,
                                   isViewMode: true,
                                   onChanged: (k, v) {},
                                 );
-                              } else if (record.programId == 'PRM_CRT' || record.programId == 'PROG-CRT') {
+                              } else if (cleanProg == 'PRMCRT' || cleanProg == 'PROGCRT') {
                                 return ProgramMasterFields(
                                   isViewMode: true,
                                   initialData: block.data,
                                   onChanged: (k, v) {},
+                                );
+                              } else if (cleanProg == 'BRNCRT' || cleanProg == 'BRANCH') {
+                                return BranchScreenFields(
+                                  isViewMode: true,
+                                  isEditMode: false,
+                                  initialData: block.data,
+                                  pgmStatus: 1,
+                                  onChanged: (k, v) {},
+                                  onStatusChanged: (s) {},
+                                  parentContext: context,
                                 );
                               }
                               return Column(

@@ -263,7 +263,7 @@ class _AmsRootState extends State<AmsRoot> {
     });
   }
 
-  void _handleNonTranSubmit(String prog, Auth101Config cfg, String authsl,
+  Future<void> _handleNonTranSubmit(String prog, Auth101Config cfg, String authsl,
       Map<String, dynamic> data) async {
     bool success = false;
 

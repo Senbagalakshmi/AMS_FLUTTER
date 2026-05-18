@@ -202,7 +202,7 @@ const Map<String, String> _kAllCountries = {
 class NonTranEntryScreen extends StatefulWidget {
   final Map<String, Auth101Config> authConfigs;
   final List<String> nonTranPrograms;
-  final void Function(String prog, Auth101Config cfg, String authsl,
+  final Future<void> Function(String prog, Auth101Config cfg, String authsl,
       Map<String, dynamic> data) onSubmit;
   final VoidCallback onBack;
   final String? initialProg;
@@ -474,8 +474,10 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
           levels: 1,
         );
 
-    widget.onSubmit(_selProg!, safeCfg, authsl, fullData);
+    setState(() => _isLoading = true);
+    await widget.onSubmit(_selProg!, safeCfg, authsl, fullData);
     setState(() {
+      _isLoading = false;
       _showForm = false;
       _viewRecord = null;
       _dynamicData.clear();
@@ -1898,6 +1900,10 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
   }
   // ──────────────────────────────────────────────────────────────────────────
 
+  String _normalize(String p) {
+    return p.replaceAll(RegExp(r'[\s\-_]'), '').toUpperCase();
+  }
+
   // ── Lifecycle ──────────────────────────────────────────────────────────────
 
   @override
@@ -1907,16 +1913,17 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
         oldWidget.initialData != widget.initialData) {
       _loadInitialData();
       _notifyDefaults();
-      if (widget.prog == 'USR-ROLE' || widget.prog == 'AUTHCTL') {
+      final cleanProg = _normalize(widget.prog);
+      if (cleanProg == 'USRROLE' || cleanProg == 'AUTHCTL') {
         _fetchDropdownData();
       }
-      if (widget.prog == 'USR-CRT') {
+      if (cleanProg == 'USRCRT') {
         _fetchBranches();
         _fetchOrgData();
       }
-      if (widget.prog == 'ROLE-CRT' ||
-          widget.prog == 'MOD-CRT' ||
-          widget.prog == 'AUTHCTL') {
+      if (cleanProg == 'ROLECRT' ||
+          cleanProg == 'MODCRT' ||
+          cleanProg == 'AUTHCTL') {
         _fetchOrgData();
       }
     }
@@ -1927,23 +1934,24 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
     super.initState();
     _loadInitialData();
     _notifyDefaults();
-    if (widget.prog == 'USR-ROLE' || widget.prog == 'AUTHCTL') {
+    final cleanProg = _normalize(widget.prog);
+    if (cleanProg == 'USRROLE' || cleanProg == 'AUTHCTL') {
       _fetchDropdownData();
     }
-    if (widget.prog == 'USR-CRT') {
+    if (cleanProg == 'USRCRT') {
       _fetchBranches();
       _fetchOrgData();
     }
-    if (widget.prog == 'ROLE-CRT' ||
-        widget.prog == 'MOD-CRT' ||
-        widget.prog == 'AUTHCTL') {
+    if (cleanProg == 'ROLECRT' ||
+        cleanProg == 'MODCRT' ||
+        cleanProg == 'AUTHCTL') {
       _fetchOrgData();
     }
   }
 
   void _notifyDefaults() {
     if (widget.initialData != null) return;
-    final prog = widget.prog.replaceAll(' ', '-').toUpperCase();
+    final prog = _normalize(widget.prog);
     if (prog == 'AUTHCTL') {
       widget.onChanged('approvalReq', _approvalReq ? 1 : 0);
       widget.onChanged('preApproveProc', _preApprovalReq ? 1 : 0);
@@ -1951,15 +1959,15 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
       widget.onChanged('isTranPgm', _isTran ? 1 : 0);
       widget.onChanged('authLevels', _authLevels);
       widget.onChanged('orgCode', 50);
-    } else if (prog == 'MOD-CRT') {
+    } else if (prog == 'MODCRT') {
       widget.onChanged('orgCode', 50);
       widget.onChanged('status', _mStatus);
       widget.onChanged('subModule', _subModuleEnabled ? 1 : 0);
       widget.onChanged('subModules', _subModules);
-    } else if (prog == 'USR-CRT') {
+    } else if (prog == 'USRCRT') {
       widget.onChanged('orgCode', 50);
       widget.onChanged('status', 1);
-    } else if (prog == 'ROLE-CRT') {
+    } else if (prog == 'ROLECRT') {
       widget.onChanged('orgCode', 50);
     }
   }
@@ -2317,13 +2325,14 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
   // ── Load initial data ──────────────────────────────────────────────────────
 
   void _loadInitialData() {
+    final cleanProg = _normalize(widget.prog);
     if (widget.initialData == null) {
-      if (widget.prog == 'AUTHCTL') {
+      if (cleanProg == 'AUTHCTL') {
         _approvalReq = true;
         _preApprovalReq = false;
         _postApprovalReq = false;
         _isTran = false;
-      } else if (widget.prog == 'MOD-CRT') {
+      } else if (cleanProg == 'MODCRT') {
         _subModuleEnabled = false;
         _subModules = [];
         _mStatus = 1;
@@ -2333,9 +2342,8 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
 
     final data =
         widget.initialData?.map((k, v) => MapEntry(k.toLowerCase(), v)) ?? {};
-    final prog = (widget.prog).replaceAll(' ', '-').toUpperCase();
 
-    if (prog == 'USR-CRT') {
+    if (cleanProg == 'USRCRT') {
       final orgCodeRaw =
           (data['orgcode'] ?? data['orgCode'] ?? '50').toString();
       _selectedOrgCode = int.tryParse(orgCodeRaw);
@@ -2396,24 +2404,12 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
           (data['mobile'] ?? data['mobileno'] ?? data['phone'] ?? '')
               .toString();
       _callCodeCtrl.text =
-          (data['callcode'] ?? data['call_code'] ?? data['callingcode'] ?? '')
-              .toString();
-
-      final g = (data['gender'] ?? '').toString().toUpperCase();
-      if (g == 'F' || g == 'FEMALE') {
-        _gender = 'Female';
-      } else if (g == 'O' || g == 'OTHER') {
-        _gender = 'Other';
-      } else if (g == 'M' || g == 'MALE') {
-        _gender = 'Male';
-      } else {
+          (data['callcode'] ?? data['dialcode'] ?? '').toString();
+      _gender = (data['gender'] ?? data['sex'] ?? '').toString();
+      if (_gender != 'Male' && _gender != 'Female' && _gender != 'Other') {
         _gender = null;
       }
-
-      _title = (data['title'] ?? '').toString().isNotEmpty
-          ? data['title'].toString()
-          : null;
-    } else if (prog == 'ROLE-CRT') {
+    } else if (cleanProg == 'ROLECRT') {
       final orgCodeRaw =
           (data['orgcode'] ?? data['orgCode'] ?? '50').toString();
       _selectedOrgCode = int.tryParse(orgCodeRaw);
@@ -2429,18 +2425,11 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
         _orgDisplayCtrl.text = orgCodeRaw;
       }
 
-      _rScdCtrl.text =
-          (data['accesscd'] ?? data['access_cd'] ?? data['rolecd'] ?? '')
-              .toString();
-      _rNameCtrl.text =
-          (data['accessname'] ?? data['access_name'] ?? data['rolename'] ?? '')
-              .toString();
-      _rTypeCtrl.text =
-          (data['accesstype'] ?? data['access_type'] ?? '').toString();
-      _rSubtypeCtrl.text =
-          (data['accesssubtype'] ?? data['access_sub_type'] ?? '').toString();
-    } else if (prog == 'MOD-CRT') {
-      final orgCodeRaw = (data['orgcode'] ?? '50').toString();
+      _rScdCtrl.text = (data['accesscd'] ?? data['rolecd'] ?? '').toString();
+      _rNameCtrl.text = (data['accessname'] ?? data['rolename'] ?? '').toString();
+    } else if (cleanProg == 'MODCRT') {
+      final orgCodeRaw =
+          (data['orgcode'] ?? data['orgCode'] ?? '50').toString();
       _orgCodeCtrl.text = orgCodeRaw;
       _selectedOrgCode = int.tryParse(orgCodeRaw);
       if (_orgList.isNotEmpty && _selectedOrgCode != null) {
@@ -2454,42 +2443,39 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
       } else {
         _orgDisplayCtrl.text = orgCodeRaw;
       }
+
       _mScdCtrl.text = (data['modcd'] ??
-              data['module_id'] ??
               data['moduleid'] ??
-              data['modulecode'] ??
+              data['module_id'] ??
+              data['modulecd'] ??
               '')
           .toString();
-      _mNameCtrl.text =
-          (data['modname'] ?? data['modulename'] ?? data['module_name'] ?? '')
-              .toString();
+      _mNameCtrl.text = (data['modname'] ??
+              data['modulename'] ??
+              data['module_name'] ??
+              '')
+          .toString();
+      _subModuleEnabled =
+          (data['submodule'] == true || data['submodule'] == 1);
       _mStatus = int.tryParse((data['status'] ?? '1').toString()) ?? 1;
 
-      final sm = data['sub_module'] ?? data['submodule'];
-      _subModuleEnabled = sm == 1 || sm == true || sm == '1';
-
-      var smData = data['submodules'] ??
-          data['submodulelist'] ??
-          data['sub_module_list'];
-      if (smData is String && smData.isNotEmpty) {
-        try {
-          smData = jsonDecode(smData);
-        } catch (e) {
-          print('Error decoding submodules: $e');
-        }
-      }
-      if (smData is List) {
-        _subModules = List<Map<String, dynamic>>.from(smData);
+      if (data['submodules'] is List) {
+        _subModules = List<Map<String, dynamic>>.from(data['submodules']);
+      } else if (data['sub_modules'] is List) {
+        _subModules = List<Map<String, dynamic>>.from(data['sub_modules']);
       } else {
         _subModules = [];
       }
-    } else if (prog == 'MENU-CRT') {
-      _menuScdCtrl.text = (data['menucd'] ?? data['menu_cd'] ?? '').toString();
-      _menuNameCtrl.text =
-          (data['menuname'] ?? data['menu_name'] ?? '').toString();
-    } else if (prog == 'AUTHCTL') {
+    } else if (cleanProg == 'MENUCRT') {
+      _menuScdCtrl.text = (data['menucd'] ?? '').toString();
+      _menuNameCtrl.text = (data['menuname'] ?? '').toString();
+      _menuType = (data['menutype'] ?? '').toString();
+      if (_menuType != 'P' && _menuType != 'S') _menuType = null;
+      _selModule = (data['modcd'] ?? '').toString();
+      _selSubModule = (data['submodcd'] ?? '').toString();
+    } else if (cleanProg == 'AUTHCTL') {
       final orgCodeRaw =
-          (data['orgcode'] ?? data['org_code'] ?? '50').toString();
+          (data['orgcode'] ?? data['orgCode'] ?? '50').toString();
       _orgCodeCtrl.text = orgCodeRaw;
       _selectedOrgCode = int.tryParse(orgCodeRaw);
       if (_orgList.isNotEmpty && _selectedOrgCode != null) {
@@ -2535,7 +2521,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
       } else if (data['datablock'] is List) {
         _authLevels = List<Map<String, dynamic>>.from(data['datablock']);
       }
-    } else if (prog == 'USR-ROLE') {
+    } else if (cleanProg == 'USRROLE') {
       _uScdCtrl.text =
           (data['userscd'] ?? data['users_cd'] ?? data['usercd'] ?? '')
               .toString();
@@ -2548,10 +2534,10 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
 
   bool validate() {
     bool isValid = true;
-    final prog = widget.prog.replaceAll(' ', '-').toUpperCase();
+    final prog = _normalize(widget.prog);
     setState(() {
       _errors.clear();
-      if (prog == 'USR-CRT') {
+      if (prog == 'USRCRT') {
         if (_uScdCtrl.text.trim().isEmpty) {
           _errors['usersCd'] = 'User Code required';
           isValid = false;
@@ -2604,7 +2590,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
             }
           }
         }
-      } else if (prog == 'ROLE-CRT') {
+      } else if (prog == 'ROLECRT') {
         if (_rScdCtrl.text.trim().isEmpty) {
           _errors['accessCd'] = 'Access Code required';
           isValid = false;
@@ -2613,9 +2599,12 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
           _errors['accessName'] = 'Access Name required';
           isValid = false;
         }
-      } else if (prog == 'MOD-CRT') {
+      } else if (prog == 'MODCRT') {
         if (_mScdCtrl.text.trim().isEmpty) {
           _errors['modCd'] = 'Module Code required';
+          isValid = false;
+        } else if (int.tryParse(_mScdCtrl.text.trim()) == null) {
+          _errors['modCd'] = 'Module Code must be a valid number';
           isValid = false;
         }
         if (_mNameCtrl.text.trim().isEmpty) {
@@ -2627,7 +2616,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
               'At least one sub-module is required when enabled';
           isValid = false;
         }
-      } else if (prog == 'MENU-CRT') {
+      } else if (prog == 'MENUCRT') {
         if (_menuScdCtrl.text.trim().isEmpty) {
           _errors['menuCd'] = 'Menu Code required';
           isValid = false;
@@ -2636,7 +2625,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
           _errors['menuName'] = 'Menu Name required';
           isValid = false;
         }
-      } else if (widget.prog == 'USR-ROLE') {
+      } else if (prog == 'USRROLE') {
         if (_uScdCtrl.text.trim().isEmpty) {
           _errors['usersCd'] = 'User Code required';
           isValid = false;
@@ -2645,7 +2634,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
           _errors['roleCd'] = 'Role Code required';
           isValid = false;
         }
-      } else if (widget.prog == 'AUTHCTL') {
+      } else if (prog == 'AUTHCTL') {
         if (_orgCodeCtrl.text.trim().isEmpty) {
           _errors['orgCode'] = 'Organization Code required';
           isValid = false;
@@ -2738,8 +2727,9 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
     final Map<String, dynamic> data =
         widget.initialData?.map((k, v) => MapEntry(k.toLowerCase(), v)) ?? {};
 
-    switch (widget.prog) {
-      case 'USR-CRT':
+    final cleanProg = _normalize(widget.prog);
+    switch (cleanProg) {
+      case 'USRCRT':
         return Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
@@ -3267,7 +3257,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
           ),
         );
 
-      case 'USR-ROLE':
+      case 'USRROLE':
         return Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
@@ -3393,7 +3383,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
           ),
         );
 
-      case 'ROLE-CRT':
+      case 'ROLECRT':
         return Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
@@ -3519,7 +3509,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
           ),
         );
 
-      case 'MOD-CRT':
+      case 'MODCRT':
         return Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
@@ -3563,19 +3553,26 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                     label: 'Module Code',
                     required: true,
                     labelAbove: true,
-                    tooltip: 'Unique module identifier.',
+                    tooltip: 'Unique module identifier (numbers only).',
                     child: AmsTextInput(
                       controller: _mScdCtrl,
                       readOnly: widget.isViewMode || widget.initialData != null,
-                      placeholder: 'e.g. FIN',
+                      placeholder: 'e.g. 10',
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                       textInputAction: TextInputAction.next,
                       errorText: _errors['modCd'],
                       isValid:
                           _errors['modCd'] == null && _mScdCtrl.text.isNotEmpty,
                       onChanged: (v) {
                         setState(() {
-                          _errors['modCd'] =
-                              v.trim().isEmpty ? 'Module Code required' : null;
+                          if (v.trim().isEmpty) {
+                            _errors['modCd'] = 'Module Code required';
+                          } else if (int.tryParse(v.trim()) == null) {
+                            _errors['modCd'] = 'Module Code must be a valid number';
+                          } else {
+                            _errors['modCd'] = null;
+                          }
                         });
                         widget.onChanged('modCd', v);
                       },
@@ -3672,7 +3669,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
           ),
         );
 
-      case 'MENU-CRT':
+      case 'MENUCRT':
         return Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(

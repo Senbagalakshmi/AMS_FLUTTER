@@ -542,10 +542,49 @@ class ApiService {
       if (data['isUpdate'] == true) {
         return updateModule(data);
       }
+      final mappedData = Map<String, dynamic>.from(data);
+
+      // Module Name mapping
+      if (data.containsKey('modName')) {
+        mappedData['moduleName'] = data['modName'];
+        mappedData['modulename'] = data['modName'];
+      }
+      // Sub Module flag mapping
+      if (data.containsKey('subModule')) {
+        final val = (data['subModule'] == true || data['subModule'] == 1) ? 1 : 0;
+        mappedData['subModuleRequired'] = val;
+        mappedData['sub_module'] = val;
+        mappedData['submodule'] = val;
+      }
+      // Organisation Code mapping
+      final rawOrg = data['orgcode'] ?? data['orgCode'] ?? data['org_code'];
+      if (rawOrg != null) {
+        final parsedOrg = int.tryParse(rawOrg.toString());
+        if (parsedOrg != null) {
+          mappedData['orgcode'] = parsedOrg;
+        }
+      }
+
+      // Module ID Identification (Check various possible keys)
+      final rawMid = data['modCd'] ??
+          data['moduleId'] ??
+          data['module_id'] ??
+          data['moduleid'] ??
+          data['modcd'];
+      final midInt = int.tryParse(rawMid.toString()) ?? 0;
+
+      if (midInt != 0) {
+        mappedData['moduleId'] = midInt;
+        mappedData['module_id'] = midInt;
+        mappedData['moduleid'] = midInt;
+        mappedData['modcd'] = midInt;
+        mappedData['modCd'] = midInt;
+      }
+
       final res = await http.post(
         Uri.parse('$baseUrl/modules'),
         headers: _headers,
-        body: jsonEncode(data),
+        body: jsonEncode(mappedData),
       );
       return res.statusCode >= 200 && res.statusCode < 300;
     } catch (e) {
@@ -889,13 +928,18 @@ class ApiService {
       }
       // Sub Module flag mapping
       if (data.containsKey('subModule')) {
-        mappedData['subModuleRequired'] = data['subModule'];
-        mappedData['sub_module'] = data['subModule'];
-        mappedData['submodule'] = data['subModule'];
+        final val = (data['subModule'] == true || data['subModule'] == 1) ? 1 : 0;
+        mappedData['subModuleRequired'] = val;
+        mappedData['sub_module'] = val;
+        mappedData['submodule'] = val;
       }
       // Organisation Code mapping
-      if (data.containsKey('orgCode')) {
-        mappedData['orgcode'] = data['orgCode'];
+      final rawOrg = data['orgcode'] ?? data['orgCode'] ?? data['org_code'];
+      if (rawOrg != null) {
+        final parsedOrg = int.tryParse(rawOrg.toString());
+        if (parsedOrg != null) {
+          mappedData['orgcode'] = parsedOrg;
+        }
       }
 
       // Module ID Identification (Check various possible keys)
@@ -950,8 +994,12 @@ class ApiService {
       final mappedData = Map<String, dynamic>.from(data);
 
       // 1. Map Organisation Code
-      if (data.containsKey('orgCode')) {
-        mappedData['orgcode'] = data['orgCode'];
+      final rawOrg = data['orgcode'] ?? data['orgCode'] ?? data['org_code'];
+      if (rawOrg != null) {
+        final parsedOrg = int.tryParse(rawOrg.toString());
+        if (parsedOrg != null) {
+          mappedData['orgcode'] = parsedOrg;
+        }
       }
 
       // 2. Map Module ID
