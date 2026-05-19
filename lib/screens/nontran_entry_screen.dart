@@ -2594,24 +2594,19 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
         } else {
           final mobileStr = _mobileCtrl.text.trim();
           final callCodeStr = _callCodeCtrl.text.trim();
-          if (callCodeStr.isNotEmpty) {
+          if (mobileStr.length < 10 || mobileStr.length > 15) {
+            _errors['mobile'] = 'Mobile number must be between 10 and 15 digits';
+            isValid = false;
+          } else if (callCodeStr.isNotEmpty) {
             try {
               final phone = PhoneNumber.parse('+$callCodeStr$mobileStr');
               if (!phone.isValid()) {
                 _errors['mobile'] = 'Invalid mobile number for selected country';
                 isValid = false;
-              } else if (callCodeStr == '91' && mobileStr.length != 10) {
-                _errors['mobile'] = 'Mobile number must be exactly 10 digits';
-                isValid = false;
               }
             } catch (e) {
               _errors['mobile'] = 'Invalid mobile number format';
               isValid = false;
-            }
-          } else {
-            if (mobileStr.length < 7 || mobileStr.length > 15) {
-               _errors['mobile'] = 'Mobile number must be between 7 and 15 digits';
-               isValid = false;
             }
           }
         }
@@ -3089,7 +3084,10 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                   readOnly: widget.isViewMode,
                   placeholder: 'e.g. 9876543210',
                   keyboardType: TextInputType.phone,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    LengthLimitingTextInputFormatter(15),
+                  ],
                   textInputAction: TextInputAction.next,
                   errorText: _errors['mobile'],
                   onChanged: (v) {
