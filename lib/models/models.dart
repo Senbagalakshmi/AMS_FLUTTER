@@ -162,9 +162,12 @@ class AuthRecord {
       dataBlocks.isNotEmpty ? dataBlocks.first.data : <String, dynamic>{};
 
   factory AuthRecord.fromJson(Map<String, dynamic> json) {
+    // Create a lowercase map for easy fallback
+    final d = json.map((k, v) => MapEntry(k.toLowerCase(), v));
+
     List<AuthDataBlock> dataBlocksList = [];
     try {
-      var dbData = json['dataBlocks'] ?? json['datablock'] ?? json['dataBlock'];
+      var dbData = json['dataBlocks'] ?? json['datablock'] ?? json['dataBlock'] ?? d['datablocks'] ?? d['datablock'];
       if (dbData != null) {
         if (dbData is String && dbData.trim().isNotEmpty) {
           var parsed = jsonDecode(dbData);
@@ -188,33 +191,33 @@ class AuthRecord {
         }
       }
     } catch (e) {
-      print('Error parsing dataBlocks for ${json['authSl']}: $e');
+      print('Error parsing dataBlocks for ${json['authSl'] ?? json['authsl']}: $e');
     }
 
     return AuthRecord(
-      orgCode: json['orgCode']?.toString() ?? '',
-      effDate: json['effDate']?.toString() ?? '',
-      programId: json['programId']?.toString() ?? '',
-      primaryKey: json['primaryKey']?.toString() ?? '',
-      authSl: json['authSl']?.toString() ?? '',
-      displayRemarks: json['displayRemarks']?.toString() ?? '',
-      eUser: (json['eUser'] ?? json['entryUser'])?.toString() ?? '',
-      eDate: (json['eDate'] ?? json['entryDate'])?.toString() ?? '',
-      cUser: json['cUser']?.toString(),
-      cDate: json['cDate']?.toString(),
-      rUser: json['rUser']?.toString(),
-      rDate: json['rDate']?.toString(),
-      flUser: json['flUser']?.toString(),
-      flDate: (json['flDate'] ?? json['flUserDate'])?.toString(),
-      slUser: json['slUser']?.toString(),
-      slDate: (json['slDate'] ?? json['slUserDate'])?.toString(),
-      tlUser: json['tlUser']?.toString(),
-      tlDate: (json['tlDate'] ?? json['tlUserDate'])?.toString(),
-      exceptionalRemarks: json['exceptionalRemarks']?.toString(),
-      correctionReq: json['correctionReq'] == true || json['correctionReq'] == 1,
-      correctionDetails: json['correctionDetails']?.toString(),
-      riskPresented: json['riskPresented'] == true || json['riskPresented'] == 1,
-      authLock: json['authLock'] == true || json['authLock'] == 1,
+      orgCode: (json['orgCode'] ?? json['orgcode'] ?? d['orgcode'] ?? d['org_code'] ?? '')?.toString() ?? '',
+      effDate: (json['effDate'] ?? json['effdate'] ?? d['effdate'] ?? d['eff_date'] ?? '')?.toString() ?? '',
+      programId: (json['programId'] ?? json['programid'] ?? d['programid'] ?? d['program_id'] ?? '')?.toString() ?? '',
+      primaryKey: (json['primaryKey'] ?? json['primarykey'] ?? d['primarykey'] ?? d['primary_key'] ?? '')?.toString() ?? '',
+      authSl: (json['authSl'] ?? json['authsl'] ?? d['authsl'] ?? d['auth_sl'] ?? '')?.toString() ?? '',
+      displayRemarks: (json['displayRemarks'] ?? json['displayremarks'] ?? json['remarks'] ?? d['remarks'] ?? d['displayremarks'] ?? d['display_remarks'] ?? '')?.toString() ?? '',
+      eUser: (json['eUser'] ?? json['entryUser'] ?? json['euser'] ?? json['entryuser'] ?? d['euser'] ?? d['entryuser'] ?? d['entry_user'] ?? '')?.toString() ?? '',
+      eDate: (json['eDate'] ?? json['entryDate'] ?? json['edate'] ?? json['entrydate'] ?? d['edate'] ?? d['entrydate'] ?? d['entry_date'] ?? '')?.toString() ?? '',
+      cUser: (json['cUser'] ?? json['cuser'] ?? d['cuser'] ?? d['c_user'])?.toString(),
+      cDate: (json['cDate'] ?? json['cdate'] ?? d['cdate'] ?? d['c_date'])?.toString(),
+      rUser: (json['rUser'] ?? json['ruser'] ?? d['ruser'] ?? d['r_user'])?.toString(),
+      rDate: (json['rDate'] ?? json['rdate'] ?? d['rdate'] ?? d['r_date'])?.toString(),
+      flUser: (json['flUser'] ?? json['fluser'] ?? d['fluser'] ?? d['fl_user'])?.toString(),
+      flDate: (json['flDate'] ?? json['flUserDate'] ?? json['fldate'] ?? json['fluserdate'] ?? d['fldate'] ?? d['fluserdate'] ?? d['fl_user_date'] ?? d['fl_date'])?.toString(),
+      slUser: (json['slUser'] ?? json['sluser'] ?? d['sluser'] ?? d['sl_user'])?.toString(),
+      slDate: (json['slDate'] ?? json['slUserDate'] ?? json['sldate'] ?? json['sluserdate'] ?? d['sldate'] ?? d['sluserdate'] ?? d['sl_user_date'] ?? d['sl_date'])?.toString(),
+      tlUser: (json['tlUser'] ?? json['tluser'] ?? d['tluser'] ?? d['tl_user'])?.toString(),
+      tlDate: (json['tlDate'] ?? json['tlUserDate'] ?? json['tldate'] ?? json['tluserdate'] ?? d['tldate'] ?? d['tluserdate'] ?? d['tl_user_date'] ?? d['tl_date'])?.toString(),
+      exceptionalRemarks: (json['exceptionalRemarks'] ?? json['exceptionalremarks'] ?? d['exceptionalremarks'] ?? d['exceptional_remarks'])?.toString(),
+      correctionReq: json['correctionReq'] == true || json['correctionReq'] == 1 || d['correctionreq'] == true || d['correctionreq'] == 1 || d['correction_req'] == true || d['correction_req'] == 1,
+      correctionDetails: (json['correctionDetails'] ?? json['correctiondetails'] ?? d['correctiondetails'] ?? d['correction_details'])?.toString(),
+      riskPresented: json['riskPresented'] == true || json['riskPresented'] == 1 || d['riskpresented'] == true || d['riskpresented'] == 1 || d['risk_presented'] == true || d['risk_presented'] == 1,
+      authLock: json['authLock'] == true || json['authLock'] == 1 || d['authlock'] == true || d['authlock'] == 1 || d['auth_lock'] == true || d['auth_lock'] == 1,
       dataBlocks: dataBlocksList,
     );
   }

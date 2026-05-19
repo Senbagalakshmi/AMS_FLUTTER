@@ -915,11 +915,11 @@ class OrganisationFieldsState extends State<OrganisationFields> {
 
   void _loadInitialData() {
     if (widget.initialData == null) return;
-    final d = widget.initialData!;
-    _orgCodeCtrl.text = (d['orgcode'] ?? d['orgCode'] ?? '').toString();
-    _nameCtrl.text = (d['name'] ?? d['orgName'] ?? '').toString();
+    final d = widget.initialData!.map((k, v) => MapEntry(k.toLowerCase(), v));
+    _orgCodeCtrl.text = (d['orgcode'] ?? '').toString();
+    _nameCtrl.text = (d['name'] ?? d['orgname'] ?? '').toString();
     
-    String rawDate = (d['openDate'] ?? d['opendate'] ?? '').toString();
+    String rawDate = (d['opendate'] ?? '').toString();
     if (rawDate.isNotEmpty) {
       try {
         DateTime dt = DateTime.parse(rawDate.split('T')[0]);
@@ -938,7 +938,7 @@ class OrganisationFieldsState extends State<OrganisationFields> {
       _countryCtrl.text = countryCode;
     }
 
-    String div = (d['divisionName'] ?? d['state'] ?? '').toString();
+    String div = (d['divisionname'] ?? d['state'] ?? '').toString();
     if (div.contains(' - ')) {
       var parts = div.split(' - ');
       _stateCtrl.text = parts[0];
