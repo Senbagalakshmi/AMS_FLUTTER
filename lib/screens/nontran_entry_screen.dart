@@ -2405,8 +2405,14 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
               .toString();
       _callCodeCtrl.text =
           (data['callcode'] ?? data['dialcode'] ?? '').toString();
-      _gender = (data['gender'] ?? data['sex'] ?? '').toString();
-      if (_gender != 'Male' && _gender != 'Female' && _gender != 'Other') {
+      final g = (data['gender'] ?? data['sex'] ?? '').toString().trim();
+      if (g == 'M' || g == 'm' || g == 'Male') {
+        _gender = 'Male';
+      } else if (g == 'F' || g == 'f' || g == 'Female') {
+        _gender = 'Female';
+      } else if (g == 'O' || g == 'o' || g == 'Other') {
+        _gender = 'Other';
+      } else {
         _gender = null;
       }
     } else if (cleanProg == 'ROLECRT') {
@@ -2557,6 +2563,19 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
         if (_uDobCtrl.text.trim().isEmpty) {
           _errors['dob'] = 'DOB required';
           isValid = false;
+        } else {
+          try {
+            final dobDate = DateFormat('dd-MMM-yyyy').parse(_uDobCtrl.text.trim());
+            final today = DateTime.now();
+            final ageLimitDate = DateTime(today.year - 18, today.month, today.day);
+            if (dobDate.isAfter(ageLimitDate)) {
+              _errors['dob'] = 'User must be at least 18 years old';
+              isValid = false;
+            }
+          } catch (_) {
+            _errors['dob'] = 'Invalid date format';
+            isValid = false;
+          }
         }
         if (_gender == null) {
           _errors['gender'] = 'Gender required';
@@ -2569,7 +2588,10 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
           _errors['emailid'] = 'Invalid email format';
           isValid = false;
         }
-        if (_mobileCtrl.text.trim().isNotEmpty) {
+        if (_mobileCtrl.text.trim().isEmpty) {
+          _errors['mobile'] = 'Mobile Number required';
+          isValid = false;
+        } else {
           final mobileStr = _mobileCtrl.text.trim();
           final callCodeStr = _callCodeCtrl.text.trim();
           if (callCodeStr.isNotEmpty) {
@@ -2578,14 +2600,17 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
               if (!phone.isValid()) {
                 _errors['mobile'] = 'Invalid mobile number for selected country';
                 isValid = false;
+              } else if (callCodeStr == '91' && mobileStr.length != 10) {
+                _errors['mobile'] = 'Mobile number must be exactly 10 digits';
+                isValid = false;
               }
             } catch (e) {
               _errors['mobile'] = 'Invalid mobile number format';
               isValid = false;
             }
           } else {
-            if (mobileStr.length < 5) {
-               _errors['mobile'] = 'Invalid mobile number length';
+            if (mobileStr.length < 7 || mobileStr.length > 15) {
+               _errors['mobile'] = 'Mobile number must be between 7 and 15 digits';
                isValid = false;
             }
           }
@@ -2998,12 +3023,13 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                   errorText: _errors['dob'],
                   onTap: () async {
                     if (widget.isViewMode) return;
+                    final now = DateTime.now();
+                    final eighteenYearsAgo = DateTime(now.year - 18, now.month, now.day);
                     final picked = await showDatePicker(
                       context: context,
-                      initialDate:
-                          DateTime.now().subtract(const Duration(days: 6570)),
+                      initialDate: eighteenYearsAgo,
                       firstDate: DateTime(1900),
-                      lastDate: DateTime.now(),
+                      lastDate: eighteenYearsAgo,
                     );
                     if (picked != null) {
                       final displayFmt =
@@ -3055,6 +3081,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
               ),
               AmsField(
                 label: 'Mobile Number',
+                required: true,
                 labelAbove: true,
                 tooltip: 'Primary mobile number for contact.',
                 child: AmsTextInput(
