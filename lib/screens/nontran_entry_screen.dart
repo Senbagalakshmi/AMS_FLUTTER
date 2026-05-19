@@ -2431,8 +2431,36 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
         _orgDisplayCtrl.text = orgCodeRaw;
       }
 
-      _rScdCtrl.text = (data['accesscd'] ?? data['rolecd'] ?? '').toString();
-      _rNameCtrl.text = (data['accessname'] ?? data['rolename'] ?? '').toString();
+      _rScdCtrl.text = (data['accesscd'] ??
+              data['accesscode'] ??
+              data['access_code'] ??
+              data['rolecd'] ??
+              data['rolecode'] ??
+              data['role_code'] ??
+              data['role_cd'] ??
+              '')
+          .toString();
+      _rNameCtrl.text = (data['accessname'] ??
+              data['access_name'] ??
+              data['rolename'] ??
+              data['role_name'] ??
+              data['name'] ??
+              '')
+          .toString();
+      _rTypeCtrl.text = (data['accesstype'] ??
+              data['access_type'] ??
+              data['roletype'] ??
+              data['role_type'] ??
+              data['type'] ??
+              '')
+          .toString();
+      _rSubtypeCtrl.text = (data['accesssubtype'] ??
+              data['access_sub_type'] ??
+              data['rolesubtype'] ??
+              data['role_sub_type'] ??
+              data['subtype'] ??
+              '')
+          .toString();
     } else if (cleanProg == 'MODCRT') {
       final orgCodeRaw =
           (data['orgcode'] ?? data['orgCode'] ?? '50').toString();
@@ -2690,6 +2718,8 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
     _uPictureCtrl.clear();
     _rScdCtrl.clear();
     _rNameCtrl.clear();
+    _rTypeCtrl.clear();
+    _rSubtypeCtrl.clear();
     _mScdCtrl.clear();
     _mNameCtrl.clear();
     _menuScdCtrl.clear();
@@ -2728,6 +2758,8 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
     _countryCtrl.dispose();
     _rScdCtrl.dispose();
     _rNameCtrl.dispose();
+    _rTypeCtrl.dispose();
+    _rSubtypeCtrl.dispose();
     _mScdCtrl.dispose();
     _mNameCtrl.dispose();
     _menuScdCtrl.dispose();
@@ -3514,19 +3546,37 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
               _AccessToggleGroup(
                 initialViewAccess: data['viewaccess'] == 1 ||
                     data['viewaccess'] == '1' ||
-                    data['viewaccess'] == true,
+                    data['viewaccess'] == true ||
+                    data['view_access'] == 1 ||
+                    data['view_access'] == '1' ||
+                    data['view_access'] == true,
                 initialAuthAccess: data['authaccess'] == 1 ||
                     data['authaccess'] == '1' ||
-                    data['authaccess'] == true,
+                    data['authaccess'] == true ||
+                    data['auth_access'] == 1 ||
+                    data['auth_access'] == '1' ||
+                    data['auth_access'] == true,
                 initialMakerAccess: data['makeraccess'] == 1 ||
                     data['makeraccess'] == '1' ||
-                    data['makeraccess'] == true,
+                    data['makeraccess'] == true ||
+                    data['maker_access'] == 1 ||
+                    data['maker_access'] == '1' ||
+                    data['maker_access'] == true,
                 initialAdminAccess: data['adminaccess'] == 1 ||
                     data['adminaccess'] == '1' ||
-                    data['adminaccess'] == true,
+                    data['adminaccess'] == true ||
+                    data['admin_access'] == 1 ||
+                    data['admin_access'] == '1' ||
+                    data['admin_access'] == true,
                 initialSysAdminAccess: data['sysadminaccess'] == 1 ||
                     data['sysadminaccess'] == '1' ||
-                    data['sysadminaccess'] == true,
+                    data['sysadminaccess'] == true ||
+                    data['sys_admin_access'] == 1 ||
+                    data['sys_admin_access'] == '1' ||
+                    data['sys_admin_access'] == true ||
+                    data['sysadmin_access'] == 1 ||
+                    data['sysadmin_access'] == '1' ||
+                    data['sysadmin_access'] == true,
                 isViewMode: widget.isViewMode,
                 onChanged: widget.onChanged,
               ),

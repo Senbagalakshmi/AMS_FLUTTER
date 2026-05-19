@@ -1566,6 +1566,68 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
       } else {
         _errors['openDate'] = null;
       }
+
+      if (_brnAddressCtrl.text.trim().isEmpty) {
+        _errors['address'] = 'Address required';
+        isValid = false;
+      } else {
+        _errors['address'] = null;
+      }
+
+      if (_brnCountryCtrl.text.trim().isEmpty) {
+        _errors['country'] = 'Country required';
+        isValid = false;
+      } else {
+        _errors['country'] = null;
+      }
+
+      if (_brnStateCtrl.text.trim().isEmpty) {
+        _errors['divisionName'] = 'State required';
+        isValid = false;
+      } else {
+        _errors['divisionName'] = null;
+      }
+
+      if (_brnDistrictCtrl.text.trim().isEmpty) {
+        _errors['district'] = 'District required';
+        isValid = false;
+      } else {
+        _errors['district'] = null;
+      }
+
+      if (_brnPinCtrl.text.trim().isEmpty) {
+        _errors['pincode'] = 'Pincode required';
+        isValid = false;
+      } else {
+        _errors['pincode'] = null;
+      }
+
+      if (_brnAddr1Ctrl.text.trim().isEmpty) {
+        _errors['addrline1'] = 'Address Line 1 required';
+        isValid = false;
+      } else {
+        _errors['addrline1'] = null;
+      }
+
+      if (_brnTelCtrl.text.trim().isEmpty) {
+        _errors['telephone'] = 'Telephone required';
+        isValid = false;
+      } else {
+        final tel = _brnTelCtrl.text.trim();
+        if (tel.length < 10 || tel.length > 15) {
+          _errors['telephone'] = 'Telephone must be between 10 and 15 digits';
+          isValid = false;
+        } else {
+          _errors['telephone'] = null;
+        }
+      }
+
+      if (_brnEmailCtrl.text.trim().isEmpty) {
+        _errors['email'] = 'Email required';
+        isValid = false;
+      } else {
+        _errors['email'] = null;
+      }
     });
     return isValid;
   }
@@ -1772,17 +1834,28 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
             children: [
               AmsField(
                 label: 'Address',
+                required: true,
                 labelAbove: true,
                 tooltip: 'Full address block.',
                 child: AmsTextInput(
                   controller: _brnAddressCtrl,
                   readOnly: widget.isViewMode,
                   placeholder: 'Enter Address',
-                  onChanged: (v) => widget.onChanged('address', v),
+                  errorText: _errors['address'],
+                  isValid: _errors['address'] == null &&
+                      _brnAddressCtrl.text.isNotEmpty,
+                  onChanged: (v) {
+                    setState(() {
+                      _errors['address'] =
+                          v.trim().isEmpty ? 'Address required' : null;
+                    });
+                    widget.onChanged('address', v);
+                  },
                 ),
               ),
               AmsField(
                 label: 'Country',
+                required: true,
                 labelAbove: true,
                 tooltip: 'Select country.',
                 child: CompositedTransformTarget(
@@ -1800,6 +1873,9 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
                         icon: _countriesLoading
                             ? Icons.hourglass_empty_rounded
                             : Icons.public_rounded,
+                        errorText: _errors['country'],
+                        isValid: _errors['country'] == null &&
+                            _brnCountryCtrl.text.isNotEmpty,
                       ),
                     ),
                   ),
@@ -1807,6 +1883,7 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
               ),
               AmsField(
                 label: 'State code',
+                required: true,
                 labelAbove: true,
                 tooltip: 'Select state.',
                 child: CompositedTransformTarget(
@@ -1824,6 +1901,9 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
                         icon: _statesLoading
                             ? Icons.hourglass_empty_rounded
                             : Icons.map_rounded,
+                        errorText: _errors['divisionName'],
+                        isValid: _errors['divisionName'] == null &&
+                            _brnStateCtrl.text.isNotEmpty,
                       ),
                     ),
                   ),
@@ -1831,6 +1911,7 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
               ),
               AmsField(
                 label: 'Distric code',
+                required: true,
                 labelAbove: true,
                 tooltip: 'Select district.',
                 child: CompositedTransformTarget(
@@ -1848,6 +1929,9 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
                         icon: _districtsLoading
                             ? Icons.hourglass_empty_rounded
                             : Icons.location_city_rounded,
+                        errorText: _errors['district'],
+                        isValid: _errors['district'] == null &&
+                            _brnDistrictCtrl.text.isNotEmpty,
                       ),
                     ),
                   ),
@@ -1855,6 +1939,7 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
               ),
               AmsField(
                 label: 'Pincode',
+                required: true,
                 labelAbove: true,
                 child: Stack(
                   alignment: Alignment.centerRight,
@@ -1867,7 +1952,16 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
                           : 'Enter Pincode',
                       keyboardType: TextInputType.number,
                       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                      onChanged: (v) => widget.onChanged('pincode', v),
+                      errorText: _errors['pincode'],
+                      isValid: _errors['pincode'] == null &&
+                          _brnPinCtrl.text.isNotEmpty,
+                      onChanged: (v) {
+                        setState(() {
+                          _errors['pincode'] =
+                              v.trim().isEmpty ? 'Pincode required' : null;
+                        });
+                        widget.onChanged('pincode', v);
+                      },
                     ),
                     if (_pincodeLoading)
                       const Padding(
@@ -1884,12 +1978,22 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
               ),
               AmsField(
                 label: 'Address line',
+                required: true,
                 labelAbove: true,
                 child: AmsTextInput(
                   controller: _brnAddr1Ctrl,
                   readOnly: widget.isViewMode,
                   placeholder: 'Address Line 1',
-                  onChanged: (v) => widget.onChanged('addrline1', v),
+                  errorText: _errors['addrline1'],
+                  isValid: _errors['addrline1'] == null &&
+                      _brnAddr1Ctrl.text.isNotEmpty,
+                  onChanged: (v) {
+                    setState(() {
+                      _errors['addrline1'] =
+                          v.trim().isEmpty ? 'Address Line 1 required' : null;
+                    });
+                    widget.onChanged('addrline1', v);
+                  },
                 ),
               ),
               AmsField(
@@ -1934,18 +2038,38 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
               ),
               AmsField(
                 label: 'Telephone',
+                required: true,
                 labelAbove: true,
                 child: AmsTextInput(
                   controller: _brnTelCtrl,
                   readOnly: widget.isViewMode,
                   keyboardType: TextInputType.phone,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    LengthLimitingTextInputFormatter(15),
+                  ],
                   icon: Icons.phone_outlined,
-                  placeholder: '+919876543210',
-                  onChanged: (v) => widget.onChanged('telephone', v),
+                  placeholder: 'e.g. 9876543210',
+                  errorText: _errors['telephone'],
+                  isValid: _errors['telephone'] == null &&
+                      _brnTelCtrl.text.isNotEmpty,
+                  onChanged: (v) {
+                    setState(() {
+                      if (v.trim().isEmpty) {
+                        _errors['telephone'] = 'Telephone required';
+                      } else if (v.trim().length < 10 || v.trim().length > 15) {
+                        _errors['telephone'] = 'Telephone must be between 10 and 15 digits';
+                      } else {
+                        _errors['telephone'] = null;
+                      }
+                    });
+                    widget.onChanged('telephone', v);
+                  },
                 ),
               ),
               AmsField(
                 label: 'Email',
+                required: true,
                 labelAbove: true,
                 child: AmsTextInput(
                   controller: _brnEmailCtrl,
@@ -1953,7 +2077,16 @@ class BranchScreenFieldsState extends State<BranchScreenFields> {
                   keyboardType: TextInputType.emailAddress,
                   icon: Icons.email_outlined,
                   placeholder: 'contact@branch.com',
-                  onChanged: (v) => widget.onChanged('email', v),
+                  errorText: _errors['email'],
+                  isValid: _errors['email'] == null &&
+                      _brnEmailCtrl.text.isNotEmpty,
+                  onChanged: (v) {
+                    setState(() {
+                      _errors['email'] =
+                          v.trim().isEmpty ? 'Email required' : null;
+                    });
+                    widget.onChanged('email', v);
+                  },
                 ),
               ),
             ],
