@@ -306,8 +306,15 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Authorization Volume (Last 7 Days)',
-                  style: bodyStyle(size: 16, weight: FontWeight.w800)),
+              Expanded(
+                child: Text(
+                  'Authorization Volume (Last 7 Days)',
+                  style: bodyStyle(size: 16, weight: FontWeight.w800),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: 12),
               const Icon(Icons.more_horiz_rounded, color: AppColors.ink3),
             ],
           ),

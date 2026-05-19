@@ -1148,48 +1148,51 @@ class _AmsIdentityHeaderState extends State<AmsIdentityHeader> {
                   : CrossFadeState.showSecond,
               firstChild: Padding(
                 padding: const EdgeInsets.only(bottom: 4),
-                child: Row(
-                  children: widget.breadcrumbs!.asMap().entries.map((entry) {
-                    final idx = entry.key;
-                    final item = entry.value;
-                    final isLast = idx == widget.breadcrumbs!.length - 1;
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: widget.breadcrumbs!.asMap().entries.map((entry) {
+                      final idx = entry.key;
+                      final item = entry.value;
+                      final isLast = idx == widget.breadcrumbs!.length - 1;
 
-                    return Row(
-                      children: [
-                        MouseRegion(
-                          cursor: item.onTap != null
-                              ? SystemMouseCursors.click
-                              : SystemMouseCursors.basic,
-                          child: GestureDetector(
-                            onTap: item.onTap,
-                            child: Text(
-                              item.label,
-                              style: bodyStyle(
-                                size: 11,
-                                weight: FontWeight.w600,
-                                color: AppColors.ink4,
-                              ).copyWith(
-                                decoration: item.onTap != null
-                                    ? TextDecoration.underline
-                                    : TextDecoration.none,
-                                decorationColor:
-                                    AppColors.ink4.withOpacity(0.3),
+                      return Row(
+                        children: [
+                          MouseRegion(
+                            cursor: item.onTap != null
+                                ? SystemMouseCursors.click
+                                : SystemMouseCursors.basic,
+                            child: GestureDetector(
+                              onTap: item.onTap,
+                              child: Text(
+                                item.label,
+                                style: bodyStyle(
+                                  size: 11,
+                                  weight: FontWeight.w600,
+                                  color: AppColors.ink4,
+                                ).copyWith(
+                                  decoration: item.onTap != null
+                                      ? TextDecoration.underline
+                                      : TextDecoration.none,
+                                  decorationColor:
+                                      AppColors.ink4.withOpacity(0.3),
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                        if (!isLast)
-                          const Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 6),
-                            child: Icon(
-                              Icons.chevron_right_rounded,
-                              size: 14,
-                              color: AppColors.ink4,
+                          if (!isLast)
+                            const Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 6),
+                              child: Icon(
+                                Icons.chevron_right_rounded,
+                                size: 14,
+                                color: AppColors.ink4,
+                              ),
                             ),
-                          ),
-                      ],
-                    );
-                  }).toList(),
+                        ],
+                      );
+                    }).toList(),
+                  ),
                 ),
               ),
               secondChild: const SizedBox(),
@@ -3202,15 +3205,20 @@ class _AmsPaginatedViewState<T> extends State<AmsPaginatedView<T>> {
               border: Border(top: BorderSide(color: Color(0xFFE2E8F0))),
               color: Colors.white,
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                    'Showing ${startIndex + 1} to ${startIndex + currentItems.length}',
-                    style: const TextStyle(
-                        fontSize: 13, color: Color(0xFF64748B))),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
+            child: SizedBox(
+              width: double.infinity,
+              child: Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 16,
+                runSpacing: 12,
+                children: [
+                  Text(
+                      'Showing ${startIndex + 1} to ${startIndex + currentItems.length}',
+                      style: const TextStyle(
+                          fontSize: 13, color: Color(0xFF64748B))),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
                   children: [
                     InkWell(
                       onTap: hasPrevPage
@@ -3280,6 +3288,7 @@ class _AmsPaginatedViewState<T> extends State<AmsPaginatedView<T>> {
               ],
             ),
           ),
+        ),
       ],
     );
   }

@@ -481,7 +481,15 @@ class _ChartFrameState extends State<_ChartFrame> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(widget.title, style: bodyStyle(size: 16, weight: FontWeight.w800, color: AppColors.ink)),
+              Expanded(
+                child: Text(
+                  widget.title,
+                  style: bodyStyle(size: 16, weight: FontWeight.w800, color: AppColors.ink),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: 12),
               PopupMenuButton<String>(
                 icon: _isRefreshing 
                   ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation(AppColors.tBlue)))

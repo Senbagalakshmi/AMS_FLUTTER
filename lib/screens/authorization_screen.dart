@@ -4,6 +4,7 @@ import '../models/models.dart';
 import '../widgets/widgets.dart';
 import '../services/gl_api_service.dart';
 import '../services/journal_api_service.dart';
+import '../utils/responsive.dart';
 
 class AuthorizationScreen extends StatefulWidget {
   final List<AuthRecord> authQueue;
@@ -75,6 +76,47 @@ class _AuthorizationScreenState extends State<AuthorizationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = Responsive.isMobile(context);
+
+    if (isMobile) {
+      return Scaffold(
+        backgroundColor: AppColors.bg,
+        body: Column(
+          children: [
+            Expanded(
+              child: _selectedRecord == null
+                  ? _buildMobileList()
+                  : _AuthDetailView(
+                      record: _selectedRecord!,
+                      fetchedDetails: _fetchedDetails,
+                      isLoading: _isFetchingDetails,
+                      isMobile: true,
+                      onBackToList: () => setState(() => _selectedRecord = null),
+                      onApprove: () {
+                        widget.onProcess(_selectedRecord!, true);
+                        setState(() => _selectedRecord = null);
+                      },
+                      onReject: () {
+                        widget.onProcess(_selectedRecord!, false);
+                        setState(() => _selectedRecord = null);
+                      },
+                    ),
+            ),
+            if (_selectedRecord == null)
+              AmsSubmitBar(
+                borderColor: AppColors.tBlue,
+                actions: [
+                  AmsButton(
+                      label: 'Close Queue',
+                      variant: AmsButtonVariant.outline,
+                      onPressed: widget.onBack),
+                ],
+              ),
+          ],
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: AppColors.bg,
       body: Column(
@@ -85,7 +127,8 @@ class _AuthorizationScreenState extends State<AuthorizationScreen> {
                 // Left Panel: Queue List
                 Container(
                   width: 400,
-                  decoration: const BoxDecoration(border: Border(right: BorderSide(color: AppColors.border))),
+                  decoration: const BoxDecoration(
+                      border: Border(right: BorderSide(color: AppColors.border))),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -94,8 +137,12 @@ class _AuthorizationScreenState extends State<AuthorizationScreen> {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text('Pending Requests', style: bodyStyle(size: 18, weight: FontWeight.w800)),
-                            AmsBadge(label: '${widget.authQueue.length}', color: AppColors.amber, background: AppColors.amberLt),
+                            Text('Pending Requests',
+                                style: bodyStyle(size: 18, weight: FontWeight.w800)),
+                            AmsBadge(
+                                label: '${widget.authQueue.length}',
+                                color: AppColors.amber,
+                                background: AppColors.amberLt),
                           ],
                         ),
                       ),
@@ -125,8 +172,11 @@ class _AuthorizationScreenState extends State<AuthorizationScreen> {
                           record: _selectedRecord!,
                           fetchedDetails: _fetchedDetails,
                           isLoading: _isFetchingDetails,
-                          onApprove: () => widget.onProcess(_selectedRecord!, true),
-                          onReject: () => widget.onProcess(_selectedRecord!, false),
+                          isMobile: false,
+                          onApprove: () =>
+                              widget.onProcess(_selectedRecord!, true),
+                          onReject: () =>
+                              widget.onProcess(_selectedRecord!, false),
                         ),
                 ),
               ],
@@ -135,7 +185,10 @@ class _AuthorizationScreenState extends State<AuthorizationScreen> {
           AmsSubmitBar(
             borderColor: AppColors.tBlue,
             actions: [
-              AmsButton(label: 'Close Queue', variant: AmsButtonVariant.outline, onPressed: widget.onBack),
+              AmsButton(
+                  label: 'Close Queue',
+                  variant: AmsButtonVariant.outline,
+                  onPressed: widget.onBack),
             ],
           ),
         ],
@@ -143,8 +196,47 @@ class _AuthorizationScreenState extends State<AuthorizationScreen> {
     );
   }
 
+  Widget _buildMobileList() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(20),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Pending Requests',
+                  style: bodyStyle(size: 18, weight: FontWeight.w800)),
+              AmsBadge(
+                  label: '${widget.authQueue.length}',
+                  color: AppColors.amber,
+                  background: AppColors.amberLt),
+            ],
+          ),
+        ),
+        const Divider(height: 1, color: AppColors.border),
+        Expanded(
+          child: widget.authQueue.isEmpty
+              ? _buildEmptyState()
+              : ListView.builder(
+                  itemCount: widget.authQueue.length,
+                  itemBuilder: (ctx, i) {
+                    final rec = widget.authQueue[i];
+                    return _AuthQueueItem(
+                      record: rec,
+                      isSelected: _selectedRecord == rec,
+                      onTap: () => _onRecordSelected(rec),
+                    );
+                  },
+                ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildEmptyState() => const Center(child: Text('No pending requests'));
-  Widget _buildNoSelection() => const Center(child: Text('Select a request to review'));
+  Widget _buildNoSelection() =>
+      const Center(child: Text('Select a request to review'));
 }
 
 class _AuthQueueItem extends StatelessWidget {
@@ -170,36 +262,97 @@ class _AuthDetailView extends StatelessWidget {
   final AuthRecord record;
   final List<Map<String, dynamic>> fetchedDetails;
   final bool isLoading;
+  final bool isMobile;
+  final VoidCallback? onBackToList;
   final VoidCallback onApprove;
   final VoidCallback onReject;
 
-  const _AuthDetailView({required this.record, required this.fetchedDetails, required this.isLoading, required this.onApprove, required this.onReject});
+  const _AuthDetailView({
+    required this.record,
+    required this.fetchedDetails,
+    required this.isLoading,
+    this.isMobile = false,
+    this.onBackToList,
+    required this.onApprove,
+    required this.onReject,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
         Container(
-          padding: const EdgeInsets.all(20),
-          decoration: const BoxDecoration(color: Colors.white, border: Border(bottom: BorderSide(color: AppColors.border))),
-          child: Row(
-            children: [
-              Expanded(child: Text('Review Transaction', style: bodyStyle(size: 16, weight: FontWeight.w800))),
-              Row(
-                children: [
-                  AmsButton(label: 'Reject', variant: AmsButtonVariant.danger, onPressed: onReject),
-                  const SizedBox(width: 12),
-                  AmsButton(label: 'Approve', variant: AmsButtonVariant.primary, onPressed: onApprove),
-                ],
-              ),
-            ],
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          decoration: const BoxDecoration(
+              color: Colors.white,
+              border: Border(bottom: BorderSide(color: AppColors.border))),
+          child: isMobile
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.arrow_back_rounded),
+                          onPressed: onBackToList,
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text('Review Transaction',
+                              style: bodyStyle(size: 16, weight: FontWeight.w800)),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: AmsButton(
+                              label: 'Reject',
+                              variant: AmsButtonVariant.danger,
+                              small: true,
+                              onPressed: onReject),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: AmsButton(
+                              label: 'Approve',
+                              variant: AmsButtonVariant.primary,
+                              small: true,
+                              onPressed: onApprove),
+                        ),
+                      ],
+                    ),
+                  ],
+                )
+              : Row(
+                  children: [
+                    Expanded(
+                        child: Text('Review Transaction',
+                            style: bodyStyle(size: 16, weight: FontWeight.w800))),
+                    Row(
+                      children: [
+                        AmsButton(
+                            label: 'Reject',
+                            variant: AmsButtonVariant.danger,
+                            onPressed: onReject),
+                        const SizedBox(width: 12),
+                        AmsButton(
+                            label: 'Approve',
+                            variant: AmsButtonVariant.primary,
+                            onPressed: onApprove),
+                      ],
+                    ),
+                  ],
+                ),
         ),
         Expanded(
           child: isLoading
               ? const Center(child: CircularProgressIndicator())
               : SingleChildScrollView(
-                  padding: const EdgeInsets.all(24),
+                  padding: EdgeInsets.all(isMobile ? 16 : 24),
                   child: JournalDetailsView(
                     header: record.details ?? {},
                     details: fetchedDetails,

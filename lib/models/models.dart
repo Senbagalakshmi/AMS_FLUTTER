@@ -156,6 +156,11 @@ class AuthRecord {
     required this.dataBlocks,
   });
 
+  String get title => programId;
+  String get subtitle => displayRemarks;
+  Map<String, dynamic> get details =>
+      dataBlocks.isNotEmpty ? dataBlocks.first.data : <String, dynamic>{};
+
   factory AuthRecord.fromJson(Map<String, dynamic> json) {
     List<AuthDataBlock> dataBlocksList = [];
     try {
