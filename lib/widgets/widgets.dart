@@ -1618,7 +1618,7 @@ class _AmsSidebarState extends State<AmsSidebar> {
       openMenu = 'config';
     } else if (widget.currentScreen == 'nontranauth') {
       openMenu = 'auth';
-    }  else if (['GL-JRN', 'RPT-PL', 'RPT-TB', 'RPT-BS'].contains(widget.selectedProg)) {
+    }  else if (['GL-JRN', 'RPT-PL', 'RPT-TB', 'RPT-BS', 'RPT-COA'].contains(widget.selectedProg)) {
       openMenu = 'transactions';
       openReportsSubCategory = ['RPT-PL', 'RPT-TB', 'RPT-BS'].contains(widget.selectedProg);
     }
@@ -1871,6 +1871,13 @@ class _AmsSidebarState extends State<AmsSidebar> {
                     icon: Icons.description_rounded,
                     isSelected: widget.selectedProg == 'GL-JRN',
                     onTap: () => widget.onNavigate('nontran', 'GL-JRN'),
+                  ),
+                  AmsSubSidebarItem(
+                    label: 'Chart of Accounts',
+                    isCollapsed: widget.isCollapsed,
+                    icon: Icons.list_alt_rounded,
+                    isSelected: widget.selectedProg == 'RPT-COA',
+                    onTap: () => widget.onNavigate('nontran', 'RPT-COA'),
                   ),
                    AmsSubSidebarItem(
                     label: 'Reports',

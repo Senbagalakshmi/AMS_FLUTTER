@@ -155,6 +155,12 @@ final Map<String, Auth101Config> auth101 = {
       approvalReq: false,
       isTran: false,
       levels: 0),
+  'RPT-COA': const Auth101Config(
+      id: 'RPT-COA',
+      name: 'Chart of Accounts',
+      approvalReq: false,
+      isTran: false,
+      levels: 0),
 };
 
 final Map<String, List<Auth103Limit>> auth103 = {
@@ -227,6 +233,7 @@ final Map<String, String> nonTranProgPkPrefix = {
   'RPT-PL': 'RPL',
   'RPT-TB': 'RTB',
   'RPT-BS': 'RBS',
+  'RPT-COA': 'RCA',
 };
 
 List<QueueEntry> seedQueue() => [
