@@ -657,7 +657,7 @@ class _AllowedCurrencyScreenState extends State<AllowedCurrencyScreen> {
                                       const SizedBox(width: 12),
                                       Expanded(
                                         child: Text(
-                                          item["gl"] ?? "",
+                                          item["gl_full"] ?? item["gl"] ?? "",
                                           style: bodyStyle(
                                             weight: FontWeight.w600,
                                             size: 15,
@@ -804,7 +804,7 @@ class _AllowedCurrencyScreenState extends State<AllowedCurrencyScreen> {
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        item["gl"] ?? "",
+                                        item["gl_full"] ?? item["gl"] ?? "",
                                         style: bodyStyle(
                                           weight: FontWeight.w600,
                                           size: 15,

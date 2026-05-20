@@ -242,14 +242,17 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
         ? c['glCatCd'] as int
         : int.tryParse(c['glCatCd']?.toString() ?? '');
 
-    if (glCatCd == null) {
-      _showSnackbar('Cannot delete: invalid category code.', isError: true);
+    final orgCodeRaw = c['orgCode'] ?? c['orgcode'] ?? c['org_code'];
+    final orgCode = orgCodeRaw is int ? orgCodeRaw : int.tryParse(orgCodeRaw?.toString() ?? '');
+
+    if (glCatCd == null || orgCode == null) {
+      _showSnackbar('Cannot delete: invalid category or organisation code.', isError: true);
       return;
     }
 
     setState(() => _isLoading = true);
 
-    final success = await apiService.deleteGlCategory(glCatCd);
+    final success = await apiService.deleteGlCategory(orgCode, glCatCd);
 
     setState(() => _isLoading = false);
 
@@ -1165,6 +1168,7 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
               child: AmsTextInput(
                 controller: _catCodeController,
                 focusNode: _catCodeFocus,
+                readOnly: _isEditMode,
                 errorText: _catCodeError,
                 isValid: _catCodeController.text.trim().isNotEmpty &&
                     _catCodeError == null,

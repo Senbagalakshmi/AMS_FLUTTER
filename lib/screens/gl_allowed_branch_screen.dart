@@ -653,7 +653,7 @@ Widget _buildListView() {
                                     const SizedBox(width: 12),
                                     Expanded(
                                       child: Text(
-                                        item["gl"] ?? "",
+                                        item["gl_full"] ?? item["gl"] ?? "",
                                         style: bodyStyle(
                                           weight: FontWeight.w600,
                                           size: 15,
@@ -818,7 +818,7 @@ Widget _buildListView() {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      item["gl"] ?? "",
+                                      item["gl_full"] ?? item["gl"] ?? "",
                                       style: bodyStyle(
                                         weight: FontWeight.w600,
                                         size: 15,

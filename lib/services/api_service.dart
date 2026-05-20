@@ -778,10 +778,10 @@ class ApiService {
     }
   }
 
-  Future<bool> deleteGlCategory(int glCatCd) async {
+  Future<bool> deleteGlCategory(int orgCode, int glCatCd) async {
     try {
       final res = await http.delete(
-        Uri.parse('$baseUrl/gl-category/$glCatCd'),
+        Uri.parse('$baseUrl/gl-category/$orgCode/$glCatCd'),
         headers: _headers,
       );
       return res.statusCode >= 200 && res.statusCode < 300;
@@ -876,10 +876,10 @@ class ApiService {
     }
   }
 
-  Future<bool> deleteGlMaster(int glNo) async {
+  Future<bool> deleteGlMaster(int orgCode, int glNo) async {
     try {
       final res = await http.delete(
-        Uri.parse('$baseUrl/gl-master/$glNo'),
+        Uri.parse('$baseUrl/gl-master/$orgCode/$glNo'),
         headers: _headers,
       );
       return res.statusCode >= 200 && res.statusCode < 300;

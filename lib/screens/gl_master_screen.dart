@@ -553,7 +553,11 @@ class _GLMasterScreenState extends State<GLMasterScreen> {
     final glNo = c['glNo'] is int
         ? c['glNo'] as int
         : int.tryParse(c['glNo'].toString()) ?? 0;
-    final success = await apiService.deleteGlMaster(glNo);
+    
+    final orgCodeRaw = c['orgCode'] ?? c['orgcode'] ?? c['org_code'];
+    final orgCode = orgCodeRaw is int ? orgCodeRaw : int.tryParse(orgCodeRaw?.toString() ?? '') ?? 0;
+
+    final success = await apiService.deleteGlMaster(orgCode, glNo);
 
     if (!mounted) return;
 
@@ -1450,6 +1454,7 @@ class _GLMasterScreenState extends State<GLMasterScreen> {
           child: AmsTextInput(
             controller: _glNumberController,
             focusNode: _glNumberFocus,
+            readOnly: _isEditing,
             errorText: _glNumberError,
             isValid: _glNumberController.text.trim().isNotEmpty &&
                 _glNumberError == null,
