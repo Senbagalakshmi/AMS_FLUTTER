@@ -37,6 +37,7 @@ import 'screens/journal_entry_screen.dart';
 import 'screens/journal_list_screen.dart';
 import 'screens/gl_balance_screen.dart';
 import 'screens/trial_balance_screen.dart';
+import 'screens/profit_and_loss_screen.dart';
 import 'screens/chart_of_accounts_screen.dart';
 
 void main() async {
@@ -534,7 +535,7 @@ class _AmsRootState extends State<AmsRoot> {
             body = JournalListScreen(
               onNew: () => setState(() => _showJournalEntry = true),
               onBack: () => _navigate('list'),
-              onBackToModule: () => _handleProceed('GL'),
+              onBackToModule: () => _handleProceed('TRANSACTIONS'),
               userName: _state.userName,
             );
           }
@@ -570,7 +571,17 @@ class _AmsRootState extends State<AmsRoot> {
             userName: _state.userName,
           );
            //trial balance - end
-        } else if (_state.selectedProg == 'RPT-COA') {
+        } 
+        //profit and loss - add
+        else if (_state.selectedProg == 'RPT-PL') {
+          body = ProfitAndLossScreen(
+            onBack: () => _navigate('list'),
+            onBackToModule: () => _handleProceed('TRANSACTIONS'),
+            userName: _state.userName,
+          );
+        }
+        //profit and loss - end
+        else if (_state.selectedProg == 'RPT-COA') {
           body = ChartOfAccountsScreen(
             onBack: () => _navigate('list'),
             onBackToModule: () => _handleProceed('TRANSACTIONS'),

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../theme.dart';
-import '../widgets/widgets.dart';
 import '../services/report_api_service.dart';
 import '../utils/responsive.dart';
+import '../theme.dart';
+import '../widgets/widgets.dart';
 
 class TrialBalanceScreen extends StatefulWidget {
   final VoidCallback onBack;
@@ -23,9 +23,11 @@ class TrialBalanceScreen extends StatefulWidget {
 
 class _TrialBalanceScreenState extends State<TrialBalanceScreen> {
   final ReportApiService _apiService = ReportApiService();
+
   bool _loading = true;
+
   String _dateRange = 'This Month';
-  
+
   List<Map<String, dynamic>> _reportData = [];
 
   double _totalDebit = 0.0;
@@ -37,325 +39,288 @@ class _TrialBalanceScreenState extends State<TrialBalanceScreen> {
     _loadData();
   }
 
+  // ================= LOAD DATA =================
+  Future<void> _loadData() async {
+    setState(() => _loading = true);
+
+    String dateParam = DateFormat('yyyy-MM-dd').format(DateTime.now());
+
+    final data = await _apiService.getFinancialReport(
+      reportType: "TB",
+      date: dateParam,
+    );
+
+    if (!mounted) return;
+
+    setState(() {
+      _reportData = data ?? [];
+      _calculateTotals();
+      _loading = false;
+    });
+  }
+
+  // ================= TOTAL CALCULATION =================
   void _calculateTotals() {
     double dr = 0;
     double cr = 0;
-    for (var group in _reportData) {
-      for (var acc in group['accounts']) {
-        dr += (acc['debit'] ?? 0.0);
-        cr += (acc['credit'] ?? 0.0);
-      }
+
+    for (var acc in _reportData) {
+      dr += (acc['debit'] ?? 0).toDouble();
+      cr += (acc['credit'] ?? 0).toDouble();
     }
+
     _totalDebit = dr;
     _totalCredit = cr;
   }
 
-  Future<void> _loadData() async {
-    setState(() => _loading = true);
-    
-    String? dateParam;
-    if (_dateRange == 'Today') {
-      dateParam = DateFormat('yyyy-MM-dd').format(DateTime.now());
-    } else {
-      dateParam = DateFormat('yyyy-MM-dd').format(DateTime.now());
-    }
-
-    final data = await _apiService.getTrialBalance(date: dateParam);
-    
-    if (mounted) {
-      setState(() {
-        if (data != null) {
-          _reportData = data;
-        } else {
-          _reportData = [];
-        }
-        _calculateTotals();
-        _loading = false;
-      });
-    }
-  }
-
+  // ================= FORMAT AMOUNT =================
   String _formatAmount(double amount) {
     if (amount == 0) return '-';
-    return NumberFormat.currency(symbol: '₹', customPattern: '¤#,##,##0.00').format(amount);
+    return NumberFormat.currency(
+      symbol: '₹',
+      decimalDigits: 2,
+    ).format(amount);
   }
 
+  // ================= GET ACCOUNT NAME =================
+  String _getAccountName(Map<String, dynamic> acc) {
+    if (acc['glname'] != null && acc['glname'].toString().isNotEmpty) return acc['glname'].toString();
+    if (acc['gl_name'] != null && acc['gl_name'].toString().isNotEmpty) return acc['gl_name'].toString();
+    if (acc['accountName'] != null && acc['accountName'].toString().isNotEmpty) return acc['accountName'].toString();
+    if (acc['account_name'] != null && acc['account_name'].toString().isNotEmpty) return acc['account_name'].toString();
+    if (acc['name'] != null && acc['name'].toString().isNotEmpty) return acc['name'].toString();
+    
+    // Debug info: if all else fails, show the keys that are actually present
+    return 'Keys: ${acc.keys.join(", ")}';
+  }
+
+  // ================= UI =================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.bg,
       body: Column(
         children: [
-          // Header matches GL Balance
+          // HEADER
           AmsIdentityHeader(
-            icon: const Icon(Icons.balance_rounded, size: 28, color: AppColors.tBlue),
+            icon: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1967D2), // Match the blue from the image
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(Icons.balance_rounded, size: 28, color: Colors.white),
+            ),
             title: 'Trial Balance',
-            subtitle: 'View your account balances and verify that total debits equal total credits.',
-            badges: [
-              AmsBadge(label: _dateRange, color: AppColors.tBlue),
-            ],
-            accentColor: AppColors.tBlue,
+            subtitle: 'View account balances and verify debit vs credit equality.',
+            badges: const [], // Empty badges since we use actions instead
+            accentColor: Colors.black, // Title color in image is very dark
             accentLt: AppColors.tBlueLt,
             accentMd: AppColors.tBlueMd,
             onBack: widget.onBackToModule,
             breadcrumbs: [
               HeaderBreadcrumb(label: 'Home', onTap: widget.onBack),
-              HeaderBreadcrumb(label: 'Transactions', onTap: widget.onBackToModule),
               HeaderBreadcrumb(label: 'Reports'),
               HeaderBreadcrumb(label: 'Trial Balance'),
+            ],
+            actions: [
+              OutlinedButton.icon(
+                onPressed: () {},
+                icon: const Icon(Icons.calendar_today_outlined, size: 16),
+                label: Text(_dateRange),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFF1967D2),
+                  side: const BorderSide(color: Color(0xFF1967D2)),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                ),
+              ),
             ],
           ),
 
           Expanded(
             child: Container(
-              margin: EdgeInsets.all(Responsive.isMobile(context) ? 12 : 24),
+              margin: EdgeInsets.symmetric(
+                horizontal: Responsive.isMobile(context) ? 12 : 24,
+                vertical: 12,
+              ),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(color: AppColors.border),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.03),
-                    blurRadius: 20,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
               ),
-              child: Column(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                    decoration: const BoxDecoration(
-                      border: Border(bottom: BorderSide(color: AppColors.border)),
-                    ),
-                    child: LayoutBuilder(builder: (context, constraints) {
-                      final isMobile = Responsive.isMobile(context);
-                      if (isMobile) {
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            AmsDropdown(
-                              items: const ['Today', 'This Week', 'This Month', 'This Quarter', 'This Year', 'Custom'],
-                              initialValue: _dateRange,
-                              onChanged: (v) {
-                                if (v != null) setState(() => _dateRange = v);
-                                _loadData();
-                              },
+              child: _loading
+                  ? const Center(child: CircularProgressIndicator())
+                  : Column(
+                      children: [
+                        // TOP BAR
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                          decoration: const BoxDecoration(
+                            border: Border(
+                              bottom: BorderSide(color: AppColors.border),
                             ),
-                            const SizedBox(height: 12),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: AmsButton(
-                                    label: 'Print',
-                                    icon: Icons.print_rounded,
-                                    variant: AmsButtonVariant.ghost,
-                                    onPressed: () {},
-                                  ),
+                          ),
+                          child: Row(
+                            children: [
+                              const Text(
+                                "Accounts",
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
                                 ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: AmsButton(
-                                    label: 'Export',
-                                    icon: Icons.file_download_outlined,
-                                    variant: AmsButtonVariant.outline,
-                                    onPressed: () {},
-                                  ),
+                              ),
+                              const Spacer(),
+                              OutlinedButton.icon(
+                                onPressed: _loadData,
+                                icon: const Icon(Icons.refresh, size: 16),
+                                label: const Text("Refresh"),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: const Color(0xFF1967D2),
+                                  side: const BorderSide(color: Color(0xFF1967D2)),
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                                 ),
-                              ],
-                            ),
-                          ],
-                        );
-                      }
-                      return Row(
-                        children: [
-                          SizedBox(
-                            width: 200,
-                            child: AmsDropdown(
-                              items: const ['Today', 'This Week', 'This Month', 'This Quarter', 'This Year', 'Custom'],
-                              initialValue: _dateRange,
-                              onChanged: (v) {
-                                if (v != null) setState(() => _dateRange = v);
-                                _loadData();
-                              },
-                            ),
+                              )
+                            ],
                           ),
-                          const SizedBox(width: 16),
-                          AmsButton(
-                            label: 'Customize Report',
-                            icon: Icons.tune_rounded,
-                            variant: AmsButtonVariant.outline,
-                            onPressed: () {},
-                          ),
-                          const Spacer(),
-                          AmsButton(
-                            label: 'Print',
-                            icon: Icons.print_rounded,
-                            variant: AmsButtonVariant.ghost,
-                            onPressed: () {},
-                          ),
-                          const SizedBox(width: 8),
-                          AmsButton(
-                            label: 'Export As',
-                            icon: Icons.file_download_outlined,
-                            variant: AmsButtonVariant.outline,
-                            onPressed: () {},
-                          ),
-                        ],
-                      );
-                    }),
-                  ),
+                        ),
 
-                  // Report Body
-                  Expanded(
-                    child: _loading
-                        ? const Center(child: CircularProgressIndicator())
-                        : SingleChildScrollView(
-                            padding: EdgeInsets.symmetric(
-                              vertical: Responsive.isMobile(context) ? 16 : 32,
-                              horizontal: Responsive.isMobile(context) ? 16 : 48,
-                            ),
+                        // TABLE HEADER
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 16,
+                            horizontal: 24,
+                          ),
+                          color: const Color(0xFFF4F7FB),
+                          child: const Row(
+                            children: [
+                              Expanded(
+                                flex: 3,
+                                child: Text("ACCOUNT",
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.w700, fontSize: 13)),
+                              ),
+                              Expanded(
+                                flex: 1,
+                                child: Text("DEBIT",
+                                    textAlign: TextAlign.right,
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.w700, fontSize: 13)),
+                              ),
+                              Expanded(
+                                flex: 1,
+                                child: Text("CREDIT",
+                                    textAlign: TextAlign.right,
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.w700, fontSize: 13)),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        // DATA LIST
+                        Expanded(
+                          child: SingleChildScrollView(
                             child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                // Report Title
-                                Text(
-                                  'TRIAL BALANCE',
-                                  textAlign: TextAlign.center,
-                                  style: bodyStyle(size: 24, weight: FontWeight.w700, color: AppColors.ink),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'As of ${DateFormat('dd MMM yyyy').format(DateTime.now())}',
-                                  textAlign: TextAlign.center,
-                                  style: bodyStyle(size: 14, color: AppColors.ink3),
-                                ),
-                                const SizedBox(height: 32),
-
-                                 SingleChildScrollView(
-                                  scrollDirection: Axis.horizontal,
-                                  child: SizedBox(
-                                    width: 700,
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        border: Border.all(color: AppColors.border),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      clipBehavior: Clip.antiAlias,
-                                      child: Column(
+                              children: _reportData.asMap().entries.map((entry) {
+                                final acc = entry.value;
+                                final isLast = entry.key == _reportData.length - 1;
+                                return Column(
+                                  children: [
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 16, horizontal: 24),
+                                      child: Row(
                                         children: [
-                                          // Table Header
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
-                                            decoration: const BoxDecoration(
-                                              border: Border(bottom: BorderSide(color: AppColors.border)),
-                                              color: Color(0xFFF8FAFC),
-                                            ),
-                                            child: Row(
-                                              children: [
-                                                Expanded(flex: 3, child: Text('ACCOUNT', style: monoStyle(size: 11, weight: FontWeight.w700, color: AppColors.ink3, letterSpacing: 0.5))),
-                                                Expanded(flex: 1, child: Text('DEBIT', textAlign: TextAlign.right, style: monoStyle(size: 11, weight: FontWeight.w700, color: AppColors.ink3, letterSpacing: 0.5))),
-                                                Expanded(flex: 1, child: Text('CREDIT', textAlign: TextAlign.right, style: monoStyle(size: 11, weight: FontWeight.w700, color: AppColors.ink3, letterSpacing: 0.5))),
-                                              ],
+                                          Expanded(
+                                            flex: 3,
+                                            child: Text(
+                                              _getAccountName(acc),
+                                              style: TextStyle(fontSize: 14, color: Colors.grey.shade800),
                                             ),
                                           ),
-                                          
-                                          // Groups
-                                          ..._reportData.map((group) {
-                                            double groupDebit = group['accounts'].fold(0.0, (sum, acc) => sum + acc['debit']);
-                                            double groupCredit = group['accounts'].fold(0.0, (sum, acc) => sum + acc['credit']);
-                                            
-                                            return Column(
-                                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                                              children: [
-                                                // Group Header
-                                                Container(
-                                                  padding: const EdgeInsets.only(top: 16, bottom: 8, left: 16, right: 16),
-                                                  child: Text(
-                                                    group['group'].toUpperCase(),
-                                                    style: bodyStyle(size: 13, weight: FontWeight.w700, color: AppColors.ink),
-                                                  ),
-                                                ),
-                                                // Accounts
-                                                ...group['accounts'].map<Widget>((acc) {
-                                                  return Container(
-                                                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                                                    child: Row(
-                                                      children: [
-                                                        Expanded(
-                                                          flex: 3,
-                                                          child: Padding(
-                                                            padding: const EdgeInsets.only(left: 16),
-                                                            child: Text(acc['name'], style: bodyStyle(size: 13, color: AppColors.ink)),
-                                                          ),
-                                                        ),
-                                                        Expanded(
-                                                          flex: 1,
-                                                          child: Text(_formatAmount(acc['debit']), textAlign: TextAlign.right, style: bodyStyle(size: 13, color: AppColors.ink)),
-                                                        ),
-                                                        Expanded(
-                                                          flex: 1,
-                                                          child: Text(_formatAmount(acc['credit']), textAlign: TextAlign.right, style: bodyStyle(size: 13, color: AppColors.ink)),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  );
-                                                }).toList(),
-                                                // Group Total
-                                                Container(
-                                                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                                                  margin: const EdgeInsets.only(left: 16),
-                                                  decoration: const BoxDecoration(
-                                                    border: Border(top: BorderSide(color: AppColors.border, width: 0.5)),
-                                                  ),
-                                                  child: Row(
-                                                    children: [
-                                                      Expanded(
-                                                        flex: 3,
-                                                        child: Text('Total for ${group['group']}', style: bodyStyle(size: 12, weight: FontWeight.w600, color: AppColors.ink2)),
-                                                      ),
-                                                      Expanded(
-                                                        flex: 1,
-                                                        child: Text(_formatAmount(groupDebit), textAlign: TextAlign.right, style: bodyStyle(size: 13, weight: FontWeight.w600, color: AppColors.ink2)),
-                                                      ),
-                                                      Expanded(
-                                                        flex: 1,
-                                                        child: Text(_formatAmount(groupCredit), textAlign: TextAlign.right, style: bodyStyle(size: 13, weight: FontWeight.w600, color: AppColors.ink2)),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                                const SizedBox(height: 8),
-                                              ],
-                                            );
-                                          }),
-                                          
-                                          // Grand Total
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-                                            decoration: const BoxDecoration(
-                                              border: Border(top: BorderSide(color: AppColors.border, width: 1.5)),
-                                              color: Color(0xFFF8FAFC),
+                                          Expanded(
+                                            flex: 1,
+                                            child: Text(
+                                              _formatAmount(
+                                                  (acc['debit'] ?? 0)
+                                                      .toDouble()),
+                                              textAlign: TextAlign.right,
+                                              style: const TextStyle(fontSize: 14),
                                             ),
-                                            child: Row(
-                                              children: [
-                                                Expanded(flex: 3, child: Text('TOTAL', style: bodyStyle(size: 14, weight: FontWeight.w800, color: AppColors.ink))),
-                                                Expanded(flex: 1, child: Text(_formatAmount(_totalDebit), textAlign: TextAlign.right, style: bodyStyle(size: 14, weight: FontWeight.w800, color: AppColors.ink))),
-                                                Expanded(flex: 1, child: Text(_formatAmount(_totalCredit), textAlign: TextAlign.right, style: bodyStyle(size: 14, weight: FontWeight.w800, color: AppColors.ink))),
-                                              ],
+                                          ),
+                                          Expanded(
+                                            flex: 1,
+                                            child: Text(
+                                              _formatAmount(
+                                                  (acc['credit'] ?? 0)
+                                                      .toDouble()),
+                                              textAlign: TextAlign.right,
+                                              style: const TextStyle(fontSize: 14),
                                             ),
                                           ),
                                         ],
                                       ),
                                     ),
-                                  ),
-                                ),
-                              ],
+                                    if (!isLast)
+                                      const Divider(height: 1, color: Color(0xFFEEEEEE)),
+                                  ],
+                                );
+                              }).toList(),
                             ),
                           ),
-                  ),
-                ],
-              ),
+                        ),
+
+                        // TOTAL
+                        Container(
+                          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
+                          decoration: const BoxDecoration(
+                            border: Border(
+                              top: BorderSide(color: AppColors.border),
+                            ),
+                            color: Color(0xFFF0F7FF),
+                          ),
+                          child: Row(
+                            children: [
+                              const Expanded(
+                                flex: 3,
+                                child: Text(
+                                  "TOTAL",
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 15,
+                                    color: Color(0xFF1E293B),
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                flex: 1,
+                                child: Text(
+                                  _formatAmount(_totalDebit),
+                                  textAlign: TextAlign.right,
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 15,
+                                      color: Color(0xFF1E293B)),
+                                ),
+                              ),
+                              Expanded(
+                                flex: 1,
+                                child: Text(
+                                  _formatAmount(_totalCredit),
+                                  textAlign: TextAlign.right,
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 15,
+                                      color: Color(0xFF1E293B)),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
             ),
           ),
         ],
@@ -363,3 +328,4 @@ class _TrialBalanceScreenState extends State<TrialBalanceScreen> {
     );
   }
 }
+
