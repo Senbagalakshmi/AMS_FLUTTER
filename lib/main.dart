@@ -338,7 +338,7 @@ class _AmsRootState extends State<AmsRoot> {
       _modalAuthsl = null;
       _modalAmount = null;
     });
-    _toast('Ã°Å¸â€œÂ¥', '$authsl submitted routed to L1 authorization queue!');
+    _toast('🔥', '$authsl submitted routed to L1 authorization queue!');
   }
 
   Future<void> _handleAuthProcess(AuthRecord record, bool isApprove) async {
@@ -355,17 +355,28 @@ class _AmsRootState extends State<AmsRoot> {
         record.slUser!.trim().isNotEmpty) {
       level = 3;
     }
-    final userId = _state.userName ?? 'SYSTEM';
 
-    final success =
-        await apiService.processAuth(record.authSl, action, level, userId);
+    // Capture who is approving and exactly when — these become aUser / aDate
+    String rawUser = _state.userName ?? 'SYSTEM';
+    if (rawUser.contains('@')) rawUser = rawUser.split('@').first;
+    final String approverUser = rawUser;
+    final now = DateTime.now().toUtc();
+    final String approverDate =
+        '${now.year.toString().padLeft(4,'0')}-${now.month.toString().padLeft(2,'0')}-${now.day.toString().padLeft(2,'0')}T'
+        '${now.hour.toString().padLeft(2,'0')}:${now.minute.toString().padLeft(2,'0')}:${now.second.toString().padLeft(2,'0')}.000+00:00';
+
+    final success = await apiService.processAuth(
+      record.authSl, action, level, approverUser,
+      aUser: isApprove ? approverUser : null,
+      aDate: isApprove ? approverDate : null,
+    );
 
     if (success) {
-      _toast(isApprove ? 'Ã¢Å“â€¦' : 'Ã¢ÂÅ’',
+      _toast(isApprove ? '✅' : '❌',
           'Request ${record.authSl} ${isApprove ? 'authorized' : 'rejected'} successfully!');
       _refreshData();
     } else {
-      _toast('Ã¢Å¡Â Ã¯Â¸Â', 'Failed to process authorization request.');
+      _toast('⚠️', 'Failed to process authorization request.');
     }
   }
 

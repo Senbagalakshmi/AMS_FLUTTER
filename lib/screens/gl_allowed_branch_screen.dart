@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../theme.dart';
 import '../widgets/widgets.dart';
 import '../services/gl_api_service.dart';
@@ -44,6 +45,7 @@ class _AllowedBranchScreenState extends State<AllowedBranchScreen> {
   bool _orgLoading = false;
   int? _selectedOrgCode;
   List<Map<String, dynamic>> savedList = [];
+  Map<String, dynamic> _editingRecord = {}; // Track for audit field preservation
 
   /// GL Masters (same pattern as GL Segments)
   List<Map<String, dynamic>> _glMasters = [];
@@ -538,6 +540,7 @@ Widget _buildListView() {
                               for (var b in branches) {
                                 b["enabled"] = false;
                               }
+                              _editingRecord = {};
                             });
                           },
                         ),
@@ -589,6 +592,7 @@ Widget _buildListView() {
                       for (var b in branches) {
                         b["enabled"] = false;
                       }
+                      _editingRecord = {};
                     });
                   },
                 ),
@@ -716,6 +720,7 @@ Widget _buildListView() {
                                           for (var b in branches) {
                                             b["enabled"] = savedBranches.contains(b["name"]);
                                           }
+                                          _editingRecord = Map<String, dynamic>.from(item);
                                         });
                                       },
                                     ),
@@ -878,6 +883,7 @@ Widget _buildListView() {
                                         for (var b in branches) {
                                           b["enabled"] = savedBranches.contains(b["name"]);
                                         }
+                                        _editingRecord = Map<String, dynamic>.from(item);
                                       });
                                     },
                                   ),
@@ -1062,10 +1068,48 @@ Widget _buildListView() {
                   _isLoading = true;
                 });
 
+                // ── Compute audit fields ─────────────────────────────────────────────
+                String nowIso =
+                    "${DateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").format(DateTime.now().toUtc())}+00:00";
+                String cleanUser = 'admin'; 
+                if (cleanUser.contains('@')) cleanUser = cleanUser.split('@').first;
+
+                final orig = _editingRecord;
+
+                String cUserVal = _isEditMode
+                    ? (orig['cUser'] ?? orig['cuser'] ?? cleanUser).toString()
+                    : cleanUser;
+                String cDateVal = _isEditMode
+                    ? (orig['cDate'] ?? orig['cdate'] ?? nowIso).toString()
+                    : nowIso;
+
+                String eUserVal = cleanUser;
+                String eDateVal = nowIso;
+
+                String aUserVal = _isEditMode
+                    ? (orig['aUser'] ?? orig['auser'] ?? eUserVal).toString()
+                    : eUserVal;
+                String aDateVal = _isEditMode
+                    ? (orig['aDate'] ?? orig['adate'] ?? eDateVal).toString()
+                    : eDateVal;
+                // ────────────────────────────────────────────────────────────────────
+
                 final payload = {
                   "orgCode": targetOrg,
                   "glNo": targetGl,
-                  "allowedBrn": selectedBranches.join(",")
+                  "allowedBrn": selectedBranches.join(","),
+
+                  // ── Audit: creator ─────────────────────────────────────────────
+                  'cUser': cUserVal,  'cuser': cUserVal,
+                  'cDate': cDateVal,  'cdate': cDateVal,
+
+                  // ── Audit: last editor ────────────────────────────────────────
+                  'eUser': eUserVal,  'euser': eUserVal,
+                  'eDate': eDateVal,  'edate': eDateVal,
+
+                  // ── Audit: approver ───────────────────────────────────────────
+                  'aUser': aUserVal,  'auser': aUserVal,
+                  'aDate': aDateVal,  'adate': aDateVal,
                 };
 
                 final bool success;
@@ -1105,6 +1149,7 @@ Widget _buildListView() {
                   for (var b in branches) {
                     b["enabled"] = false;
                   }
+                  _editingRecord = {};
                 });
               },
             ),

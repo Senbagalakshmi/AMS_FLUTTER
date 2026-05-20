@@ -138,8 +138,56 @@ class _BranchScreenState extends State<BranchScreen> {
         if (val != null) _formData['brnCd'] = val;
       }
 
-      _formData['eUser'] = widget.userName ?? 'ADMIN';
-      _formData['eDate'] = DateFormat('yyyy-MM-dd').format(DateTime.now());
+      String nowIso = "${DateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").format(DateTime.now().toUtc())}+00:00";
+
+      // Clean and strip email domain from username
+      String cleanUser = (widget.userName ?? "admin");
+      if (cleanUser.contains('@')) {
+        cleanUser = cleanUser.split('@').first;
+      }
+
+      // Fetch the original record if in edit mode to preserve created/authorized audit details
+      Map<String, dynamic> originalRecord = {};
+      if (_isEditMode) {
+        try {
+          originalRecord = _branches.firstWhere(
+            (b) => (b['brnCd'] ?? b['brncd'] ?? b['branchcd'] ?? b['branchCd'] ?? b['BRNCD'])?.toString() == _formData['brnCd']?.toString(),
+            orElse: () => <String, dynamic>{},
+          );
+        } catch (_) {}
+      }
+
+      // Resolve created values: preserve if editing, otherwise set current user and timestamp
+      String cUserVal = _isEditMode
+          ? (originalRecord['cUser'] ?? originalRecord['cuser'] ?? cleanUser).toString()
+          : cleanUser;
+      String cDateVal = _isEditMode
+          ? (originalRecord['cDate'] ?? originalRecord['cdate'] ?? nowIso).toString()
+          : nowIso;
+
+      // Resolve edited values: always set to current user and timestamp on submit
+      String eUserVal = cleanUser;
+      String eDateVal = nowIso;
+
+      // aUser / aDate — the approval-stamp fields.
+      // The DB procedure (pr_process_approval) copies the AUTH002 datablock
+      // verbatim into BRANCH001, so these must be non-null at submission.
+      // • On CREATE  → default to the submitter (eUser/eDate) so the column is never null.
+      // • On EDIT    → keep whatever approver value is already stored in the DB;
+      //               only fall back to eUser if it was never set.
+      String aUserVal = _isEditMode
+          ? (originalRecord['aUser'] ??
+                  originalRecord['auser'] ??
+                  eUserVal)
+              .toString()
+          : eUserVal;
+      String aDateVal = _isEditMode
+          ? (originalRecord['aDate'] ??
+                  originalRecord['adate'] ??
+                  eDateVal)
+              .toString()
+          : eDateVal;
+
       _formData['headBrn'] = 1;
       _formData['orgCode'] = _formData['orgCode'] ?? 50;
 
@@ -163,10 +211,23 @@ class _BranchScreenState extends State<BranchScreen> {
         'telephone': trunc(_formData['telephone']?.toString(), 20),
         'email': trunc(_formData['email']?.toString(), 100),
         'status': _formData['status'],
-        'eUser': trunc(_formData['eUser']?.toString(), 5),
-        'eDate': trunc(_formData['eDate']?.toString(), 10),
         'headBrn': _formData['headBrn'],
+
+        // ── Audit: creator ───────────────────────────────────────────────────
+        'cUser': cUserVal,  'cuser': cUserVal,
+        'cDate': cDateVal,  'cdate': cDateVal,
+
+        // ── Audit: last editor ───────────────────────────────────────────────
+        'eUser': eUserVal,  'euser': eUserVal,
+        'eDate': eDateVal,  'edate': eDateVal,
+
+        // ── Audit: approver ──────────────────────────────────────────────────
+        // Defaults to eUser so the table column is never null.
+        // The real approver identity comes from AUTH001 (fluser/fldate) once approved.
+        'aUser': aUserVal,  'auser': aUserVal,
+        'aDate': aDateVal,  'adate': aDateVal,
       };
+
 
       final success = _isEditMode
           ? await branchApiService.updateBranch(cleanPayload)

@@ -66,19 +66,33 @@ class UserMappingModel {
 
   // ── Model → JSON (for POST / PUT) ────────────────────────────────────────
   Map<String, dynamic> toJson({String? currentUser}) {
-    final now = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    final now =
+        "${DateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").format(DateTime.now().toUtc())}+00:00";
+    final resolvedEUser = currentUser ?? eUser ?? 'ADMIN';
+    final resolvedEDate = eDate ?? now;
+    final resolvedCUser = cUser ?? resolvedEUser;
+    final resolvedCDate = cDate ?? resolvedEDate;
+    final resolvedAUser = aUser ?? resolvedEUser;
+    final resolvedADate = aDate ?? resolvedEDate;
+
     return {
       'orgCode': orgCode,
       'userScd': userScd,
       'prodCode': prodCode,
       'accessCd': accessCd,
       'status': status,
-      'eUser': currentUser ?? eUser ?? 'ADMIN',
-      'eDate': eDate ?? now,
-      'aUser': aUser,
-      'aDate': aDate,
-      'cUser': cUser,
-      'cDate': cDate,
+
+      // ── Audit: creator ────────────────────────────────────────────────────
+      'cUser': resolvedCUser,  'cuser': resolvedCUser,
+      'cDate': resolvedCDate,  'cdate': resolvedCDate,
+
+      // ── Audit: last editor ────────────────────────────────────────────────
+      'eUser': resolvedEUser,  'euser': resolvedEUser,
+      'eDate': resolvedEDate,  'edate': resolvedEDate,
+
+      // ── Audit: approver ───────────────────────────────────────────────────
+      'aUser': resolvedAUser,  'auser': resolvedAUser,
+      'aDate': resolvedADate,  'adate': resolvedADate,
     };
   }
 

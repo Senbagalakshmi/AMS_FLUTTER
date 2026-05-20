@@ -7,6 +7,7 @@ import 'package:ams_flutter/services/prm_api_service.dart' as prm;
 import 'package:ams_flutter/services/api_service.dart' as main;
 import 'package:ams_flutter/services/menu_api_service.dart';
 import 'package:ams_flutter/services/org_api_service.dart'; // ← ADD THIS
+import 'package:intl/intl.dart';
 import '../utils/responsive.dart';
 
 class ProgramMasterScreen extends StatefulWidget {
@@ -218,9 +219,52 @@ class _ProgramMasterScreenState extends State<ProgramMasterScreen> {
   void _doSubmit() async {
     if (!_validate()) return;
 
+    // ── Compute audit fields ───────────────────────────────────────────────
+    String nowIso =
+        "${DateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").format(DateTime.now().toUtc())}+00:00";
+    String cleanUser = (widget.userName ?? 'admin');
+    if (cleanUser.contains('@')) cleanUser = cleanUser.split('@').first;
+
+    final isEdit = _viewRecord != null;
+    Map<String, dynamic> orig = _viewRecord ?? {};
+
+    // creator — preserved on edit, set on create
+    String cUserVal = isEdit
+        ? (orig['cUser'] ?? orig['cuser'] ?? cleanUser).toString()
+        : cleanUser;
+    String cDateVal = isEdit
+        ? (orig['cDate'] ?? orig['cdate'] ?? nowIso).toString()
+        : nowIso;
+
+    // last editor — always current user/time
+    String eUserVal = cleanUser;
+    String eDateVal = nowIso;
+
+    // approver — preserve existing DB value on edit; default to eUser on create
+    String aUserVal = isEdit
+        ? (orig['aUser'] ?? orig['auser'] ?? eUserVal).toString()
+        : eUserVal;
+    String aDateVal = isEdit
+        ? (orig['aDate'] ?? orig['adate'] ?? eDateVal).toString()
+        : eDateVal;
+    // ──────────────────────────────────────────────────────────────────────
+
     final fullData = {
       ..._dynamicData,
       'orgcode': int.tryParse(_orgcodeCtrl.text.trim()) ?? 50,
+
+      // ── Audit: creator ─────────────────────────────────────────────────
+      'cUser': cUserVal,  'cuser': cUserVal,
+      'cDate': cDateVal,  'cdate': cDateVal,
+
+      // ── Audit: last editor ─────────────────────────────────────────────
+      'eUser': eUserVal,  'euser': eUserVal,
+      'eDate': eDateVal,  'edate': eDateVal,
+
+      // ── Audit: approver ────────────────────────────────────────────────
+      // Defaults to eUser so the table column is never null.
+      'aUser': aUserVal,  'auser': aUserVal,
+      'aDate': aDateVal,  'adate': aDateVal,
     };
 
     bool success;

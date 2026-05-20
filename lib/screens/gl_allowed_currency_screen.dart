@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../theme.dart';
 import '../widgets/widgets.dart';
 import '../services/gl_api_service.dart';
@@ -1027,11 +1028,48 @@ class _AllowedCurrencyScreenState extends State<AllowedCurrencyScreen> {
                   }
                 }
 
+                // ── Compute audit fields ─────────────────────────────────────────────
+                String nowIso =
+                    "${DateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").format(DateTime.now().toUtc())}+00:00";
+                String cleanUser = 'admin'; 
+                if (cleanUser.contains('@')) cleanUser = cleanUser.split('@').first;
+
+                final orig = _selectedRecord ?? {};
+
+                String cUserVal = _isEditMode
+                    ? (orig['cUser'] ?? orig['cuser'] ?? cleanUser).toString()
+                    : cleanUser;
+                String cDateVal = _isEditMode
+                    ? (orig['cDate'] ?? orig['cdate'] ?? nowIso).toString()
+                    : nowIso;
+
+                String eUserVal = cleanUser;
+                String eDateVal = nowIso;
+
+                String aUserVal = _isEditMode
+                    ? (orig['aUser'] ?? orig['auser'] ?? eUserVal).toString()
+                    : eUserVal;
+                String aDateVal = _isEditMode
+                    ? (orig['aDate'] ?? orig['adate'] ?? eDateVal).toString()
+                    : eDateVal;
+                // ────────────────────────────────────────────────────────────────────
+
                 final payload = {
                   "orgCode": targetOrg,
                   "glNo": targetGl,
                   "allowedCurr": currencies.join(","),
-                  "eUser": "SYSTEM"
+                  
+                  // ── Audit: creator ─────────────────────────────────────────────
+                  'cUser': cUserVal,  'cuser': cUserVal,
+                  'cDate': cDateVal,  'cdate': cDateVal,
+
+                  // ── Audit: last editor ────────────────────────────────────────
+                  'eUser': eUserVal,  'euser': eUserVal,
+                  'eDate': eDateVal,  'edate': eDateVal,
+
+                  // ── Audit: approver ───────────────────────────────────────────
+                  'aUser': aUserVal,  'auser': aUserVal,
+                  'aDate': aDateVal,  'adate': aDateVal,
                 };
 
                 setState(() {

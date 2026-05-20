@@ -438,6 +438,174 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
     final authsl =
         '2026-${(100 + (DateTime.now().millisecondsSinceEpoch % 900)).toString().padLeft(4, '0')}';
 
+    if (_selProg == 'USR-CRT') {
+      String nowIso = "${DateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").format(DateTime.now().toUtc())}+00:00";
+      String cleanUser = (widget.userName ?? "admin");
+      if (cleanUser.contains('@')) {
+        cleanUser = cleanUser.split('@').first;
+      }
+
+      Map<String, dynamic> originalRecord = _viewRecord ?? {};
+
+      // ── Audit: creator ───────────────────────────────────────────────────
+      // Preserved from DB on edit; set to logged-in user on create.
+      String cUserVal = _isEditMode
+          ? (originalRecord['cUser'] ?? originalRecord['cuser'] ?? cleanUser).toString()
+          : cleanUser;
+      String cDateVal = _isEditMode
+          ? (originalRecord['cDate'] ?? originalRecord['cdate'] ?? nowIso).toString()
+          : nowIso;
+
+      // ── Audit: last editor ───────────────────────────────────────────────
+      // Always set to the current submitting user and now timestamp.
+      String eUserVal = cleanUser;
+      String eDateVal = nowIso;
+
+      // ── Audit: approver ──────────────────────────────────────────────────
+      // The DB procedure copies the AUTH002 datablock verbatim into USER001,
+      // so these must be non-null at submission.
+      // • On CREATE → default to submitter (eUser/eDate) so column is never null.
+      // • On EDIT   → keep existing DB approver value; fall back to eUser if not yet set.
+      String aUserVal = _isEditMode
+          ? (originalRecord['aUser'] ??
+                  originalRecord['auser'] ??
+                  eUserVal)
+              .toString()
+          : eUserVal;
+      String aDateVal = _isEditMode
+          ? (originalRecord['aDate'] ??
+                  originalRecord['adate'] ??
+                  eDateVal)
+              .toString()
+          : eDateVal;
+
+      // camelCase variants
+      _dynamicData['cUser'] = cUserVal;
+      _dynamicData['cDate'] = cDateVal;
+      _dynamicData['eUser'] = eUserVal;
+      _dynamicData['eDate'] = eDateVal;
+      _dynamicData['aUser'] = aUserVal;
+      _dynamicData['aDate'] = aDateVal;
+
+      // lowercase variants (required by backend DB column mapping)
+      _dynamicData['cuser'] = cUserVal;
+      _dynamicData['cdate'] = cDateVal;
+      _dynamicData['euser'] = eUserVal;
+      _dynamicData['edate'] = eDateVal;
+      _dynamicData['auser'] = aUserVal;
+      _dynamicData['adate'] = aDateVal;
+    }
+
+    // ── ROLE-CRT: inject audit fields ─────────────────────────────────────────
+    if (_selProg == 'ROLE-CRT') {
+      String nowIso = "${DateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").format(DateTime.now().toUtc())}+00:00";
+      String cleanUser = (widget.userName ?? "admin");
+      if (cleanUser.contains('@')) {
+        cleanUser = cleanUser.split('@').first;
+      }
+
+      Map<String, dynamic> originalRecord = _viewRecord ?? {};
+
+      // ── Audit: creator ───────────────────────────────────────────────────
+      String cUserVal = _isEditMode
+          ? (originalRecord['cUser'] ?? originalRecord['cuser'] ?? cleanUser).toString()
+          : cleanUser;
+      String cDateVal = _isEditMode
+          ? (originalRecord['cDate'] ?? originalRecord['cdate'] ?? nowIso).toString()
+          : nowIso;
+
+      // ── Audit: last editor ───────────────────────────────────────────────
+      String eUserVal = cleanUser;
+      String eDateVal = nowIso;
+
+      // ── Audit: approver ──────────────────────────────────────────────────
+      // DB procedure copies AUTH002 datablock verbatim into ACCESS001.
+      // Non-null at submission: default to eUser on create; preserve DB value on edit.
+      String aUserVal = _isEditMode
+          ? (originalRecord['aUser'] ??
+                  originalRecord['auser'] ??
+                  eUserVal)
+              .toString()
+          : eUserVal;
+      String aDateVal = _isEditMode
+          ? (originalRecord['aDate'] ??
+                  originalRecord['adate'] ??
+                  eDateVal)
+              .toString()
+          : eDateVal;
+
+      // camelCase variants
+      _dynamicData['cUser'] = cUserVal;
+      _dynamicData['cDate'] = cDateVal;
+      _dynamicData['eUser'] = eUserVal;
+      _dynamicData['eDate'] = eDateVal;
+      _dynamicData['aUser'] = aUserVal;
+      _dynamicData['aDate'] = aDateVal;
+
+      // lowercase variants
+      _dynamicData['cuser'] = cUserVal;
+      _dynamicData['cdate'] = cDateVal;
+      _dynamicData['euser'] = eUserVal;
+      _dynamicData['edate'] = eDateVal;
+      _dynamicData['auser'] = aUserVal;
+      _dynamicData['adate'] = aDateVal;
+    }
+
+    // ── MOD-CRT: inject audit fields ──────────────────────────────────────────
+    if (_selProg == 'MOD-CRT') {
+      String nowIso = "${DateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").format(DateTime.now().toUtc())}+00:00";
+      String cleanUser = (widget.userName ?? "admin");
+      if (cleanUser.contains('@')) {
+        cleanUser = cleanUser.split('@').first;
+      }
+
+      Map<String, dynamic> originalRecord = _viewRecord ?? {};
+
+      // ── Audit: creator ───────────────────────────────────────────────────
+      String cUserVal = _isEditMode
+          ? (originalRecord['cUser'] ?? originalRecord['cuser'] ?? cleanUser).toString()
+          : cleanUser;
+      String cDateVal = _isEditMode
+          ? (originalRecord['cDate'] ?? originalRecord['cdate'] ?? nowIso).toString()
+          : nowIso;
+
+      // ── Audit: last editor ───────────────────────────────────────────────
+      String eUserVal = cleanUser;
+      String eDateVal = nowIso;
+
+      // ── Audit: approver ──────────────────────────────────────────────────
+      // DB procedure copies AUTH002 datablock verbatim into MODULE001.
+      // Non-null at submission: default to eUser on create; preserve DB value on edit.
+      String aUserVal = _isEditMode
+          ? (originalRecord['aUser'] ??
+                  originalRecord['auser'] ??
+                  eUserVal)
+              .toString()
+          : eUserVal;
+      String aDateVal = _isEditMode
+          ? (originalRecord['aDate'] ??
+                  originalRecord['adate'] ??
+                  eDateVal)
+              .toString()
+          : eDateVal;
+
+      // camelCase variants
+      _dynamicData['cUser'] = cUserVal;
+      _dynamicData['cDate'] = cDateVal;
+      _dynamicData['eUser'] = eUserVal;
+      _dynamicData['eDate'] = eDateVal;
+      _dynamicData['aUser'] = aUserVal;
+      _dynamicData['aDate'] = aDateVal;
+
+      // lowercase variants
+      _dynamicData['cuser'] = cUserVal;
+      _dynamicData['cdate'] = cDateVal;
+      _dynamicData['euser'] = eUserVal;
+      _dynamicData['edate'] = eDateVal;
+      _dynamicData['auser'] = aUserVal;
+      _dynamicData['adate'] = aDateVal;
+    }
+
     final fullData = {
       'orgCode': _dynamicData['orgCode'] ??
           (([

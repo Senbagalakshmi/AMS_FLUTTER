@@ -370,26 +370,12 @@ class GLApiService {
   }
 
   // ── CREATE GL ATTRIBUTE ────────────────────────────────────────────────
-  static Future<bool> createGlAttribute({
-    required int orgCode,
-    required int glNo,
-    required String glAttrid,
-    required String glAttrValue,
-    required String eUser,
-  }) async {
+  static Future<bool> createGlAttribute(Map<String, dynamic> payload) async {
     try {
-      final body = {
-        "orgCode": orgCode,
-        "glNo": glNo,
-        "glAttrid": glAttrid,
-        "glAttrValue": glAttrValue,
-        "eUser": eUser,
-      };
-
       final response = await http.post(
         Uri.parse(_baseUrl),
         headers: apiService.headers,
-        body: jsonEncode(body),
+        body: jsonEncode(payload),
       );
 
       return response.statusCode == 200 || response.statusCode == 201;
@@ -400,26 +386,12 @@ class GLApiService {
   }
 
   // ── UPDATE GL ATTRIBUTE ────────────────────────────────────────────────
-  static Future<bool> updateGlAttribute({
-    required int orgCode,
-    required int glNo,
-    required String glAttrid,
-    required String glAttrValue,
-    required String eUser,
-  }) async {
+  static Future<bool> updateGlAttribute(Map<String, dynamic> payload) async {
     try {
-      final body = {
-        "orgCode": orgCode,
-        "glNo": glNo,
-        "glAttrid": glAttrid,
-        "glAttrValue": glAttrValue,
-        "eUser": eUser,
-      };
-
       final response = await http.put(
         Uri.parse(_baseUrl),
         headers: apiService.headers,
-        body: jsonEncode(body),
+        body: jsonEncode(payload),
       );
 
       return response.statusCode == 200;

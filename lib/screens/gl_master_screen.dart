@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 import '../theme.dart';
 import '../widgets/widgets.dart';
 import '../services/api_service.dart';
@@ -30,6 +31,7 @@ class _GLMasterScreenState extends State<GLMasterScreen> {
   String? _selectedStatus; // 'Active' / 'Inactive'
   bool _isViewOnly = false;
   bool _isEditing = false; // true = Edit mode, false = Create mode
+  Map<String, dynamic> _editingRecord = {}; // original record for audit field preservation
   int _currentPage = 1;
   static const int _pageSize = 10;
   // When backend returns the full list despite page/size, cache it here so
@@ -170,18 +172,54 @@ class _GLMasterScreenState extends State<GLMasterScreen> {
 
     setState(() => _saving = true);
 
+    // ── Compute audit fields ─────────────────────────────────────────────
+    String nowIso =
+        "${DateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").format(DateTime.now().toUtc())}+00:00";
+    String cleanUser = (widget.userName ?? 'admin');
+    if (cleanUser.contains('@')) cleanUser = cleanUser.split('@').first;
+
+    final orig = _editingRecord;
+
+    // creator — preserved on edit, set on create
+    String cUserVal = _isEditing
+        ? (orig['cUser'] ?? orig['cuser'] ?? cleanUser).toString()
+        : cleanUser;
+    String cDateVal = _isEditing
+        ? (orig['cDate'] ?? orig['cdate'] ?? nowIso).toString()
+        : nowIso;
+
+    // last editor — always current user/time
+    String eUserVal = cleanUser;
+    String eDateVal = nowIso;
+
+    // approver — preserve existing DB value on edit; default to eUser on create
+    String aUserVal = _isEditing
+        ? (orig['aUser'] ?? orig['auser'] ?? eUserVal).toString()
+        : eUserVal;
+    String aDateVal = _isEditing
+        ? (orig['aDate'] ?? orig['adate'] ?? eDateVal).toString()
+        : eDateVal;
+    // ────────────────────────────────────────────────────────────────────
+
     final payload = {
       'orgCode': _selectedOrgCode ?? int.tryParse(_orgCodeController.text.split(' – ')[0]) ?? 0,
       'glNo': int.tryParse(_glNumberController.text.trim()) ?? 0,
       'glName': _glNameController.text.trim(),
       'glCatCd': _selectedCategoryCd ?? 0,
       'status': _selectedStatus == 'Active' ? 1 : 0,
-      'eUser': widget.userName ?? '',
-      // 'eDate': null,
-      // 'aUser': null,
-      // 'aDate': null,
-      // 'cUser': null,
-      // 'cDate': null,
+
+      // ── Audit: creator ─────────────────────────────────────────────
+      'cUser': cUserVal,  'cuser': cUserVal,
+      'cDate': cDateVal,  'cdate': cDateVal,
+
+      // ── Audit: last editor ────────────────────────────────────────
+      'eUser': eUserVal,  'euser': eUserVal,
+      'eDate': eDateVal,  'edate': eDateVal,
+
+      // ── Audit: approver ───────────────────────────────────────────
+      // Defaults to eUser so the table column is never null.
+      'aUser': aUserVal,  'auser': aUserVal,
+      'aDate': aDateVal,  'adate': aDateVal,
     };
 
     bool success;
@@ -620,6 +658,7 @@ class _GLMasterScreenState extends State<GLMasterScreen> {
       _glNameError = null;
       _categoryError = null;
       _statusError = null;
+      _editingRecord = {};
     });
   }
 
@@ -639,6 +678,7 @@ class _GLMasterScreenState extends State<GLMasterScreen> {
       _selectedStatus = _statusLabel(c['status']);
       _orgError =
           _glNumberError = _glNameError = _categoryError = _statusError = null;
+      _editingRecord = Map<String, dynamic>.from(c);
     });
   }
 

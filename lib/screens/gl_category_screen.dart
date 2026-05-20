@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../theme.dart';
 import '../widgets/widgets.dart';
 import '../services/api_service.dart';
@@ -66,6 +67,7 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
   // Track if we're in edit mode and which record
   bool _isEditMode = false;
   int? _editingGlCatCd;
+  Map<String, dynamic> _editingRecord = {}; // original record — used for audit field preservation
   int? _lastModifiedId; // 🔥 Track recently saved/updated for top positioning
 
   @override
@@ -152,13 +154,55 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
 
     setState(() => _isLoading = true);
 
+    // ── Compute audit fields ─────────────────────────────────────────────
+    String nowIso =
+        "${DateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").format(DateTime.now().toUtc())}+00:00";
+    String cleanUser = (widget.userName ?? 'admin');
+    if (cleanUser.contains('@')) cleanUser = cleanUser.split('@').first;
+
+    final orig = _editingRecord;
+
+    // creator — preserved on edit, set on create
+    String cUserVal = _isEditMode
+        ? (orig['cUser'] ?? orig['cuser'] ?? cleanUser).toString()
+        : cleanUser;
+    String cDateVal = _isEditMode
+        ? (orig['cDate'] ?? orig['cdate'] ?? nowIso).toString()
+        : nowIso;
+
+    // last editor — always current user/time
+    String eUserVal = cleanUser;
+    String eDateVal = nowIso;
+
+    // approver — preserve existing DB value on edit; default to eUser on create
+    String aUserVal = _isEditMode
+        ? (orig['aUser'] ?? orig['auser'] ?? eUserVal).toString()
+        : eUserVal;
+    String aDateVal = _isEditMode
+        ? (orig['aDate'] ?? orig['adate'] ?? eDateVal).toString()
+        : eDateVal;
+    // ────────────────────────────────────────────────────────────────────
+
     final data = {
-      'orgCode': (_selectedOrgCode ?? int.tryParse(_orgCodeController.text.split(' – ')[0]) ?? 0).toString(), // Send as String
+      'orgCode': (_selectedOrgCode ?? int.tryParse(_orgCodeController.text.split(' – ')[0]) ?? 0).toString(),
       'glCatCd': int.tryParse(_catCodeController.text.trim()) ?? 0,
       'glCatName': _catNameController.text.trim(),
       'glCatType': _selectedCategoryType,
       if (_subTypeController.text.trim().isNotEmpty)
         'glCatSubType': _subTypeController.text.trim(),
+
+      // ── Audit: creator ─────────────────────────────────────────────
+      'cUser': cUserVal,  'cuser': cUserVal,
+      'cDate': cDateVal,  'cdate': cDateVal,
+
+      // ── Audit: last editor ────────────────────────────────────────
+      'eUser': eUserVal,  'euser': eUserVal,
+      'eDate': eDateVal,  'edate': eDateVal,
+
+      // ── Audit: approver ───────────────────────────────────────────
+      // Defaults to eUser so the table column is never null.
+      'aUser': aUserVal,  'auser': aUserVal,
+      'aDate': aDateVal,  'adate': aDateVal,
     };
 
     // ✅ Edit mode → PUT (updateGlCategory), Create mode → POST (createGlCategory)
@@ -181,10 +225,11 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
         _showForm = false;
         _isEditMode = false;
         _editingGlCatCd = null;
+        _editingRecord = {};
       });
       // Invalidate cached full-list responses so we fetch fresh data next.
       _backendFullCategories = null;
-      await _loadCategories(page: 1); // Refresh to page 1 (first page only)
+      await _loadCategories(page: 1);
     } else {
       _showSnackbar('Failed to save category. Please try again.',
           isError: true);
@@ -1553,6 +1598,7 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
       _catCodeError = null;
       _catNameError = null;
       _catTypeError = null;
+      _editingRecord = Map<String, dynamic>.from(c); // store original for audit field preservation
     });
   }
 

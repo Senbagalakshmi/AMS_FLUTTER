@@ -211,6 +211,54 @@ class _OrganisationScreenState extends State<OrganisationScreen> {
 
       String nowIso = "${DateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").format(DateTime.now().toUtc())}+00:00";
 
+      // Clean and strip email domain from username
+      String cleanUser = (widget.userName ?? "admin");
+      if (cleanUser.contains('@')) {
+        cleanUser = cleanUser.split('@').first;
+      }
+
+      // Fetch the original record if in edit mode to preserve created/authorized audit details
+      Map<String, dynamic> originalRecord = {};
+      if (_isEditMode) {
+        try {
+          originalRecord = _organisations.firstWhere(
+            (o) => (o['orgcode'] ?? o['orgCode'])?.toString() == _orgCodeCtrl.text,
+            orElse: () => <String, dynamic>{},
+          );
+        } catch (_) {}
+      }
+
+      // Resolve created values: preserve if editing, otherwise set current user and timestamp
+      String cUserVal = _isEditMode
+          ? (originalRecord['cUser'] ?? originalRecord['cuser'] ?? cleanUser).toString()
+          : cleanUser;
+      String cDateVal = _isEditMode
+          ? (originalRecord['cDate'] ?? originalRecord['cdate'] ?? nowIso).toString()
+          : nowIso;
+
+      // Resolve edited values: always set to current user and timestamp on submit
+      String eUserVal = cleanUser;
+      String eDateVal = nowIso;
+
+      // aUser / aDate — the approval-stamp fields.
+      // The DB procedure (pr_process_approval) copies the AUTH002 datablock
+      // verbatim into ORG001, so these must be non-null at submission.
+      // • On CREATE  → default to the submitter (eUser/eDate) so the column is never null.
+      // • On EDIT    → keep whatever approver value is already stored in the DB;
+      //               only fall back to eUser if it was never set.
+      String aUserVal = _isEditMode
+          ? (originalRecord['aUser'] ??
+                  originalRecord['auser'] ??
+                  eUserVal)
+              .toString()
+          : eUserVal;
+      String aDateVal = _isEditMode
+          ? (originalRecord['aDate'] ??
+                  originalRecord['adate'] ??
+                  eDateVal)
+              .toString()
+          : eDateVal;
+
       final payload = {
         "orgcode": int.tryParse(_orgCodeCtrl.text) ?? 0,
         "name": _nameCtrl.text,
@@ -225,16 +273,23 @@ class _OrganisationScreenState extends State<OrganisationScreen> {
         "email": _emailCtrl.text,
         "status": 1,
         "indiv": 10,
-        "logo": "/ftp/logos/org_header.png"
+        "logo": "/ftp/logos/org_header.png",
+
+        // ── Audit: creator ───────────────────────────────────────────────────
+        "cUser": cUserVal,  "cuser": cUserVal,
+        "cDate": cDateVal,  "cdate": cDateVal,
+
+        // ── Audit: last editor ───────────────────────────────────────────────
+        "eUser": eUserVal,  "euser": eUserVal,
+        "eDate": eDateVal,  "edate": eDateVal,
+
+        // ── Audit: approver ──────────────────────────────────────────────────
+        // Defaults to eUser so the table column is never null.
+        // The real approver identity comes from AUTH001 (fluser/fldate) once approved.
+        "aUser": aUserVal,  "auser": aUserVal,
+        "aDate": aDateVal,  "adate": aDateVal,
       };
 
-      if (_isEditMode) {
-        payload["cUser"] = widget.userName ?? "admin";
-        payload["cDate"] = nowIso;
-      } else {
-        payload["eUser"] = widget.userName ?? "admin";
-        payload["eDate"] = nowIso;
-      }
 
       final success = _isEditMode
           ? await orgApiService.updateOrganisation(payload)

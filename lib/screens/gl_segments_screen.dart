@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 import '../theme.dart';
 import '../widgets/widgets.dart';
 import '../services/api_service.dart';
@@ -39,6 +40,7 @@ class Segment {
   int? glNo;
   String? glName;
   int? orgCode; // ✅ ADDED
+  final Map<String, dynamic> rawMap;
 
   Segment({
     required this.id,
@@ -50,6 +52,7 @@ class Segment {
     this.glNo,
     this.glName,
     this.orgCode, // ✅ ADDED
+    this.rawMap = const {},
   });
 
   factory Segment.fromApi(Map<String, dynamic> map) {
@@ -64,6 +67,7 @@ class Segment {
       glNo: map['glNo'] as int?,
       glName: map['glName']?.toString(),
       orgCode: map['orgCode'] as int?, // ✅ ADDED
+      rawMap: map,
     );
   }
 
@@ -285,12 +289,50 @@ class _GLSegmentPageState extends State<GLSegmentPage> {
     final typeNum = level.replaceAll('L', '');
     final isEditing = _activeSegment != null;
 
+    // ── Compute audit fields ─────────────────────────────────────────────
+    String nowIso =
+        "${DateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").format(DateTime.now().toUtc())}+00:00";
+    String cleanUser = 'admin'; 
+    if (cleanUser.contains('@')) cleanUser = cleanUser.split('@').first;
+
+    final orig = _activeSegment?.rawMap ?? {};
+
+    String cUserVal = isEditing
+        ? (orig['cUser'] ?? orig['cuser'] ?? cleanUser).toString()
+        : cleanUser;
+    String cDateVal = isEditing
+        ? (orig['cDate'] ?? orig['cdate'] ?? nowIso).toString()
+        : nowIso;
+
+    String eUserVal = cleanUser;
+    String eDateVal = nowIso;
+
+    String aUserVal = isEditing
+        ? (orig['aUser'] ?? orig['auser'] ?? eUserVal).toString()
+        : eUserVal;
+    String aDateVal = isEditing
+        ? (orig['aDate'] ?? orig['adate'] ?? eDateVal).toString()
+        : eDateVal;
+    // ────────────────────────────────────────────────────────────────────
+
     final payload = {
       'orgCode': orgCode,
       'glNo': glNo,
       'segId': segId,
       'segValue': segValue,
       'segType': int.tryParse(typeNum) ?? 1,
+      
+      // ── Audit: creator ─────────────────────────────────────────────
+      'cUser': cUserVal,  'cuser': cUserVal,
+      'cDate': cDateVal,  'cdate': cDateVal,
+
+      // ── Audit: last editor ────────────────────────────────────────
+      'eUser': eUserVal,  'euser': eUserVal,
+      'eDate': eDateVal,  'edate': eDateVal,
+
+      // ── Audit: approver ───────────────────────────────────────────
+      'aUser': aUserVal,  'auser': aUserVal,
+      'aDate': aDateVal,  'adate': aDateVal,
     };
 
     bool success;

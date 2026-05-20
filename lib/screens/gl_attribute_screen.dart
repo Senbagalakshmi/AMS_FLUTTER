@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import '../theme.dart';
 import '../widgets/widgets.dart';
@@ -150,6 +151,7 @@ class _GLAttributeScreenState extends State<GLAttributeScreen> {
         'value': item['glAttrValue'] ?? '',
         'desc': '',
         'orgCode': item['orgCode'],
+        'rawMap': item,
       });
     }
     // ✅ Latest inserted group shows first
@@ -466,25 +468,50 @@ class _GLAttributeScreenState extends State<GLAttributeScreen> {
     final glNo = int.tryParse(_selectedGlMasterForm?['glNo']?.toString() ?? '') ?? 0;
     final attrId = _attrIdController.text.trim();
     final attrValue = _valueController.text.trim();
-    final currentUser = widget.userName ?? 'SYSTEM';
+    final orig = _isEditMode && attributes.isNotEmpty 
+        ? (attributes[0]['rawMap'] as Map<String, dynamic>? ?? {})
+        : <String, dynamic>{};
+
+    String nowIso =
+        "${DateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").format(DateTime.now().toUtc())}+00:00";
+    String cleanUser = widget.userName ?? 'SYSTEM'; 
+    if (cleanUser.contains('@')) cleanUser = cleanUser.split('@').first;
+
+    String cUserVal = _isEditMode
+        ? (orig['cUser'] ?? orig['cuser'] ?? cleanUser).toString()
+        : cleanUser;
+    String cDateVal = _isEditMode
+        ? (orig['cDate'] ?? orig['cdate'] ?? nowIso).toString()
+        : nowIso;
+
+    String eUserVal = cleanUser;
+    String eDateVal = nowIso;
+
+    String aUserVal = _isEditMode
+        ? (orig['aUser'] ?? orig['auser'] ?? eUserVal).toString()
+        : eUserVal;
+    String aDateVal = _isEditMode
+        ? (orig['aDate'] ?? orig['adate'] ?? eDateVal).toString()
+        : eDateVal;
+
+    final payload = {
+        "orgCode": orgCode,
+        "glNo": glNo,
+        "glAttrid": attrId,
+        "glAttrValue": attrValue,
+        "cUser": cUserVal, "cuser": cUserVal,
+        "cDate": cDateVal, "cdate": cDateVal,
+        "eUser": eUserVal, "euser": eUserVal,
+        "eDate": eDateVal, "edate": eDateVal,
+        "aUser": aUserVal, "auser": aUserVal,
+        "aDate": aDateVal, "adate": aDateVal,
+    };
 
     bool success;
     if (_isEditMode) {
-      success = await GLApiService.updateGlAttribute(
-        orgCode: orgCode,
-        glNo: glNo,
-        glAttrid: attrId,
-        glAttrValue: attrValue,
-        eUser: currentUser,
-      );
+      success = await GLApiService.updateGlAttribute(payload);
     } else {
-      success = await GLApiService.createGlAttribute(
-        orgCode: orgCode,
-        glNo: glNo,
-        glAttrid: attrId,
-        glAttrValue: attrValue,
-        eUser: currentUser,
-      );
+      success = await GLApiService.createGlAttribute(payload);
     }
 
     setState(() => _savingAttribute = false);

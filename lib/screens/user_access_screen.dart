@@ -63,13 +63,29 @@ class _UserAccessScreenState extends State<UserAccessScreen> {
     }
   }
 
-  Future<bool> _apiCreate(Map<String, dynamic> payload) async {
-    final model = _payloadToModel(payload);
+  Future<bool> _apiCreate(
+    Map<String, dynamic> payload, {
+    required String cUserVal, required String cDateVal,
+    required String eUserVal, required String eDateVal,
+    required String aUserVal, required String aDateVal,
+  }) async {
+    final model = _payloadToModel(payload,
+        cUserVal: cUserVal, cDateVal: cDateVal,
+        eUserVal: eUserVal, eDateVal: eDateVal,
+        aUserVal: aUserVal, aDateVal: aDateVal);
     return userMappingService.create(model, currentUser: widget.userName);
   }
 
-  Future<bool> _apiUpdate(Map<String, dynamic> payload) async {
-    final model = _payloadToModel(payload);
+  Future<bool> _apiUpdate(
+    Map<String, dynamic> payload, {
+    required String cUserVal, required String cDateVal,
+    required String eUserVal, required String eDateVal,
+    required String aUserVal, required String aDateVal,
+  }) async {
+    final model = _payloadToModel(payload,
+        cUserVal: cUserVal, cDateVal: cDateVal,
+        eUserVal: eUserVal, eDateVal: eDateVal,
+        aUserVal: aUserVal, aDateVal: aDateVal);
     return userMappingService.update(model, currentUser: widget.userName);
   }
 
@@ -77,16 +93,27 @@ class _UserAccessScreenState extends State<UserAccessScreen> {
     return userMappingService.delete(userScd);
   }
 
-  UserMappingModel _payloadToModel(Map<String, dynamic> p) {
-    final now = DateFormat('yyyy-MM-dd').format(DateTime.now());
+  UserMappingModel _payloadToModel(
+    Map<String, dynamic> p, {
+    required String cUserVal,
+    required String cDateVal,
+    required String eUserVal,
+    required String eDateVal,
+    required String aUserVal,
+    required String aDateVal,
+  }) {
     return UserMappingModel(
       orgCode: int.tryParse(p['orgCode']?.toString() ?? '') ?? 50,
       userScd: p['userCode']?.toString() ?? '',
       prodCode: int.tryParse(p['productCode']?.toString() ?? '') ?? 0,
       accessCd: int.tryParse(p['accessCode']?.toString() ?? '') ?? 0,
       status: (p['status'] ?? 1).toString(),
-      eUser: widget.userName ?? 'ADMIN',
-      eDate: now,
+      cUser: cUserVal,
+      cDate: cDateVal,
+      eUser: eUserVal,
+      eDate: eDateVal,
+      aUser: aUserVal,
+      aDate: aDateVal,
     );
   }
 
@@ -137,6 +164,35 @@ class _UserAccessScreenState extends State<UserAccessScreen> {
       String trunc(String? v, int max) =>
           (v ?? '').length > max ? (v ?? '').substring(0, max) : (v ?? '');
 
+      // ── Compute audit fields ─────────────────────────────────────────────
+      String nowIso =
+          "${DateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").format(DateTime.now().toUtc())}+00:00";
+      String cleanUser = (widget.userName ?? 'ADMIN');
+      if (cleanUser.contains('@')) cleanUser = cleanUser.split('@').first;
+
+      Map<String, dynamic> orig = _selectedRecord ?? {};
+
+      // creator — preserved on edit, set on create
+      String cUserVal = _isEditMode
+          ? (orig['cUser'] ?? orig['cuser'] ?? cleanUser).toString()
+          : cleanUser;
+      String cDateVal = _isEditMode
+          ? (orig['cDate'] ?? orig['cdate'] ?? nowIso).toString()
+          : nowIso;
+
+      // last editor — always current user/time
+      String eUserVal = cleanUser;
+      String eDateVal = nowIso;
+
+      // approver — preserve existing DB value on edit; default to eUser on create
+      String aUserVal = _isEditMode
+          ? (orig['aUser'] ?? orig['auser'] ?? eUserVal).toString()
+          : eUserVal;
+      String aDateVal = _isEditMode
+          ? (orig['aDate'] ?? orig['adate'] ?? eDateVal).toString()
+          : eDateVal;
+      // ────────────────────────────────────────────────────────────────────
+
       final payload = {
         'orgCode': _formData['orgCode'],
         'userCode': trunc(_formData['userCode']?.toString(), 20),
@@ -145,8 +201,15 @@ class _UserAccessScreenState extends State<UserAccessScreen> {
         'status': _formData['status'],
       };
 
-      final success =
-          _isEditMode ? await _apiUpdate(payload) : await _apiCreate(payload);
+      final success = _isEditMode
+          ? await _apiUpdate(payload,
+              cUserVal: cUserVal, cDateVal: cDateVal,
+              eUserVal: eUserVal, eDateVal: eDateVal,
+              aUserVal: aUserVal, aDateVal: aDateVal)
+          : await _apiCreate(payload,
+              cUserVal: cUserVal, cDateVal: cDateVal,
+              eUserVal: eUserVal, eDateVal: eDateVal,
+              aUserVal: aUserVal, aDateVal: aDateVal);
 
       if (success) {
         _showSnack(

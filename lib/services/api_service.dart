@@ -393,10 +393,21 @@ class ApiService {
   }
 
   Future<bool> processAuth(
-      String authSl, String action, int level, String userId) async {
+      String authSl, String action, int level, String userId,
+      {String? aUser, String? aDate}) async {
     try {
+      // Build query params — include aUser & aDate when approving so the
+      // backend can stamp them into the target-table record (BRANCH001, etc.)
+      String url =
+          '$baseUrl/auth/$action/$authSl?level=$level&userId=$userId';
+      if (aUser != null && aUser.isNotEmpty) {
+        url += '&aUser=${Uri.encodeComponent(aUser)}';
+      }
+      if (aDate != null && aDate.isNotEmpty) {
+        url += '&aDate=${Uri.encodeComponent(aDate)}';
+      }
       final res = await http.post(
-        Uri.parse('$baseUrl/auth/$action/$authSl?level=$level&userId=$userId'),
+        Uri.parse(url),
         headers: _headers,
       );
       return res.statusCode >= 200 && res.statusCode < 300;
