@@ -4,8 +4,9 @@ import 'api_service.dart';
 
 class ReportApiService {
 
-  final ApiService apiService = ApiService();
-
+  // =========================
+  // FINANCIAL REPORTS
+  // =========================
   Future<List<Map<String, dynamic>>?> getFinancialReport({
     required String reportType,
     required String date,
@@ -13,7 +14,7 @@ class ReportApiService {
     try {
       final uri = Uri.parse(
         '${ApiService.baseUrl}/reports/financial-report'
-        '?reportType=$reportType&date=$date',
+        '?reportType=$reportType&date=$date'
       );
 
       final response = await http.get(
@@ -27,6 +28,7 @@ class ReportApiService {
       } else {
         print('Error: ${response.statusCode} - ${response.body}');
       }
+
     } catch (e) {
       print('getFinancialReport Error: $e');
     }
@@ -34,6 +36,37 @@ class ReportApiService {
     return null;
   }
 
+  // =========================
+  // CHART OF ACCOUNTS (NEW)
+  // =========================
+  Future<List<Map<String, dynamic>>?> getChartOfAccounts() async {
+    try {
+      final uri = Uri.parse(
+        '${ApiService.baseUrl}/reports/chart-of-accounts'
+      );
+
+      final response = await http.get(
+        uri,
+        headers: apiService.headers,
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        return data.cast<Map<String, dynamic>>();
+      } else {
+        print('COA Error: ${response.statusCode} - ${response.body}');
+      }
+
+    } catch (e) {
+      print('getChartOfAccounts Error: $e');
+    }
+
+    return null;
+  }
+
+  // =========================
+  // HELPERS
+  // =========================
   Future<List<Map<String, dynamic>>?> getTrialBalance(String date) {
     return getFinancialReport(
       reportType: "TB",
@@ -53,29 +86,5 @@ class ReportApiService {
       reportType: "BS",
       date: date,
     );
-  }
-
-  // ✅ FIXED: Now inside class + correct baseUrl usage
-  Future<dynamic> getChartOfAccounts() async {
-    try {
-      final uri = Uri.parse(
-        '${ApiService.baseUrl}/chart-of-accounts',
-      );
-
-      final response = await http.get(
-        uri,
-        headers: apiService.headers,
-      );
-
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      } else {
-        throw Exception(
-          "Failed to load chart of accounts: ${response.body}",
-        );
-      }
-    } catch (e) {
-      throw Exception("getChartOfAccounts Error: $e");
-    }
   }
 }
