@@ -102,107 +102,107 @@ class _ProfitAndLossScreenState extends State<ProfitAndLossScreen> {
     });
   }
 
-  // ================= DATE RANGE PICKER (ONLY ADDITION) =================
+  // ================= DATE RANGE PICKER =================
   Future<void> _pickDateRange() async {
-  DateTime startDate = selectedRange?.start ?? DateTime.now();
-  DateTime endDate = selectedRange?.end ?? DateTime.now();
+    DateTime startDate = selectedRange?.start ?? DateTime.now();
+    DateTime endDate = selectedRange?.end ?? DateTime.now();
 
-  await showDialog(
-    context: context,
-    builder: (context) {
-      return StatefulBuilder(
-        builder: (context, setStateDialog) {
-          return AlertDialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            title: const Text("Select Date Range"),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              title: const Text("Select Date Range"),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
 
-                // ================= START DATE =================
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text("Start Date"),
-                  subtitle: Text(
-                    DateFormat('dd MMM yyyy').format(startDate),
+                  // ================= START DATE =================
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text("Start Date"),
+                    subtitle: Text(
+                      DateFormat('dd MMM yyyy').format(startDate),
+                    ),
+                    trailing: const Icon(Icons.calendar_month),
+                    onTap: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime(2030),
+                        initialDate: startDate,
+                      );
+
+                      if (picked != null) {
+                        setStateDialog(() {
+                          startDate = picked;
+                        });
+                      }
+                    },
                   ),
-                  trailing: const Icon(Icons.calendar_month),
-                  onTap: () async {
-                    final picked = await showDatePicker(
-                      context: context,
-                      firstDate: DateTime(2020),
-                      lastDate: DateTime(2030),
-                      initialDate: startDate,
-                    );
 
-                    if (picked != null) {
-                      setStateDialog(() {
-                        startDate = picked;
-                      });
-                    }
-                  },
+                  const SizedBox(height: 10),
+
+                  // ================= END DATE =================
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text("End Date"),
+                    subtitle: Text(
+                      DateFormat('dd MMM yyyy').format(endDate),
+                    ),
+                    trailing: const Icon(Icons.calendar_month),
+                    onTap: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime(2030),
+                        initialDate: endDate,
+                      );
+
+                      if (picked != null) {
+                        setStateDialog(() {
+                          endDate = picked;
+                        });
+                      }
+                    },
+                  ),
+                ],
+              ),
+
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text("Cancel"),
                 ),
 
-                const SizedBox(height: 10),
+                ElevatedButton(
+                  onPressed: () {
+                    setState(() {
+                      selectedRange = DateTimeRange(
+                        start: startDate,
+                        end: endDate,
+                      );
 
-                // ================= END DATE =================
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text("End Date"),
-                  subtitle: Text(
-                    DateFormat('dd MMM yyyy').format(endDate),
-                  ),
-                  trailing: const Icon(Icons.calendar_month),
-                  onTap: () async {
-                    final picked = await showDatePicker(
-                      context: context,
-                      firstDate: DateTime(2020),
-                      lastDate: DateTime(2030),
-                      initialDate: endDate,
-                    );
+                      selectedDate =
+                          DateFormat('yyyy-MM-dd').format(endDate);
+                    });
 
-                    if (picked != null) {
-                      setStateDialog(() {
-                        endDate = picked;
-                      });
-                    }
+                    _loadData();
+                    Navigator.pop(context);
                   },
+                  child: const Text("Apply"),
                 ),
               ],
-            ),
-
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text("Cancel"),
-              ),
-
-              ElevatedButton(
-                onPressed: () {
-                  setState(() {
-                    selectedRange = DateTimeRange(
-                      start: startDate,
-                      end: endDate,
-                    );
-
-                    selectedDate =
-                        DateFormat('yyyy-MM-dd').format(endDate);
-                  });
-
-                  _loadData();
-                  Navigator.pop(context);
-                },
-                child: const Text("Apply"),
-              ),
-            ],
-          );
-        },
-      );
-    },
-  );
-}
+            );
+          },
+        );
+      },
+    );
+  }
 
 
   // ================= PDF EXPORT =================
@@ -299,19 +299,132 @@ class _ProfitAndLossScreenState extends State<ProfitAndLossScreen> {
   // ================= UI =================
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xffF5F7FB),
-      body: Column(
-        children: [
-          // ================= HEADER =================
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            color: Colors.white,
-            child: Row(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isMobile = constraints.maxWidth < 600;
+        return Scaffold(
+          backgroundColor: const Color(0xffF5F7FB),
+          body: Column(
+            children: [
+              // ================= HEADER =================
+              _buildHeader(isMobile),
+
+              const Divider(height: 1, color: Color(0xFFEEEEEE)),
+
+              // ================= TOOLBAR =================
+              _buildToolbar(isMobile),
+
+              // ================= BODY =================
+              Expanded(
+                child: _loading
+                    ? const Center(child: CircularProgressIndicator())
+                    : Center(
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 1100),
+                          child: SingleChildScrollView(
+                            padding: EdgeInsets.all(isMobile ? 12 : 24),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // ================= SUMMARY CARDS =================
+                                _buildSummaryCards(isMobile),
+
+                                const SizedBox(height: 24),
+
+                                _buildTableSection(
+                                  "INCOME",
+                                  incomeItems,
+                                  Colors.green,
+                                  Icons.trending_up,
+                                  totalIncome,
+                                ),
+
+                                const SizedBox(height: 24),
+
+                                _buildTableSection(
+                                  "EXPENSES",
+                                  expenseItems,
+                                  Colors.red,
+                                  Icons.trending_down,
+                                  totalExpense,
+                                ),
+
+                                const SizedBox(height: 24),
+
+                                // ================= NET PROFIT FOOTER =================
+                                _buildNetProfitFooter(isMobile),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // ================= HEADER WIDGET =================
+  Widget _buildHeader(bool isMobile) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      color: Colors.white,
+      child: isMobile
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    IconButton(
+                      onPressed: widget.onBack,
+                      icon: const Icon(Icons.arrow_back_ios,
+                          color: Colors.black, size: 20),
+                    ),
+                    const SizedBox(width: 4),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Profit & Loss",
+                            style: TextStyle(
+                                fontSize: 18, fontWeight: FontWeight.bold),
+                          ),
+                          Text(
+                            "Financial Performance Report",
+                            style:
+                                TextStyle(color: Colors.grey, fontSize: 12),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () {},
+                    icon: const Icon(Icons.settings_outlined, size: 16),
+                    label: const Text("Customize Report",
+                        style: TextStyle(fontSize: 13)),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.blue,
+                      side: const BorderSide(color: Colors.blue),
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                    ),
+                  ),
+                ),
+              ],
+            )
+          : Row(
               children: [
                 IconButton(
                   onPressed: widget.onBack,
-                  icon: const Icon(Icons.arrow_back_ios, color: Colors.black, size: 20),
+                  icon: const Icon(Icons.arrow_back_ios,
+                      color: Colors.black, size: 20),
                 ),
                 const SizedBox(width: 8),
                 const Expanded(
@@ -320,7 +433,8 @@ class _ProfitAndLossScreenState extends State<ProfitAndLossScreen> {
                     children: [
                       Text(
                         "Profit & Loss",
-                        style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                            fontSize: 22, fontWeight: FontWeight.bold),
                       ),
                       Text(
                         "Financial Performance Report",
@@ -340,238 +454,280 @@ class _ProfitAndLossScreenState extends State<ProfitAndLossScreen> {
                 ),
               ],
             ),
+    );
+  }
+
+  // ================= TOOLBAR WIDGET =================
+  Widget _buildToolbar(bool isMobile) {
+    final dateWidget = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey.shade300),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: InkWell(
+        onTap: _pickDateRange,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.calendar_today_outlined,
+                size: 16, color: Colors.grey.shade600),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                selectedRange == null
+                    ? "01 Apr 2025 - 30 Apr 2025"
+                    : "${DateFormat('dd MMM yyyy').format(selectedRange!.start)} - "
+                        "${DateFormat('dd MMM yyyy').format(selectedRange!.end)}",
+                style: TextStyle(color: Colors.grey.shade800, fontSize: 13),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const SizedBox(width: 6),
+            Icon(Icons.keyboard_arrow_down,
+                size: 16, color: Colors.grey.shade600),
+          ],
+        ),
+      ),
+    );
+
+    final exportWidget = PopupMenuButton<String>(
+      onSelected: (value) async {
+        if (value == 'pdf') await _exportPdf();
+        if (value == 'excel') await _exportExcel();
+      },
+      itemBuilder: (context) => const [
+        PopupMenuItem(
+          value: 'pdf',
+          child: Row(
+            children: [
+              Icon(Icons.picture_as_pdf, color: Colors.red, size: 18),
+              SizedBox(width: 8),
+              Text("Export as PDF"),
+            ],
           ),
+        ),
+        PopupMenuItem(
+          value: 'excel',
+          child: Row(
+            children: [
+              Icon(Icons.table_chart, color: Colors.green, size: 18),
+              SizedBox(width: 8),
+              Text("Export as Excel"),
+            ],
+          ),
+        ),
+      ],
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1967D2),
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.download, color: Colors.white, size: 18),
+            SizedBox(width: 6),
+            Text("Export", style: TextStyle(color: Colors.white)),
+          ],
+        ),
+      ),
+    );
 
-          const Divider(height: 1, color: Color(0xFFEEEEEE)),
-
-          // ================= TOOLBAR =================
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            color: Colors.white,
-            child: Row(
+    return Container(
+      padding: EdgeInsets.symmetric(
+          horizontal: isMobile ? 12 : 24, vertical: 10),
+      color: Colors.white,
+      child: isMobile
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                dateWidget,
+                const SizedBox(height: 8),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: exportWidget,
+                ),
+              ],
+            )
+          : Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // ================= DATE RANGE (ONLY CHANGE HERE) =================
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey.shade300),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: InkWell(
-                    onTap: _pickDateRange,
-                    child: Row(
-                      children: [
-                        Icon(Icons.calendar_today_outlined,
-                            size: 18, color: Colors.grey.shade600),
-                        const SizedBox(width: 8),
-                        Text(
-                          selectedRange == null
-                              ? "01 Apr 2025 - 30 Apr 2025"
-                              : "${DateFormat('dd MMM yyyy').format(selectedRange!.start)} - "
-                                "${DateFormat('dd MMM yyyy').format(selectedRange!.end)}",
-                          style: TextStyle(color: Colors.grey.shade800),
-                        ),
-                        const SizedBox(width: 8),
-                        Icon(Icons.keyboard_arrow_down,
-                            size: 18, color: Colors.grey.shade600),
-                      ],
-                    ),
-                  ),
-                ),
+                dateWidget,
+                exportWidget,
+              ],
+            ),
+    );
+  }
 
-                // ================= EXPORT =================
+  // ================= SUMMARY CARDS =================
+  Widget _buildSummaryCards(bool isMobile) {
+    final cards = [
+      _summaryCard(
+        "Total Income",
+        totalIncome,
+        Colors.green,
+        Icons.trending_up,
+        100.0,
+        isMobile,
+      ),
+      _summaryCard(
+        "Total Expenses",
+        totalExpense,
+        Colors.red,
+        Icons.trending_down,
+        totalIncome > 0 ? (totalExpense / totalIncome * 100) : 0,
+        isMobile,
+      ),
+      _summaryCard(
+        "Net Profit",
+        netProfit,
+        Colors.blue,
+        Icons.pie_chart_outline,
+        totalIncome > 0 ? (netProfit / totalIncome * 100) : 0,
+        isMobile,
+      ),
+    ];
+
+    if (isMobile) {
+      return Column(
+        children: [
+          cards[0],
+          const SizedBox(height: 12),
+          cards[1],
+          const SizedBox(height: 12),
+          cards[2],
+        ],
+      );
+    }
+
+    return Row(
+      children: [
+        Expanded(child: cards[0]),
+        const SizedBox(width: 16),
+        Expanded(child: cards[1]),
+        const SizedBox(width: 16),
+        Expanded(child: cards[2]),
+      ],
+    );
+  }
+
+  // ================= NET PROFIT FOOTER =================
+  Widget _buildNetProfitFooter(bool isMobile) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF0F7FF),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.blue.shade100),
+      ),
+      child: isMobile
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 Row(
                   children: [
-                    PopupMenuButton<String>(
-                      onSelected: (value) async {
-                        if (value == 'pdf') await _exportPdf();
-                        if (value == 'excel') await _exportExcel();
-                      },
-                      itemBuilder: (context) => const [
-                        PopupMenuItem(
-                          value: 'pdf',
-                          child: Row(
-                            children: [
-                              Icon(Icons.picture_as_pdf, color: Colors.red, size: 18),
-                              SizedBox(width: 8),
-                              Text("Export as PDF"),
-                            ],
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.shade100,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.account_balance_wallet,
+                        color: Colors.blue,
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            "NET PROFIT",
+                            style: TextStyle(
+                              color: Colors.blue,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        ),
-                        PopupMenuItem(
-                          value: 'excel',
-                          child: Row(
-                            children: [
-                              Icon(Icons.table_chart, color: Colors.green, size: 18),
-                              SizedBox(width: 8),
-                              Text("Export as Excel"),
-                            ],
+                          const SizedBox(height: 4),
+                          Text(
+                            netProfit >= 0
+                                ? "Your business is profitable. Keep up the good work!"
+                                : "Your business is running at a loss.",
+                            style: const TextStyle(fontSize: 12),
                           ),
-                        ),
-                      ],
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF1967D2),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: const Row(
-                          children: [
-                            Icon(Icons.download, color: Colors.white, size: 18),
-                            SizedBox(width: 6),
-                            Text("Export", style: TextStyle(color: Colors.white)),
-                          ],
-                        ),
+                        ],
                       ),
                     ),
                   ],
                 ),
+                const SizedBox(height: 12),
+                Text(
+                  currency.format(netProfit),
+                  style: TextStyle(
+                    color: netProfit >= 0 ? Colors.green : Colors.red,
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ],
-            ),
-          ),
-
-          // ================= BODY =================
-          Expanded(
-  child: _loading
-      ? const Center(child: CircularProgressIndicator())
-      : Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 1100), // 👈 controls width
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
+            )
+          : Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade100,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.account_balance_wallet,
+                    color: Colors.blue,
+                    size: 32,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: _summaryCard(
-                          "Total Income",
-                          totalIncome,
-                          Colors.green,
-                          Icons.trending_up,
-                          100.0,
+                      const Text(
+                        "NET PROFIT",
+                        style: TextStyle(
+                          color: Colors.blue,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: _summaryCard(
-                          "Total Expenses",
-                          totalExpense,
-                          Colors.red,
-                          Icons.trending_down,
-                          totalIncome > 0
-                              ? (totalExpense / totalIncome * 100)
-                              : 0,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: _summaryCard(
-                          "Net Profit",
-                          netProfit,
-                          Colors.blue,
-                          Icons.pie_chart_outline,
-                          totalIncome > 0
-                              ? (netProfit / totalIncome * 100)
-                              : 0,
-                        ),
+                      const SizedBox(height: 4),
+                      Text(
+                        netProfit >= 0
+                            ? "Your business is profitable. Keep up the good work!"
+                            : "Your business is running at a loss.",
                       ),
                     ],
                   ),
-
-                  const SizedBox(height: 24),
-
-                  _buildTableSection(
-                    "INCOME",
-                    incomeItems,
-                    Colors.green,
-                    Icons.trending_up,
-                    totalIncome,
+                ),
+                Text(
+                  currency.format(netProfit),
+                  style: TextStyle(
+                    color: netProfit >= 0 ? Colors.green : Colors.red,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
                   ),
-
-                  const SizedBox(height: 24),
-
-                  _buildTableSection(
-                    "EXPENSES",
-                    expenseItems,
-                    Colors.red,
-                    Icons.trending_down,
-                    totalExpense,
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF0F7FF),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.blue.shade100),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.blue.shade100,
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.account_balance_wallet,
-                            color: Colors.blue,
-                            size: 32,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                "NET PROFIT",
-                                style: TextStyle(
-                                  color: Colors.blue,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                netProfit >= 0
-                                    ? "Your business is profitable. Keep up the good work!"
-                                    : "Your business is running at a loss.",
-                              ),
-                            ],
-                          ),
-                        ),
-                        Text(
-                          currency.format(netProfit),
-                          style: TextStyle(
-                            color: netProfit >= 0
-                                ? Colors.green
-                                : Colors.red,
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ),
-        ),
-),
-        ],
-      ),
     );
   }
 
-  Widget _summaryCard(String title, double value, Color color, IconData icon, double percentage) {
+  Widget _summaryCard(String title, double value, Color color, IconData icon,
+      double percentage, bool isMobile) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(8),
@@ -580,17 +736,27 @@ class _ProfitAndLossScreenState extends State<ProfitAndLossScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-          Text(currency.format(value),
-              style: TextStyle(color: color, fontSize: 20, fontWeight: FontWeight.bold)),
-          Text("${percentage.toStringAsFixed(2)}% of Revenue",
-              style: TextStyle(color: Colors.grey.shade500, fontSize: 11)),
+          Text(title,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+          const SizedBox(height: 4),
+          Text(
+            currency.format(value),
+            style: TextStyle(
+                color: color,
+                fontSize: isMobile ? 18 : 20,
+                fontWeight: FontWeight.bold),
+          ),
+          Text(
+            "${percentage.toStringAsFixed(2)}% of Revenue",
+            style: TextStyle(color: Colors.grey.shade500, fontSize: 11),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildTableSection(String title, List<Map<String, dynamic>> items, Color color, IconData icon, double total) {
+  Widget _buildTableSection(String title, List<Map<String, dynamic>> items,
+      Color color, IconData icon, double total) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -606,23 +772,33 @@ class _ProfitAndLossScreenState extends State<ProfitAndLossScreen> {
               children: [
                 Icon(icon, color: color),
                 const SizedBox(width: 8),
-                Text(title, style: TextStyle(color: color, fontWeight: FontWeight.bold)),
+                Text(title,
+                    style:
+                        TextStyle(color: color, fontWeight: FontWeight.bold)),
               ],
             ),
           ),
           ...items.map((e) => ListTile(
-                title: Text(e['glname'] ?? ''),
-                trailing: Text(currency.format((e['amount'] ?? 0).toDouble()),
-                    style: TextStyle(color: color)),
+                title: Text(e['glname'] ?? '',
+                    style: const TextStyle(fontSize: 14)),
+                trailing: Text(
+                  currency.format((e['amount'] ?? 0).toDouble()),
+                  style: TextStyle(color: color, fontWeight: FontWeight.w600),
+                ),
               )),
           Container(
             padding: const EdgeInsets.all(12),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text("TOTAL $title", style: TextStyle(color: color)),
-                Text(currency.format(total),
-                    style: TextStyle(color: color, fontWeight: FontWeight.bold)),
+                Text("TOTAL $title",
+                    style: TextStyle(
+                        color: color, fontWeight: FontWeight.bold)),
+                Text(
+                  currency.format(total),
+                  style: TextStyle(
+                      color: color, fontWeight: FontWeight.bold),
+                ),
               ],
             ),
           )
