@@ -205,24 +205,130 @@ class _ProfitAndLossScreenState extends State<ProfitAndLossScreen> {
   }
 
 
-  // ================= PDF EXPORT =================
+ // ================= PDF EXPORT ENGINE =================
   Future<void> _exportPdf() async {
     final pdf = pw.Document();
+    
+    // Resolve a Unicode-compliant font over the network to natively render the "₹" symbol
+    final unicodeFont = await PdfGoogleFonts.robotoMedium();
+    final pw.TextStyle baseStyle = pw.TextStyle(font: unicodeFont, fontSize: 12);
+
+    final String rangeStr = selectedRange == null
+        ? "01 Apr 2025 - 30 Apr 2025"
+        : "${DateFormat('dd MMM yyyy').format(selectedRange!.start)} - ${DateFormat('dd MMM yyyy').format(selectedRange!.end)}";
 
     pdf.addPage(
-      pw.Page(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(32),
         build: (context) {
-          return pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
-            children: [
-              pw.Text("Profit & Loss",
-                  style: pw.TextStyle(fontSize: 20)),
-              pw.SizedBox(height: 10),
-              pw.Text("Income: $totalIncome"),
-              pw.Text("Expense: $totalExpense"),
-              pw.Text("Net Profit: $netProfit"),
-            ],
-          );
+          return [
+            // Statement Title Banner
+            pw.Header(
+              level: 0,
+              child: pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Text(
+                    "PROFIT & LOSS STATEMENT",
+                    style: baseStyle.copyWith(fontSize: 20, fontWeight: pw.FontWeight.bold),
+                  ),
+                  pw.Text(
+                    rangeStr, 
+                    style: baseStyle.copyWith(fontSize: 11, color: PdfColors.grey700),
+                  ),
+                ],
+              ),
+            ),
+            pw.SizedBox(height: 15),
+
+            // INCOME STATEMENT CATEGORY BLOCK
+            pw.Text(
+              "INCOME", 
+              style: baseStyle.copyWith(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.green800),
+            ),
+            pw.Divider(color: PdfColors.green200, thickness: 1),
+            pw.SizedBox(height: 5),
+            
+            ...incomeItems.map((item) => pw.Padding(
+              padding: const pw.EdgeInsets.symmetric(vertical: 4),
+              child: pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Text(item['glname'] ?? '', style: baseStyle),
+                  pw.Text(currency.format((item['amount'] ?? 0).toDouble()), style: baseStyle),
+                ],
+              ),
+            )),
+            
+            pw.SizedBox(height: 6),
+            pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: [
+                pw.Text("TOTAL INCOME", style: baseStyle.copyWith(fontWeight: pw.FontWeight.bold)),
+                pw.Text(
+                  currency.format(totalIncome), 
+                  style: baseStyle.copyWith(fontWeight: pw.FontWeight.bold, color: PdfColors.green800),
+                ),
+              ],
+            ),
+            
+            pw.SizedBox(height: 24),
+
+            // EXPENSES STATEMENT CATEGORY BLOCK
+            pw.Text(
+              "EXPENSES", 
+              style: baseStyle.copyWith(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.red800),
+            ),
+            pw.Divider(color: PdfColors.red200, thickness: 1),
+            pw.SizedBox(height: 5),
+            
+            ...expenseItems.map((item) => pw.Padding(
+              padding: const pw.EdgeInsets.symmetric(vertical: 4),
+              child: pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Text(item['glname'] ?? '', style: baseStyle),
+                  pw.Text(currency.format((item['amount'] ?? 0).toDouble()), style: baseStyle),
+                ],
+              ),
+            )),
+            
+            pw.SizedBox(height: 6),
+            pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: [
+                pw.Text("TOTAL EXPENSES", style: baseStyle.copyWith(fontWeight: pw.FontWeight.bold)),
+                pw.Text(
+                  currency.format(totalExpense), 
+                  style: baseStyle.copyWith(fontWeight: pw.FontWeight.bold, color: PdfColors.red800),
+                ),
+              ],
+            ),
+
+            pw.SizedBox(height: 30),
+            pw.Divider(color: PdfColors.grey400, thickness: 1.5),
+            
+            // NET SUMMARY TOTAL FOOTER
+            pw.Container(
+              padding: const pw.EdgeInsets.all(8),
+              color: PdfColors.blue50,
+              child: pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Text("NET PROFIT / (LOSS)", style: baseStyle.copyWith(fontSize: 14, fontWeight: pw.FontWeight.bold)),
+                  pw.Text(
+                    currency.format(netProfit),
+                    style: baseStyle.copyWith(
+                      fontSize: 14,
+                      fontWeight: pw.FontWeight.bold,
+                      color: netProfit >= 0 ? PdfColors.green800 : PdfColors.red800,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ];
         },
       ),
     );
@@ -233,7 +339,7 @@ class _ProfitAndLossScreenState extends State<ProfitAndLossScreen> {
       final blob = html.Blob([bytes], 'application/pdf');
       final url = html.Url.createObjectUrlFromBlob(blob);
       html.AnchorElement(href: url)
-        ..setAttribute("download", "PL_Report.pdf")
+        ..setAttribute("download", "Profit_Loss_Statement.pdf")
         ..click();
       html.Url.revokeObjectUrl(url);
     } else {

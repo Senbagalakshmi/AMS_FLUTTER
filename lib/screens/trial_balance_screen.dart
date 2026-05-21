@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
+import 'package:excel/excel.dart' as ex;
+import 'package:universal_html/html.dart' as html;
+import 'package:flutter/foundation.dart' show kIsWeb;
+
 import '../services/report_api_service.dart';
 import '../utils/responsive.dart';
 import '../theme.dart';
-import '../widgets/widgets.dart';
 
 class TrialBalanceScreen extends StatefulWidget {
   final VoidCallback onBack;
@@ -26,7 +32,8 @@ class _TrialBalanceScreenState extends State<TrialBalanceScreen> {
 
   bool _loading = true;
 
-  String _dateRange = 'This Month';
+  late DateTime _startDate;
+  late DateTime _endDate;
 
   List<Map<String, dynamic>> _reportData = [];
 
@@ -36,6 +43,10 @@ class _TrialBalanceScreenState extends State<TrialBalanceScreen> {
   @override
   void initState() {
     super.initState();
+
+    _endDate = DateTime.now();
+    _startDate = DateTime(_endDate.year, _endDate.month, 1);
+
     _loadData();
   }
 
@@ -43,11 +54,11 @@ class _TrialBalanceScreenState extends State<TrialBalanceScreen> {
   Future<void> _loadData() async {
     setState(() => _loading = true);
 
-    String dateParam = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    final toDateStr = DateFormat('yyyy-MM-dd').format(_endDate);
 
     final data = await _apiService.getFinancialReport(
       reportType: "TB",
-      date: dateParam,
+      date: toDateStr,
     );
 
     if (!mounted) return;
@@ -59,7 +70,7 @@ class _TrialBalanceScreenState extends State<TrialBalanceScreen> {
     });
   }
 
-  // ================= TOTAL CALCULATION =================
+  // ================= CALCULATE TOTALS =================
   void _calculateTotals() {
     double dr = 0;
     double cr = 0;
@@ -76,6 +87,7 @@ class _TrialBalanceScreenState extends State<TrialBalanceScreen> {
   // ================= FORMAT AMOUNT =================
   String _formatAmount(double amount) {
     if (amount == 0) return '-';
+
     return NumberFormat.currency(
       symbol: '₹',
       decimalDigits: 2,
@@ -84,248 +96,487 @@ class _TrialBalanceScreenState extends State<TrialBalanceScreen> {
 
   // ================= GET ACCOUNT NAME =================
   String _getAccountName(Map<String, dynamic> acc) {
-    if (acc['glname'] != null && acc['glname'].toString().isNotEmpty) return acc['glname'].toString();
-    if (acc['gl_name'] != null && acc['gl_name'].toString().isNotEmpty) return acc['gl_name'].toString();
-    if (acc['accountName'] != null && acc['accountName'].toString().isNotEmpty) return acc['accountName'].toString();
-    if (acc['account_name'] != null && acc['account_name'].toString().isNotEmpty) return acc['account_name'].toString();
-    if (acc['name'] != null && acc['name'].toString().isNotEmpty) return acc['name'].toString();
-    
-    // Debug info: if all else fails, show the keys that are actually present
-    return 'Keys: ${acc.keys.join(", ")}';
+    if (acc['account_name'] != null) {
+      return acc['account_name'].toString();
+    }
+
+    if (acc['glname'] != null) {
+      return acc['glname'].toString();
+    }
+
+    return '-';
+  }
+
+  // ================= DATE PICKER =================
+  Future<void> _pickDateRange() async {
+    await showDialog(
+      context: context,
+      builder: (context) {
+        DateTime localStart = _startDate;
+        DateTime localEnd = _endDate;
+
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              title: const Text("Select Financial Date Range"),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text("Start Date"),
+                    subtitle: Text(DateFormat('dd MMM yyyy').format(localStart)),
+                    trailing: const Icon(Icons.calendar_month, color: Color(0xFF1967D2)),
+                    onTap: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime(2030),
+                        initialDate: localStart,
+                      );
+                      if (picked != null) {
+                        setStateDialog(() => localStart = picked);
+                      }
+                    },
+                  ),
+                  const Divider(),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text("End Date"),
+                    subtitle: Text(DateFormat('dd MMM yyyy').format(localEnd)),
+                    trailing: const Icon(Icons.calendar_month, color: Color(0xFF1967D2)),
+                    onTap: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime(2030),
+                        initialDate: localEnd,
+                      );
+                      if (picked != null) {
+                        setStateDialog(() => localEnd = picked);
+                      }
+                    },
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text("Cancel", style: TextStyle(color: Colors.grey)),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    setState(() {
+                      _startDate = localStart;
+                      _endDate = localEnd;
+                    });
+                    _loadData();
+                    Navigator.pop(context);
+                  },
+                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1967D2)),
+                  child: const Text("Apply Range", style: TextStyle(color: Colors.white)),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // ================= EXPORT PDF =================
+  Future<void> _exportPdf() async {
+    final pdf = pw.Document();
+    final unicodeFont = await PdfGoogleFonts.robotoMedium();
+
+    final pw.TextStyle baseStyle = pw.TextStyle(
+      font: unicodeFont,
+      fontSize: 11,
+    );
+
+    final pw.TextStyle boldStyle = pw.TextStyle(
+      font: unicodeFont,
+      fontSize: 11,
+      fontWeight: pw.FontWeight.bold,
+    );
+
+    final String rangeStr =
+        "${DateFormat('dd MMM yyyy').format(_startDate)} - ${DateFormat('dd MMM yyyy').format(_endDate)}";
+
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(32),
+        build: (context) => [
+          pw.Header(
+            level: 0,
+            child: pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: [
+                pw.Text(
+                  "TRIAL BALANCE REPORT",
+                  style: boldStyle.copyWith(fontSize: 22),
+                ),
+                pw.Text(
+                  rangeStr,
+                  style: baseStyle.copyWith(fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+          pw.SizedBox(height: 20),
+          pw.Table(
+            border: pw.TableBorder.all(
+              color: PdfColors.grey300,
+              width: 0.5,
+            ),
+            columnWidths: {
+              0: const pw.FlexColumnWidth(3),
+              1: const pw.FlexColumnWidth(2),
+              2: const pw.FlexColumnWidth(1.5),
+              3: const pw.FlexColumnWidth(1.5),
+            },
+            children: [
+              pw.TableRow(
+                decoration: const pw.BoxDecoration(
+                  color: PdfColors.grey200,
+                ),
+                children: [
+                  pw.Padding(
+                    padding: const pw.EdgeInsets.all(8),
+                    child: pw.Text("ACCOUNT NAME", style: boldStyle),
+                  ),
+                  pw.Padding(
+                    padding: const pw.EdgeInsets.all(8),
+                    child: pw.Text("ACCOUNT TYPE", style: boldStyle),
+                  ),
+                  pw.Padding(
+                    padding: const pw.EdgeInsets.all(8),
+                    child: pw.Text("DEBIT", textAlign: pw.TextAlign.right, style: boldStyle),
+                  ),
+                  pw.Padding(
+                    padding: const pw.EdgeInsets.all(8),
+                    child: pw.Text("CREDIT", textAlign: pw.TextAlign.right, style: boldStyle),
+                  ),
+                ],
+              ),
+              ..._reportData.map(
+                (row) => pw.TableRow(
+                  children: [
+                    pw.Padding(
+                      padding: const pw.EdgeInsets.all(8),
+                      child: pw.Text(_getAccountName(row), style: baseStyle),
+                    ),
+                    pw.Padding(
+                      padding: const pw.EdgeInsets.all(8),
+                      child: pw.Text(row['account_type']?.toString() ?? '-', style: baseStyle),
+                    ),
+                    pw.Padding(
+                      padding: const pw.EdgeInsets.all(8),
+                      child: pw.Text(
+                        _formatAmount((row['debit'] ?? 0).toDouble()),
+                        textAlign: pw.TextAlign.right,
+                        style: baseStyle,
+                      ),
+                    ),
+                    pw.Padding(
+                      padding: const pw.EdgeInsets.all(8),
+                      child: pw.Text(
+                        _formatAmount((row['credit'] ?? 0).toDouble()),
+                        textAlign: pw.TextAlign.right,
+                        style: baseStyle,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              pw.TableRow(
+                decoration: const pw.BoxDecoration(
+                  color: PdfColors.blue50,
+                ),
+                children: [
+                  pw.Padding(
+                    padding: const pw.EdgeInsets.all(8),
+                    child: pw.Text("TOTAL", style: boldStyle),
+                  ),
+                  pw.Padding(
+                    padding: const pw.EdgeInsets.all(8),
+                    child: pw.Text("", style: boldStyle),
+                  ),
+                  pw.Padding(
+                    padding: const pw.EdgeInsets.all(8),
+                    child: pw.Text(_formatAmount(_totalDebit), textAlign: pw.TextAlign.right, style: boldStyle),
+                  ),
+                  pw.Padding(
+                    padding: const pw.EdgeInsets.all(8),
+                    child: pw.Text(_formatAmount(_totalCredit), textAlign: pw.TextAlign.right, style: boldStyle),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+
+    final bytes = await pdf.save();
+
+    if (kIsWeb) {
+      final blob = html.Blob([bytes], 'application/pdf');
+      final url = html.Url.createObjectUrlFromBlob(blob);
+      html.AnchorElement(href: url)
+        ..setAttribute("download", "Trial_Balance_${DateFormat('yyyyMMdd').format(_endDate)}.pdf")
+        ..click();
+      html.Url.revokeObjectUrl(url);
+    } else {
+      await Printing.sharePdf(bytes: bytes, filename: "Trial_Balance_Report.pdf");
+    }
+  }
+
+  // ================= EXPORT EXCEL =================
+  Future<void> _exportExcel() async {
+    final excel = ex.Excel.createExcel();
+    final sheet = excel['Trial Balance'];
+
+    sheet.appendRow([
+      ex.TextCellValue("ACCOUNT"),
+      ex.TextCellValue("TYPE"),
+      ex.TextCellValue("DEBIT"),
+      ex.TextCellValue("CREDIT"),
+    ]);
+
+    for (var row in _reportData) {
+      sheet.appendRow([
+        ex.TextCellValue(_getAccountName(row)),
+        ex.TextCellValue(row['account_type']?.toString() ?? '-'),
+        ex.DoubleCellValue((row['debit'] ?? 0).toDouble()),
+        ex.DoubleCellValue((row['credit'] ?? 0).toDouble()),
+      ]);
+    }
+
+    sheet.appendRow([
+      ex.TextCellValue("TOTAL"),
+      ex.TextCellValue(""),
+      ex.DoubleCellValue(_totalDebit),
+      ex.DoubleCellValue(_totalCredit),
+    ]);
+
+    final bytes = excel.save();
+
+    if (bytes != null && kIsWeb) {
+      final blob = html.Blob([bytes], 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      final url = html.Url.createObjectUrlFromBlob(blob);
+      html.AnchorElement(href: url)
+        ..setAttribute("download", "trial_balance.xlsx")
+        ..click();
+      html.Url.revokeObjectUrl(url);
+    }
   }
 
   // ================= UI =================
   @override
   Widget build(BuildContext context) {
+    final rangeStr =
+        "${DateFormat('dd MMM yyyy').format(_startDate)} - ${DateFormat('dd MMM yyyy').format(_endDate)}";
+
+    // Standard widths shared between Header, Body, and Footer grid structures
+    final Map<int, TableColumnWidth> tableColumnWidths = {
+      0: const FlexColumnWidth(3),
+      1: const FlexColumnWidth(2),
+      2: const FlexColumnWidth(1.5),
+      3: const FlexColumnWidth(1.5),
+    };
+
     return Scaffold(
       backgroundColor: AppColors.bg,
       body: Column(
         children: [
-          // HEADER
-          AmsIdentityHeader(
-            icon: Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: const Color(0xFF1967D2), // Match the blue from the image
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(Icons.balance_rounded, size: 28, color: Colors.white),
+          // HEADER BAR
+          Container(
+            height: 70,
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
             ),
-            title: 'Trial Balance',
-            subtitle: 'View account balances and verify debit vs credit equality.',
-            badges: const [], // Empty badges since we use actions instead
-            accentColor: Colors.black, // Title color in image is very dark
-            accentLt: AppColors.tBlueLt,
-            accentMd: AppColors.tBlueMd,
-            onBack: widget.onBackToModule,
-            breadcrumbs: [
-              HeaderBreadcrumb(label: 'Home', onTap: widget.onBack),
-              HeaderBreadcrumb(label: 'Reports'),
-              HeaderBreadcrumb(label: 'Trial Balance'),
-            ],
-            actions: [
-              OutlinedButton.icon(
-                onPressed: () {},
-                icon: const Icon(Icons.calendar_today_outlined, size: 16),
-                label: Text(_dateRange),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xFF1967D2),
-                  side: const BorderSide(color: Color(0xFF1967D2)),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+            child: Row(
+              children: [
+                IconButton(
+                  onPressed: widget.onBackToModule,
+                  icon: const Icon(Icons.arrow_back),
                 ),
-              ),
-            ],
-          ),
-
-          Expanded(
-            child: Container(
-              margin: EdgeInsets.symmetric(
-                horizontal: Responsive.isMobile(context) ? 12 : 24,
-                vertical: 12,
-              ),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: AppColors.border),
-              ),
-              child: _loading
-                  ? const Center(child: CircularProgressIndicator())
-                  : Column(
+                const SizedBox(width: 10),
+                const Text(
+                  "Trial Balance",
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+                const Spacer(),
+                OutlinedButton.icon(
+                  onPressed: _pickDateRange,
+                  icon: const Icon(Icons.calendar_today),
+                  label: Text(rangeStr),
+                ),
+                const SizedBox(width: 10),
+                PopupMenuButton<String>(
+                  onSelected: (value) async {
+                    if (value == 'pdf') await _exportPdf();
+                    if (value == 'excel') await _exportExcel();
+                  },
+                  itemBuilder: (context) => const [
+                    PopupMenuItem(value: 'pdf', child: Text("Export PDF")),
+                    PopupMenuItem(value: 'excel', child: Text("Export Excel")),
+                  ],
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1967D2),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: const Row(
                       children: [
-                        // TOP BAR
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                          decoration: const BoxDecoration(
-                            border: Border(
-                              bottom: BorderSide(color: AppColors.border),
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              const Text(
-                                "Accounts",
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const Spacer(),
-                              OutlinedButton.icon(
-                                onPressed: _loadData,
-                                icon: const Icon(Icons.refresh, size: 16),
-                                label: const Text("Refresh"),
-                                style: OutlinedButton.styleFrom(
-                                  foregroundColor: const Color(0xFF1967D2),
-                                  side: const BorderSide(color: Color(0xFF1967D2)),
-                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-                                ),
-                              )
-                            ],
-                          ),
-                        ),
-
-                        // TABLE HEADER
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 16,
-                            horizontal: 24,
-                          ),
-                          color: const Color(0xFFF4F7FB),
-                          child: const Row(
-                            children: [
-                              Expanded(
-                                flex: 3,
-                                child: Text("ACCOUNT",
-                                    style: TextStyle(
-                                        fontWeight: FontWeight.w700, fontSize: 13)),
-                              ),
-                              Expanded(
-                                flex: 1,
-                                child: Text("DEBIT",
-                                    textAlign: TextAlign.right,
-                                    style: TextStyle(
-                                        fontWeight: FontWeight.w700, fontSize: 13)),
-                              ),
-                              Expanded(
-                                flex: 1,
-                                child: Text("CREDIT",
-                                    textAlign: TextAlign.right,
-                                    style: TextStyle(
-                                        fontWeight: FontWeight.w700, fontSize: 13)),
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        // DATA LIST
-                        Expanded(
-                          child: SingleChildScrollView(
-                            child: Column(
-                              children: _reportData.asMap().entries.map((entry) {
-                                final acc = entry.value;
-                                final isLast = entry.key == _reportData.length - 1;
-                                return Column(
-                                  children: [
-                                    Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                          vertical: 16, horizontal: 24),
-                                      child: Row(
-                                        children: [
-                                          Expanded(
-                                            flex: 3,
-                                            child: Text(
-                                              _getAccountName(acc),
-                                              style: TextStyle(fontSize: 14, color: Colors.grey.shade800),
-                                            ),
-                                          ),
-                                          Expanded(
-                                            flex: 1,
-                                            child: Text(
-                                              _formatAmount(
-                                                  (acc['debit'] ?? 0)
-                                                      .toDouble()),
-                                              textAlign: TextAlign.right,
-                                              style: const TextStyle(fontSize: 14),
-                                            ),
-                                          ),
-                                          Expanded(
-                                            flex: 1,
-                                            child: Text(
-                                              _formatAmount(
-                                                  (acc['credit'] ?? 0)
-                                                      .toDouble()),
-                                              textAlign: TextAlign.right,
-                                              style: const TextStyle(fontSize: 14),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    if (!isLast)
-                                      const Divider(height: 1, color: Color(0xFFEEEEEE)),
-                                  ],
-                                );
-                              }).toList(),
-                            ),
-                          ),
-                        ),
-
-                        // TOTAL
-                        Container(
-                          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
-                          decoration: const BoxDecoration(
-                            border: Border(
-                              top: BorderSide(color: AppColors.border),
-                            ),
-                            color: Color(0xFFF0F7FF),
-                          ),
-                          child: Row(
-                            children: [
-                              const Expanded(
-                                flex: 3,
-                                child: Text(
-                                  "TOTAL",
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w800,
-                                    fontSize: 15,
-                                    color: Color(0xFF1E293B),
-                                  ),
-                                ),
-                              ),
-                              Expanded(
-                                flex: 1,
-                                child: Text(
-                                  _formatAmount(_totalDebit),
-                                  textAlign: TextAlign.right,
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.w800,
-                                      fontSize: 15,
-                                      color: Color(0xFF1E293B)),
-                                ),
-                              ),
-                              Expanded(
-                                flex: 1,
-                                child: Text(
-                                  _formatAmount(_totalCredit),
-                                  textAlign: TextAlign.right,
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.w800,
-                                      fontSize: 15,
-                                      color: Color(0xFF1E293B)),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                        Icon(Icons.download, color: Colors.white),
+                        SizedBox(width: 8),
+                        Text("Export", style: TextStyle(color: Colors.white)),
                       ],
                     ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // FINANCIAL TABLE MAIN CONTAINER
+          Expanded(
+            child: Center(
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 1100),
+                margin: EdgeInsets.symmetric(
+                  horizontal: Responsive.isMobile(context) ? 12 : 24,
+                  vertical: 24,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: _loading
+                    ? const Center(child: CircularProgressIndicator())
+                    : Column(
+                        children: [
+                          // FIXED GRID HEADER
+                          Container(
+                            color: const Color(0xFFF4F7FB),
+                            child: Table(
+                              columnWidths: tableColumnWidths,
+                              children: [
+                                TableRow(
+                                  children: [
+                                    _buildHeaderCell("ACCOUNT"),
+                                    _buildHeaderCell("TYPE"),
+                                    _buildHeaderCell("DEBIT", alignRight: true),
+                                    _buildHeaderCell("CREDIT", alignRight: true),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          // SCROLLABLE GRID BODY
+                          Expanded(
+                            child: SingleChildScrollView(
+                              child: Table(
+                                columnWidths: tableColumnWidths,
+                                // Native table line separators
+                                border: const TableBorder(
+                                  horizontalInside: BorderSide(color: Color(0xFFE2E8F0), width: 1),
+                                ),
+                                children: _reportData.map((acc) {
+                                  return TableRow(
+                                    children: [
+                                      _buildBodyCell(_getAccountName(acc)),
+                                      _buildBodyCell(acc['account_type']?.toString() ?? '-'),
+                                      _buildBodyCell(_formatAmount((acc['debit'] ?? 0).toDouble()), alignRight: true),
+                                      _buildBodyCell(_formatAmount((acc['credit'] ?? 0).toDouble()), alignRight: true),
+                                    ],
+                                  );
+                                }).toList(),
+                              ),
+                            ),
+                          ),
+
+                          // FIXED GRID TOTAL FOOTER
+                          Container(
+                            decoration: const BoxDecoration(
+                              border: Border(top: BorderSide(color: AppColors.border)),
+                              color: Color(0xFFF0F7FF),
+                            ),
+                            child: Table(
+                              columnWidths: tableColumnWidths,
+                              children: [
+                                TableRow(
+                                  children: [
+                                    _buildFooterCell("TOTAL"),
+                                    _buildFooterCell(""),
+                                    _buildFooterCell(_formatAmount(_totalDebit), alignRight: true),
+                                    _buildFooterCell(_formatAmount(_totalCredit), alignRight: true),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+              ),
             ),
           ),
         ],
       ),
     );
   }
-}
 
+  // ================= CELl BUILDERS FOR PERFECT ALIGNMENT =================
+  Widget _buildHeaderCell(String text, {bool alignRight = false}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+      child: Text(
+        text,
+        textAlign: alignRight ? TextAlign.right : TextAlign.left,
+        style: const TextStyle(
+          fontWeight: FontWeight.w700,
+          fontSize: 13,
+          color: Color(0xFF334155),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBodyCell(String text, {bool alignRight = false}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+      child: Text(
+        text,
+        textAlign: alignRight ? TextAlign.right : TextAlign.left,
+        style: const TextStyle(
+          fontSize: 14,
+          color: Color(0xFF0F172A),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFooterCell(String text, {bool alignRight = false}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
+      child: Text(
+        text,
+        textAlign: alignRight ? TextAlign.right : TextAlign.left,
+        style: const TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 14,
+          color: Color(0xFF1E3A8A),
+        ),
+      ),
+    );
+  }
+}

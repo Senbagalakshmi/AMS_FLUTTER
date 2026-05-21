@@ -39,6 +39,7 @@ import 'screens/gl_balance_screen.dart';
 import 'screens/trial_balance_screen.dart';
 import 'screens/profit_and_loss_screen.dart';
 import 'screens/chart_of_accounts_screen.dart';
+import 'screens/balance_sheet_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -581,6 +582,15 @@ class _AmsRootState extends State<AmsRoot> {
           );
         }
         //profit and loss - end
+        // balance sheet - add
+        else if (_state.selectedProg == 'RPT-BS') {
+          body = BalanceSheetScreen(
+          onBack: () => _navigate('list'),
+          onBackToModule: () => _handleProceed('TRANSACTIONS'),
+          userName: _state.userName,
+          );
+        }
+// balance sheet - end
         else if (_state.selectedProg == 'RPT-COA') {
           body = ChartOfAccountsScreen(
             onBack: () => _navigate('list'),
