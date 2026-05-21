@@ -374,6 +374,38 @@ class _TrialBalanceScreenState extends State<TrialBalanceScreen> {
     }
   }
 
+  // ================= EXPORT MENU =================
+  Widget _buildExportMenu({bool isMobile = false}) {
+    return PopupMenuButton<String>(
+      onSelected: (value) async {
+        if (value == 'pdf') await _exportPdf();
+        if (value == 'excel') await _exportExcel();
+      },
+      itemBuilder: (context) => const [
+        PopupMenuItem(value: 'pdf', child: Text("Export PDF")),
+        PopupMenuItem(value: 'excel', child: Text("Export Excel")),
+      ],
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          horizontal: isMobile ? 12 : 18,
+          vertical: isMobile ? 10 : 12,
+        ),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1967D2),
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.download, color: Colors.white, size: isMobile ? 18 : 20),
+            const SizedBox(width: 8),
+            Text("Export", style: TextStyle(color: Colors.white, fontSize: isMobile ? 13 : 14)),
+          ],
+        ),
+      ),
+    );
+  }
+
   // ================= UI =================
   @override
   Widget build(BuildContext context) {
@@ -388,62 +420,85 @@ class _TrialBalanceScreenState extends State<TrialBalanceScreen> {
       3: const FlexColumnWidth(1.5),
     };
 
+    final isMobile = Responsive.isMobile(context);
+
     return Scaffold(
       backgroundColor: AppColors.bg,
       body: Column(
         children: [
           // HEADER BAR
           Container(
-            height: 70,
-            padding: const EdgeInsets.symmetric(horizontal: 24),
+            padding: EdgeInsets.symmetric(
+              horizontal: isMobile ? 12 : 24,
+              vertical: isMobile ? 12 : 16,
+            ),
             decoration: const BoxDecoration(
               color: Colors.white,
               border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
             ),
-            child: Row(
-              children: [
-                IconButton(
-                  onPressed: widget.onBackToModule,
-                  icon: const Icon(Icons.arrow_back),
-                ),
-                const SizedBox(width: 10),
-                const Text(
-                  "Trial Balance",
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                ),
-                const Spacer(),
-                OutlinedButton.icon(
-                  onPressed: _pickDateRange,
-                  icon: const Icon(Icons.calendar_today),
-                  label: Text(rangeStr),
-                ),
-                const SizedBox(width: 10),
-                PopupMenuButton<String>(
-                  onSelected: (value) async {
-                    if (value == 'pdf') await _exportPdf();
-                    if (value == 'excel') await _exportExcel();
-                  },
-                  itemBuilder: (context) => const [
-                    PopupMenuItem(value: 'pdf', child: Text("Export PDF")),
-                    PopupMenuItem(value: 'excel', child: Text("Export Excel")),
-                  ],
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF1967D2),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: const Row(
-                      children: [
-                        Icon(Icons.download, color: Colors.white),
-                        SizedBox(width: 8),
-                        Text("Export", style: TextStyle(color: Colors.white)),
-                      ],
-                    ),
+            child: isMobile
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          IconButton(
+                            onPressed: widget.onBackToModule,
+                            icon: const Icon(Icons.arrow_back),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                          ),
+                          const SizedBox(width: 8),
+                          const Text(
+                            "Trial Balance",
+                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: _pickDateRange,
+                              icon: const Icon(Icons.calendar_today, size: 16),
+                              label: Text(
+                                rangeStr,
+                                style: const TextStyle(fontSize: 13),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          _buildExportMenu(isMobile: true),
+                        ],
+                      ),
+                    ],
+                  )
+                : Row(
+                    children: [
+                      IconButton(
+                        onPressed: widget.onBackToModule,
+                        icon: const Icon(Icons.arrow_back),
+                      ),
+                      const SizedBox(width: 10),
+                      const Text(
+                        "Trial Balance",
+                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                      ),
+                      const Spacer(),
+                      OutlinedButton.icon(
+                        onPressed: _pickDateRange,
+                        icon: const Icon(Icons.calendar_today),
+                        label: Text(rangeStr),
+                      ),
+                      const SizedBox(width: 10),
+                      _buildExportMenu(isMobile: false),
+                    ],
                   ),
-                ),
-              ],
-            ),
           ),
 
           // FINANCIAL TABLE MAIN CONTAINER
@@ -452,8 +507,8 @@ class _TrialBalanceScreenState extends State<TrialBalanceScreen> {
               child: Container(
                 constraints: const BoxConstraints(maxWidth: 1100),
                 margin: EdgeInsets.symmetric(
-                  horizontal: Responsive.isMobile(context) ? 12 : 24,
-                  vertical: 24,
+                  horizontal: isMobile ? 12 : 24,
+                  vertical: isMobile ? 12 : 24,
                 ),
                 decoration: BoxDecoration(
                   color: Colors.white,
@@ -472,10 +527,10 @@ class _TrialBalanceScreenState extends State<TrialBalanceScreen> {
                               children: [
                                 TableRow(
                                   children: [
-                                    _buildHeaderCell("ACCOUNT"),
-                                    _buildHeaderCell("TYPE"),
-                                    _buildHeaderCell("DEBIT", alignRight: true),
-                                    _buildHeaderCell("CREDIT", alignRight: true),
+                                    _buildHeaderCell(context, "ACCOUNT"),
+                                    _buildHeaderCell(context, "TYPE"),
+                                    _buildHeaderCell(context, "DEBIT", alignRight: true),
+                                    _buildHeaderCell(context, "CREDIT", alignRight: true),
                                   ],
                                 ),
                               ],
@@ -487,17 +542,16 @@ class _TrialBalanceScreenState extends State<TrialBalanceScreen> {
                             child: SingleChildScrollView(
                               child: Table(
                                 columnWidths: tableColumnWidths,
-                                // Native table line separators
                                 border: const TableBorder(
                                   horizontalInside: BorderSide(color: Color(0xFFE2E8F0), width: 1),
                                 ),
                                 children: _reportData.map((acc) {
                                   return TableRow(
                                     children: [
-                                      _buildBodyCell(_getAccountName(acc)),
-                                      _buildBodyCell(acc['account_type']?.toString() ?? '-'),
-                                      _buildBodyCell(_formatAmount((acc['debit'] ?? 0).toDouble()), alignRight: true),
-                                      _buildBodyCell(_formatAmount((acc['credit'] ?? 0).toDouble()), alignRight: true),
+                                      _buildBodyCell(context, _getAccountName(acc)),
+                                      _buildBodyCell(context, acc['account_type']?.toString() ?? '-'),
+                                      _buildBodyCell(context, _formatAmount((acc['debit'] ?? 0).toDouble()), alignRight: true),
+                                      _buildBodyCell(context, _formatAmount((acc['credit'] ?? 0).toDouble()), alignRight: true),
                                     ],
                                   );
                                 }).toList(),
@@ -516,10 +570,10 @@ class _TrialBalanceScreenState extends State<TrialBalanceScreen> {
                               children: [
                                 TableRow(
                                   children: [
-                                    _buildFooterCell("TOTAL"),
-                                    _buildFooterCell(""),
-                                    _buildFooterCell(_formatAmount(_totalDebit), alignRight: true),
-                                    _buildFooterCell(_formatAmount(_totalCredit), alignRight: true),
+                                    _buildFooterCell(context, "TOTAL"),
+                                    _buildFooterCell(context, ""),
+                                    _buildFooterCell(context, _formatAmount(_totalDebit), alignRight: true),
+                                    _buildFooterCell(context, _formatAmount(_totalCredit), alignRight: true),
                                   ],
                                 ),
                               ],
@@ -535,46 +589,58 @@ class _TrialBalanceScreenState extends State<TrialBalanceScreen> {
     );
   }
 
-  // ================= CELl BUILDERS FOR PERFECT ALIGNMENT =================
-  Widget _buildHeaderCell(String text, {bool alignRight = false}) {
+  // ================= CELL BUILDERS =================
+  Widget _buildHeaderCell(BuildContext context, String text, {bool alignRight = false}) {
+    final isMobile = Responsive.isMobile(context);
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+      padding: EdgeInsets.symmetric(
+        vertical: isMobile ? 10 : 16,
+        horizontal: isMobile ? 6 : 24,
+      ),
       child: Text(
         text,
         textAlign: alignRight ? TextAlign.right : TextAlign.left,
-        style: const TextStyle(
+        style: TextStyle(
           fontWeight: FontWeight.w700,
-          fontSize: 13,
-          color: Color(0xFF334155),
+          fontSize: isMobile ? 10 : 13,
+          color: const Color(0xFF334155),
         ),
       ),
     );
   }
 
-  Widget _buildBodyCell(String text, {bool alignRight = false}) {
+  Widget _buildBodyCell(BuildContext context, String text, {bool alignRight = false}) {
+    final isMobile = Responsive.isMobile(context);
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+      padding: EdgeInsets.symmetric(
+        vertical: isMobile ? 10 : 16,
+        horizontal: isMobile ? 6 : 24,
+      ),
       child: Text(
         text,
         textAlign: alignRight ? TextAlign.right : TextAlign.left,
-        style: const TextStyle(
-          fontSize: 14,
-          color: Color(0xFF0F172A),
+        style: TextStyle(
+          fontSize: isMobile ? 10 : 14,
+          color: const Color(0xFF0F172A),
         ),
       ),
     );
   }
 
-  Widget _buildFooterCell(String text, {bool alignRight = false}) {
+  Widget _buildFooterCell(BuildContext context, String text, {bool alignRight = false}) {
+    final isMobile = Responsive.isMobile(context);
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
+      padding: EdgeInsets.symmetric(
+        vertical: isMobile ? 12 : 20,
+        horizontal: isMobile ? 6 : 24,
+      ),
       child: Text(
         text,
         textAlign: alignRight ? TextAlign.right : TextAlign.left,
-        style: const TextStyle(
+        style: TextStyle(
           fontWeight: FontWeight.bold,
-          fontSize: 14,
-          color: Color(0xFF1E3A8A),
+          fontSize: isMobile ? 10 : 14,
+          color: const Color(0xFF1E3A8A),
         ),
       ),
     );
