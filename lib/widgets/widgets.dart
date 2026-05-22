@@ -1088,8 +1088,8 @@ class HeaderBreadcrumb {
 }
 
 // ─── IDENTITY HEADER ─────────────────────────────────────────
-class AmsIdentityHeader extends StatefulWidget {
-  final Widget icon;
+class AmsIdentityHeader extends StatelessWidget {
+  final Widget? icon;
   final String title;
   final String subtitle;
   final List<Widget> badges;
@@ -1097,167 +1097,135 @@ class AmsIdentityHeader extends StatefulWidget {
   final Color accentLt;
   final Color accentMd;
   final List<HeaderBreadcrumb>? breadcrumbs;
-  final VoidCallback onBack;
+  final Widget? backIcon;
+  final VoidCallback? onBack;
   final List<Widget>? actions;
-  final bool showBack;
+  final bool? showBack;
 
   const AmsIdentityHeader({
-    super.key,
-    required this.icon,
+    Key? key,
+    this.icon,
     required this.title,
     required this.subtitle,
-    required this.badges,
+    this.badges = const [],
     required this.accentColor,
     required this.accentLt,
     required this.accentMd,
     this.breadcrumbs,
-    required this.onBack,
+    this.backIcon,
+    this.onBack,
     this.actions,
-    this.showBack = true,
-  });
-
-  @override
-  State<AmsIdentityHeader> createState() => _AmsIdentityHeaderState();
-}
-
-class _AmsIdentityHeaderState extends State<AmsIdentityHeader> {
-  bool _isHover = false;
+    this.showBack,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (_) => setState(() => _isHover = true),
-      onExit: (_) => setState(() => _isHover = false),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          border: Border.all(color: AppColors.border),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            /// 🔥 Breadcrumbs (SHOW ONLY ON HOVER)
-            AnimatedCrossFade(
-              duration: const Duration(milliseconds: 200),
-              crossFadeState: _isHover
-                  ? CrossFadeState.showFirst
-                  : CrossFadeState.showSecond,
-              firstChild: Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: widget.breadcrumbs!.asMap().entries.map((entry) {
-                      final idx = entry.key;
-                      final item = entry.value;
-                      final isLast = idx == widget.breadcrumbs!.length - 1;
+    final isRTL = Directionality.of(context) == TextDirection.rtl;
+    final bool displayBackButton = (showBack ?? true) && onBack != null;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          /// 1. GLOBAL LEFT-SIDE BACK BUTTON (Clean Black Arrow Icon Only)
+          if (displayBackButton) ...[
+            GestureDetector(
+              onTap: onBack,
+              child: MouseRegion(
+                cursor: SystemMouseCursors.click, // Changes cursor to hand pointer on hover
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4), // Clickable area padding
+                  child: Icon(
+                    isRTL ? Icons.arrow_forward_rounded : Icons.arrow_back_rounded,
+                    color: Colors.black, // Clean black arrow color
+                    size: 24,            // Standalone icon sizing
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12), // Space between the black arrow and the layout content
+          ],
+
+          /// 2. Header Layout Contents (Title, Subtitle, Breadcrumbs)
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    if (icon != null) ...[
+                      icon!,
+                      const SizedBox(width: 8),
+                    ],
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1E293B),
+                      ),
+                    ),
+                    if (badges.isNotEmpty) ...[
+                      const SizedBox(width: 8),
+                      ...badges,
+                    ],
+                  ],
+                ),
+                if (breadcrumbs != null && breadcrumbs!.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Row(
+                    children: breadcrumbs!.asMap().entries.map((entry) {
+                      final index = entry.key;
+                      final crumb = entry.value;
+                      final isLast = index == breadcrumbs!.length - 1;
 
                       return Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          MouseRegion(
-                            cursor: item.onTap != null
-                                ? SystemMouseCursors.click
-                                : SystemMouseCursors.basic,
-                            child: GestureDetector(
-                              onTap: item.onTap,
+                          GestureDetector(
+                            onTap: crumb.onTap,
+                            child: MouseRegion(
+                              cursor: crumb.onTap != null 
+                                  ? SystemMouseCursors.click 
+                                  : SystemMouseCursors.basic,
                               child: Text(
-                                item.label,
-                                style: bodyStyle(
-                                  size: 11,
-                                  weight: FontWeight.w600,
-                                  color: AppColors.ink4,
-                                ).copyWith(
-                                  decoration: item.onTap != null
-                                      ? TextDecoration.underline
-                                      : TextDecoration.none,
-                                  decorationColor:
-                                      AppColors.ink4.withOpacity(0.3),
+                                crumb.label,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: isLast ? Colors.grey[600] : AppColors.tBlue,
+                                  fontWeight: isLast ? FontWeight.w500 : FontWeight.normal,
                                 ),
                               ),
                             ),
                           ),
                           if (!isLast)
-                            const Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 6),
-                              child: Icon(
-                                Icons.chevron_right_rounded,
-                                size: 14,
-                                color: AppColors.ink4,
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 4),
+                              child: Text(
+                                '/',
+                                style: TextStyle(fontSize: 12, color: Colors.grey[400]),
                               ),
                             ),
                         ],
                       );
                     }).toList(),
                   ),
-                ),
-              ),
-              secondChild: const SizedBox(),
+                ],
+              ],
             ),
+          ),
 
-            /// Title Row
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final isMobile = Responsive.isMobile(context);
-                return Row(
-                  children: [
-                    widget.icon,
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        widget.title,
-                        style: bodyStyle(
-                          size: isMobile ? 14 : 16,
-                          weight: FontWeight.w800,
-                          color: widget.accentColor,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-
-                    if (widget.actions != null && !isMobile) ...[
-                      ...widget.actions!,
-                      const SizedBox(width: 12),
-                    ],
-
-                    /// Back Button
-                    GestureDetector(
-                      onTap: widget.onBack,
-                      child: Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: isMobile ? 8 : 12,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.red,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.arrow_back, color: Colors.white, size: 14),
-                            if (!isMobile) ...[
-                              const SizedBox(width: 6),
-                              const Text(
-                                "Back",
-                                style: TextStyle(color: Colors.white),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-                    )
-                  ],
-                );
-              }
+          /// 3. Trailing Actions Container (Right side actions)
+          if (actions != null && actions!.isNotEmpty) ...[
+            const SizedBox(width: 16),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: actions!,
             ),
           ],
-        ),
+        ],
       ),
     );
   }
