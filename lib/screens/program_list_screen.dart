@@ -297,9 +297,13 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
   }
 
   Widget _buildActivityChart() {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: _cardDecoration(),
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: () => widget.onProceed('AUTH'),
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: _cardDecoration(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -336,6 +340,8 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
             ),
           ),
         ],
+      ),
+        ),
       ),
     );
   }

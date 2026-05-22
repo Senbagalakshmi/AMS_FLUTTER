@@ -11,6 +11,7 @@ import 'gl_attribute_screen.dart';
 import 'organisation_screen.dart';
 import 'program_master_screen.dart';
 import 'branch_screen.dart';
+import 'gl_allowed_branch_screen.dart';
 
 class NonTranAuthScreen extends StatefulWidget {
   final List<AuthRecord> authQueue;
@@ -474,6 +475,12 @@ class _NonTranAuthScreenState extends State<NonTranAuthScreen> {
                                 return ProgramMasterFields(
                                   isViewMode: true,
                                   initialData: block.data,
+                                  onChanged: (k, v) {},
+                                );
+                              } else if (cleanProg == 'GLBRN' || cleanProg == 'GL104') {
+                                return GLAllowedBranchFields(
+                                  initialData: block.data,
+                                  isViewMode: true,
                                   onChanged: (k, v) {},
                                 );
                               } else if (cleanProg == 'BRNCRT' || cleanProg == 'BRANCH') {

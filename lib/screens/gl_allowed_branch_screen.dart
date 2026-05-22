@@ -1451,3 +1451,66 @@ class _PremiumToggle extends StatelessWidget {
     );
   }
 }
+
+// ─── GLAllowedBranchFields Widget ──────────────────────────────────────────────
+class GLAllowedBranchFields extends StatelessWidget {
+  final Map<String, dynamic>? initialData;
+  final bool isViewMode;
+  final void Function(String key, dynamic val) onChanged;
+
+  const GLAllowedBranchFields({
+    super.key,
+    this.initialData,
+    this.isViewMode = false,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (initialData == null) return const SizedBox.shrink();
+
+    final d = initialData!.map((k, v) => MapEntry(k.toLowerCase(), v));
+
+    final orgCode = d['orgcode']?.toString() ?? '50';
+    final glNo = d['glno']?.toString() ?? '';
+    final allowedBrn = d['allowedbrn']?.toString() ?? '';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        AmsFormGrid(
+          children: [
+            AmsField(
+              label: 'Organisation Code',
+              labelAbove: true,
+              child: AmsTextInput(
+                initialValue: orgCode,
+                readOnly: isViewMode,
+                icon: Icons.business,
+                onChanged: (v) => onChanged('orgCode', v),
+              ),
+            ),
+            AmsField(
+              label: 'GL Account No',
+              labelAbove: true,
+              child: AmsTextInput(
+                initialValue: glNo,
+                readOnly: isViewMode,
+                onChanged: (v) => onChanged('glNo', v),
+              ),
+            ),
+            AmsField(
+              label: 'Allowed Branches',
+              labelAbove: true,
+              child: AmsTextInput(
+                initialValue: allowedBrn,
+                readOnly: isViewMode,
+                onChanged: (v) => onChanged('allowedBrn', v),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
