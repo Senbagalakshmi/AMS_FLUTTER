@@ -505,14 +505,6 @@ final List<SubmenuItem> glSubmenus = [
     metric: '4 Modules',
     trend: 'Grouped',
   ),
-  SubmenuItem(
-    label: 'GL Balance',
-    icon: Icons.account_balance_rounded,
-    programId: 'GL-BAL',
-    subtitle: 'View current, date-wise, and yearly balances.',
-    metric: 'Real-time',
-    trend: 'Live',
-  ),
 ];
 
 final List<SubmenuItem> transactionSubmenus = [
@@ -523,6 +515,14 @@ final List<SubmenuItem> transactionSubmenus = [
     subtitle: 'Create and manage ledger journal entries.',
     metric: 'New',
     trend: 'Daily',
+  ),
+  SubmenuItem(
+    label: 'Chart of Accounts',
+    icon: Icons.list_alt_rounded,
+    programId: 'RPT-COA',
+    subtitle: 'View and manage organization accounts structure.',
+    metric: 'Active',
+    trend: 'Standard',
   ),
 ];
 

@@ -35,7 +35,6 @@ import 'screens/menu_master_screen.dart';
 import 'screens/splash_screen.dart';
 import 'screens/journal_entry_screen.dart';
 import 'screens/journal_list_screen.dart';
-import 'screens/gl_balance_screen.dart';
 import 'screens/trial_balance_screen.dart';
 import 'screens/profit_and_loss_screen.dart';
 import 'screens/chart_of_accounts_screen.dart';
@@ -554,12 +553,6 @@ class _AmsRootState extends State<AmsRoot> {
           );
         } else if (_state.selectedProg == 'GL-SEG') {
           body = GlSegmentsScreen(
-            onBack: () => _navigate('list'),
-            onBackToModule: () => _handleProceed('GL'),
-            userName: _state.userName,
-          );
-        } else if (_state.selectedProg == 'GL-BAL') {
-          body = GLBalanceScreen(
             onBack: () => _navigate('list'),
             onBackToModule: () => _handleProceed('GL'),
             userName: _state.userName,
