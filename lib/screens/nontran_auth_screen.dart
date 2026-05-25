@@ -637,25 +637,38 @@ class _AuthQueueTable extends StatelessWidget {
                           Container(height: 1, color: AppColors.border.withValues(alpha: 0.6)),
                           const SizedBox(height: 12),
                           Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text('ENTERED BY',
-                                      style: bodyStyle(size: 9, color: AppColors.ink3, weight: FontWeight.w700, letterSpacing: 0.5)),
-                                  const SizedBox(height: 3),
-                                  Text(record.eUser, style: bodyStyle(size: 12, color: AppColors.ink2, weight: FontWeight.w600)),
-                                ],
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text('ENTERED BY',
+                                        style: bodyStyle(size: 9, color: AppColors.ink3, weight: FontWeight.w700, letterSpacing: 0.5)),
+                                    const SizedBox(height: 3),
+                                    Text(record.eUser, 
+                                      style: bodyStyle(size: 12, color: AppColors.ink2, weight: FontWeight.w600),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
+                                ),
                               ),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  Text('ENTERED ON',
-                                      style: bodyStyle(size: 9, color: AppColors.ink3, weight: FontWeight.w700, letterSpacing: 0.5)),
-                                  const SizedBox(height: 3),
-                                  Text(record.eDate, style: monoStyle(size: 11, color: AppColors.ink2, weight: FontWeight.w600)),
-                                ],
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Text('ENTERED ON',
+                                        style: bodyStyle(size: 9, color: AppColors.ink3, weight: FontWeight.w700, letterSpacing: 0.5)),
+                                    const SizedBox(height: 3),
+                                    Text(record.eDate, 
+                                      style: monoStyle(size: 11, color: AppColors.ink2, weight: FontWeight.w600),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
+                                ),
                               ),
                             ],
                           ),

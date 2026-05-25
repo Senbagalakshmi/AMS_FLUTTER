@@ -1153,7 +1153,8 @@ class AmsIdentityHeader extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Row(
+                Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
                     if (icon != null) ...[
                       icon!,
@@ -1175,7 +1176,8 @@ class AmsIdentityHeader extends StatelessWidget {
                 ),
                 if (breadcrumbs != null && breadcrumbs!.isNotEmpty) ...[
                   const SizedBox(height: 4),
-                  Row(
+                  Wrap(
+                    crossAxisAlignment: WrapCrossAlignment.center,
                     children: breadcrumbs!.asMap().entries.map((entry) {
                       final index = entry.key;
                       final crumb = entry.value;

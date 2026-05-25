@@ -1863,17 +1863,30 @@ class _GLCategoryFieldsState extends State<GLCategoryFields> {
             children: [
               Icon(icon, size: 14, color: AppColors.ink3),
               const SizedBox(width: 8),
-              Text(label,
+              Expanded(
+                child: Text(
+                  label,
                   style: bodyStyle(
-                      size: 11,
-                      color: AppColors.ink3,
-                      weight: FontWeight.w600)),
+                    size: 11,
+                    color: AppColors.ink3,
+                    weight: FontWeight.w600,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 8),
-          Text(value,
-              style: bodyStyle(
-                  size: 14, color: AppColors.ink, weight: FontWeight.w700)),
+          Text(
+            value,
+            style: bodyStyle(
+              size: 14,
+              color: AppColors.ink,
+              weight: FontWeight.w700,
+            ),
+            overflow: TextOverflow.ellipsis,
+            maxLines: 2,
+          ),
         ],
       ),
     );
