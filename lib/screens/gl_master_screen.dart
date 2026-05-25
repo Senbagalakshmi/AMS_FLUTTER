@@ -32,11 +32,7 @@ class _GLMasterScreenState extends State<GLMasterScreen> {
   bool _isViewOnly = false;
   bool _isEditing = false; // true = Edit mode, false = Create mode
   Map<String, dynamic> _editingRecord = {}; // original record for audit field preservation
-  int _currentPage = 1;
   static const int _pageSize = 10;
-  // When backend returns the full list despite page/size, cache it here so
-  // subsequent page navigation can be served from the cache without extra requests.
-  List<Map<String, dynamic>>? _backendFullGlMasters;
 
   // ── Loading / Error ──────────────────────────────────────────────────
   bool _loadingList = false;
@@ -45,9 +41,19 @@ class _GLMasterScreenState extends State<GLMasterScreen> {
   String? _listError;
 
   // ── Data ─────────────────────────────────────────────────────────────
-  List<Map<String, dynamic>> _accounts = [];
+  List<Map<String, dynamic>> _allAccounts = [];
   List<Map<String, dynamic>> _categoryList = []; // [{glCatCd, glCatName, ...}]
-  int _totalItems = 0;
+
+  List<Map<String, dynamic>> get _filteredAccounts {
+    if (_searchQuery.isEmpty) return _allAccounts;
+    final q = _searchQuery.toLowerCase();
+    return _allAccounts.where((c) {
+      if (c == null) return false;
+      return (c['glName'] ?? '').toString().toLowerCase().contains(q) ||
+          (c['glNo'] ?? '').toString().toLowerCase().contains(q);
+    }).toList();
+  }
+
 
   // ── Controllers & Focus ──────────────────────────────────────────────
   final _orgCodeController = TextEditingController();
@@ -109,55 +115,26 @@ class _GLMasterScreenState extends State<GLMasterScreen> {
   // API Calls
   // ─────────────────────────────────────────────────────────────────────
 
-  Future<void> _loadCategories({int page = 1}) async {
+  Future<void> _loadCategories() async {
     setState(() => _loadingCategories = true);
-    final result = await apiService.getAllGlCategories(page: page - 1, size: _pageSize);
+    final result = await apiService.getAllGlCategories(page: 0, size: 1000);
     setState(() {
       _loadingCategories = false;
       _categoryList = result?.items ?? [];
     });
   }
 
-  Future<void> _loadGlMasters({int page = 1}) async {
+  Future<void> _loadGlMasters() async {
     setState(() {
       _loadingList = true;
       _listError = null;
-      _currentPage = page;
     });
-    // If we previously detected the backend returned a full list and cached it,
-    // serve from cache instead of making another network request.
-    if (_backendFullGlMasters != null) {
-      final cache = _backendFullGlMasters!;
-      _loadingList = false;
-      _totalItems = cache.length;
-      final startIndex = (page - 1) * _pageSize;
-      final pageItems = cache.skip(startIndex).take(_pageSize).toList();
-      setState(() {
-        _accounts = pageItems;
-        _loadingList = false;
-      });
-      return;
-    }
 
-    final result = await apiService.getAllGlMasters(page: page - 1, size: _pageSize);
+    final result = await apiService.getAllGlMasters(page: 0, size: 1000);
     setState(() {
       _loadingList = false;
       if (result != null) {
-        // Detect backend returning full list ignoring page/size.
-        final bool backendReturnedFullList =
-            result.items.length > _pageSize && result.totalElements == result.items.length;
-
-        _totalItems = result.totalElements;
-
-        if (backendReturnedFullList) {
-          // Cache the full list so subsequent page clicks can be served from cache
-          // without re-requesting the API which incorrectly returns all items.
-          _backendFullGlMasters = result.items.reversed.toList();
-          final startIndex = (page - 1) * _pageSize;
-          _accounts = _backendFullGlMasters!.skip(startIndex).take(_pageSize).toList();
-        } else {
-          _accounts = result.items.reversed.toList();
-        }
+        _allAccounts = result.items.reversed.toList();
       } else {
         _listError = 'Failed to load GL Master records.';
       }
@@ -242,9 +219,8 @@ class _GLMasterScreenState extends State<GLMasterScreen> {
       );
       _clearFields();
       setState(() => _showForm = false);
-        // Invalidate any cached full-list responses so the next load fetches fresh data.
-        _backendFullGlMasters = null;
-        await _loadGlMasters(page: 1); // Refresh to page 1 (first page only)
+        await _loadGlMasters(); // Refresh
+
     } else {
       _showSnack(
         _isEditing
@@ -552,7 +528,7 @@ class _GLMasterScreenState extends State<GLMasterScreen> {
   Future<void> _deleteGlMaster(Map<String, dynamic> c) async {
     final glNo = c['glNo'] is int
         ? c['glNo'] as int
-        : int.tryParse(c['glNo'].toString()) ?? 0;
+        : int.tryParse((c['glNo'] ?? '').toString()) ?? 0;
     
     final orgCodeRaw = c['orgCode'] ?? c['orgcode'] ?? c['org_code'];
     final orgCode = orgCodeRaw is int ? orgCodeRaw : int.tryParse(orgCodeRaw?.toString() ?? '') ?? 0;
@@ -563,7 +539,7 @@ class _GLMasterScreenState extends State<GLMasterScreen> {
 
     if (success) {
       _showSnack('${c['glName']} deleted successfully', isError: false);
-      await _loadGlMasters(page: 1);
+      await _loadGlMasters();
     } else {
       _showSnack('Failed to delete ${c['glName']}', isError: true);
     }
@@ -577,7 +553,7 @@ class _GLMasterScreenState extends State<GLMasterScreen> {
   String _catName(dynamic glCatCd) {
     if (_categoryList.isEmpty) return glCatCd?.toString() ?? '—';
     final match = _categoryList.firstWhere(
-      (c) => c['glCatCd'].toString() == glCatCd.toString(),
+      (c) => (c['glCatCd'] ?? '').toString() == (glCatCd ?? '').toString(),
       orElse: () => {},
     );
     return match['glCatName']?.toString() ?? glCatCd?.toString() ?? '—';
@@ -798,7 +774,6 @@ class _GLMasterScreenState extends State<GLMasterScreen> {
                       placeholder: 'Search GL accounts...',
                       onChanged: (v) => setState(() {
                         _searchQuery = v;
-                        _currentPage = 1;
                       }),
                     ),
                     const SizedBox(height: 12),
@@ -842,7 +817,6 @@ class _GLMasterScreenState extends State<GLMasterScreen> {
                       placeholder: 'Search GL accounts...',
                       onChanged: (v) => setState(() {
                         _searchQuery = v;
-                        _currentPage = 1;
                       }),
                     ),
                   ),
@@ -878,11 +852,9 @@ class _GLMasterScreenState extends State<GLMasterScreen> {
           ),
           Expanded(
             child: AmsPaginatedView<Map<String, dynamic>>(
-              items: _accounts,
+              items: _filteredAccounts,
               itemsPerPage: _pageSize,
-              currentPage: _currentPage,
-              totalRecords: _totalItems,
-              onPageChanged: (page) => _loadGlMasters(page: page),
+              forceShowFooter: true,
               builder: (context, paginatedItems) => _buildTable(paginatedItems),
             ),
           ),
@@ -896,7 +868,7 @@ class _GLMasterScreenState extends State<GLMasterScreen> {
   // ─────────────────────────────────────────────────────────────────────
 
   Widget _buildTable(List<Map<String, dynamic>> items) {
-    if (_loadingList && _accounts.isEmpty) {
+    if (_loadingList && _allAccounts.isEmpty) {
       return const Padding(
         padding: EdgeInsets.all(16.0),
         child: AmsTableSkeleton(rows: 8),
@@ -916,21 +888,14 @@ class _GLMasterScreenState extends State<GLMasterScreen> {
             AmsButton(
               label: 'Retry',
               variant: AmsButtonVariant.outline,
-              onPressed: () => _loadGlMasters(page: _currentPage),
+              onPressed: () => _loadGlMasters(),
             ),
           ],
         ),
       );
     }
 
-    final filtered = items.where((c) {
-      if (_searchQuery.isEmpty) return true;
-      final q = _searchQuery.toLowerCase();
-      return c['glName'].toString().toLowerCase().contains(q) ||
-          c['glNo'].toString().toLowerCase().contains(q);
-    }).toList();
-
-    if (filtered.isEmpty) {
+    if (items.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -957,10 +922,10 @@ class _GLMasterScreenState extends State<GLMasterScreen> {
 
     return ListView.separated(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      itemCount: filtered.length,
+      itemCount: items.length,
       separatorBuilder: (_, __) => const SizedBox(height: 12),
       itemBuilder: (_, idx) {
-        final c = filtered[idx];
+        final c = items[idx] ?? <String, dynamic>{};
         final isMobile = Responsive.isMobile(context);
         final catName = _catName(c['glCatCd']);
         final statusLbl = _statusLabel(c['status']);
@@ -1541,59 +1506,6 @@ class _GLMasterScreenState extends State<GLMasterScreen> {
   }
 
   // ─────────────────────────────────────────────────────────────────────
-  // Pagination Footer
-  // ─────────────────────────────────────────────────────────────────────
-
-  Widget _buildPaginationFooter() {
-    final start = ((_currentPage - 1) * _pageSize) + 1;
-    final end = start + _accounts.length - 1;
-
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text('Showing $start–$end',
-              style: bodyStyle(size: 13, color: AppColors.ink3)),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              IconButton(
-                icon: Icon(Icons.chevron_left_rounded,
-                    size: 20,
-                    color: _currentPage > 1 ? AppColors.ink3 : AppColors.border),
-                onPressed: _currentPage > 1
-                    ? () {
-                        setState(() {
-                          _currentPage--;
-                        });
-                        _loadGlMasters(page: _currentPage);
-                      }
-                    : null,
-              ),
-              IconButton(
-                icon: Icon(Icons.chevron_right_rounded,
-                    size: 20,
-                    color: _accounts.length == _pageSize
-                        ? AppColors.ink3
-                        : AppColors.border),
-                onPressed: _accounts.length == _pageSize
-                    ? () {
-                        setState(() {
-                          _currentPage++;
-                        });
-                        _loadGlMasters(page: _currentPage);
-                      }
-                    : null,
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ─────────────────────────────────────────────────────────────────────
   // Small helpers
   // ─────────────────────────────────────────────────────────────────────
 
@@ -1829,7 +1741,7 @@ class _GLMasterFieldsState extends State<GLMasterFields> {
             initialValue: widget.categoryList.isEmpty ? null : () {
               if (_glCatCd == null) return null;
               final match = widget.categoryList.firstWhere(
-                (c) => c['glCatCd'].toString() == _glCatCd.toString(),
+                (c) => (c['glCatCd'] ?? '').toString() == (_glCatCd ?? '').toString(),
                 orElse: () => {},
               );
               if (match.isEmpty) return null;

@@ -27,17 +27,23 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
   bool _showForm = false;
   String? _selectedCategoryType;
   bool _isViewOnly = false;
-  int _currentPage = 1;
   static const int _pageSize = 10;
 
   // API state
-  List<Map<String, dynamic>> _categories = [];
+  List<Map<String, dynamic>> _allCategories = [];
   bool _isLoading = false;
   String? _loadError;
-  int _totalItems = 0;
-  // Cache full-array category responses so subsequent page navigation can be served
-  // from the cache when the backend returns the entire dataset.
-  List<Map<String, dynamic>>? _backendFullCategories;
+  
+  List<Map<String, dynamic>> get _filteredCategories {
+    if (_searchQuery.isEmpty) return _allCategories;
+    final q = _searchQuery.toLowerCase();
+    return _allCategories.where((c) {
+      if (c == null) return false;
+      final name = _getName(c).toLowerCase();
+      final code = _getCode(c).toLowerCase();
+      return name.contains(q) || code.contains(q);
+    }).toList();
+  }
 
   final _orgCodeController = TextEditingController();
 
@@ -82,64 +88,29 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
 
   // ─── API CALLS ────────────────────────────────────────────────────────────
 
-  Future<void> _loadCategories({int page = 1}) async {
+  Future<void> _loadCategories() async {
     setState(() {
       _isLoading = true;
       _loadError = null;
-      _currentPage = page;
     });
 
-    // Serve from cache when available (backend previously returned full list).
-    if (_backendFullCategories != null) {
-      final cache = _backendFullCategories!;
-      setState(() {
-        _isLoading = false;
-        _totalItems = cache.length;
-        final startIndex = (page - 1) * _pageSize;
-        _categories = cache.skip(startIndex).take(_pageSize).toList();
-      });
-      return;
-    }
-
     final result =
-        await apiService.getAllGlCategories(page: page - 1, size: _pageSize);
+        await apiService.getAllGlCategories(page: 0, size: 1000);
 
     setState(() {
       _isLoading = false;
       if (result != null) {
-        _totalItems = result.totalElements;
-
-        final bool backendReturnedFullList =
-            result.items.length > _pageSize && result.totalElements == result.items.length;
-
-        if (backendReturnedFullList) {
-          // Cache the sorted reversed list and serve pages from cache.
-          final temp = List<Map<String, dynamic>>.from(result.items);
-          temp.sort((a, b) {
-            final idA = int.tryParse(_getCode(a)) ?? 0;
-            final idB = int.tryParse(_getCode(b)) ?? 0;
-            if (_lastModifiedId != null) {
-              if (idA == _lastModifiedId) return -1;
-              if (idB == _lastModifiedId) return 1;
-            }
-            return idB.compareTo(idA);
-          });
-          _backendFullCategories = temp;
-          final startIndex = (page - 1) * _pageSize;
-          _categories = _backendFullCategories!.skip(startIndex).take(_pageSize).toList();
-        } else {
-          _categories = result.items;
-          // 🔥 SORT BY glCatCd DESCENDING (LATEST ON TOP)
-          _categories.sort((a, b) {
-            final idA = int.tryParse(_getCode(a)) ?? 0;
-            final idB = int.tryParse(_getCode(b)) ?? 0;
-            if (_lastModifiedId != null) {
-              if (idA == _lastModifiedId) return -1;
-              if (idB == _lastModifiedId) return 1;
-            }
-            return idB.compareTo(idA);
-          });
-        }
+        _allCategories = result.items;
+        // 🔥 SORT BY glCatCd DESCENDING (LATEST ON TOP)
+        _allCategories.sort((a, b) {
+          final idA = int.tryParse(_getCode(a)) ?? 0;
+          final idB = int.tryParse(_getCode(b)) ?? 0;
+          if (_lastModifiedId != null) {
+            if (idA == _lastModifiedId) return -1;
+            if (idB == _lastModifiedId) return 1;
+          }
+          return idB.compareTo(idA);
+        });
       } else {
         _loadError = 'Failed to load categories. Please try again.';
       }
@@ -228,8 +199,7 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
         _editingRecord = {};
       });
       // Invalidate cached full-list responses so we fetch fresh data next.
-      _backendFullCategories = null;
-      await _loadCategories(page: 1);
+      await _loadCategories();
     } else {
       _showSnackbar('Failed to save category. Please try again.',
           isError: true);
@@ -259,7 +229,7 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
     if (success) {
       _showSnackbar('${c['glCatName'] ?? c['name']} deleted successfully',
           isError: false);
-      await _loadCategories(page: 1); // Refresh to page 1 (first page only)
+      await _loadCategories(); // Refresh
     } else {
       _showSnackbar('Failed to delete category. Please try again.',
           isError: true);
@@ -655,8 +625,9 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
   // ─── FIELD MAPPING HELPERS ────────────────────────────────────────────────
   // API may return different key names — handle both gracefully
 
-  String _getField(Map<String, dynamic> c, List<String> keys,
+  String _getField(Map<String, dynamic>? c, List<String> keys,
       {String fallback = ''}) {
+    if (c == null) return fallback;
     for (final k in keys) {
       if (c.containsKey(k) && c[k] != null) return c[k].toString();
     }
@@ -819,11 +790,9 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
           ),
           Expanded(
             child: AmsPaginatedView<Map<String, dynamic>>(
-              items: _categories,
+              items: _filteredCategories,
               itemsPerPage: _pageSize,
-              currentPage: _currentPage,
-              totalRecords: _totalItems,
-              onPageChanged: (page) => _loadCategories(page: page),
+              forceShowFooter: true,
               builder: (context, paginatedItems) => _buildTable(paginatedItems),
             ),
           ),
@@ -1252,7 +1221,7 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
   // ─── TABLE ────────────────────────────────────────────────────────────────
 
   Widget _buildTable(List<Map<String, dynamic>> items) {
-    if (_isLoading && _categories.isEmpty) {
+    if (_isLoading && _allCategories.isEmpty) {
       return const Padding(
         padding: EdgeInsets.all(16.0),
         child: AmsTableSkeleton(rows: 8),
@@ -1272,22 +1241,14 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
             AmsButton(
               label: 'Retry',
               variant: AmsButtonVariant.outline,
-              onPressed: () => _loadCategories(page: _currentPage),
+              onPressed: () => _loadCategories(),
             ),
           ],
         ),
       );
     }
 
-    final filtered = items.where((c) {
-      if (_searchQuery.isEmpty) return true;
-      final q = _searchQuery.toLowerCase();
-      final name = _getName(c).toLowerCase();
-      final code = _getCode(c).toLowerCase();
-      return name.contains(q) || code.contains(q);
-    }).toList();
-
-    if (filtered.isEmpty) {
+    if (items.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -1314,10 +1275,10 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
 
     return ListView.separated(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      itemCount: filtered.length,
+      itemCount: items.length,
       separatorBuilder: (ctx, idx) => const SizedBox(height: 12),
       itemBuilder: (ctx, idx) {
-        final c = filtered[idx];
+        final c = items[idx] ?? <String, dynamic>{};
         final isMobile = Responsive.isMobile(context);
         final type = _getType(c);
         final name = _getName(c);
