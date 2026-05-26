@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../theme.dart';
 import '../widgets/widgets.dart';
 import '../models/models.dart';
@@ -759,7 +760,7 @@ class _AuthQueueTable extends StatelessWidget {
                       ),
                       // Entered On
                       _td(
-                        Text(record.eDate,
+                        Text(_formatDateOnly(record.eDate),
                             style: monoStyle(size: 11, color: AppColors.ink2)),
                         onTap: () => onSelect(record),
                       ),
@@ -798,6 +799,16 @@ class _AuthQueueTable extends StatelessWidget {
         child: child,
       ),
     );
+  }
+
+  static String _formatDateOnly(String dateString) {
+    if (dateString.isEmpty) return '';
+    try {
+      final dateTime = DateTime.parse(dateString);
+      return DateFormat('yyyy-MM-dd').format(dateTime);
+    } catch (e) {
+      return dateString;
+    }
   }
 
   static Widget _tdCenter(Widget child) {
