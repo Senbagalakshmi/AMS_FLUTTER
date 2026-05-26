@@ -236,6 +236,10 @@ class _AmsRootState extends State<AmsRoot> {
       setState(() => _state = _state.copyWith(screen: 'auth_config'));
       return;
     }
+    if (type == 'nontranauth') {
+      setState(() => _state = _state.copyWith(screen: 'nontranauth'));
+      return;
+    }
     setState(() => _state = _state.copyWith(
           screen: 'list',
           selectedType: type,

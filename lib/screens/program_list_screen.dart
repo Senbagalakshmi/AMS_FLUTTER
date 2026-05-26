@@ -221,6 +221,7 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
             Icons.pending_actions_rounded,
             AppColors.tBlue,
             pendingTrend,
+            onTap: () => widget.onProceed('nontranauth'),
           ),
           _kpiCard('System Security', '98%', Icons.security_rounded,
               AppColors.green, 'Healthy'),
@@ -236,7 +237,7 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
   }
 
   Widget _kpiCard(
-      String title, String val, IconData icon, Color color, String trend) {
+      String title, String val, IconData icon, Color color, String trend, {VoidCallback? onTap}) {
     // Determine trend text color
     Color trendColor;
     if (trend.contains('+')) {
@@ -247,52 +248,64 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
       trendColor = AppColors.ink4;
     }
 
+    Widget cardContent = Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Icon(icon, color: color, size: 24),
+              Text(
+                trend,
+                style: bodyStyle(
+                    size: 10, weight: FontWeight.w800, color: trendColor),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            val,
+            style: bodyStyle(
+              size: 28,
+              weight: FontWeight.w900,
+              color: AppColors.ink,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(title,
+              style: bodyStyle(
+                  size: 13, color: AppColors.ink3, weight: FontWeight.w600)),
+        ],
+      ),
+    );
+
+    if (onTap != null) {
+      cardContent = MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: GestureDetector(
+          onTap: onTap,
+          child: cardContent,
+        ),
+      );
+    }
+
     return SizedBox(
       width: 210,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.border),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.02),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Icon(icon, color: color, size: 24),
-                Text(
-                  trend,
-                  style: bodyStyle(
-                      size: 10, weight: FontWeight.w800, color: trendColor),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Text(
-              val,
-              style: bodyStyle(
-                size: 28,
-                weight: FontWeight.w900,
-                color: AppColors.ink,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(title,
-                style: bodyStyle(
-                    size: 13, color: AppColors.ink3, weight: FontWeight.w600)),
-          ],
-        ),
-      ),
+      child: cardContent,
     );
   }
 
