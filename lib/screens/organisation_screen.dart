@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 import '../theme.dart';
 import '../widgets/widgets.dart';
 import '../services/org_api_service.dart';
+import '../services/location_api_service.dart'; // ← NEW
 import '../utils/responsive.dart';
 
 class OrganisationScreen extends StatefulWidget {
@@ -25,62 +24,6 @@ class OrganisationScreen extends StatefulWidget {
 }
 
 class _OrganisationScreenState extends State<OrganisationScreen> {
-  static const Map<String, Map<String, String>> _countryInfo = {
-    'India': {'flag': '🇮🇳', 'code': '+91', 'iso': 'IN'},
-    'USA': {'flag': '🇺🇸', 'code': '+1', 'iso': 'US'},
-    'UK': {'flag': '🇬🇧', 'code': '+44', 'iso': 'GB'},
-    'Singapore': {'flag': '🇸🇬', 'code': '+65', 'iso': 'SG'},
-    'Germany': {'flag': '🇩🇪', 'code': '+49', 'iso': 'DE'},
-    'Japan': {'flag': '🇯🇵', 'code': '+81', 'iso': 'JP'},
-    'Canada': {'flag': '🇨🇦', 'code': '+1', 'iso': 'CA'},
-    'Australia': {'flag': '🇦🇺', 'code': '+61', 'iso': 'AU'},
-  };
-
-  static const Map<String, List<String>> _countryStates = {
-    'India': ['Tamil Nadu', 'Karnataka', 'Maharashtra', 'Kerala'],
-    'USA': ['New York', 'California', 'Texas'],
-    'UK': ['Greater London', 'Manchester', 'West Midlands'],
-    'Singapore': ['Central Region'],
-    'Germany': ['Bavaria', 'Berlin'],
-    'Japan': ['Tokyo', 'Osaka'],
-    'Canada': ['Ontario', 'Quebec'],
-    'Australia': ['New South Wales', 'Victoria'],
-  };
-
-  final Map<String, List<String>> _stateDistricts = {
-    'Tamil Nadu': ['Chennai', 'Coimbatore', 'Madurai', 'Salem', 'Trichy'],
-    'Karnataka': ['Bangalore', 'Mysore', 'Hubli', 'Mangalore'],
-    'Maharashtra': ['Mumbai', 'Pune', 'Nagpur', 'Nashik'],
-    'Kerala': ['Kochi', 'Thiruvananthapuram', 'Kozhikode'],
-    'New York': ['Manhattan', 'Brooklyn', 'Queens'],
-    'California': ['Los Angeles', 'San Francisco', 'San Diego'],
-    'Greater London': ['City of London', 'Westminster', 'Camden', 'Greenwich'],
-    'Manchester': ['Manchester City', 'Salford', 'Bolton'],
-    'West Midlands': ['Birmingham', 'Coventry', 'Wolverhampton'],
-  };
-
-  final Map<String, String> _pincodeMap = {
-    'Chennai': '600001',
-    'Coimbatore': '641001',
-    'Madurai': '625001',
-    'Salem': '636001',
-    'Trichy': '620001',
-    'Bangalore': '560001',
-    'Mysore': '570001',
-    'Hubli': '580001',
-    'Mangalore': '575001',
-    'Mumbai': '400001',
-    'Pune': '411001',
-    'Nagpur': '440001',
-    'Nashik': '422001',
-    'Kochi': '682001',
-    'Thiruvananthapuram': '695001',
-    'Kozhikode': '673001',
-    'Manhattan': '10001',
-    'Brooklyn': '11201',
-    'Queens': '11101',
-  };
-
   // --- UI STATE ---
   bool _isLoading = false;
   bool _isSaving = false;
@@ -97,7 +40,7 @@ class _OrganisationScreenState extends State<OrganisationScreen> {
   String? _orgNameError;
   String? _emailError;
 
-  // Controllers
+  // Controllers (kept in sync from OrganisationFields via onChanged)
   final _orgCodeCtrl = TextEditingController();
   final _nameCtrl = TextEditingController();
   final _openDateCtrl = TextEditingController();
@@ -110,9 +53,15 @@ class _OrganisationScreenState extends State<OrganisationScreen> {
   final _addr3Ctrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
-  bool _pincodeLoading = false;
 
-  final GlobalKey<OrganisationFieldsState> _fieldsKey = GlobalKey<OrganisationFieldsState>();
+  // IDs synced from OrganisationFields for payload building
+  int _selectedCountryId = 0;
+  int _selectedStateId = 0;
+  int _selectedDistrictId = 0;
+  String _selectedCountryIso = '';
+
+  final GlobalKey<OrganisationFieldsState> _fieldsKey =
+      GlobalKey<OrganisationFieldsState>();
 
   @override
   void initState() {
@@ -152,15 +101,16 @@ class _OrganisationScreenState extends State<OrganisationScreen> {
     super.dispose();
   }
 
-
   bool _isValidEmail(String email) {
     if (email.isEmpty) return true;
-    return RegExp(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$").hasMatch(email);
+    return RegExp(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
+        .hasMatch(email);
   }
 
   bool _isValidPhone(String phone) {
     if (phone.isEmpty) return true;
-    return RegExp(r"^[+0-9\s-]{7,15}$").hasMatch(phone.replaceAll(RegExp(r'\s+'), ''));
+    return RegExp(r"^[+0-9\s-]{7,15}$")
+        .hasMatch(phone.replaceAll(RegExp(r'\s+'), ''));
   }
 
   void _clearErrors() {
@@ -187,7 +137,6 @@ class _OrganisationScreenState extends State<OrganisationScreen> {
         hasError = true;
       }
       if (_phoneCtrl.text.isNotEmpty && !_isValidPhone(_phoneCtrl.text)) {
-        // We'll show a snackbar or just a generic error since we don't have _phoneError state yet
         hasError = true;
       }
     });
@@ -201,61 +150,49 @@ class _OrganisationScreenState extends State<OrganisationScreen> {
     setState(() => _isSaving = true);
 
     try {
-      // Format openDate to ISO-8601 with offset
-      String openDateStr = _openDateCtrl.text; // dd-MM-yyyy
+      String openDateStr = _openDateCtrl.text;
       DateTime openDate = DateFormat('dd-MM-yyyy').parse(openDateStr);
-      String isoOpenDate = "${DateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").format(openDate.toUtc())}+00:00";
+      String isoOpenDate =
+          "${DateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").format(openDate.toUtc())}+00:00";
 
-      String countryName = _countryCtrl.text.split(' ').last;
-      String countryCode = _countryInfo[countryName]?['iso'] ?? countryName;
+      // Use the ISO code synced from OrganisationFields
+      String countryCode = _selectedCountryIso.isNotEmpty
+          ? _selectedCountryIso
+          : _countryCtrl.text;
 
-      String nowIso = "${DateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").format(DateTime.now().toUtc())}+00:00";
+      String nowIso =
+          "${DateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").format(DateTime.now().toUtc())}+00:00";
 
-      // Clean and strip email domain from username
       String cleanUser = (widget.userName ?? "admin");
-      if (cleanUser.contains('@')) {
-        cleanUser = cleanUser.split('@').first;
-      }
+      if (cleanUser.contains('@')) cleanUser = cleanUser.split('@').first;
 
-      // Fetch the original record if in edit mode to preserve created/authorized audit details
       Map<String, dynamic> originalRecord = {};
       if (_isEditMode) {
         try {
           originalRecord = _organisations.firstWhere(
-            (o) => (o['orgcode'] ?? o['orgCode'])?.toString() == _orgCodeCtrl.text,
+            (o) =>
+                (o['orgcode'] ?? o['orgCode'])?.toString() == _orgCodeCtrl.text,
             orElse: () => <String, dynamic>{},
           );
         } catch (_) {}
       }
 
-      // Resolve created values: preserve if editing, otherwise set current user and timestamp
       String cUserVal = _isEditMode
-          ? (originalRecord['cUser'] ?? originalRecord['cuser'] ?? cleanUser).toString()
+          ? (originalRecord['cUser'] ?? originalRecord['cuser'] ?? cleanUser)
+              .toString()
           : cleanUser;
       String cDateVal = _isEditMode
-          ? (originalRecord['cDate'] ?? originalRecord['cdate'] ?? nowIso).toString()
+          ? (originalRecord['cDate'] ?? originalRecord['cdate'] ?? nowIso)
+              .toString()
           : nowIso;
-
-      // Resolve edited values: always set to current user and timestamp on submit
       String eUserVal = cleanUser;
       String eDateVal = nowIso;
-
-      // aUser / aDate — the approval-stamp fields.
-      // The DB procedure (pr_process_approval) copies the AUTH002 datablock
-      // verbatim into ORG001, so these must be non-null at submission.
-      // • On CREATE  → default to the submitter (eUser/eDate) so the column is never null.
-      // • On EDIT    → keep whatever approver value is already stored in the DB;
-      //               only fall back to eUser if it was never set.
       String aUserVal = _isEditMode
-          ? (originalRecord['aUser'] ??
-                  originalRecord['auser'] ??
-                  eUserVal)
+          ? (originalRecord['aUser'] ?? originalRecord['auser'] ?? eUserVal)
               .toString()
           : eUserVal;
       String aDateVal = _isEditMode
-          ? (originalRecord['aDate'] ??
-                  originalRecord['adate'] ??
-                  eDateVal)
+          ? (originalRecord['aDate'] ?? originalRecord['adate'] ?? eDateVal)
               .toString()
           : eDateVal;
 
@@ -274,22 +211,19 @@ class _OrganisationScreenState extends State<OrganisationScreen> {
         "status": 1,
         "indiv": 10,
         "logo": "/ftp/logos/org_header.png",
-
-        // ── Audit: creator ───────────────────────────────────────────────────
-        "cUser": cUserVal,  "cuser": cUserVal,
-        "cDate": cDateVal,  "cdate": cDateVal,
-
-        // ── Audit: last editor ───────────────────────────────────────────────
-        "eUser": eUserVal,  "euser": eUserVal,
-        "eDate": eDateVal,  "edate": eDateVal,
-
-        // ── Audit: approver ──────────────────────────────────────────────────
-        // Defaults to eUser so the table column is never null.
-        // The real approver identity comes from AUTH001 (fluser/fldate) once approved.
-        "aUser": aUserVal,  "auser": aUserVal,
-        "aDate": aDateVal,  "adate": aDateVal,
+        "cUser": cUserVal,
+        "cuser": cUserVal,
+        "cDate": cDateVal,
+        "cdate": cDateVal,
+        "eUser": eUserVal,
+        "euser": eUserVal,
+        "eDate": eDateVal,
+        "edate": eDateVal,
+        "aUser": aUserVal,
+        "auser": aUserVal,
+        "aDate": aDateVal,
+        "adate": aDateVal,
       };
-
 
       final success = _isEditMode
           ? await orgApiService.updateOrganisation(payload)
@@ -303,8 +237,7 @@ class _OrganisationScreenState extends State<OrganisationScreen> {
         });
         _fetchOrganisations(1);
       } else {
-        _showTopNotification('Failed to save organisation.',
-            isError: true);
+        _showTopNotification('Failed to save organisation.', isError: true);
         setState(() => _isSaving = false);
       }
     } catch (e) {
@@ -313,17 +246,15 @@ class _OrganisationScreenState extends State<OrganisationScreen> {
     }
   }
 
-
-
   void _enterViewMode(Map<String, dynamic> record, {bool viewOnly = true}) {
-    _orgCodeCtrl.text = (record['orgcode'] ?? record['orgCode'] ?? '').toString();
+    _orgCodeCtrl.text =
+        (record['orgcode'] ?? record['orgCode'] ?? '').toString();
     _nameCtrl.text = record['name'] ?? '';
 
-    // Bind and format Date: yyyy-MM-dd -> dd-MM-yyyy
-    String rawDate = (record['openDate'] ?? record['opendate'] ?? '').toString();
+    String rawDate =
+        (record['openDate'] ?? record['opendate'] ?? '').toString();
     if (rawDate.isNotEmpty) {
       try {
-        // Handle full ISO date or just yyyy-MM-dd
         DateTime dt = DateTime.parse(rawDate.split('T')[0]);
         _openDateCtrl.text = DateFormat('dd-MM-yyyy').format(dt);
       } catch (e) {
@@ -333,17 +264,8 @@ class _OrganisationScreenState extends State<OrganisationScreen> {
       _openDateCtrl.text = '';
     }
 
-    // Resolve Country Flag from ISO Code
-    String countryCode = record['country'] ?? '';
-    var match = _countryInfo.entries.where((e) => e.value['iso'] == countryCode);
-    if (match.isNotEmpty) {
-      final info = match.first.value;
-      _countryCtrl.text = "${info['flag']} ${match.first.key}";
-    } else {
-      _countryCtrl.text = countryCode;
-    }
+    _countryCtrl.text = record['country'] ?? '';
 
-    // Map divisionName to State and District fields
     String div = record['divisionName'] ?? record['state'] ?? '';
     if (div.contains(' - ')) {
       var parts = div.split(' - ');
@@ -354,7 +276,6 @@ class _OrganisationScreenState extends State<OrganisationScreen> {
       _districtCtrl.text = record['district'] ?? '';
     }
     _pincodeCtrl.text = (record['pincode'] ?? '').toString();
-
     _addr1Ctrl.text = record['addrline1'] ?? '';
     _addr2Ctrl.text = record['addrline2'] ?? '';
     _addr3Ctrl.text = record['addrline3'] ?? '';
@@ -373,14 +294,22 @@ class _OrganisationScreenState extends State<OrganisationScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Delete Organisation', style: bodyStyle(weight: FontWeight.bold)),
-        content: Text('Are you sure you want to delete "$name"? This action cannot be undone.'),
+        title: Text('Delete Organisation',
+            style: bodyStyle(weight: FontWeight.bold)),
+        content: Text(
+            'Are you sure you want to delete "$name"? This action cannot be undone.'),
         actions: [
-          AmsButton(label: 'Cancel', variant: AmsButtonVariant.ghost, onPressed: () => Navigator.pop(ctx, false)),
-          AmsButton(label: 'Delete', variant: AmsButtonVariant.danger, onPressed: () => Navigator.pop(ctx, true)),
+          AmsButton(
+              label: 'Cancel',
+              variant: AmsButtonVariant.ghost,
+              onPressed: () => Navigator.pop(ctx, false)),
+          AmsButton(
+              label: 'Delete',
+              variant: AmsButtonVariant.danger,
+              onPressed: () => Navigator.pop(ctx, true)),
         ],
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      )
+      ),
     );
 
     if (ok == true) {
@@ -409,13 +338,13 @@ class _OrganisationScreenState extends State<OrganisationScreen> {
     _addr3Ctrl.clear();
     _phoneCtrl.clear();
     _emailCtrl.clear();
-    
-    // Clear the child fields via key
+    _selectedCountryId = 0;
+    _selectedStateId = 0;
+    _selectedDistrictId = 0;
+    _selectedCountryIso = '';
     _fieldsKey.currentState?.clear();
-    
     _clearErrors();
   }
-
 
   void _showTopNotification(String message, {bool isError = false}) {
     final overlay = Overlay.of(context);
@@ -466,25 +395,6 @@ class _OrganisationScreenState extends State<OrganisationScreen> {
     overlay.insert(entry);
     Future.delayed(const Duration(seconds: 3), () => entry.remove());
   }
-
-  Future<void> _selectDate() async {
-    if (_isViewOnly) return;
-    DateTime? pick = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime(1900),
-      lastDate: DateTime(2100),
-      builder: (ctx, child) => Theme(
-          data: Theme.of(ctx).copyWith(
-              colorScheme: const ColorScheme.light(primary: AppColors.tBlue)),
-          child: child!),
-    );
-    if (pick != null) {
-      setState(
-          () => _openDateCtrl.text = DateFormat('dd-MM-yyyy').format(pick));
-    }
-  }
-
 
   @override
   Widget build(BuildContext context) {
@@ -591,9 +501,9 @@ class _OrganisationScreenState extends State<OrganisationScreen> {
               );
             }),
           ),
-          _isLoading 
-            ? const Expanded(child: AmsListSkeleton())
-            : _buildListTable(),
+          _isLoading
+              ? const Expanded(child: AmsListSkeleton())
+              : _buildListTable(),
         ],
       ),
     );
@@ -616,7 +526,8 @@ class _OrganisationScreenState extends State<OrganisationScreen> {
           }).toList();
 
           if (filtered.isEmpty && q.isNotEmpty) {
-            return const Center(child: Padding(
+            return const Center(
+                child: Padding(
               padding: EdgeInsets.all(32.0),
               child: Text('No matches found for your search'),
             ));
@@ -656,10 +567,12 @@ class _OrganisationScreenState extends State<OrganisationScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                 Text(o['name'] ?? 'Unknown',
-                                    style: bodyStyle(weight: FontWeight.bold, size: 14)),
+                                    style: bodyStyle(
+                                        weight: FontWeight.bold, size: 14)),
                                 Text(
                                     '${o['district'] ?? o['divisionName'] ?? ''}, ${o['country'] ?? ''}',
-                                    style: bodyStyle(color: AppColors.ink3, size: 11)),
+                                    style: bodyStyle(
+                                        color: AppColors.ink3, size: 11)),
                               ])),
                           AmsBadge(label: o['orgcode']?.toString() ?? ''),
                         ],
@@ -673,7 +586,10 @@ class _OrganisationScreenState extends State<OrganisationScreen> {
                           Expanded(
                             child: Text(
                               o['email'] ?? '',
-                              style: bodyStyle(color: AppColors.tBlue, size: 12, weight: FontWeight.w500),
+                              style: bodyStyle(
+                                  color: AppColors.tBlue,
+                                  size: 12,
+                                  weight: FontWeight.w500),
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
@@ -690,13 +606,15 @@ class _OrganisationScreenState extends State<OrganisationScreen> {
                                   icon: Icons.edit_outlined,
                                   color: AppColors.tBlue,
                                   bg: Colors.white,
-                                  onTap: () => _enterViewMode(o, viewOnly: false)),
+                                  onTap: () =>
+                                      _enterViewMode(o, viewOnly: false)),
                               const SizedBox(width: 8),
                               _actionIcon(
                                   icon: Icons.delete_outline_rounded,
                                   color: AppColors.red,
                                   bg: AppColors.redLt,
-                                  onTap: () => _confirmDelete(o['orgcode'] ?? 0, o['name'] ?? 'Organisation')),
+                                  onTap: () => _confirmDelete(o['orgcode'] ?? 0,
+                                      o['name'] ?? 'Organisation')),
                             ],
                           ),
                         ],
@@ -725,14 +643,17 @@ class _OrganisationScreenState extends State<OrganisationScreen> {
                         child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                          Text(o['name'] ?? 'Unknown', style: bodyStyle(weight: FontWeight.bold)),
-                          Text('${o['district'] ?? o['divisionName'] ?? ''}, ${o['country'] ?? ''}',
-                              style: bodyStyle(color: AppColors.ink3, size: 12)),
+                          Text(o['name'] ?? 'Unknown',
+                              style: bodyStyle(weight: FontWeight.bold)),
+                          Text(
+                              '${o['district'] ?? o['divisionName'] ?? ''}, ${o['country'] ?? ''}',
+                              style:
+                                  bodyStyle(color: AppColors.ink3, size: 12)),
                         ])),
                     SizedBox(
                         width: 60,
-                        child:
-                            Center(child: AmsBadge(label: o['orgcode'].toString()))),
+                        child: Center(
+                            child: AmsBadge(label: o['orgcode'].toString()))),
                     const SizedBox(width: 16),
                     SizedBox(
                         width: 120,
@@ -745,26 +666,29 @@ class _OrganisationScreenState extends State<OrganisationScreen> {
                     const SizedBox(width: 24),
                     SizedBox(
                         width: 110,
-                        child:
-                            Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-                          _actionIcon(
-                              icon: Icons.visibility_outlined,
-                              color: AppColors.green,
-                              bg: Colors.white,
-                              onTap: () => _enterViewMode(o)),
-                          const SizedBox(width: 8),
-                          _actionIcon(
-                              icon: Icons.edit_outlined,
-                              color: AppColors.tBlue,
-                              bg: Colors.white,
-                              onTap: () => _enterViewMode(o, viewOnly: false)),
-                          const SizedBox(width: 8),
-                          _actionIcon(
-                              icon: Icons.delete_outline_rounded,
-                              color: AppColors.red,
-                              bg: AppColors.redLt,
-                              onTap: () => _confirmDelete(o['orgcode'] ?? 0, o['name'] ?? 'Organisation')),
-                        ])),
+                        child: Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              _actionIcon(
+                                  icon: Icons.visibility_outlined,
+                                  color: AppColors.green,
+                                  bg: Colors.white,
+                                  onTap: () => _enterViewMode(o)),
+                              const SizedBox(width: 8),
+                              _actionIcon(
+                                  icon: Icons.edit_outlined,
+                                  color: AppColors.tBlue,
+                                  bg: Colors.white,
+                                  onTap: () =>
+                                      _enterViewMode(o, viewOnly: false)),
+                              const SizedBox(width: 8),
+                              _actionIcon(
+                                  icon: Icons.delete_outline_rounded,
+                                  color: AppColors.red,
+                                  bg: AppColors.redLt,
+                                  onTap: () => _confirmDelete(o['orgcode'] ?? 0,
+                                      o['name'] ?? 'Organisation')),
+                            ])),
                   ],
                 ),
               );
@@ -813,9 +737,15 @@ class _OrganisationScreenState extends State<OrganisationScreen> {
                   child: OrganisationFields(
                     key: _fieldsKey,
                     isViewMode: _isViewOnly,
-                    initialData: _isEditMode || _isViewOnly ? _organisations.firstWhere((o) => (o['orgcode'] ?? o['orgCode'])?.toString() == _orgCodeCtrl.text, orElse: () => {}) : null,
+                    initialData: _isEditMode || _isViewOnly
+                        ? _organisations.firstWhere(
+                            (o) =>
+                                (o['orgcode'] ?? o['orgCode'])?.toString() ==
+                                _orgCodeCtrl.text,
+                            orElse: () => {})
+                        : null,
                     onChanged: (k, v) {
-                      // Sync from Fields widgets to screen controllers for save logic
+                      // Sync text fields
                       if (k == 'orgCode') _orgCodeCtrl.text = v.toString();
                       if (k == 'name') _nameCtrl.text = v.toString();
                       if (k == 'email') _emailCtrl.text = v.toString();
@@ -828,6 +758,11 @@ class _OrganisationScreenState extends State<OrganisationScreen> {
                       if (k == 'addrline2') _addr2Ctrl.text = v.toString();
                       if (k == 'addrline3') _addr3Ctrl.text = v.toString();
                       if (k == 'telephone') _phoneCtrl.text = v.toString();
+                      // Sync IDs for payload building
+                      if (k == 'countryId') _selectedCountryId = v as int;
+                      if (k == 'stateId') _selectedStateId = v as int;
+                      if (k == 'districtId') _selectedDistrictId = v as int;
+                      if (k == 'countryIso') _selectedCountryIso = v.toString();
                     },
                   ))),
           _buildEntryFooter(),
@@ -891,6 +826,10 @@ class _OrganisationScreenState extends State<OrganisationScreen> {
   }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// OrganisationFields — Backend Location API integrated
+// ─────────────────────────────────────────────────────────────────────────────
+
 class OrganisationFields extends StatefulWidget {
   final bool isViewMode;
   final Map<String, dynamic>? initialData;
@@ -908,6 +847,7 @@ class OrganisationFields extends StatefulWidget {
 }
 
 class OrganisationFieldsState extends State<OrganisationFields> {
+  // ── Form controllers ───────────────────────────────────────────────────────
   final _orgCodeCtrl = TextEditingController();
   final _nameCtrl = TextEditingController();
   final _openDateCtrl = TextEditingController();
@@ -921,6 +861,42 @@ class OrganisationFieldsState extends State<OrganisationFields> {
   final _phoneCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
 
+  // ── Overlay search controllers ─────────────────────────────────────────────
+  final _countrySearchCtrl = TextEditingController();
+  final _stateSearchCtrl = TextEditingController();
+  final _districtSearchCtrl = TextEditingController();
+  final _pincodeSearchCtrl = TextEditingController();
+
+  // ── LayerLinks for overlay anchoring ──────────────────────────────────────
+  final _countryLayerLink = LayerLink();
+  final _stateLayerLink = LayerLink();
+  final _districtLayerLink = LayerLink();
+  final _pincodeLayerLink = LayerLink();
+
+  // ── Overlay entries ────────────────────────────────────────────────────────
+  OverlayEntry? _countryOverlay;
+  OverlayEntry? _stateOverlay;
+  OverlayEntry? _districtOverlay;
+  OverlayEntry? _pincodeOverlay;
+
+  // ── Selected model objects (hold IDs for chained API calls) ───────────────
+  LocationCountry? _selectedCountry;
+  LocationState? _selectedState;
+  LocationDistrict? _selectedDistrict;
+
+  // ── Data lists fetched from backend ───────────────────────────────────────
+  List<LocationCountry> _countries = [];
+  List<LocationState> _states = [];
+  List<LocationDistrict> _districts = [];
+  List<LocationPincode> _pincodes = [];
+
+  // ── Loading flags ──────────────────────────────────────────────────────────
+  bool _countriesLoading = false;
+  bool _statesLoading = false;
+  bool _districtsLoading = false;
+  bool _pincodesLoading = false;
+
+  // ── Validation error texts ─────────────────────────────────────────────────
   String? _orgCodeError;
   String? _orgNameError;
   String? _emailError;
@@ -931,33 +907,15 @@ class OrganisationFieldsState extends State<OrganisationFields> {
   String? _districtError;
   String? _addr1Error;
 
-  static const Map<String, Map<String, String>> _countryInfo = {
-    'India': {'flag': '🇮🇳', 'code': '+91', 'iso': 'IN'},
-    'USA': {'flag': '🇺🇸', 'code': '+1', 'iso': 'US'},
-    'UK': {'flag': '🇬🇧', 'code': '+44', 'iso': 'GB'},
-    'Singapore': {'flag': '🇸🇬', 'code': '+65', 'iso': 'SG'},
-  };
-
-  static const Map<String, List<String>> _countryStates = {
-    'India': ['Tamil Nadu', 'Karnataka', 'Maharashtra', 'Kerala'],
-    'USA': ['New York', 'California', 'Texas'],
-  };
-
-  final Map<String, List<String>> _stateDistricts = {
-    'Tamil Nadu': ['Chennai', 'Coimbatore', 'Madurai', 'Salem', 'Trichy'],
-    'Karnataka': ['Bangalore', 'Mysore', 'Hubli', 'Mangalore'],
-  };
-
-  final Map<String, String> _pincodeMap = {
-    'Chennai': '600001',
-    'Bangalore': '560001',
-  };
+  // ─────────────────────────────────────────────────────────────────────────
+  // Lifecycle
+  // ─────────────────────────────────────────────────────────────────────────
 
   @override
   void initState() {
     super.initState();
+    _loadCountries(); // Pre-fetch countries on widget init
     _loadInitialData();
-    _loadCountries(); // Pre-load countries on init
   }
 
   @override
@@ -968,13 +926,44 @@ class OrganisationFieldsState extends State<OrganisationFields> {
     }
   }
 
+  @override
+  void dispose() {
+    _removeAllOverlays();
+    for (final c in [
+      _orgCodeCtrl,
+      _nameCtrl,
+      _openDateCtrl,
+      _countryCtrl,
+      _stateCtrl,
+      _districtCtrl,
+      _pincodeCtrl,
+      _addr1Ctrl,
+      _addr2Ctrl,
+      _addr3Ctrl,
+      _phoneCtrl,
+      _emailCtrl,
+      _countrySearchCtrl,
+      _stateSearchCtrl,
+      _districtSearchCtrl,
+      _pincodeSearchCtrl,
+    ]) {
+      c.dispose();
+    }
+    super.dispose();
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Initial data (view / edit mode)
+  // ─────────────────────────────────────────────────────────────────────────
+
   void _loadInitialData() {
     if (widget.initialData == null) return;
     final d = widget.initialData!.map((k, v) => MapEntry(k.toLowerCase(), v));
+
     _orgCodeCtrl.text = (d['orgcode'] ?? '').toString();
     _nameCtrl.text = (d['name'] ?? d['orgname'] ?? '').toString();
-    
-    String rawDate = (d['opendate'] ?? '').toString();
+
+    final rawDate = (d['opendate'] ?? '').toString();
     if (rawDate.isNotEmpty) {
       try {
         DateTime dt = DateTime.parse(rawDate.split('T')[0]);
@@ -984,80 +973,127 @@ class OrganisationFieldsState extends State<OrganisationFields> {
       }
     }
 
-    String countryCode = (d['country'] ?? '').toString();
-    var match = _countryInfo.entries.where((e) => e.value['iso'] == countryCode);
-    if (match.isNotEmpty) {
-      final info = match.first.value;
-      _countryCtrl.text = "${info['flag']} ${match.first.key}";
-    } else {
-      _countryCtrl.text = countryCode;
-    }
+    // Country — stored as ISO code in DB (e.g. "IN")
+    // We display the countryname once the list loads; for now show the code.
+    final countryCode = (d['country'] ?? '').toString();
+    _countryCtrl.text = countryCode;
 
-    String div = (d['divisionname'] ?? d['state'] ?? '').toString();
+    // State + District from divisionName "Tamil Nadu - Chennai"
+    final div = (d['divisionname'] ?? d['state'] ?? '').toString();
     if (div.contains(' - ')) {
-      var parts = div.split(' - ');
+      final parts = div.split(' - ');
       _stateCtrl.text = parts[0];
       _districtCtrl.text = parts[1];
     } else {
       _stateCtrl.text = div;
       _districtCtrl.text = (d['district'] ?? '').toString();
     }
+
     _pincodeCtrl.text = (d['pincode'] ?? '').toString();
     _addr1Ctrl.text = (d['addrline1'] ?? '').toString();
     _addr2Ctrl.text = (d['addrline2'] ?? '').toString();
     _addr3Ctrl.text = (d['addrline3'] ?? '').toString();
     _phoneCtrl.text = (d['telephone'] ?? '').toString();
     _emailCtrl.text = (d['email'] ?? '').toString();
+
+    // Once countries are loaded, resolve the ISO code → full country name
+    _resolveCountryFromIso(countryCode);
   }
 
-  // --- Smart Search (Overlays) ---
-  final _countryLayerLink = LayerLink();
-  final _stateLayerLink = LayerLink();
-  final _districtLayerLink = LayerLink();
-  
-  OverlayEntry? _countryOverlay;
-  OverlayEntry? _stateOverlay;
-  OverlayEntry? _districtOverlay;
-
-  final _countrySearchCtrl = TextEditingController();
-  final _stateSearchCtrl = TextEditingController();
-  final _districtSearchCtrl = TextEditingController();
-
-  static List<String> _cachedCountries = [];
-  static Map<String, String> _cachedIsoMap = {};
-  
-  List<String> _countriesList = _cachedCountries;
-  final Map<String, String> _countryIsoMap = Map.from(_cachedIsoMap);
-  List<String> _statesList = [];
-  List<String> _districtsList = [];
-  
-  bool _countriesLoading = false;
-  bool _statesLoading = false;
-  bool _districtsLoading = false;
-  bool _pincodeLoading = false;
-
-  String? _selectedCountryIso;
-
-  @override
-  void dispose() {
-    _removeAllOverlays();
-    _orgCodeCtrl.dispose();
-    _nameCtrl.dispose();
-    _openDateCtrl.dispose();
-    _countryCtrl.dispose();
-    _stateCtrl.dispose();
-    _districtCtrl.dispose();
-    _pincodeCtrl.dispose();
-    _addr1Ctrl.dispose();
-    _addr2Ctrl.dispose();
-    _addr3Ctrl.dispose();
-    _phoneCtrl.dispose();
-    _emailCtrl.dispose();
-    _countrySearchCtrl.dispose();
-    _stateSearchCtrl.dispose();
-    _districtSearchCtrl.dispose();
-    super.dispose();
+  /// After countries list is available, find the matching entry by ISO code
+  /// and update the display text + selected object.
+  void _resolveCountryFromIso(String isoCode) {
+    if (isoCode.isEmpty) return;
+    // Try immediately if list is already loaded
+    if (_countries.isNotEmpty) {
+      _applyCountryFromIso(isoCode);
+    }
+    // Also hook into countries load completion (handled in _loadCountries)
   }
+
+  void _applyCountryFromIso(String isoCode) {
+    try {
+      final match = _countries.firstWhere(
+        (c) => c.countrycode.toUpperCase() == isoCode.toUpperCase(),
+      );
+      if (mounted) {
+        setState(() {
+          _selectedCountry = match;
+          _countryCtrl.text = match.countryname;
+        });
+      }
+    } catch (_) {
+      // No match — keep ISO code as display text
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Backend API loaders
+  // ─────────────────────────────────────────────────────────────────────────
+
+  Future<void> _loadCountries() async {
+    if (_countriesLoading) return;
+    setState(() => _countriesLoading = true);
+    try {
+      final list = await locationApiService.getCountries();
+      if (mounted) {
+        setState(() => _countries = list);
+        // If initial data set an ISO code, resolve it now
+        if (_countryCtrl.text.isNotEmpty && _selectedCountry == null) {
+          _applyCountryFromIso(_countryCtrl.text);
+        }
+      }
+    } finally {
+      if (mounted) setState(() => _countriesLoading = false);
+    }
+  }
+
+  Future<void> _loadStates(int countryId) async {
+    setState(() {
+      _statesLoading = true;
+      _states = [];
+      _districts = [];
+      _pincodes = [];
+    });
+    try {
+      final list = await locationApiService.getStates(countryId);
+      if (mounted) setState(() => _states = list);
+    } finally {
+      if (mounted) setState(() => _statesLoading = false);
+    }
+  }
+
+  Future<void> _loadDistricts(int countryId, int stateId) async {
+    setState(() {
+      _districtsLoading = true;
+      _districts = [];
+      _pincodes = [];
+    });
+    try {
+      final list = await locationApiService.getDistricts(countryId, stateId);
+      if (mounted) setState(() => _districts = list);
+    } finally {
+      if (mounted) setState(() => _districtsLoading = false);
+    }
+  }
+
+  Future<void> _loadPincodes(int countryId, int stateId, int cityId) async {
+    setState(() {
+      _pincodesLoading = true;
+      _pincodes = [];
+    });
+    try {
+      final list =
+          await locationApiService.getPincodes(countryId, stateId, cityId);
+      if (mounted) setState(() => _pincodes = list);
+    } finally {
+      if (mounted) setState(() => _pincodesLoading = false);
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Overlay helpers
+  // ─────────────────────────────────────────────────────────────────────────
 
   void _removeAllOverlays() {
     _countryOverlay?.remove();
@@ -1066,228 +1102,21 @@ class OrganisationFieldsState extends State<OrganisationFields> {
     _stateOverlay = null;
     _districtOverlay?.remove();
     _districtOverlay = null;
+    _pincodeOverlay?.remove();
+    _pincodeOverlay = null;
   }
 
-  bool _isValidEmail(String email) {
-    if (email.isEmpty) return true;
-    return RegExp(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$").hasMatch(email);
-  }
-
-  bool _isValidPhone(String phone) {
-    if (phone.isEmpty) return true;
-    return RegExp(r"^[+0-9\s-]{7,15}$").hasMatch(phone.replaceAll(RegExp(r'\s+'), ''));
-  }
-
-  bool validate() {
-    bool hasError = false;
-    setState(() {
-      _orgCodeError = null;
-      _orgNameError = null;
-      _emailError = null;
-      _phoneError = null;
-      _openDateError = null;
-      _countryError = null;
-      _stateError = null;
-      _districtError = null;
-      _addr1Error = null;
-
-      if (_orgCodeCtrl.text.isEmpty) {
-        _orgCodeError = 'Organisation Code is mandatory';
-        hasError = true;
-      }
-      if (_nameCtrl.text.isEmpty) {
-        _orgNameError = 'Organisation Name is mandatory';
-        hasError = true;
-      }
-      if (_openDateCtrl.text.isEmpty) {
-        _openDateError = 'Open Date is mandatory';
-        hasError = true;
-      }
-      if (_countryCtrl.text.isEmpty) {
-        _countryError = 'Country is mandatory';
-        hasError = true;
-      }
-      if (_stateCtrl.text.isEmpty) {
-        _stateError = 'State is mandatory';
-        hasError = true;
-      }
-      if (_districtCtrl.text.isEmpty) {
-        _districtError = 'District is mandatory';
-        hasError = true;
-      }
-      if (_emailCtrl.text.isEmpty) {
-        _emailError = 'Email Address is mandatory';
-        hasError = true;
-      } else if (!_isValidEmail(_emailCtrl.text)) {
-        _emailError = 'Invalid email format (e.g. user@example.com)';
-        hasError = true;
-      }
-      if (_phoneCtrl.text.isEmpty) {
-        _phoneError = 'Telephone is mandatory';
-        hasError = true;
-      } else if (!_isValidPhone(_phoneCtrl.text)) {
-        _phoneError = 'Invalid phone number (min 7 digits)';
-        hasError = true;
-      }
-      if (_addr1Ctrl.text.isEmpty) {
-        _addr1Error = 'Address Line 1 is mandatory';
-        hasError = true;
-      }
-    });
-    return !hasError;
-  }
-
-  void clear() {
-    setState(() {
-      _orgCodeCtrl.clear();
-      _nameCtrl.clear();
-      _openDateCtrl.clear();
-      _countryCtrl.clear();
-      _stateCtrl.clear();
-      _districtCtrl.clear();
-      _pincodeCtrl.clear();
-      _addr1Ctrl.clear();
-      _addr2Ctrl.clear();
-      _addr3Ctrl.clear();
-      _phoneCtrl.clear();
-      _emailCtrl.clear();
-
-      _orgCodeError = null;
-      _orgNameError = null;
-      _emailError = null;
-      _phoneError = null;
-      _openDateError = null;
-      _countryError = null;
-      _stateError = null;
-      _districtError = null;
-      _addr1Error = null;
-    });
-  }
-
-  // --- External APIs for Addresses ---
-
-  Future<void> _loadCountries() async {
-    if (_countriesLoading || _countriesList.isNotEmpty) return;
-    
-    // Add default common countries immediately to avoid empty list
-    if (_countriesList.isEmpty) {
-      setState(() {
-        _countriesList = ['India', 'USA', 'UK', 'Singapore', 'Canada', 'Australia', 'Germany', 'Japan'];
-        _countryIsoMap.addAll({'India': 'IN', 'USA': 'US', 'UK': 'GB', 'Singapore': 'SG', 'Canada': 'CA', 'Australia': 'AU', 'Germany': 'DE', 'Japan': 'JP'});
-      });
-    }
-
-    setState(() => _countriesLoading = true);
-    try {
-      final res = await http.get(Uri.parse('https://countriesnow.space/api/v0.1/countries')).timeout(const Duration(seconds: 8));
-      if (res.statusCode == 200) {
-        final decoded = jsonDecode(res.body);
-        final List data = decoded['data'] ?? [];
-        final names = data.map<String>((e) => e['country'] as String).toList()..sort();
-        final isoMap = <String, String>{};
-        for (final entry in data) {
-          final name = entry['country'] as String? ?? '';
-          final iso = entry['iso2'] as String? ?? '';
-          if (name.isNotEmpty && iso.isNotEmpty) isoMap[name] = iso.toUpperCase();
-        }
-        
-        // Update cache
-        _cachedCountries = names;
-        _cachedIsoMap = isoMap;
-
-        if (mounted) {
-          setState(() {
-            _countriesList = names;
-            _countryIsoMap.clear();
-            _countryIsoMap.addAll(isoMap);
-          });
-        }
-      }
-    } catch (e) {
-      debugPrint("Country Load Error: $e");
-    } finally {
-      if (mounted) setState(() => _countriesLoading = false);
-    }
-  }
-
-  Future<void> _loadStates(String countryName) async {
-    setState(() {
-      _statesLoading = true;
-      _statesList = [];
-      _districtsList = [];
-    });
-    try {
-      final res = await http.post(
-        Uri.parse('https://countriesnow.space/api/v0.1/countries/states'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'country': countryName}),
-      ).timeout(const Duration(seconds: 10));
-      if (res.statusCode == 200) {
-        final decoded = jsonDecode(res.body);
-        final List stateList = decoded['data']?['states'] ?? [];
-        final names = stateList.map<String>((s) => s['name'] as String).toList()..sort();
-        if (mounted) setState(() => _statesList = names);
-      }
-    } catch (_) {} finally {
-      if (mounted) setState(() => _statesLoading = false);
-    }
-  }
-
-  Future<void> _loadDistricts(String countryName, String stateName) async {
-    setState(() {
-      _districtsLoading = true;
-      _districtsList = [];
-    });
-    try {
-      final res = await http.post(
-        Uri.parse('https://countriesnow.space/api/v0.1/countries/state/cities'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'country': countryName, 'state': stateName}),
-      ).timeout(const Duration(seconds: 10));
-      if (res.statusCode == 200) {
-        final decoded = jsonDecode(res.body);
-        final List cities = decoded['data'] ?? [];
-        final names = cities.cast<String>()..sort();
-        if (mounted) setState(() => _districtsList = names);
-      }
-    } catch (_) {} finally {
-      if (mounted) setState(() => _districtsLoading = false);
-    }
-  }
-
-  Future<void> _loadPincode(String cityName) async {
-    if (!mounted) return;
-    setState(() => _pincodeLoading = true);
-    try {
-      final res = await http.get(Uri.parse('https://api.postalpincode.in/postoffice/${Uri.encodeComponent(cityName)}')).timeout(const Duration(seconds: 8));
-      if (res.statusCode == 200) {
-        final List data = jsonDecode(res.body);
-        if (data.isNotEmpty && data[0]['Status'] == 'Success') {
-          final postOffices = data[0]['PostOffice'] as List;
-          if (postOffices.isNotEmpty) {
-            final pincode = postOffices[0]['Pincode']?.toString() ?? '';
-            if (pincode.isNotEmpty && mounted) {
-              setState(() => _pincodeCtrl.text = pincode);
-              widget.onChanged('pincode', pincode);
-            }
-          }
-        }
-      }
-    } catch (_) {} finally {
-      if (mounted) setState(() => _pincodeLoading = false);
-    }
-  }
-
-  OverlayEntry _buildDropdownOverlay({
+  OverlayEntry _buildDropdownOverlay<T>({
     required LayerLink link,
-    required List<String> items,
+    required List<T> items,
     required bool isLoading,
     required TextEditingController searchCtrl,
-    required Function(String) onSelect,
+    required String Function(T) labelOf,
+    required void Function(T) onSelect,
     required VoidCallback onClose,
   }) {
     return OverlayEntry(
-      builder: (context) => GestureDetector(
+      builder: (ctx) => GestureDetector(
         behavior: HitTestBehavior.translucent,
         onTap: onClose,
         child: Stack(
@@ -1311,27 +1140,30 @@ class OrganisationFieldsState extends State<OrganisationFields> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Padding(
-                        padding: const EdgeInsets.all(8.0),
+                        padding: const EdgeInsets.all(8),
                         child: AmsTextInput(
                           controller: searchCtrl,
                           placeholder: 'Search...',
                           icon: Icons.search,
-                          onChanged: (v) => (context as Element).markNeedsBuild(),
+                          onChanged: (_) => (ctx as Element).markNeedsBuild(),
                         ),
                       ),
                       if (isLoading)
                         const Padding(
-                          padding: EdgeInsets.all(16.0),
+                          padding: EdgeInsets.all(16),
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       else
                         Flexible(
-                          child: Builder(builder: (ctx) {
-                            final query = searchCtrl.text.toLowerCase();
-                            final filtered = items.where((i) => i.toLowerCase().contains(query)).toList();
+                          child: Builder(builder: (_) {
+                            final q = searchCtrl.text.toLowerCase();
+                            final filtered = items
+                                .where(
+                                    (i) => labelOf(i).toLowerCase().contains(q))
+                                .toList();
                             if (filtered.isEmpty) {
                               return const Padding(
-                                padding: EdgeInsets.all(16.0),
+                                padding: EdgeInsets.all(16),
                                 child: Text('No results found'),
                               );
                             }
@@ -1339,10 +1171,11 @@ class OrganisationFieldsState extends State<OrganisationFields> {
                               shrinkWrap: true,
                               padding: EdgeInsets.zero,
                               itemCount: filtered.length,
-                              itemBuilder: (ctx, idx) => ListTile(
-                                title: Text(filtered[idx], style: bodyStyle(size: 13)),
+                              itemBuilder: (_, i) => ListTile(
+                                title: Text(labelOf(filtered[i]),
+                                    style: bodyStyle(size: 13)),
                                 dense: true,
-                                onTap: () => onSelect(filtered[idx]),
+                                onTap: () => onSelect(filtered[i]),
                               ),
                             );
                           }),
@@ -1358,26 +1191,43 @@ class OrganisationFieldsState extends State<OrganisationFields> {
     );
   }
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // Dropdown openers
+  // ─────────────────────────────────────────────────────────────────────────
+
   void _openCountryDropdown() {
     if (widget.isViewMode) return;
     _removeAllOverlays();
-    _loadCountries();
     _countrySearchCtrl.clear();
-    _countryOverlay = _buildDropdownOverlay(
+
+    // Trigger load if list is empty
+    if (_countries.isEmpty) _loadCountries();
+
+    _countryOverlay = _buildDropdownOverlay<LocationCountry>(
       link: _countryLayerLink,
-      items: _countriesList,
+      items: _countries,
       isLoading: _countriesLoading,
       searchCtrl: _countrySearchCtrl,
-      onSelect: (val) {
+      labelOf: (c) => c.displayName,
+      onSelect: (c) {
         setState(() {
-          _countryCtrl.text = val;
-          _selectedCountryIso = _countryIsoMap[val];
+          _selectedCountry = c;
+          _countryCtrl.text = c.countryname;
+          // Reset dependent fields
+          _selectedState = null;
           _stateCtrl.clear();
+          _selectedDistrict = null;
           _districtCtrl.clear();
           _pincodeCtrl.clear();
+          _states = [];
+          _districts = [];
+          _pincodes = [];
+          _countryError = null;
         });
-        widget.onChanged('country', val);
-        _loadStates(val);
+        widget.onChanged('country', c.countrycode); // ISO code for payload
+        widget.onChanged('countryId', c.countryid);
+        widget.onChanged('countryIso', c.countrycode);
+        _loadStates(c.countryid);
         _removeAllOverlays();
       },
       onClose: _removeAllOverlays,
@@ -1386,22 +1236,31 @@ class OrganisationFieldsState extends State<OrganisationFields> {
   }
 
   void _openStateDropdown() {
-    if (widget.isViewMode || _countryCtrl.text.isEmpty) return;
+    if (widget.isViewMode || _selectedCountry == null) return;
     _removeAllOverlays();
     _stateSearchCtrl.clear();
-    _stateOverlay = _buildDropdownOverlay(
+
+    _stateOverlay = _buildDropdownOverlay<LocationState>(
       link: _stateLayerLink,
-      items: _statesList,
+      items: _states,
       isLoading: _statesLoading,
       searchCtrl: _stateSearchCtrl,
-      onSelect: (val) {
+      labelOf: (s) => s.displayName,
+      onSelect: (s) {
         setState(() {
-          _stateCtrl.text = val;
+          _selectedState = s;
+          _stateCtrl.text = s.statename;
+          // Reset dependent fields
+          _selectedDistrict = null;
           _districtCtrl.clear();
           _pincodeCtrl.clear();
+          _districts = [];
+          _pincodes = [];
+          _stateError = null;
         });
-        widget.onChanged('state', val);
-        _loadDistricts(_countryCtrl.text, val);
+        widget.onChanged('state', s.statename);
+        widget.onChanged('stateId', s.stateid);
+        _loadDistricts(_selectedCountry!.countryid, s.stateid);
         _removeAllOverlays();
       },
       onClose: _removeAllOverlays,
@@ -1410,21 +1269,32 @@ class OrganisationFieldsState extends State<OrganisationFields> {
   }
 
   void _openDistrictDropdown() {
-    if (widget.isViewMode || _stateCtrl.text.isEmpty) return;
+    if (widget.isViewMode || _selectedState == null) return;
     _removeAllOverlays();
     _districtSearchCtrl.clear();
-    _districtOverlay = _buildDropdownOverlay(
+
+    _districtOverlay = _buildDropdownOverlay<LocationDistrict>(
       link: _districtLayerLink,
-      items: _districtsList,
+      items: _districts,
       isLoading: _districtsLoading,
       searchCtrl: _districtSearchCtrl,
-      onSelect: (val) {
+      labelOf: (d) => d.displayName,
+      onSelect: (d) {
         setState(() {
-          _districtCtrl.text = val;
+          _selectedDistrict = d;
+          _districtCtrl.text = d.cityname;
           _pincodeCtrl.clear();
+          _pincodes = [];
+          _districtError = null;
         });
-        widget.onChanged('district', val);
-        _loadPincode(val);
+        widget.onChanged('district', d.cityname);
+        widget.onChanged('districtId', d.cityid);
+        // Auto-load pincodes for this city
+        _loadPincodes(
+          _selectedCountry!.countryid,
+          _selectedState!.stateid,
+          d.cityid,
+        );
         _removeAllOverlays();
       },
       onClose: _removeAllOverlays,
@@ -1432,6 +1302,136 @@ class OrganisationFieldsState extends State<OrganisationFields> {
     Overlay.of(context).insert(_districtOverlay!);
   }
 
+  void _openPincodeDropdown() {
+    if (widget.isViewMode || _selectedDistrict == null) return;
+    _removeAllOverlays();
+    _pincodeSearchCtrl.clear();
+
+    _pincodeOverlay = _buildDropdownOverlay<LocationPincode>(
+      link: _pincodeLayerLink,
+      items: _pincodes,
+      isLoading: _pincodesLoading,
+      searchCtrl: _pincodeSearchCtrl,
+      labelOf: (p) => p.displayName,
+      onSelect: (p) {
+        setState(() => _pincodeCtrl.text = p.pincode);
+        widget.onChanged('pincode', p.pincode);
+        _removeAllOverlays();
+      },
+      onClose: _removeAllOverlays,
+    );
+    Overlay.of(context).insert(_pincodeOverlay!);
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Validation
+  // ─────────────────────────────────────────────────────────────────────────
+
+  bool _isValidEmail(String v) =>
+      v.isEmpty ||
+      RegExp(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$").hasMatch(v);
+
+  bool _isValidPhone(String v) =>
+      v.isEmpty ||
+      RegExp(r"^[+0-9\s-]{7,15}$").hasMatch(v.replaceAll(RegExp(r'\s+'), ''));
+
+  bool validate() {
+    bool hasError = false;
+    setState(() {
+      _orgCodeError =
+          _orgCodeCtrl.text.isEmpty ? 'Organisation Code is mandatory' : null;
+      _orgNameError =
+          _nameCtrl.text.isEmpty ? 'Organisation Name is mandatory' : null;
+      _openDateError =
+          _openDateCtrl.text.isEmpty ? 'Open Date is mandatory' : null;
+      _countryError = _countryCtrl.text.isEmpty ? 'Country is mandatory' : null;
+      _stateError = _stateCtrl.text.isEmpty ? 'State is mandatory' : null;
+      _districtError =
+          _districtCtrl.text.isEmpty ? 'District is mandatory' : null;
+      _addr1Error =
+          _addr1Ctrl.text.isEmpty ? 'Address Line 1 is mandatory' : null;
+      _emailError = _emailCtrl.text.isEmpty
+          ? 'Email Address is mandatory'
+          : !_isValidEmail(_emailCtrl.text)
+              ? 'Invalid email format (e.g. user@example.com)'
+              : null;
+      _phoneError = _phoneCtrl.text.isEmpty
+          ? 'Telephone is mandatory'
+          : !_isValidPhone(_phoneCtrl.text)
+              ? 'Invalid phone number (min 7 digits)'
+              : null;
+
+      hasError = [
+        _orgCodeError,
+        _orgNameError,
+        _openDateError,
+        _countryError,
+        _stateError,
+        _districtError,
+        _addr1Error,
+        _emailError,
+        _phoneError,
+      ].any((e) => e != null);
+    });
+    return !hasError;
+  }
+
+  void clear() {
+    setState(() {
+      for (final c in [
+        _orgCodeCtrl,
+        _nameCtrl,
+        _openDateCtrl,
+        _countryCtrl,
+        _stateCtrl,
+        _districtCtrl,
+        _pincodeCtrl,
+        _addr1Ctrl,
+        _addr2Ctrl,
+        _addr3Ctrl,
+        _phoneCtrl,
+        _emailCtrl,
+      ]) {
+        c.clear();
+      }
+      _selectedCountry = null;
+      _selectedState = null;
+      _selectedDistrict = null;
+      _states = [];
+      _districts = [];
+      _pincodes = [];
+      _orgCodeError = _orgNameError = _emailError = _phoneError =
+          _openDateError =
+              _countryError = _stateError = _districtError = _addr1Error = null;
+    });
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Date picker
+  // ─────────────────────────────────────────────────────────────────────────
+
+  Future<void> _selectDate() async {
+    if (widget.isViewMode) return;
+    final pick = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(1900),
+      lastDate: DateTime(2100),
+      builder: (ctx, child) => Theme(
+          data: Theme.of(ctx).copyWith(
+              colorScheme: const ColorScheme.light(primary: AppColors.tBlue)),
+          child: child!),
+    );
+    if (pick != null) {
+      final fmt = DateFormat('dd-MM-yyyy').format(pick);
+      setState(() => _openDateCtrl.text = fmt);
+      widget.onChanged('openDate', fmt);
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Build
+  // ─────────────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
@@ -1439,6 +1439,7 @@ class OrganisationFieldsState extends State<OrganisationFields> {
     return Padding(
       padding: EdgeInsets.all(isMobile ? 16 : 32),
       child: AmsFormGrid(cols: 2, children: [
+        // ── Basic info ────────────────────────────────────────────────────
         _field('Organisation Code*', _orgCodeCtrl,
             isNum: true,
             mandatory: true,
@@ -1449,39 +1450,100 @@ class OrganisationFieldsState extends State<OrganisationFields> {
             errorText: _orgNameError,
             onChanged: (v) => widget.onChanged('name', v)),
         _buildPickerField('Open Date*', _openDateCtrl, _selectDate,
-            Icons.calendar_today_rounded, errorText: _openDateError),
-        
+            Icons.calendar_today_rounded,
+            errorText: _openDateError),
+
+        // ── Country (backend dropdown) ────────────────────────────────────
         CompositedTransformTarget(
           link: _countryLayerLink,
-          child: _buildPickerField('Country*', _countryCtrl, _openCountryDropdown,
-              Icons.public_rounded, errorText: _countryError),
+          child: _buildPickerField(
+            'Country*',
+            _countryCtrl,
+            _openCountryDropdown,
+            Icons.public_rounded,
+            errorText: _countryError,
+            trailingWidget: _countriesLoading
+                ? const SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(strokeWidth: 2))
+                : null,
+          ),
         ),
+
+        // ── State (depends on country) ────────────────────────────────────
         CompositedTransformTarget(
           link: _stateLayerLink,
-          child: _buildPickerField('State Code*', _stateCtrl, _openStateDropdown,
-              Icons.map_rounded, errorText: _stateError),
+          child: _buildPickerField(
+            'State*',
+            _stateCtrl,
+            _selectedCountry != null ? _openStateDropdown : () {},
+            Icons.map_rounded,
+            errorText: _stateError,
+            enabled: _selectedCountry != null,
+            trailingWidget: _statesLoading
+                ? const SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(strokeWidth: 2))
+                : null,
+          ),
         ),
+
+        // ── District / City (depends on state) ───────────────────────────
         CompositedTransformTarget(
           link: _districtLayerLink,
-          child: _buildPickerField('District Code*', _districtCtrl,
-              _openDistrictDropdown, Icons.location_city_rounded, errorText: _districtError),
+          child: _buildPickerField(
+            'District*',
+            _districtCtrl,
+            _selectedState != null ? _openDistrictDropdown : () {},
+            Icons.location_city_rounded,
+            errorText: _districtError,
+            enabled: _selectedState != null,
+            trailingWidget: _districtsLoading
+                ? const SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(strokeWidth: 2))
+                : null,
+          ),
         ),
-        
-        _field('Pincode*', _pincodeCtrl, enabled: false),
+
+        // ── Pincode (clickable dropdown OR auto-populated when only 1) ───
+        CompositedTransformTarget(
+          link: _pincodeLayerLink,
+          child: _buildPickerField(
+            'Pincode',
+            _pincodeCtrl,
+            _selectedDistrict != null ? _openPincodeDropdown : () {},
+            Icons.pin_drop_rounded,
+            enabled: _selectedDistrict != null,
+            trailingWidget: _pincodesLoading
+                ? const SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(strokeWidth: 2))
+                : null,
+          ),
+        ),
+
+        // ── Contact ───────────────────────────────────────────────────────
         _field('Email Address*', _emailCtrl,
+            mandatory: true, errorText: _emailError, onChanged: (v) {
+          setState(() =>
+              _emailError = _isValidEmail(v) ? null : 'Invalid email format');
+          widget.onChanged('email', v);
+        }),
+        _field('Telephone*', _phoneCtrl,
+            icon: Icons.phone_rounded,
             mandatory: true,
-            errorText: _emailError,
-            onChanged: (v) {
-              setState(() => _emailError = _isValidEmail(v) ? null : 'Invalid email format');
-              widget.onChanged('email', v);
-            }),
-        _field('Telephone*', _phoneCtrl, icon: Icons.phone_rounded,
-            mandatory: true,
-            errorText: _phoneError,
-            onChanged: (v) {
-              setState(() => _phoneError = _isValidPhone(v) ? null : 'Invalid phone format');
-              widget.onChanged('telephone', v);
-            }),
+            errorText: _phoneError, onChanged: (v) {
+          setState(() =>
+              _phoneError = _isValidPhone(v) ? null : 'Invalid phone format');
+          widget.onChanged('telephone', v);
+        }),
+
+        // ── Address ───────────────────────────────────────────────────────
         _field('Address Line 1*', _addr1Ctrl,
             mandatory: true,
             errorText: _addr1Error,
@@ -1494,13 +1556,20 @@ class OrganisationFieldsState extends State<OrganisationFields> {
     );
   }
 
-  Widget _field(String label, TextEditingController ctrl,
-      {bool isNum = false,
-      bool mandatory = false,
-      bool enabled = true,
-      String? errorText,
-      IconData? icon,
-      void Function(String)? onChanged}) {
+  // ─────────────────────────────────────────────────────────────────────────
+  // Field builders
+  // ─────────────────────────────────────────────────────────────────────────
+
+  Widget _field(
+    String label,
+    TextEditingController ctrl, {
+    bool isNum = false,
+    bool mandatory = false,
+    bool enabled = true,
+    String? errorText,
+    IconData? icon,
+    void Function(String)? onChanged,
+  }) {
     return AmsField(
         label: label,
         labelAbove: true,
@@ -1513,46 +1582,50 @@ class OrganisationFieldsState extends State<OrganisationFields> {
                 : 'Auto-populated',
             borderColor: AppColors.tBlue,
             keyboardType: isNum ? TextInputType.number : TextInputType.text,
-            inputFormatters: isNum ? [FilteringTextInputFormatter.digitsOnly] : null,
+            inputFormatters:
+                isNum ? [FilteringTextInputFormatter.digitsOnly] : null,
             errorText: errorText,
             icon: icon,
             onChanged: onChanged));
   }
 
-  Widget _buildPickerField(String label, TextEditingController ctrl,
-      VoidCallback onTap, IconData icon, {String? errorText}) {
+  Widget _buildPickerField(
+    String label,
+    TextEditingController ctrl,
+    VoidCallback onTap,
+    IconData icon, {
+    String? errorText,
+    bool enabled = true,
+    Widget? trailingWidget,
+  }) {
+    // Dim the field if it's disabled (waiting for parent selection)
+    final isDisabled = widget.isViewMode || !enabled;
     return AmsField(
         label: label,
         labelAbove: true,
         required: label.contains('*'),
-        child: GestureDetector(
-            onTap: onTap,
-            child: AbsorbPointer(
-                child: AmsTextInput(
-                    controller: ctrl,
-                    readOnly: widget.isViewMode,
-                    placeholder: 'Select $label',
-                    borderColor: AppColors.tBlue,
-                    errorText: errorText,
-                    icon: icon))));
-  }
-
-  Future<void> _selectDate() async {
-    if (widget.isViewMode) return;
-    DateTime? pick = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime(1900),
-      lastDate: DateTime(2100),
-      builder: (ctx, child) => Theme(
-          data: Theme.of(ctx).copyWith(
-              colorScheme: const ColorScheme.light(primary: AppColors.tBlue)),
-          child: child!),
-    );
-    if (pick != null) {
-      String fmt = DateFormat('dd-MM-yyyy').format(pick);
-      setState(() => _openDateCtrl.text = fmt);
-      widget.onChanged('openDate', fmt);
-    }
+        child: Stack(
+          alignment: Alignment.centerRight,
+          children: [
+            GestureDetector(
+                onTap: isDisabled ? null : onTap,
+                child: AbsorbPointer(
+                    child: AmsTextInput(
+                        controller: ctrl,
+                        readOnly: true,
+                        placeholder: isDisabled && !widget.isViewMode
+                            ? 'Select ${label.replaceAll('*', '')} first'
+                            : 'Select ${label.replaceAll('*', '')}',
+                        borderColor:
+                            isDisabled ? AppColors.border : AppColors.tBlue,
+                        errorText: errorText,
+                        icon: icon))),
+            if (trailingWidget != null)
+              Positioned(
+                right: 12,
+                child: trailingWidget,
+              ),
+          ],
+        ));
   }
 }

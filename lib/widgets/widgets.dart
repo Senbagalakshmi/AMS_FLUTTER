@@ -799,11 +799,13 @@ class AmsDropdown extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DropdownButtonFormField<String>(
+      isExpanded: true,
       focusNode: focusNode,
       initialValue: initialValue ?? (placeholder == null ? items.first : null),
       hint: placeholder != null
           ? Text(placeholder!,
-              style: bodyStyle(size: 13, color: AppColors.ink4))
+              style: bodyStyle(size: 13, color: AppColors.ink4),
+              overflow: TextOverflow.ellipsis)
           : null,
       onChanged: onChanged,
       style: bodyStyle(size: 13, color: AppColors.ink),
@@ -832,7 +834,10 @@ class AmsDropdown extends StatelessWidget {
       ),
       items: items
           .map((e) => DropdownMenuItem(
-              value: e, child: Text(e, style: bodyStyle(size: 13))))
+              value: e,
+              child: Text(e,
+                  style: bodyStyle(size: 13),
+                  overflow: TextOverflow.ellipsis)))
           .toList(),
     );
   }
