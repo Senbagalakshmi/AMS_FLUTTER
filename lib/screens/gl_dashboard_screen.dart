@@ -5,6 +5,8 @@ import '../theme.dart';
 import '../data.dart';
 import '../screens/submenu_dashboard_screen.dart';
 import '../utils/responsive.dart';
+import '../services/api_service.dart';
+import '../services/gl_api_service.dart';
 
 class GlDashboardScreen extends StatefulWidget {
   final List<SubmenuItem> items;
@@ -29,6 +31,12 @@ class _GlDashboardScreenState extends State<GlDashboardScreen> with SingleTicker
   int _selectedScenario = 0;
   late AnimationController _entryController;
 
+  final GLApiService _glApiService = GLApiService();
+  int _glCategoriesCount = 0;
+  int _ledgerMastersCount = 0;
+  int _branchesCount = 0;
+  bool _isLoading = true;
+
   @override
   void initState() {
     super.initState();
@@ -37,6 +45,27 @@ class _GlDashboardScreenState extends State<GlDashboardScreen> with SingleTicker
       vsync: this,
       duration: const Duration(milliseconds: 1000),
     )..forward();
+    _fetchDashboardData();
+  }
+
+  Future<void> _fetchDashboardData() async {
+    setState(() => _isLoading = true);
+    try {
+      final glCategories = await apiService.getAllGlCategories(size: 1);
+      final ledgerMasters = await _glApiService.getGlList();
+      final branches = await _glApiService.getGl104List();
+
+      if (mounted) {
+        setState(() {
+          _glCategoriesCount = glCategories?.totalElements ?? 0;
+          _ledgerMastersCount = ledgerMasters?.length ?? 0;
+          _branchesCount = branches.length;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -196,21 +225,21 @@ class _GlDashboardScreenState extends State<GlDashboardScreen> with SingleTicker
     final summaryCards = [
       _SummaryCard3D(
         title: 'GL Categories',
-        value: (10 + (safeIndex * 2)).toString(),
+        value: _isLoading ? '...' : _glCategoriesCount.toString(),
         icon: Icons.category_rounded,
         color: const Color(0xFF6366F1),
         delay: 0,
       ),
       _SummaryCard3D(
         title: 'Ledger Masters',
-        value: (70 + (safeIndex * 15)).toString(),
+        value: _isLoading ? '...' : _ledgerMastersCount.toString(),
         icon: Icons.account_balance_rounded,
         color: const Color(0xFF10B981),
         delay: 0.05,
       ),
       _SummaryCard3D(
         title: 'Branches',
-        value: (8 + (safeIndex % 4)).toString(),
+        value: _isLoading ? '...' : _branchesCount.toString(),
         icon: Icons.business_rounded,
         color: const Color(0xFFEF4444),
         delay: 0.1,
@@ -235,11 +264,13 @@ class _GlDashboardScreenState extends State<GlDashboardScreen> with SingleTicker
               children: [
                 _ChartFrame(
                   title: 'Ledger Composition',
+                  onRefresh: _fetchDashboardData,
                   child: _ModernPieChart(items: widget.items, type: PieType.distribution, seed: safeIndex.abs()),
                 ),
                 const SizedBox(height: 16),
                 _ChartFrame(
                   title: 'Authorization Integrity',
+                  onRefresh: _fetchDashboardData,
                   child: _ModernPieChart(items: widget.items, type: PieType.authorization, seed: (safeIndex + 10).abs()),
                 ),
               ],
@@ -251,6 +282,7 @@ class _GlDashboardScreenState extends State<GlDashboardScreen> with SingleTicker
                 Expanded(
                   child: _ChartFrame(
                     title: 'Ledger Composition: ${selectedItem.label}',
+                    onRefresh: _fetchDashboardData,
                     child: _ModernPieChart(items: widget.items, type: PieType.distribution, seed: safeIndex.abs()),
                   ),
                 ),
@@ -258,6 +290,7 @@ class _GlDashboardScreenState extends State<GlDashboardScreen> with SingleTicker
                 Expanded(
                   child: _ChartFrame(
                     title: 'Authorization Integrity: ${selectedItem.label}',
+                    onRefresh: _fetchDashboardData,
                     child: _ModernPieChart(items: widget.items, type: PieType.authorization, seed: (safeIndex + 10).abs()),
                   ),
                 ),
@@ -270,6 +303,7 @@ class _GlDashboardScreenState extends State<GlDashboardScreen> with SingleTicker
               children: [
                 _ChartFrame(
                   title: 'Top GL Scenarios',
+                  onRefresh: _fetchDashboardData,
                   child: _ScenarioAuthorizationPipeline(
                     items: widget.items.take(5).toList(),
                     selectedIndex: safeIndex,
@@ -279,6 +313,7 @@ class _GlDashboardScreenState extends State<GlDashboardScreen> with SingleTicker
                 const SizedBox(height: 16),
                 _ChartFrame(
                   title: 'Module Intelligence',
+                  onRefresh: _fetchDashboardData,
                   child: _ModuleIntelligencePanel(selectedItem: selectedItem),
                 ),
               ],
@@ -291,6 +326,7 @@ class _GlDashboardScreenState extends State<GlDashboardScreen> with SingleTicker
                   flex: 7,
                   child: _ChartFrame(
                     title: 'Top GL Scenarios',
+                    onRefresh: _fetchDashboardData,
                     child: _ScenarioAuthorizationPipeline(
                       items: widget.items.take(5).toList(),
                       selectedIndex: safeIndex,
@@ -303,6 +339,7 @@ class _GlDashboardScreenState extends State<GlDashboardScreen> with SingleTicker
                   flex: 3,
                   child: _ChartFrame(
                     title: 'Module Intelligence',
+                    onRefresh: _fetchDashboardData,
                     child: _ModuleIntelligencePanel(selectedItem: selectedItem),
                   ),
                 ),
@@ -448,7 +485,8 @@ class _TabItem extends StatelessWidget {
 class _ChartFrame extends StatefulWidget {
   final String title;
   final Widget child;
-  const _ChartFrame({required this.title, required this.child});
+  final VoidCallback? onRefresh;
+  const _ChartFrame({required this.title, required this.child, this.onRefresh});
 
   @override
   State<_ChartFrame> createState() => _ChartFrameState();
@@ -459,6 +497,7 @@ class _ChartFrameState extends State<_ChartFrame> {
 
   Future<void> _handleRefresh() async {
     setState(() => _isRefreshing = true);
+    widget.onRefresh?.call();
     await Future.delayed(const Duration(milliseconds: 800));
     if (mounted) setState(() => _isRefreshing = false);
   }

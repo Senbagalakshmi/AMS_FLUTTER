@@ -1863,6 +1863,7 @@ class _AmsSidebarState extends State<AmsSidebar> {
                       setState(() {
                         openReportsSubCategory = !openReportsSubCategory;
                       });
+                      widget.onNavigate('submenu_dashboard', 'REPORTS');
                     },
                   ),
                   if (openReportsSubCategory) ...[
@@ -2032,7 +2033,7 @@ class _AmsShellState extends State<AmsShell> {
                 onNavigate: (screen, prog) {
                   final isDashboard = screen == 'submenu_dashboard';
                   final stayInDrawer = isDashboard &&
-                      ['MASTERS', 'GL', 'GL-SUB', 'TRANSACTIONS', 'CONFIG', 'AUTH'].contains(prog);
+                      ['MASTERS', 'GL', 'GL-SUB', 'TRANSACTIONS', 'CONFIG', 'AUTH', 'REPORTS'].contains(prog);
 
                   if (!stayInDrawer) {
                     Navigator.pop(context);

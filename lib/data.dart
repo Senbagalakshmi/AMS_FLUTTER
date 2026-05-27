@@ -583,3 +583,30 @@ final List<SubmenuItem> authSubmenus = [
     trend: 'Priority',
   ),
 ];
+
+final List<SubmenuItem> reportSubmenus = [
+  SubmenuItem(
+    label: 'Profit and Loss',
+    icon: Icons.trending_up_rounded,
+    programId: 'RPT-PL',
+    subtitle: 'View operational profit and loss statements.',
+    metric: 'Monthly',
+    trend: 'View',
+  ),
+  SubmenuItem(
+    label: 'Trial Balance',
+    icon: Icons.balance_rounded,
+    programId: 'RPT-TB',
+    subtitle: 'Generate and review the trial balance.',
+    metric: 'Summary',
+    trend: 'View',
+  ),
+  SubmenuItem(
+    label: 'Balance Sheet',
+    icon: Icons.account_balance_wallet_rounded,
+    programId: 'RPT-BS',
+    subtitle: 'View overall organizational balance sheet.',
+    metric: 'Annual',
+    trend: 'View',
+  ),
+];

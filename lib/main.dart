@@ -39,6 +39,7 @@ import 'screens/trial_balance_screen.dart';
 import 'screens/profit_and_loss_screen.dart';
 import 'screens/chart_of_accounts_screen.dart';
 import 'screens/balance_sheet_screen.dart';
+import 'screens/report_dashboard_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -221,7 +222,7 @@ class _AmsRootState extends State<AmsRoot> {
   }
 
   void _handleProceed(String type) {
-    if (['MASTERS', 'GL', 'CONFIG', 'AUTH'].contains(type)) {
+    if (['MASTERS', 'GL', 'CONFIG', 'AUTH', 'REPORTS'].contains(type)) {
       setState(() {
         _state = _state.copyWith(
           screen: 'submenu_dashboard',
@@ -741,6 +742,9 @@ class _AmsRootState extends State<AmsRoot> {
         } else if (cat == 'TRANSACTIONS') {
           title = 'Transactions';
           items = transactionSubmenus;
+        } else if (cat == 'REPORTS') {
+          title = 'Reports';
+          items = reportSubmenus;
         }
 
         if (cat == 'GL') {
@@ -758,6 +762,13 @@ class _AmsRootState extends State<AmsRoot> {
 
               return item.copyWith(metric: metric);
             }).toList(),
+            userName: _state.userName,
+            onBack: () => _navigate('list'),
+            onNavigate: _handleScreenNavigation,
+          );
+        } else if (cat == 'REPORTS') {
+          body = ReportDashboardScreen(
+            items: reportSubmenus,
             userName: _state.userName,
             onBack: () => _navigate('list'),
             onNavigate: _handleScreenNavigation,
