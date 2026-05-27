@@ -37,6 +37,14 @@ class _ChartOfAccountsScreenState extends State<ChartOfAccountsScreen> with Sing
     'Expense'
   ];
 
+  TextStyle bodyStyle({double size = 14, FontWeight weight = FontWeight.w500, Color color = Colors.black, double? height}) {
+    return TextStyle(fontSize: size, fontWeight: weight, color: color, height: height);
+  }
+
+  TextStyle monoStyle({double size = 11, FontWeight weight = FontWeight.w700, Color color = Colors.grey, double? letterSpacing}) {
+    return TextStyle(fontSize: size, fontWeight: weight, color: color, fontFamily: 'monospace', letterSpacing: letterSpacing);
+  }
+
   @override
   void initState() {
     super.initState();
@@ -53,7 +61,7 @@ class _ChartOfAccountsScreenState extends State<ChartOfAccountsScreen> with Sing
 
   void _handleTabSelection() {
     if (_tabController.indexIsChanging) return;
-    setState(() {}); // Re-render the table below based on selected tab
+    setState(() {}); 
   }
 
   Future<void> _fetchData() async {
@@ -72,7 +80,6 @@ class _ChartOfAccountsScreenState extends State<ChartOfAccountsScreen> with Sing
     if (selectedTab == 'All Accounts') {
       return _allAccounts;
     }
-    // Filter by GLCATNAME which usually contains "Asset", "Liability", etc.
     return _allAccounts.where((acc) {
       final type = (acc['accountType'] as String?)?.toLowerCase() ?? '';
       return type.contains(selectedTab.toLowerCase());
@@ -81,12 +88,13 @@ class _ChartOfAccountsScreenState extends State<ChartOfAccountsScreen> with Sing
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = Responsive.isMobile(context);
+
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: const Color(0xFFF4F7FC),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Header matches GL Balance & Trial Balance
           AmsIdentityHeader(
             icon: const Icon(Icons.list_alt_rounded, size: 28, color: AppColors.tBlue),
             title: 'Chart of Accounts',
@@ -104,14 +112,14 @@ class _ChartOfAccountsScreenState extends State<ChartOfAccountsScreen> with Sing
             ],
           ),
 
-          // Tabs
+          // Tabs Section
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
             child: Container(
               decoration: const BoxDecoration(
                 border: Border(
                   bottom: BorderSide(
-                    color: AppColors.border,
+                    color: Color(0xEFEFEFEF),
                     width: 1.0,
                   ),
                 ),
@@ -120,36 +128,30 @@ class _ChartOfAccountsScreenState extends State<ChartOfAccountsScreen> with Sing
                 controller: _tabController,
                 isScrollable: true,
                 labelColor: AppColors.tBlue,
-                unselectedLabelColor: AppColors.ink3,
+                unselectedLabelColor: Colors.grey[600],
                 indicatorColor: AppColors.tBlue,
                 indicatorWeight: 3.0,
-                labelStyle: bodyStyle(
-                  size: 14,
-                  weight: FontWeight.w700,
-                ),
-                unselectedLabelStyle: bodyStyle(
-                  size: 14,
-                  weight: FontWeight.w500,
-                ),
+                labelStyle: bodyStyle(size: 14, weight: FontWeight.w700),
+                unselectedLabelStyle: bodyStyle(size: 14, weight: FontWeight.w500),
                 tabs: _tabs.map((t) => Tab(text: t, height: 48)).toList(),
               ),
             ),
           ),
 
-          // Content Area
+          // Data Table Container
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : Container(
-                    margin: EdgeInsets.all(Responsive.isMobile(context) ? 12 : 24),
+                    margin: EdgeInsets.all(isMobile ? 12 : 24),
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: AppColors.border),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.03),
-                          blurRadius: 20,
+                          color: Colors.black.withOpacity(0.02),
+                          blurRadius: 16,
                           offset: const Offset(0, 4),
                         ),
                       ],
@@ -159,9 +161,9 @@ class _ChartOfAccountsScreenState extends State<ChartOfAccountsScreen> with Sing
                       children: [
                         // Dynamic Title & Filter Button
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
                           decoration: const BoxDecoration(
-                            border: Border(bottom: BorderSide(color: AppColors.border)),
+                            border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
                           ),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -169,48 +171,53 @@ class _ChartOfAccountsScreenState extends State<ChartOfAccountsScreen> with Sing
                               Text(
                                 _tabs[_tabController.index].toUpperCase(),
                                 style: bodyStyle(
-                                  size: 16,
-                                  weight: FontWeight.w700,
+                                  size: 15,
+                                  weight: FontWeight.w800,
                                   color: AppColors.ink,
                                 ),
                               ),
                               AmsButton(
                                 label: 'Filters',
-                                icon: Icons.filter_list,
+                                icon: Icons.filter_list_rounded,
                                 variant: AmsButtonVariant.outline,
                                 onPressed: () {},
                               ),
                             ],
                           ),
                         ),
-                        // Data Table Header
+                        
+                        // Table Column Headers
                         Container(
-                          padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 20),
+                          padding: const EdgeInsets.symmetric(vertical: 14.0, horizontal: 24),
                           decoration: const BoxDecoration(
-                            border: Border(
-                              bottom: BorderSide(color: AppColors.border, width: 1.0),
-                            ),
+                            border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
                             color: Color(0xFFF8FAFC),
                           ),
                           child: Row(
                             children: [
-                              Expanded(flex: 3, child: _buildColHeader('ACCOUNT / PARENT ACCOUNT')),
-                              Expanded(flex: 1, child: _buildColHeader('ACCOUNT NUMBER')),
-                              Expanded(flex: 2, child: _buildColHeader('ACCOUNT TYPE / SUB TYPE')),
-                              Expanded(flex: 1, child: _buildColHeader('BALANCE', alignRight: true)),
+                              Expanded(flex: 4, child: _buildColHeader('ACCOUNT / PARENT ACCOUNT')),
+                              Expanded(flex: 2, child: _buildColHeader('ACCOUNT NUMBER')),
+                              Expanded(flex: 3, child: _buildColHeader('ACCOUNT TYPE / SUB TYPE')),
+                              Expanded(flex: 2, child: _buildColHeader('BALANCE', alignRight: true)),
                             ],
                           ),
                         ),
-                        // Data List
+                        
+                        // Data Content List
                         Expanded(
                           child: _filteredAccounts.isEmpty
-                              ? const Center(child: Text('No accounts found in this category.'))
+                              ? Center(
+                                  child: Text(
+                                    'No accounts found in this category.',
+                                    style: bodyStyle(color: Colors.grey[500]!, size: 14),
+                                  ),
+                                )
                               : ListView.separated(
+                                  padding: EdgeInsets.zero,
                                   itemCount: _filteredAccounts.length,
-                                  separatorBuilder: (context, index) => const Divider(height: 1, color: AppColors.border),
+                                  separatorBuilder: (context, index) => const Divider(height: 1, color: Color(0xFFF1F5F9)),
                                   itemBuilder: (context, index) {
-                                    final acc = _filteredAccounts[index];
-                                    return _buildAccountRow(acc);
+                                    return _buildAccountRow(_filteredAccounts[index]);
                                   },
                                 ),
                         ),
@@ -230,7 +237,7 @@ class _ChartOfAccountsScreenState extends State<ChartOfAccountsScreen> with Sing
       style: monoStyle(
         size: 11,
         weight: FontWeight.w700,
-        color: AppColors.ink3,
+        color: const Color(0xFF64748B),
         letterSpacing: 0.5,
       ),
     );
@@ -243,36 +250,34 @@ class _ChartOfAccountsScreenState extends State<ChartOfAccountsScreen> with Sing
     final isNegative = balance < 0;
 
     return InkWell(
-      onHover: (hovering) {
-        // Optional: add a subtle hover effect state if desired.
-      },
       onTap: () {},
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 16.0),
+        padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 24.0),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Account Name
+            // Column 1: Account Name
             Expanded(
-              flex: 3,
+              flex: 4,
               child: Row(
                 children: [
                   Container(
-                    width: 24,
-                    height: 24,
-                    margin: const EdgeInsets.only(right: 12),
+                    width: 32,
+                    height: 32,
+                    margin: const EdgeInsets.only(right: 14),
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      border: Border.all(color: Colors.purple.shade200),
-                      color: Colors.purple.shade50,
+                      color: const Color(0xFFF3E8FF),
+                      // FIXED HERE: Valid hex formatting
+                      border: Border.all(color: const Color(0xFFE9D5FF)), 
                     ),
-                    child: Center(
+                    child: const Center(
                       child: Text(
                         '\$',
                         style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.purple.shade700,
-                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                          color: Color(0xFF7E22CE),
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                     ),
@@ -280,31 +285,35 @@ class _ChartOfAccountsScreenState extends State<ChartOfAccountsScreen> with Sing
                   Expanded(
                     child: Text(
                       acc['accountName']?.toString() ?? '',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: bodyStyle(
                         size: 14,
                         weight: FontWeight.w600,
-                        color: AppColors.ink,
+                        color: const Color(0xFF1E293B),
                       ),
                     ),
                   ),
                 ],
               ),
             ),
-            // Account Number
+            
+            // Column 2: Account Number
             Expanded(
-              flex: 1,
+              flex: 2,
               child: Text(
-                acc['accountNumber']?.toString() ?? '',
+                acc['accountNumber']?.toString() ?? '—',
                 style: bodyStyle(
                   size: 14,
                   weight: FontWeight.w500,
-                  color: AppColors.ink,
+                  color: const Color(0xFF334155),
                 ),
               ),
             ),
-            // Account Type
+            
+            // Column 3: Account Type
             Expanded(
-              flex: 2,
+              flex: 3,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -314,7 +323,7 @@ class _ChartOfAccountsScreenState extends State<ChartOfAccountsScreen> with Sing
                     style: bodyStyle(
                       size: 14,
                       weight: FontWeight.w600,
-                      color: AppColors.ink,
+                      color: const Color(0xFF1E293B),
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -323,22 +332,25 @@ class _ChartOfAccountsScreenState extends State<ChartOfAccountsScreen> with Sing
                     style: bodyStyle(
                       size: 12,
                       weight: FontWeight.w400,
-                      color: AppColors.ink3,
+                      color: const Color(0xFF64748B),
                     ),
                   ),
                 ],
               ),
             ),
-            // Balance
+            
+            // Column 4: Balance
             Expanded(
-              flex: 1,
+              flex: 2,
               child: Text(
                 '${formatCurrency.format(balance.abs())} $currency',
                 textAlign: TextAlign.right,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: bodyStyle(
                   size: 14,
-                  weight: FontWeight.w600,
-                  color: isNegative ? Colors.red.shade700 : AppColors.ink,
+                  weight: FontWeight.w700,
+                  color: isNegative ? const Color(0xFFDC2626) : const Color(0xFF0F172A),
                 ),
               ),
             ),
