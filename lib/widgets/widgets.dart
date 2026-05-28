@@ -1598,6 +1598,9 @@ class _AmsSidebarState extends State<AmsSidebar> {
       openMenu = 'transactions';
       openReportsSubCategory = ['RPT-PL', 'RPT-TB', 'RPT-BS'].contains(widget.selectedProg);
     }
+    else if(widget.currentScreen == 'Gl-Import'){
+      openMenu = 'gl-import';
+    }
   }
 
   @override
@@ -1719,13 +1722,13 @@ class _AmsSidebarState extends State<AmsSidebar> {
                     isSelected: widget.selectedProg == 'MENU-MST',
                     onTap: () => widget.onNavigate('nontran', 'MENU-MST'),
                   ),
-                  AmsSubSidebarItem(
-                    label: 'Import Company GL',
-                    isCollapsed: widget.isCollapsed,
-                    icon: Icons.upload_file_rounded,
-                    isSelected: widget.selectedProg == 'GL-IMPORT',
-                    onTap: () => widget.onNavigate('nontran', 'GL-IMPORT'),
-                  ),
+                  // AmsSubSidebarItem(
+                  //   label: 'Clients',
+                  //   isCollapsed: widget.isCollapsed,
+                  //   icon: Icons.upload_file_rounded,
+                  //   isSelected: widget.selectedProg == 'GL-IMPORT',
+                  //   onTap: () => widget.onNavigate('nontran', 'GL-IMPORT'),
+                  // ),
                 ],
 
                 const SizedBox(height: 16),
@@ -1907,6 +1910,35 @@ class _AmsSidebarState extends State<AmsSidebar> {
                 ],
 
                 const SizedBox(height: 16),
+
+                //GL-IMPORT
+                // 1. "Clients" as the Parent Header
+AmsSidebarItem(
+  label: widget.isCollapsed ? '' : 'Clients',
+  icon: Icons.people_outline_rounded,
+  isCollapsed: widget.isCollapsed,
+  // Highlight the parent if the menu is open
+  isSelected: openMenu == 'clients_menu',
+  onTap: () {
+    setState(() {
+      openMenu = openMenu == 'clients_menu' ? '' : 'clients_menu';
+    });
+  },
+),
+
+// 2. The Actual Screen as the Sub-item
+if (openMenu == 'clients_menu' && !widget.isCollapsed) ...[
+  AmsSubSidebarItem(
+    label: 'GL-IMPORT', // This is the screen you want to reach
+    isCollapsed: widget.isCollapsed,
+    icon: Icons.upload_file_rounded,
+    isSelected: widget.selectedProg == 'GL-IMPORT',
+    onTap: () => widget.onNavigate('nontran', 'GL-IMPORT'),
+  ),
+],
+
+                const SizedBox(height: 16),
+                
                 if (!widget.isCollapsed) _sectionHeader('SYSTEM'),
 
                 // 🔹 CONFIGURATION

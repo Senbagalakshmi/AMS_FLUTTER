@@ -599,7 +599,7 @@ class _AmsRootState extends State<AmsRoot> {
         } else if (_state.selectedProg == 'GL-IMPORT') {
           body = ImportCompanyScreen(
             onBack: () => _navigate('list'),
-            onBackToModule: () => _handleProceed('MASTERS'),
+            onBackToModule: () => _handleProceed('Clients'),
             userName: _state.userName,
           );
         } else if (_state.selectedProg == 'ORG-CRT') {
