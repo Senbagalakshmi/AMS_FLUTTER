@@ -161,6 +161,12 @@ final Map<String, Auth101Config> auth101 = {
       approvalReq: false,
       isTran: false,
       levels: 0),
+  'GL-IMPORT': const Auth101Config(
+      id: 'GL-IMPORT',
+      name: 'Import Company GL',
+      approvalReq: false,
+      isTran: false,
+      levels: 0),
 };
 
 final Map<String, List<Auth103Limit>> auth103 = {
@@ -234,6 +240,7 @@ final Map<String, String> nonTranProgPkPrefix = {
   'RPT-TB': 'RTB',
   'RPT-BS': 'RBS',
   'RPT-COA': 'RCA',
+  'GL-IMPORT': 'IMP',
 };
 
 List<QueueEntry> seedQueue() => [
@@ -476,6 +483,14 @@ final List<SubmenuItem> mastersSubmenus = [
     subtitle: 'Manage multilevel navigation and system menus.',
     metric: '3 Levels',
     trend: 'Dynamic',
+  ),
+  SubmenuItem(
+    label: 'Import Company GL',
+    icon: Icons.upload_file_rounded,
+    programId: 'GL-IMPORT',
+    subtitle: 'Upload CSV to import company GL accounts & balances.',
+    metric: 'CSV Import',
+    trend: 'Global',
   ),
 ];
 

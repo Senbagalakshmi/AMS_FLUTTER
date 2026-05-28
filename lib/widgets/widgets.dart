@@ -1572,7 +1572,8 @@ class _AmsSidebarState extends State<AmsSidebar> {
       'MENU-CRT',
       'ORG-CRT',
       'PROG-CRT',
-      'BRN-CRT'
+      'BRN-CRT',
+      'GL-IMPORT'
     ].contains(widget.selectedProg)) {
       openMenu = 'masters';
     } else if ([
@@ -1717,6 +1718,13 @@ class _AmsSidebarState extends State<AmsSidebar> {
                     icon: Icons.menu_open_rounded,
                     isSelected: widget.selectedProg == 'MENU-MST',
                     onTap: () => widget.onNavigate('nontran', 'MENU-MST'),
+                  ),
+                  AmsSubSidebarItem(
+                    label: 'Import Company GL',
+                    isCollapsed: widget.isCollapsed,
+                    icon: Icons.upload_file_rounded,
+                    isSelected: widget.selectedProg == 'GL-IMPORT',
+                    onTap: () => widget.onNavigate('nontran', 'GL-IMPORT'),
                   ),
                 ],
 

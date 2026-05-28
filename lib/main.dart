@@ -40,6 +40,7 @@ import 'screens/profit_and_loss_screen.dart';
 import 'screens/chart_of_accounts_screen.dart';
 import 'screens/balance_sheet_screen.dart';
 import 'screens/report_dashboard_screen.dart';
+import 'screens/import_company_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -593,6 +594,12 @@ class _AmsRootState extends State<AmsRoot> {
           body = ChartOfAccountsScreen(
             onBack: () => _navigate('list'),
             onBackToModule: () => _handleProceed('TRANSACTIONS'),
+            userName: _state.userName,
+          );
+        } else if (_state.selectedProg == 'GL-IMPORT') {
+          body = ImportCompanyScreen(
+            onBack: () => _navigate('list'),
+            onBackToModule: () => _handleProceed('MASTERS'),
             userName: _state.userName,
           );
         } else if (_state.selectedProg == 'ORG-CRT') {
