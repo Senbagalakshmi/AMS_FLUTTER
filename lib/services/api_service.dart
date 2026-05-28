@@ -1110,6 +1110,33 @@ class ApiService {
       return null;
     }
   }
+
+  // --- Reports ---
+  Future<List<Map<String, dynamic>>?> getChartOfAccountsReport() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/reports/chart-of-accounts'),
+        headers: _headers,
+      );
+      if (response.statusCode == 200) {
+        final dynamic decoded = jsonDecode(response.body);
+        if (decoded is List) {
+          return List<Map<String, dynamic>>.from(decoded);
+        } else if (decoded is Map) {
+          if (decoded['items'] is List) {
+             return List<Map<String, dynamic>>.from(decoded['items']);
+          } else if (decoded['data'] is List) {
+             return List<Map<String, dynamic>>.from(decoded['data']);
+          } else if (decoded['content'] is List) {
+             return List<Map<String, dynamic>>.from(decoded['content']);
+          }
+        }
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
 }
 
 final apiService = ApiService();

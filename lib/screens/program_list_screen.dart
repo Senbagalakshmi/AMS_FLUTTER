@@ -4,6 +4,7 @@ import '../theme.dart';
 import '../models/models.dart';
 import '../utils/responsive.dart';
 import '../services/api_service.dart';
+import '../services/org_api_service.dart';
 
 class ProgramListScreen extends StatefulWidget {
   final Map<String, Auth101Config> authConfigs;
@@ -40,6 +41,8 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
   int _glCategories = 0;
   int _glMasters = 0;
   int _totalUsersCount = 0;
+  int _totalOrgCount = 0;
+  int _totalCoaCount = 0;
   List<AuthRecord> _recentAuthItems = [];
   // Dynamic metrics
   List<int> _weeklyData = [42, 78, 91, 65, 83, 24, 11]; // Fallback
@@ -58,18 +61,28 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
       final results = await Future.wait([
         apiService.getAuthQueue(size: 500),
         apiService.getAllGlCategories(size: 1),
-        apiService.getAllGlMasters(size: 1000), // Get enough masters to analyze distribution
+        apiService.getAllGlMasters(
+            size: 1000), // Get enough masters to analyze distribution
         apiService.getUsers(size: 1),
+        apiService.getChartOfAccountsReport(),
+        orgApiService.getAllOrganisations(size: 1),
       ]);
 
       final authResult = results[0] as PaginatedResult<AuthRecord>?;
       final catResult = results[1] as PaginatedResult<Map<String, dynamic>>?;
       final mastResult = results[2] as PaginatedResult<Map<String, dynamic>>?;
       final usrResult = results[3] as PaginatedResult<Map<String, dynamic>>?;
+      final coaReport =
+          results.length > 4 ? results[4] as List<Map<String, dynamic>>? : null;
+      final orgResult = results.length > 5
+          ? results[5] as PaginatedResult<Map<String, dynamic>>?
+          : null;
 
       final allItems = authResult?.items ?? [];
-      final processed = allItems.where((r) =>
-        r.flUser != null && r.flUser!.isNotEmpty && r.flUser != '0').length;
+      final processed = allItems
+          .where((r) =>
+              r.flUser != null && r.flUser!.isNotEmpty && r.flUser != '0')
+          .length;
 
       // 1. Dynamic Top Programs & Weekly Activity
       Map<String, int> progMap = {};
@@ -81,18 +94,47 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
           weekCounts[dt.weekday - 1]++;
         } catch (_) {}
       }
-      var sortedProgs = progMap.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
+      var sortedProgs = progMap.entries.toList()
+        ..sort((a, b) => b.value.compareTo(a.value));
 
       // 2. Dynamic Chart of Accounts Distribution
       int ast = 0, lib = 0, equ = 0, rev = 0, exp = 0;
-      final mastersList = mastResult?.items ?? [];
-      for (var gl in mastersList) {
-        int glNo = int.tryParse(gl['glNo']?.toString() ?? '0') ?? 0;
-        if (glNo >= 1000 && glNo < 2000) ast++;
-        else if (glNo >= 2000 && glNo < 3000) lib++;
-        else if (glNo >= 3000 && glNo < 4000) equ++;
-        else if (glNo >= 4000 && glNo < 5000) rev++;
-        else if (glNo >= 5000 && glNo < 6000) exp++;
+      if (coaReport != null) {
+        for (var item in coaReport) {
+          final allValues = item.values.join(' ').toLowerCase();
+          final glStr = item['accountNumber']?.toString() ??
+              item['glNo']?.toString() ??
+              item['account_number']?.toString() ??
+              '';
+          int glNo = int.tryParse(glStr.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
+
+          if (allValues.contains('asset') || (glNo >= 1000 && glNo < 2000))
+            ast++;
+          else if (allValues.contains('liab') || (glNo >= 2000 && glNo < 3000))
+            lib++;
+          else if (allValues.contains('equi') || (glNo >= 3000 && glNo < 4000))
+            equ++;
+          else if (allValues.contains('inc') ||
+              allValues.contains('rev') ||
+              (glNo >= 4000 && glNo < 5000))
+            rev++;
+          else if (allValues.contains('exp') || (glNo >= 5000 && glNo < 6000))
+            exp++;
+        }
+      } else {
+        final mastersList = mastResult?.items ?? [];
+        for (var gl in mastersList) {
+          int glNo = int.tryParse(gl['glNo']?.toString() ?? '0') ?? 0;
+          if (glNo >= 1000 && glNo < 2000)
+            ast++;
+          else if (glNo >= 2000 && glNo < 3000)
+            lib++;
+          else if (glNo >= 3000 && glNo < 4000)
+            equ++;
+          else if (glNo >= 4000 && glNo < 5000)
+            rev++;
+          else if (glNo >= 5000 && glNo < 6000) exp++;
+        }
       }
       int totalGl = ast + lib + equ + rev + exp;
       if (totalGl == 0) totalGl = 1;
@@ -104,22 +146,25 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
           _glCategories = catResult?.totalElements ?? 0;
           _glMasters = mastResult?.totalElements ?? 0;
           _totalUsersCount = usrResult?.totalElements ?? widget.totalUsers;
+          _totalOrgCount = orgResult?.totalElements ?? 0;
+          _totalCoaCount = coaReport?.length ?? _glMasters;
           _recentAuthItems = allItems.take(5).toList();
-          
+
           if (weekCounts.any((c) => c > 0)) _weeklyData = weekCounts;
           _topPrograms = sortedProgs.take(3).toList();
-          
-          if (mastersList.isNotEmpty) {
-            _coaDistribution = [
-              (ast / totalGl * 100).toInt(),
-              (lib / totalGl * 100).toInt(),
-              (equ / totalGl * 100).toInt(),
-              (rev / totalGl * 100).toInt(),
-              (exp / totalGl * 100).toInt(),
-            ];
-            // Prevent 0 flex value rendering errors
-            for(int i=0; i<_coaDistribution.length; i++) {
-               if(_coaDistribution[i] == 0) _coaDistribution[i] = 1;
+
+          if (coaReport != null || mastResult?.items != null) {
+            if (totalGl > 1 ||
+                (totalGl == 1 && (ast + lib + equ + rev + exp > 0))) {
+              _coaDistribution = [
+                (ast / totalGl * 100).toInt(),
+                (lib / totalGl * 100).toInt(),
+                (equ / totalGl * 100).toInt(),
+                (rev / totalGl * 100).toInt(),
+                (exp / totalGl * 100).toInt(),
+              ];
+            } else {
+              _coaDistribution = [0, 0, 0, 0, 0];
             }
           }
           _isLoading = false;
@@ -163,8 +208,8 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
                   children: [
                     _buildKpiRow(isMobile),
                     const SizedBox(height: 24),
-                      // Chart of Accounts row
-                      _buildChartOfAccountsOverview(isMobile),
+                    // Chart of Accounts row
+                    _buildChartOfAccountsOverview(isMobile),
                     const SizedBox(height: 24),
                     isMobile
                         ? Column(children: [
@@ -186,13 +231,16 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
                               child: Row(
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
-                                  Expanded(flex: 4, child: _buildQuickActions()),
+                                  Expanded(
+                                      flex: 4, child: _buildQuickActions()),
                                   const SizedBox(width: 16),
                                   Expanded(flex: 4, child: _buildTopPrograms()),
                                   const SizedBox(width: 16),
                                   Expanded(flex: 3, child: _buildAuthByType()),
                                   const SizedBox(width: 16),
-                                  Expanded(flex: 3, child: _buildFinancialExposure()),
+                                  Expanded(
+                                      flex: 3,
+                                      child: _buildFinancialExposure()),
                                 ],
                               ),
                             ),
@@ -206,7 +254,8 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
                                   const SizedBox(width: 16),
                                   Expanded(flex: 4, child: _buildRecentQueue()),
                                   const SizedBox(width: 16),
-                                  Expanded(flex: 3, child: _buildWeeklyActivity()),
+                                  Expanded(
+                                      flex: 3, child: _buildWeeklyActivity()),
                                 ],
                               ),
                             ),
@@ -222,7 +271,7 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
   }
 
   Widget _buildHeroHeader(bool isMobile) {
-    final pending   = _isLoading ? '—' : '$_totalAuthQueue';
+    final pending = _isLoading ? '—' : '$_totalAuthQueue';
     final processed = _isLoading ? '—' : '$_processedToday';
 
     return Container(
@@ -239,7 +288,8 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
         children: [
           const Positioned.fill(child: _FloatingFinanceBackground()),
           Padding(
-            padding: EdgeInsets.fromLTRB(isMobile ? 16 : 32, 28, isMobile ? 16 : 32, 32),
+            padding: EdgeInsets.fromLTRB(
+                isMobile ? 16 : 32, 28, isMobile ? 16 : 32, 32),
             child: _greetingBlock(pending, processed, isMobile),
           ),
         ],
@@ -265,7 +315,7 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
             );
           },
           child: Text(
-            '$_greeting, $_displayName 👋',
+            '$_greeting, $_displayName !',
             style: TextStyle(
               color: Colors.white,
               fontSize: isMobile ? 20 : 26,
@@ -279,9 +329,12 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
           spacing: 6,
           runSpacing: 6,
           children: [
-            _infoBadge(Icons.inbox_rounded, '$pending pending', const Color(0xFFFBBF24)),
-            _infoBadge(Icons.check_circle_rounded, '$processed processed', const Color(0xFF34D399)),
-            _infoBadge(Icons.category_rounded, '$_glCategories categories', const Color(0xFF818CF8)),
+            _infoBadge(Icons.inbox_rounded, '$pending pending',
+                const Color(0xFFFBBF24)),
+            _infoBadge(Icons.check_circle_rounded, '$processed processed',
+                const Color(0xFF34D399)),
+            _infoBadge(Icons.category_rounded, '$_glCategories categories',
+                const Color(0xFF818CF8)),
           ],
         ),
       ],
@@ -301,24 +354,46 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
         children: [
           Icon(icon, size: 12, color: color),
           const SizedBox(width: 5),
-          Text(label, style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w700)),
+          Text(label,
+              style: TextStyle(
+                  color: color, fontSize: 11, fontWeight: FontWeight.w700)),
         ],
       ),
     );
   }
 
-
-
-
-
-
   Widget _buildKpiRow(bool isMobile) {
     final cards = [
-      _KpiData('Total Auth Queue', '$_totalAuthQueue', Icons.inbox_rounded, const Color(0xFF6366F1), '+18% vs last week', () => widget.onProceed('AUTH')),
-      _KpiData('Pending L1', '${_totalAuthQueue - _processedToday < 0 ? 0 : _totalAuthQueue - _processedToday}', Icons.pending_actions_rounded, const Color(0xFFF59E0B), 'awaiting review', () => widget.onProceed('AUTH')),
-      _KpiData('Processed', '$_processedToday', Icons.check_circle_rounded, const Color(0xFF10B981), 'authorized', null),
-      _KpiData('GL Categories', '$_glCategories', Icons.category_rounded, const Color(0xFF3B82F6), 'configured', () => widget.onProceed('GL')),
-      _KpiData('Total Users', '$_totalUsersCount', Icons.group_rounded, const Color(0xFFEC4899), 'registered', () => widget.onProceed('MASTERS')),
+      _KpiData(
+          'Total Auth Queue',
+          '$_totalAuthQueue',
+          Icons.inbox_rounded,
+          const Color(0xFF6366F1),
+          '+18% vs last week',
+          () => widget.onProceed('AUTH')),
+      _KpiData(
+          'Organisations',
+          '$_totalOrgCount',
+          Icons.business_rounded,
+          const Color(0xFFF59E0B),
+          'registered orgs',
+          () => widget.onSelect('ORG-CRT')),
+      _KpiData(
+          'Chart of Accounts',
+          '$_totalCoaCount',
+          Icons.account_tree_rounded,
+          const Color(0xFF10B981),
+          'total accounts',
+          () => widget.onSelect('RPT-COA')),
+      _KpiData('GL Categories', '$_glCategories', Icons.category_rounded,
+          const Color(0xFF3B82F6), 'configured', () => widget.onProceed('GL')),
+      _KpiData(
+          'Total Users',
+          '$_totalUsersCount',
+          Icons.group_rounded,
+          const Color(0xFFEC4899),
+          'registered',
+          () => widget.onProceed('MASTERS')),
     ];
 
     return Wrap(
@@ -334,7 +409,8 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
   }
 
   Widget _buildAuthVolume() {
-    final int maxWeekly = _weeklyData.isEmpty ? 100 : _weeklyData.reduce((a, b) => a > b ? a : b);
+    final int maxWeekly =
+        _weeklyData.isEmpty ? 100 : _weeklyData.reduce((a, b) => a > b ? a : b);
     final int finalMax = maxWeekly == 0 ? 1 : maxWeekly;
 
     return _DashCard(
@@ -389,9 +465,16 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
   Widget _legend(Color color, String label) {
     return Row(
       children: [
-        Container(width: 10, height: 10, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+        Container(
+            width: 10,
+            height: 10,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
         const SizedBox(width: 8),
-        Text(label, style: const TextStyle(fontSize: 12, color: Color(0xFF64748B), fontWeight: FontWeight.w600)),
+        Text(label,
+            style: const TextStyle(
+                fontSize: 12,
+                color: Color(0xFF64748B),
+                fontWeight: FontWeight.w600)),
       ],
     );
   }
@@ -411,19 +494,30 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
               final frac = max == 0 ? 0.0 : (v / max);
               return Column(
                 children: [
-                  Text('$v', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFF64748B))),
+                  Text('$v',
+                      style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF64748B))),
                   const SizedBox(height: 4),
                   AnimatedContainer(
                     duration: const Duration(milliseconds: 800),
                     height: 36,
                     width: 28,
                     decoration: BoxDecoration(
-                      color: Color.lerp(const Color(0xFF1E2B5E).withValues(alpha: 0.3), const Color(0xFF1E2B5E), frac),
+                      color: Color.lerp(
+                          const Color(0xFF1E2B5E).withValues(alpha: 0.3),
+                          const Color(0xFF1E2B5E),
+                          frac),
                       borderRadius: BorderRadius.circular(6),
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Text(['M', 'T', 'W', 'T', 'F', 'S', 'S'][i], style: const TextStyle(fontSize: 9, color: Color(0xFF94A3B8), fontWeight: FontWeight.w700)),
+                  Text(['M', 'T', 'W', 'T', 'F', 'S', 'S'][i],
+                      style: const TextStyle(
+                          fontSize: 9,
+                          color: Color(0xFF94A3B8),
+                          fontWeight: FontWeight.w700)),
                 ],
               );
             }),
@@ -432,9 +526,12 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: const [
-              Text('Low', style: TextStyle(fontSize: 10, color: Color(0xFF94A3B8))),
-              Text('→', style: TextStyle(fontSize: 10, color: Color(0xFF94A3B8))),
-              Text('High', style: TextStyle(fontSize: 10, color: Color(0xFF94A3B8))),
+              Text('Low',
+                  style: TextStyle(fontSize: 10, color: Color(0xFF94A3B8))),
+              Text('→',
+                  style: TextStyle(fontSize: 10, color: Color(0xFF94A3B8))),
+              Text('High',
+                  style: TextStyle(fontSize: 10, color: Color(0xFF94A3B8))),
             ],
           ),
         ],
@@ -448,10 +545,17 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
       subtitle: 'Latest pending items',
       action: TextButton(
         onPressed: () => widget.onProceed('AUTH'),
-        child: const Text('View All', style: TextStyle(fontSize: 12, color: Color(0xFF6366F1), fontWeight: FontWeight.w700)),
+        child: const Text('View All',
+            style: TextStyle(
+                fontSize: 12,
+                color: Color(0xFF6366F1),
+                fontWeight: FontWeight.w700)),
       ),
       child: _isLoading
-          ? const Center(child: Padding(padding: EdgeInsets.all(32), child: CircularProgressIndicator()))
+          ? const Center(
+              child: Padding(
+                  padding: EdgeInsets.all(32),
+                  child: CircularProgressIndicator()))
           : _recentAuthItems.isEmpty
               ? _emptyState()
               : Column(
@@ -472,7 +576,8 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
           children: [
             Icon(Icons.inbox_rounded, size: 40, color: Color(0xFFCBD5E1)),
             SizedBox(height: 8),
-            Text('No pending items', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 13)),
+            Text('No pending items',
+                style: TextStyle(color: Color(0xFF94A3B8), fontSize: 13)),
           ],
         ),
       ),
@@ -484,9 +589,30 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         children: const [
-          Expanded(flex: 3, child: Text('AUTH SL', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Color(0xFF94A3B8), letterSpacing: 0.5))),
-          Expanded(flex: 3, child: Text('PROGRAM', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Color(0xFF94A3B8), letterSpacing: 0.5))),
-          Expanded(flex: 2, child: Text('STATUS', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Color(0xFF94A3B8), letterSpacing: 0.5))),
+          Expanded(
+              flex: 3,
+              child: Text('AUTH SL',
+                  style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF94A3B8),
+                      letterSpacing: 0.5))),
+          Expanded(
+              flex: 3,
+              child: Text('PROGRAM',
+                  style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF94A3B8),
+                      letterSpacing: 0.5))),
+          Expanded(
+              flex: 2,
+              child: Text('STATUS',
+                  style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF94A3B8),
+                      letterSpacing: 0.5))),
         ],
       ),
     );
@@ -494,7 +620,8 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
 
   Widget _queueRow(AuthRecord r) {
     final isPending = r.flUser == null || r.flUser == '0' || r.flUser!.isEmpty;
-    final statusColor = isPending ? const Color(0xFFF59E0B) : const Color(0xFF10B981);
+    final statusColor =
+        isPending ? const Color(0xFFF59E0B) : const Color(0xFF10B981);
     final statusLabel = isPending ? 'Pending' : 'In Review';
     return InkWell(
       onTap: () => widget.onProceed('AUTH'),
@@ -504,11 +631,17 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
           children: [
             Expanded(
               flex: 3,
-              child: Text(r.authSl, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF1E2B5E))),
+              child: Text(r.authSl,
+                  style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF1E2B5E))),
             ),
             Expanded(
               flex: 3,
-              child: Text(r.programId.isNotEmpty ? r.programId : '-', style: const TextStyle(fontSize: 12, color: Color(0xFF475569))),
+              child: Text(r.programId.isNotEmpty ? r.programId : '-',
+                  style:
+                      const TextStyle(fontSize: 12, color: Color(0xFF475569))),
             ),
             Expanded(
               flex: 2,
@@ -518,7 +651,11 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
                   color: statusColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: Text(statusLabel, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: statusColor)),
+                child: Text(statusLabel,
+                    style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                        color: statusColor)),
               ),
             ),
           ],
@@ -526,7 +663,6 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
       ),
     );
   }
-
 
   Widget _buildFinancialExposure() {
     return Container(
@@ -542,17 +678,26 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('System Overview', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w800)),
+          const Text('System Overview',
+              style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800)),
           const SizedBox(height: 4),
-          const Text('Live metrics', style: TextStyle(color: Colors.white54, fontSize: 11)),
+          const Text('Live metrics',
+              style: TextStyle(color: Colors.white54, fontSize: 11)),
           const SizedBox(height: 20),
-          _darkStat('Auth Queue', '$_totalAuthQueue items', const Color(0xFF818CF8)),
+          _darkStat(
+              'Auth Queue', '$_totalAuthQueue items', const Color(0xFF818CF8)),
           const SizedBox(height: 14),
-          _darkStat('GL Categories', '$_glCategories configured', const Color(0xFF34D399)),
+          _darkStat('GL Categories', '$_glCategories configured',
+              const Color(0xFF34D399)),
           const SizedBox(height: 14),
-          _darkStat('GL Masters', '$_glMasters ledgers', const Color(0xFFFBBF24)),
+          _darkStat(
+              'GL Masters', '$_glMasters ledgers', const Color(0xFFFBBF24)),
           const SizedBox(height: 14),
-          _darkStat('Total Users', '$_totalUsersCount registered', const Color(0xFFF472B6)),
+          _darkStat('Total Users', '$_totalUsersCount registered',
+              const Color(0xFFF472B6)),
           const SizedBox(height: 20),
           const Divider(color: Colors.white12),
           const SizedBox(height: 12),
@@ -560,9 +705,14 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
             width: double.infinity,
             child: OutlinedButton.icon(
               onPressed: _fetchDashboardData,
-              icon: const Icon(Icons.refresh_rounded, size: 16, color: Colors.white70),
-              label: const Text('Refresh Data', style: TextStyle(color: Colors.white70, fontSize: 12)),
-              style: OutlinedButton.styleFrom(side: const BorderSide(color: Colors.white24), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+              icon: const Icon(Icons.refresh_rounded,
+                  size: 16, color: Colors.white70),
+              label: const Text('Refresh Data',
+                  style: TextStyle(color: Colors.white70, fontSize: 12)),
+              style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: Colors.white24),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8))),
             ),
           ),
         ],
@@ -574,8 +724,11 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: const TextStyle(color: Colors.white60, fontSize: 12)),
-        Text(value, style: TextStyle(color: color, fontSize: 13, fontWeight: FontWeight.w800)),
+        Text(label,
+            style: const TextStyle(color: Colors.white60, fontSize: 12)),
+        Text(value,
+            style: TextStyle(
+                color: color, fontSize: 13, fontWeight: FontWeight.w800)),
       ],
     );
   }
@@ -589,41 +742,87 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 12, offset: const Offset(0, 4))],
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withValues(alpha: 0.02),
+              blurRadius: 12,
+              offset: const Offset(0, 4))
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Chart of Accounts Structure', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF0B1628))),
+          const Text('Chart of Accounts Structure',
+              style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF0B1628))),
           const SizedBox(height: 4),
-          const Text('Primary ledger distribution across categories', style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
+          const Text('Primary ledger distribution across categories',
+              style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
           const SizedBox(height: 24),
-          
+
           // Segmented Bar
           ClipRRect(
             borderRadius: BorderRadius.circular(8),
             child: Row(
               children: [
-                Expanded(flex: _coaDistribution[0], child: Container(height: 12, color: const Color(0xFF10B981))), // Assets
-                Expanded(flex: _coaDistribution[1], child: Container(height: 12, color: const Color(0xFFEF4444))), // Liabilities
-                Expanded(flex: _coaDistribution[2], child: Container(height: 12, color: const Color(0xFF8B5CF6))), // Equity
-                Expanded(flex: _coaDistribution[3], child: Container(height: 12, color: const Color(0xFF3B82F6))), // Revenue
-                Expanded(flex: _coaDistribution[4], child: Container(height: 12, color: const Color(0xFFF59E0B))), // Expenses
+                if (_coaDistribution[0] > 0)
+                  Expanded(
+                      flex: _coaDistribution[0],
+                      child: Container(
+                          height: 12,
+                          color: const Color(0xFF3B82F6))), // Assets
+                if (_coaDistribution[1] > 0)
+                  Expanded(
+                      flex: _coaDistribution[1],
+                      child: Container(
+                          height: 12,
+                          color: const Color(0xFFF59E0B))), // Liabilities
+                if (_coaDistribution[2] > 0)
+                  Expanded(
+                      flex: _coaDistribution[2],
+                      child: Container(
+                          height: 12,
+                          color: const Color(0xFF8B5CF6))), // Equity
+                if (_coaDistribution[3] > 0)
+                  Expanded(
+                      flex: _coaDistribution[3],
+                      child: Container(
+                          height: 12,
+                          color: const Color(0xFF10B981))), // Income
+                if (_coaDistribution[4] > 0)
+                  Expanded(
+                      flex: _coaDistribution[4],
+                      child: Container(
+                          height: 12,
+                          color: const Color(0xFFEF4444))), // Expenses
+                if (_coaDistribution.every((v) => v == 0))
+                  Expanded(
+                      flex: 1,
+                      child: Container(
+                          height: 12,
+                          color: const Color(0xFFE2E8F0))), // Empty State
               ],
             ),
           ),
           const SizedBox(height: 24),
-          
+
           // Legends
           Wrap(
             spacing: 32,
             runSpacing: 16,
             children: [
-              _coaLegend('Assets', '${_coaDistribution[0]}%', const Color(0xFF10B981)),
-              _coaLegend('Liabilities', '${_coaDistribution[1]}%', const Color(0xFFEF4444)),
-              _coaLegend('Equity', '${_coaDistribution[2]}%', const Color(0xFF8B5CF6)),
-              _coaLegend('Revenue', '${_coaDistribution[3]}%', const Color(0xFF3B82F6)),
-              _coaLegend('Expenses', '${_coaDistribution[4]}%', const Color(0xFFF59E0B)),
+              _coaLegend(
+                  'Assets', '${_coaDistribution[0]}%', const Color(0xFF3B82F6)),
+              _coaLegend('Liabilities', '${_coaDistribution[1]}%',
+                  const Color(0xFFF59E0B)),
+              _coaLegend(
+                  'Equity', '${_coaDistribution[2]}%', const Color(0xFF8B5CF6)),
+              _coaLegend(
+                  'Income', '${_coaDistribution[3]}%', const Color(0xFF10B981)),
+              _coaLegend('Expenses', '${_coaDistribution[4]}%',
+                  const Color(0xFFEF4444)),
             ],
           ),
         ],
@@ -635,13 +834,24 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Container(width: 10, height: 10, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+        Container(
+            width: 10,
+            height: 10,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
         const SizedBox(width: 8),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: const Color(0xFF0B1628))),
-            Text(range, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: const Color(0xFF94A3B8))),
+            Text(title,
+                style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    color: const Color(0xFF0B1628))),
+            Text(range,
+                style: const TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF94A3B8))),
           ],
         ),
       ],
@@ -651,12 +861,22 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
   // ── Quick Actions ────────────────────────────────────────────
   Widget _buildQuickActions() {
     final actions = [
-      _ActionItem(Icons.security_rounded, 'Auth Queue', 'Review pending items', const Color(0xFF6366F1), () => widget.onProceed('AUTH')),
-      _ActionItem(Icons.account_balance_rounded, 'GL Module', 'Manage ledgers', const Color(0xFF10B981), () => widget.onProceed('GL')),
-      _ActionItem(Icons.account_tree_rounded, 'Chart of Accounts', 'View ledger hierarchy', const Color(0xFF8B5CF6), () => widget.onSelect('RPT-COA')),
-      _ActionItem(Icons.people_rounded, 'Masters', 'Users & roles', const Color(0xFF3B82F6), () => widget.onProceed('MASTERS')),
-      _ActionItem(Icons.description_rounded, 'Journals', 'Post transactions', const Color(0xFFF59E0B), () => widget.onSelect('GL-JRN')),
-      _ActionItem(Icons.bar_chart_rounded, 'Reports', 'Financial reports', const Color(0xFFEC4899), () => widget.onProceed('REPORTS')),
+      _ActionItem(Icons.security_rounded, 'Auth Queue', 'Review pending items',
+          const Color(0xFF6366F1), () => widget.onProceed('AUTH')),
+      _ActionItem(Icons.account_balance_rounded, 'GL Module', 'Manage ledgers',
+          const Color(0xFF10B981), () => widget.onProceed('GL')),
+      _ActionItem(
+          Icons.account_tree_rounded,
+          'Chart of Accounts',
+          'View ledger hierarchy',
+          const Color(0xFF8B5CF6),
+          () => widget.onSelect('RPT-COA')),
+      _ActionItem(Icons.people_rounded, 'Masters', 'Users & roles',
+          const Color(0xFF3B82F6), () => widget.onProceed('MASTERS')),
+      _ActionItem(Icons.description_rounded, 'Journals', 'Post transactions',
+          const Color(0xFFF59E0B), () => widget.onSelect('GL-JRN')),
+      _ActionItem(Icons.bar_chart_rounded, 'Reports', 'Financial reports',
+          const Color(0xFFEC4899), () => widget.onProceed('REPORTS')),
     ];
     return _DashCard(
       title: 'Quick Actions',
@@ -684,7 +904,9 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
             children: [
               Container(
                 padding: const EdgeInsets.all(7),
-                decoration: BoxDecoration(color: a.color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(8)),
+                decoration: BoxDecoration(
+                    color: a.color.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(8)),
                 child: Icon(a.icon, size: 16, color: a.color),
               ),
               const SizedBox(width: 10),
@@ -692,8 +914,14 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(a.label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF0B1628))),
-                    Text(a.sub, style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8))),
+                    Text(a.label,
+                        style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF0B1628))),
+                    Text(a.sub,
+                        style: const TextStyle(
+                            fontSize: 10, color: Color(0xFF94A3B8))),
                   ],
                 ),
               ),
@@ -755,11 +983,24 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Row(children: [
-                      Container(width: 8, height: 8, decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(2))),
+                      Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                              color: color,
+                              borderRadius: BorderRadius.circular(2))),
                       const SizedBox(width: 8),
-                      Text(e.key, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF0B1628))),
+                      Text(e.key,
+                          style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF0B1628))),
                     ]),
-                    Text('${e.value}', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: color)),
+                    Text('${e.value}',
+                        style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                            color: color)),
                   ],
                 ),
                 const SizedBox(height: 4),
@@ -779,7 +1020,6 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
       ),
     );
   }
-
 }
 
 // ──────────────────────────────────────────
@@ -792,7 +1032,8 @@ class _KpiData {
   final Color color;
   final String trend;
   final VoidCallback? onTap;
-  _KpiData(this.title, this.value, this.icon, this.color, this.trend, this.onTap);
+  _KpiData(
+      this.title, this.value, this.icon, this.color, this.trend, this.onTap);
 }
 
 class _KpiCard extends StatelessWidget {
@@ -808,13 +1049,20 @@ class _KpiCard extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 10,
+              offset: const Offset(0, 4))
+        ],
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: data.color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
+            decoration: BoxDecoration(
+                color: data.color.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10)),
             child: Icon(data.icon, color: data.color, size: 22),
           ),
           const SizedBox(width: 12),
@@ -822,10 +1070,22 @@ class _KpiCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(isLoading ? '...' : data.value, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Color(0xFF0B1628))),
-                Text(data.title, style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w600)),
+                Text(isLoading ? '...' : data.value,
+                    style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w900,
+                        color: Color(0xFF0B1628))),
+                Text(data.title,
+                    style: const TextStyle(
+                        fontSize: 11,
+                        color: Color(0xFF64748B),
+                        fontWeight: FontWeight.w600)),
                 const SizedBox(height: 2),
-                Text(data.trend, style: TextStyle(fontSize: 10, color: data.color, fontWeight: FontWeight.w700)),
+                Text(data.trend,
+                    style: TextStyle(
+                        fontSize: 10,
+                        color: data.color,
+                        fontWeight: FontWeight.w700)),
               ],
             ),
           ),
@@ -851,7 +1111,11 @@ class _BarItem extends StatelessWidget {
   final int maxVal;
   final String label;
   final bool isHighlight;
-  const _BarItem({required this.value, required this.maxVal, required this.label, this.isHighlight = false});
+  const _BarItem(
+      {required this.value,
+      required this.maxVal,
+      required this.label,
+      this.isHighlight = false});
 
   @override
   Widget build(BuildContext context) {
@@ -860,7 +1124,13 @@ class _BarItem extends StatelessWidget {
     return Column(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        Text('$value', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: isHighlight ? const Color(0xFF6366F1) : const Color(0xFF94A3B8))),
+        Text('$value',
+            style: TextStyle(
+                fontSize: 9,
+                fontWeight: FontWeight.w700,
+                color: isHighlight
+                    ? const Color(0xFF6366F1)
+                    : const Color(0xFF94A3B8))),
         const SizedBox(height: 4),
         AnimatedContainer(
           duration: const Duration(milliseconds: 800),
@@ -868,12 +1138,18 @@ class _BarItem extends StatelessWidget {
           height: h,
           width: 28,
           decoration: BoxDecoration(
-            color: isHighlight ? const Color(0xFF6366F1) : const Color(0xFF1E2B5E).withValues(alpha: 0.25),
+            color: isHighlight
+                ? const Color(0xFF6366F1)
+                : const Color(0xFF1E2B5E).withValues(alpha: 0.25),
             borderRadius: BorderRadius.circular(6),
           ),
         ),
         const SizedBox(height: 6),
-        Text(label, style: const TextStyle(fontSize: 9, color: Color(0xFF94A3B8), fontWeight: FontWeight.w700)),
+        Text(label,
+            style: const TextStyle(
+                fontSize: 9,
+                color: Color(0xFF94A3B8),
+                fontWeight: FontWeight.w700)),
       ],
     );
   }
@@ -892,7 +1168,10 @@ class _DonutRing extends StatelessWidget {
   final List<_DonutSeg> segments;
   final String centerLabel;
   final String centerSub;
-  const _DonutRing({required this.segments, required this.centerLabel, required this.centerSub});
+  const _DonutRing(
+      {required this.segments,
+      required this.centerLabel,
+      required this.centerSub});
 
   @override
   Widget build(BuildContext context) {
@@ -909,8 +1188,14 @@ class _DonutRing extends StatelessWidget {
           Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(centerLabel, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Color(0xFF0B1628))),
-              Text(centerSub, style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
+              Text(centerLabel,
+                  style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFF0B1628))),
+              Text(centerSub,
+                  style:
+                      const TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
             ],
           ),
         ],
@@ -936,7 +1221,8 @@ class _DonutPainter extends CustomPainter {
         ..style = PaintingStyle.stroke
         ..strokeCap = StrokeCap.butt;
       final sweep = seg.fraction * 6.283185307179586;
-      canvas.drawArc(Rect.fromCircle(center: center, radius: radius), start, sweep - 0.05, false, paint);
+      canvas.drawArc(Rect.fromCircle(center: center, radius: radius), start,
+          sweep - 0.05, false, paint);
       start += sweep;
     }
   }
@@ -953,7 +1239,11 @@ class _DashCard extends StatelessWidget {
   final String subtitle;
   final Widget child;
   final Widget? action;
-  const _DashCard({required this.title, required this.subtitle, required this.child, this.action});
+  const _DashCard(
+      {required this.title,
+      required this.subtitle,
+      required this.child,
+      this.action});
 
   @override
   Widget build(BuildContext context) {
@@ -963,7 +1253,12 @@ class _DashCard extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 12, offset: const Offset(0, 4))],
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withValues(alpha: 0.02),
+              blurRadius: 12,
+              offset: const Offset(0, 4))
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -974,8 +1269,14 @@ class _DashCard extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF0B1628))),
-                  Text(subtitle, style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
+                  Text(title,
+                      style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF0B1628))),
+                  Text(subtitle,
+                      style: const TextStyle(
+                          fontSize: 11, color: Color(0xFF94A3B8))),
                 ],
               ),
               if (action != null) action!,
@@ -992,7 +1293,6 @@ class _DashCard extends StatelessWidget {
 // ──────────────────────────────────────────
 // Helper data classes
 // ──────────────────────────────────────────
-
 
 class _ActionItem {
   final IconData icon;
@@ -1047,7 +1347,8 @@ class _GaugePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_GaugePainter old) => old.value != value || old.color != color;
+  bool shouldRepaint(_GaugePainter old) =>
+      old.value != value || old.color != color;
 }
 
 // ──────────────────────────────────────────
@@ -1056,10 +1357,12 @@ class _GaugePainter extends CustomPainter {
 class _FloatingFinanceBackground extends StatefulWidget {
   const _FloatingFinanceBackground();
   @override
-  __FloatingFinanceBackgroundState createState() => __FloatingFinanceBackgroundState();
+  __FloatingFinanceBackgroundState createState() =>
+      __FloatingFinanceBackgroundState();
 }
 
-class __FloatingFinanceBackgroundState extends State<_FloatingFinanceBackground> with SingleTickerProviderStateMixin {
+class __FloatingFinanceBackgroundState extends State<_FloatingFinanceBackground>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   final Random _random = Random();
   late List<_FloatingSymbol> _symbols;
@@ -1067,7 +1370,9 @@ class __FloatingFinanceBackgroundState extends State<_FloatingFinanceBackground>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(vsync: this, duration: const Duration(seconds: 40))..repeat();
+    _controller =
+        AnimationController(vsync: this, duration: const Duration(seconds: 40))
+          ..repeat();
     _symbols = List.generate(20, (index) => _FloatingSymbol(_random));
   }
 
@@ -1086,9 +1391,12 @@ class __FloatingFinanceBackgroundState extends State<_FloatingFinanceBackground>
           builder: (context, child) {
             return Stack(
               children: _symbols.map((sym) {
-                final double progress = (_controller.value + sym.startOffset) % 1.0;
-                final double top = (1.0 - progress) * (constraints.maxHeight + 40); 
-                final double left = sym.horizontalPos * constraints.maxWidth + (sin(progress * pi * 2 + sym.startOffset) * 30);
+                final double progress =
+                    (_controller.value + sym.startOffset) % 1.0;
+                final double top =
+                    (1.0 - progress) * (constraints.maxHeight + 40);
+                final double left = sym.horizontalPos * constraints.maxWidth +
+                    (sin(progress * pi * 2 + sym.startOffset) * 30);
                 return Positioned(
                   top: top - 20,
                   left: left - 20,
@@ -1122,7 +1430,17 @@ class _FloatingSymbol {
   late double horizontalPos;
   late double size;
   late double spinSpeed;
-  final List<String> _options = ['₹', '\$', '€', '£', '%', '¥', '📈', '📊', '₹'];
+  final List<String> _options = [
+    '₹',
+    '\$',
+    '€',
+    '£',
+    '%',
+    '¥',
+    '📈',
+    '📊',
+    '₹'
+  ];
 
   _FloatingSymbol(Random rand) {
     symbol = _options[rand.nextInt(_options.length)];
