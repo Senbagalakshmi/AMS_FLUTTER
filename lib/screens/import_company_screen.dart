@@ -292,7 +292,7 @@ class _ImportCompanyScreenState extends State<ImportCompanyScreen> {
             child: Row(
               children: [
                 IconButton(
-                  onPressed: widget.onBackToModule,
+                  onPressed: widget.onBack,
                   icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20, color: Color(0xFF334155)),
                 ),
                 const SizedBox(width: 12),
