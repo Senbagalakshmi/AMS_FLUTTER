@@ -1907,21 +1907,21 @@ class _AmsSidebarState extends State<AmsSidebar> {
 
                 const SizedBox(height: 16),
 
-                // 🔹 CLIENTS
-                AmsSidebarItem(
-                  label: widget.isCollapsed ? '' : 'Clients',
-                  icon: Icons.people_outline_rounded,
-                  isCollapsed: widget.isCollapsed,
-                  isSelected: widget.selectedProg == 'GL-IMPORT',
-                  onTap: () {
-                    setState(() {
-                      openMenu = '';
-                    });
-                    widget.onNavigate('nontran', 'GL-IMPORT');
-                  },
-                ),
+                // // 🔹 CLIENTS
+                // AmsSidebarItem(
+                //   label: widget.isCollapsed ? '' : 'Clients',
+                //   icon: Icons.people_outline_rounded,
+                //   isCollapsed: widget.isCollapsed,
+                //   isSelected: widget.selectedProg == 'GL-IMPORT',
+                //   onTap: () {
+                //     setState(() {
+                //       openMenu = '';
+                //     });
+                //     widget.onNavigate('nontran', 'GL-IMPORT');
+                //   },
+                // ),
 
-                const SizedBox(height: 16),
+                // const SizedBox(height: 16),
 
                 if (!widget.isCollapsed) _sectionHeader('SYSTEM'),
 

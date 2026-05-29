@@ -594,11 +594,12 @@ class _AmsRootState extends State<AmsRoot> {
           body = ChartOfAccountsScreen(
             onBack: () => _navigate('list'),
             onBackToModule: () => _handleProceed('TRANSACTIONS'),
+            onImport: () => _handleSelectProg('GL-IMPORT'),
             userName: _state.userName,
           );
         } else if (_state.selectedProg == 'GL-IMPORT') {
           body = ImportCompanyScreen(
-            onBack: () => _navigate('list'),
+            onBack: () => _handleSelectProg('RPT-COA'),
             onBackToModule: () => _handleProceed('Clients'),
             userName: _state.userName,
           );

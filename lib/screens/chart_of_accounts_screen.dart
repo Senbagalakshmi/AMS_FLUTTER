@@ -1,19 +1,28 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:excel/excel.dart' as ex;
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
+import 'package:universal_html/html.dart' as html;
 import '../services/report_api_service.dart';
 import '../theme.dart';
 import '../widgets/widgets.dart';
 import '../utils/responsive.dart';
+import 'import_company_screen.dart';
 
 class ChartOfAccountsScreen extends StatefulWidget {
   final VoidCallback onBack;
   final VoidCallback onBackToModule;
+  final VoidCallback onImport;
   final String? userName;
 
   const ChartOfAccountsScreen({
     super.key,
     required this.onBack,
     required this.onBackToModule,
+    required this.onImport,
     required this.userName,
   });
 
@@ -86,6 +95,213 @@ class _ChartOfAccountsScreenState extends State<ChartOfAccountsScreen> with Sing
     }).toList();
   }
 
+  void _handleImport() {
+    widget.onImport();
+  }
+
+  Future<void> _handleExport(String format) async {
+    if (format == 'Excel') {
+      await _exportExcel();
+    } else if (format == 'PDF') {
+      await _exportPdf();
+    }
+  }
+
+  Future<void> _exportPdf() async {
+    final pdf = pw.Document();
+    final unicodeFont = await PdfGoogleFonts.robotoMedium();
+    final pw.TextStyle baseStyle = pw.TextStyle(font: unicodeFont, fontSize: 11);
+    final pw.TextStyle boldStyle = baseStyle.copyWith(fontWeight: pw.FontWeight.bold);
+
+    final tableHeaders = ['Account / Parent Account', 'Account Number', 'Account Type', 'Balance'];
+    final tableRows = _filteredAccounts.map((acc) {
+      final balance = (acc['balance'] as num?)?.toDouble() ?? 0.0;
+      final currency = acc['currency']?.toString() ?? 'INR';
+      return [
+        acc['accountName']?.toString() ?? '',
+        acc['accountNumber']?.toString() ?? '—',
+        acc['accountType']?.toString() ?? '',
+        '${NumberFormat.currency(symbol: 'Rs.', decimalDigits: 2, customPattern: '\u00A4#,##0.00').format(balance.abs())} $currency',
+      ];
+    }).toList();
+
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(24),
+        build: (context) {
+          return [
+            pw.Header(
+              level: 0,
+              child: pw.Text('Chart of Accounts', style: boldStyle.copyWith(fontSize: 18)),
+            ),
+            pw.SizedBox(height: 8),
+            pw.Text('Exported list of chart of accounts records.', style: baseStyle),
+            pw.SizedBox(height: 16),
+            pw.Table.fromTextArray(
+              headers: tableHeaders,
+              data: tableRows,
+              headerStyle: boldStyle,
+              headerDecoration: const pw.BoxDecoration(color: PdfColors.blue50),
+              cellAlignment: pw.Alignment.centerLeft,
+              cellStyle: baseStyle,
+              cellPadding: const pw.EdgeInsets.symmetric(vertical: 8, horizontal: 6),
+              border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.5),
+            ),
+          ];
+        },
+      ),
+    );
+
+    final bytes = await pdf.save();
+    if (kIsWeb) {
+      final blob = html.Blob([bytes], 'application/pdf');
+      final url = html.Url.createObjectUrlFromBlob(blob);
+      html.AnchorElement(href: url)
+        ..setAttribute('download', 'Chart_of_Accounts.pdf')
+        ..click();
+      html.Url.revokeObjectUrl(url);
+      return;
+    }
+
+    await Printing.sharePdf(bytes: bytes, filename: 'Chart_of_Accounts.pdf');
+  }
+
+  Future<void> _exportExcel() async {
+    final workbook = ex.Excel.createExcel();
+    final sheet = workbook['Chart of Accounts'];
+
+    sheet.appendRow([
+      ex.TextCellValue('Account / Parent Account'),
+      ex.TextCellValue('Account Number'),
+      ex.TextCellValue('Account Type'),
+      ex.TextCellValue('Balance'),
+    ]);
+
+    for (final acc in _filteredAccounts) {
+      final balance = (acc['balance'] as num?)?.toDouble() ?? 0.0;
+      final currency = acc['currency']?.toString() ?? 'INR';
+      sheet.appendRow([
+        ex.TextCellValue(acc['accountName']?.toString() ?? ''),
+        ex.TextCellValue(acc['accountNumber']?.toString() ?? ''),
+        ex.TextCellValue(acc['accountType']?.toString() ?? ''),
+        ex.TextCellValue('${NumberFormat.currency(symbol: 'Rs.', decimalDigits: 2, customPattern: '\u00A4#,##0.00').format(balance.abs())} $currency'),
+      ]);
+    }
+
+    final bytes = workbook.save();
+    if (bytes == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Unable to generate Excel file.')),
+      );
+      return;
+    }
+
+    if (kIsWeb) {
+      final blob = html.Blob([bytes], 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      final url = html.Url.createObjectUrlFromBlob(blob);
+      html.AnchorElement(href: url)
+        ..setAttribute('download', 'Chart_of_Accounts.xlsx')
+        ..click();
+      html.Url.revokeObjectUrl(url);
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Excel export is currently supported only on web.')),
+    );
+  }
+
+  Widget _buildImportExportMenu() {
+    return PopupMenuButton<String>(
+      icon: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          boxShadow: [
+            BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 10, offset: const Offset(0, 4)),
+          ],
+        ),
+        padding: const EdgeInsets.all(6),
+        child: const Icon(Icons.more_vert, color: AppColors.tBlue, size: 22),
+      ),
+      color: Colors.white,
+      elevation: 8,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      onSelected: (value) {
+        if (value == 'sort') {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Sort by feature coming soon')),
+          );
+        } else if (value == 'import') {
+          _handleImport();
+        } else if (value == 'export_excel') {
+          _handleExport('Excel');
+        } else if (value == 'export_pdf') {
+          _handleExport('PDF');
+        }
+      },
+      itemBuilder: (BuildContext context) => [
+        // PopupMenuItem<String>(
+        //   value: 'sort',
+        //   child: Row(
+        //     children: const [
+        //       Icon(Icons.sort, size: 18, color: AppColors.tBlue),
+        //       SizedBox(width: 12),
+        //       Expanded(child: Text('Sort by')),
+        //       Icon(Icons.arrow_right, size: 20, color: Colors.grey),
+        //     ],
+        //   ),
+        // ),
+        // const PopupMenuDivider(height: 6),
+        PopupMenuItem<String>(
+          value: 'import',
+          child: Row(
+            children: const [
+              Icon(Icons.download_rounded, size: 18, color: AppColors.tBlue),
+              SizedBox(width: 12),
+              Text('Import Chart of Accounts'),
+            ],
+          ),
+        ),
+        const PopupMenuDivider(height: 6),
+        const PopupMenuItem<String>(
+          enabled: false,
+          child: Text(
+            'Export',
+            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+          ),
+        ),
+        PopupMenuItem<String>(
+          value: 'export_excel',
+          child: Padding(
+            padding: const EdgeInsets.only(left: 10.0),
+            child: Row(
+              children: const [
+                Icon(Icons.table_chart, size: 18, color: AppColors.tBlue),
+                SizedBox(width: 12),
+                Expanded(child: Text('Export Chart of Accounts as Excel')),
+              ],
+            ),
+          ),
+        ),
+        PopupMenuItem<String>(
+          value: 'export_pdf',
+          child: Padding(
+            padding: const EdgeInsets.only(left: 10.0),
+            child: Row(
+              children: const [
+                Icon(Icons.picture_as_pdf, size: 18, color: AppColors.tBlue),
+                SizedBox(width: 12),
+                Expanded(child: Text('Export Chart of Accounts as PDF')),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isMobile = Responsive.isMobile(context);
@@ -109,6 +325,9 @@ class _ChartOfAccountsScreenState extends State<ChartOfAccountsScreen> with Sing
               HeaderBreadcrumb(label: 'Transactions', onTap: widget.onBackToModule),
               HeaderBreadcrumb(label: 'Reports'),
               HeaderBreadcrumb(label: 'Chart of Accounts'),
+            ],
+            actions: [
+              _buildImportExportMenu(),
             ],
           ),
 
