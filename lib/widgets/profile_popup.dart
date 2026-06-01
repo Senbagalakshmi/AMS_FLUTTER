@@ -1,12 +1,106 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart' show kIsWeb;
 // ignore: avoid_web_libraries_in_flutter
 import 'dart:html' as html;
+import 'dart:ui_web' as ui_web;
 import '../services/user_service.dart';
+import '../services/api_service.dart';
 import '../models/user_profile.dart';
 import '../theme.dart';
 import 'widgets.dart';
+
+class _WebAvatar extends StatefulWidget {
+  final String url;
+  final double size;
+  final Widget errorFallback;
+
+  const _WebAvatar({
+    Key? key,
+    required this.url,
+    required this.size,
+    required this.errorFallback,
+  }) : super(key: key);
+
+  @override
+  State<_WebAvatar> createState() => _WebAvatarState();
+}
+
+class _WebAvatarState extends State<_WebAvatar> {
+  bool _hasError = false;
+  late String _viewId;
+
+  @override
+  void initState() {
+    super.initState();
+    _initView();
+  }
+
+  @override
+  void didUpdateWidget(covariant _WebAvatar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.url != widget.url) {
+      _hasError = false;
+      _initView();
+    }
+  }
+
+  void _initView() {
+    if (kIsWeb) {
+      _viewId = 'img-${widget.url.hashCode}-${DateTime.now().millisecondsSinceEpoch}';
+      ui_web.platformViewRegistry.registerViewFactory(
+        _viewId,
+        (int viewId) {
+          final img = html.ImageElement()
+            ..src = widget.url
+            ..style.width = '100%'
+            ..style.height = '100%'
+            ..style.objectFit = 'cover'
+            ..style.borderRadius = '50%';
+            
+          img.onError.listen((_) {
+            if (mounted) {
+              setState(() {
+                _hasError = true;
+              });
+            }
+          });
+          return img;
+        },
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_hasError) {
+      return widget.errorFallback;
+    }
+
+    if (kIsWeb) {
+      return IgnorePointer(
+        child: SizedBox(
+          width: widget.size,
+          height: widget.size,
+          child: HtmlElementView(viewType: _viewId),
+        ),
+      );
+    }
+    
+    return IgnorePointer(
+      child: ClipOval(
+        child: Image.network(
+          widget.url,
+          width: widget.size,
+          height: widget.size,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) => widget.errorFallback,
+        ),
+      ),
+    );
+  }
+}
 
 class ProfilePopup extends StatefulWidget {
   final VoidCallback onLogout;
@@ -27,14 +121,47 @@ class ProfilePopup extends StatefulWidget {
 class _ProfilePopupState extends State<ProfilePopup> {
   UserProfile? user;
 
+  Timer? _profileTimer;
+
   @override
   void initState() {
     super.initState();
     _loadUser();
+    _profileTimer = Timer.periodic(const Duration(minutes: 15), (timer) {
+      _loadUser();
+    });
+  }
+
+  @override
+  void dispose() {
+    _profileTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadUser() async {
+    if (kIsWeb) {
+      apiService.updateToken(
+        html.window.sessionStorage['child_token'],
+      );
+    }
     final fetchedUser = await UserService.getUserProfile();
+    
+    if (fetchedUser != null) {
+      final userScdRaw = fetchedUser['userScd'] ?? fetchedUser['usersCd'];
+      final orgCodeRaw = fetchedUser['orgCode'];
+      if (userScdRaw != null) {
+        final uCode = userScdRaw is int ? userScdRaw : int.tryParse(userScdRaw.toString()) ?? 0;
+        final oCode = orgCodeRaw is int ? orgCodeRaw : int.tryParse(orgCodeRaw?.toString() ?? '0') ?? 0;
+        final userDetails = await apiService.getUserDetails(uCode, oCode);
+        if (userDetails != null) {
+          fetchedUser.addAll(userDetails);
+          if (kIsWeb) {
+            html.window.sessionStorage['user_data'] = jsonEncode(fetchedUser);
+          }
+        }
+      }
+    }
+
     if (mounted && fetchedUser != null) {
       setState(() {
         user = UserProfile.fromJson(fetchedUser);
@@ -84,18 +211,35 @@ class _ProfilePopupState extends State<ProfilePopup> {
               ),
             ],
           ),
-          child: Center(
-            child: Text(
-              (user?.username.isNotEmpty == true
-                      ? user!.username[0]
-                      : (widget.userName?.isNotEmpty == true
-                          ? widget.userName![0]
-                          : "A"))
-                  .toUpperCase(),
-              style: bodyStyle(
-                  size: 16, weight: FontWeight.w800, color: AppColors.tBlue),
-            ),
-          ),
+          child: user?.picture != null && user!.picture!.isNotEmpty
+              ? _WebAvatar(
+                  url: user!.picture!,
+                  size: 40,
+                  errorFallback: Center(
+                    child: Text(
+                      (user?.username.isNotEmpty == true
+                              ? user!.username[0]
+                              : (widget.userName?.isNotEmpty == true
+                                  ? widget.userName![0]
+                                  : "A"))
+                          .toUpperCase(),
+                      style: bodyStyle(
+                          size: 16, weight: FontWeight.w800, color: AppColors.tBlue),
+                    ),
+                  ),
+                )
+              : Center(
+                  child: Text(
+                    (user?.username.isNotEmpty == true
+                            ? user!.username[0]
+                            : (widget.userName?.isNotEmpty == true
+                                ? widget.userName![0]
+                                : "A"))
+                        .toUpperCase(),
+                    style: bodyStyle(
+                        size: 16, weight: FontWeight.w800, color: AppColors.tBlue),
+                  ),
+                ),
         ),
       ),
     );
@@ -375,15 +519,29 @@ class _EditProfileContentState extends State<_EditProfileContent> {
                                       ),
                                     ],
                                   ),
-                                  child: Center(
-                                    child: Text(
-                                      firstChar,
-                                      style: bodyStyle(
-                                          size: 36,
-                                          weight: FontWeight.w800,
-                                          color: AppColors.tBlue),
-                                    ),
-                                  ),
+                                  child: widget.user?.picture != null && widget.user!.picture!.isNotEmpty
+                                      ? _WebAvatar(
+                                          url: widget.user!.picture!,
+                                          size: 88,
+                                          errorFallback: Center(
+                                            child: Text(
+                                              firstChar,
+                                              style: bodyStyle(
+                                                  size: 36,
+                                                  weight: FontWeight.w800,
+                                                  color: AppColors.tBlue),
+                                            ),
+                                          ),
+                                        )
+                                      : Center(
+                                          child: Text(
+                                            firstChar,
+                                            style: bodyStyle(
+                                                size: 36,
+                                                weight: FontWeight.w800,
+                                                color: AppColors.tBlue),
+                                          ),
+                                        ),
                                 ),
                                 Positioned(
                                   bottom: 0,
