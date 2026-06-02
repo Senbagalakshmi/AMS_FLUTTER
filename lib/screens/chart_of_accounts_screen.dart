@@ -110,18 +110,21 @@ class _ChartOfAccountsScreenState extends State<ChartOfAccountsScreen>
     // 1. Tab filter (Asset, Liability, etc.)
     if (selectedTab != 'All Accounts') {
       list = list.where((acc) {
-        final type = (acc['accountType'] as String?)?.toLowerCase() ?? '';
+        final type = acc['accountType']?.toString().toLowerCase() ?? '';
         return type.contains(selectedTab.toLowerCase());
       }).toList();
     }
 
-    // 2. Search query filter (matches name or number)
+    // 2. Search query filter (matches name, number, or type)
     if (_searchQuery.trim().isNotEmpty) {
       final query = _searchQuery.toLowerCase();
       list = list.where((acc) {
-        final name = (acc['accountName'] as String?)?.toLowerCase() ?? '';
-        final number = (acc['accountNumber'] as String?)?.toLowerCase() ?? '';
-        return name.contains(query) || number.contains(query);
+        final name = acc['accountName']?.toString().toLowerCase() ?? '';
+        final number = acc['accountNumber']?.toString().toLowerCase() ?? '';
+        final type = acc['accountType']?.toString().toLowerCase() ?? '';
+        return name.contains(query) ||
+            number.contains(query) ||
+            type.contains(query);
       }).toList();
     }
 
@@ -133,7 +136,7 @@ class _ChartOfAccountsScreenState extends State<ChartOfAccountsScreen>
       }).toList();
     }
 
-    // 4. Balance filter
+    // 5. Balance filter
     if (_selectedBalanceFilter != "All") {
       list = list.where((acc) {
         final balance = (acc['balance'] as num?)?.toDouble() ?? 0.0;

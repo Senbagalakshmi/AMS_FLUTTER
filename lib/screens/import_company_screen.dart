@@ -1128,7 +1128,7 @@ class _ImportCompanyScreenState extends State<ImportCompanyScreen> {
                                       child: Text(
                                         isWarning
                                             ? "Choose mapped field (Required)"
-                                            : "Select column",
+                                            : "Please select",
                                         style: TextStyle(
                                           fontSize: 13.5,
                                           color: isWarning
