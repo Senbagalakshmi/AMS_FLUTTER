@@ -677,6 +677,13 @@ Widget _buildListView() {
                                   mainAxisAlignment: MainAxisAlignment.end,
                                   children: [
                                     _actionIcon(
+                                      icon: Icons.history_rounded,
+                                      color: AppColors.ink3,
+                                      bg: Colors.white,
+                                      onTap: () => showAuditLogPopup(context, item),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    _actionIcon(
                                       icon: Icons.visibility_outlined,
                                       color: AppColors.green,
                                       bg: Colors.white,
@@ -839,6 +846,13 @@ Widget _buildListView() {
                               Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
+                                  _actionIcon(
+                                    icon: Icons.history_rounded,
+                                    color: AppColors.ink3,
+                                    bg: Colors.white,
+                                    onTap: () => showAuditLogPopup(context, item),
+                                  ),
+                                  const SizedBox(width: 8),
                                   _actionIcon(
                                     icon: Icons.visibility_outlined,
                                     color: AppColors.green,

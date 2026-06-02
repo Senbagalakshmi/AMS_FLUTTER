@@ -14,6 +14,7 @@ import '../services/api_service.dart';
 import '../utils/responsive.dart';
 import 'profile_popup.dart';
 export 'journal_details_view.dart';
+export 'audit_log_popup.dart';
 
 // ─── TEXT STYLES ─────────────────────────────────────────────
 TextStyle monoStyle({

@@ -681,6 +681,13 @@ class _AllowedCurrencyScreenState extends State<AllowedCurrencyScreen> {
                                     mainAxisAlignment: MainAxisAlignment.end,
                                     children: [
                                       _actionIcon(
+                                        icon: Icons.history_rounded,
+                                        color: AppColors.ink3,
+                                        bg: AppColors.ink3.withOpacity(0.1),
+                                        onTap: () => showAuditLogPopup(context, item),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      _actionIcon(
                                         icon: Icons.visibility_rounded,
                                         color: Colors.green,
                                         bg: Colors.green.withOpacity(0.1),
@@ -826,6 +833,13 @@ class _AllowedCurrencyScreenState extends State<AllowedCurrencyScreen> {
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     /// View
+                                    _actionIcon(
+                                      icon: Icons.history_rounded,
+                                      color: AppColors.ink3,
+                                      bg: AppColors.ink3.withOpacity(0.1),
+                                      onTap: () => showAuditLogPopup(context, item),
+                                    ),
+                                    const SizedBox(width: 8),
                                     _actionIcon(
                                       icon: Icons.visibility_rounded,
                                       color: Colors.green,

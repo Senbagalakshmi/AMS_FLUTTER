@@ -858,6 +858,9 @@ class _GLAttributeScreenState extends State<GLAttributeScreen> {
                 ),
                 Row(
                   children: [
+                    _actionIconButton(Icons.history_rounded,
+                        AppColors.ink3, () => showAuditLogPopup(context, item)),
+                    const SizedBox(width: 8),
                     _actionIconButton(Icons.visibility_outlined,
                         AppColors.green, () => _viewSet(item)),
                     const SizedBox(width: 8),
@@ -1037,6 +1040,9 @@ class _GLAttributeScreenState extends State<GLAttributeScreen> {
               const SizedBox(width: 16),
               Row(
                 children: [
+                  _actionIconButton(Icons.history_rounded,
+                      AppColors.ink3, () => showAuditLogPopup(context, item)),
+                  const SizedBox(width: 8),
                   _actionIconButton(Icons.visibility_outlined,
                       AppColors.green, () => _viewSet(item)),
                   const SizedBox(width: 8),

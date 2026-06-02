@@ -481,6 +481,12 @@ class _BranchScreenState extends State<BranchScreen> {
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     _actionIcon(
+                        icon: Icons.history_rounded,
+                        color: AppColors.ink3,
+                        bg: Colors.white,
+                        onTap: () => showAuditLogPopup(context, b)),
+                    const SizedBox(width: 8),
+                    _actionIcon(
                         icon: Icons.visibility_outlined,
                         color: AppColors.green,
                         bg: Colors.white,
@@ -539,6 +545,12 @@ class _BranchScreenState extends State<BranchScreen> {
               ),
               const SizedBox(width: 24),
               Row(children: [
+                _actionIcon(
+                    icon: Icons.history_rounded,
+                    color: AppColors.ink3,
+                    bg: Colors.white,
+                    onTap: () => showAuditLogPopup(context, b)),
+                const SizedBox(width: 8),
                 _actionIcon(
                     icon: Icons.visibility_outlined,
                     color: AppColors.green,

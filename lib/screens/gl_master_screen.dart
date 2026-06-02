@@ -1002,6 +1002,12 @@ class _GLMasterScreenState extends State<GLMasterScreen> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         _actionButton(
+                          icon: Icons.history_rounded,
+                          color: AppColors.ink3,
+                          onTap: () => showAuditLogPopup(context, c),
+                        ),
+                        const SizedBox(width: 8),
+                        _actionButton(
                           icon: Icons.visibility_outlined,
                           color: AppColors.green,
                           onTap: () => _viewAccount(c),
@@ -1129,10 +1135,16 @@ class _GLMasterScreenState extends State<GLMasterScreen> {
               const SizedBox(width: 20),
               // Actions
               SizedBox(
-                width: 110,
+                width: 150,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
+                    _actionButton(
+                      icon: Icons.history_rounded,
+                      color: AppColors.ink3,
+                      onTap: () => showAuditLogPopup(context, c),
+                    ),
+                    const SizedBox(width: 8),
                     _actionButton(
                       icon: Icons.visibility_outlined,
                       color: AppColors.green,

@@ -1179,6 +1179,12 @@ class _UserListViewState extends State<_UserListView> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             _ActionButton(
+                              icon: Icons.history_rounded,
+                              color: AppColors.ink3,
+                              onTap: () => showAuditLogPopup(context, u),
+                            ),
+                            const SizedBox(width: 8),
+                            _ActionButton(
                               icon: Icons.visibility_outlined,
                               color: Colors.green,
                               onTap: () => widget.onView?.call(u),
@@ -1367,6 +1373,12 @@ class _RoleListViewState extends State<_RoleListView> {
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
+                          _ActionButton(
+                            icon: Icons.history_rounded,
+                            color: AppColors.ink3,
+                            onTap: () => showAuditLogPopup(context, r),
+                          ),
+                          const SizedBox(width: 8),
                           _ActionButton(
                             icon: Icons.visibility_outlined,
                             color: Colors.green,
@@ -1670,6 +1682,12 @@ class _ModuleListViewState extends State<_ModuleListView> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           _ActionButton(
+                            icon: Icons.history_rounded,
+                            color: AppColors.ink3,
+                            onTap: () => showAuditLogPopup(context, d),
+                          ),
+                          const SizedBox(width: 8),
+                          _ActionButton(
                             icon: Icons.visibility_outlined,
                             color: Colors.green,
                             onTap: () => widget.onView?.call(d),
@@ -1816,6 +1834,12 @@ class _AuthCtrlListViewState extends State<_AuthCtrlListView> {
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
+                          _ActionButton(
+                            icon: Icons.history_rounded,
+                            color: AppColors.ink3,
+                            onTap: () => showAuditLogPopup(context, rec),
+                          ),
+                          const SizedBox(width: 8),
                           _ActionButton(
                             icon: Icons.visibility_outlined,
                             color: Colors.green,

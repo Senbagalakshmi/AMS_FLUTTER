@@ -906,6 +906,13 @@ class _GLSegmentPageState extends State<GLSegmentPage> {
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
                         _iconBtn(
+                          icon: Icons.history_rounded,
+                          iconColor: AppColors.ink3,
+                          bgColor: const Color(0xFFF1F5F9),
+                          onTap: () => showAuditLogPopup(context, seg.rawMap),
+                        ),
+                        const SizedBox(width: 8),
+                        _iconBtn(
                           icon: Icons.visibility_outlined,
                           iconColor: const Color(0xFF16A34A),
                           bgColor: const Color(0xFFDCFCE7),
@@ -1004,6 +1011,13 @@ class _GLSegmentPageState extends State<GLSegmentPage> {
                       style: const TextStyle(fontSize: 12, color: kTextLight)),
                 ),
                 const SizedBox(width: 12),
+                _iconBtn(
+                  icon: Icons.history_rounded,
+                  iconColor: AppColors.ink3,
+                  bgColor: const Color(0xFFF1F5F9),
+                  onTap: () => showAuditLogPopup(context, seg.rawMap),
+                ),
+                const SizedBox(width: 6),
                 _iconBtn(
                   icon: Icons.visibility_outlined,
                   iconColor: const Color(0xFF16A34A),

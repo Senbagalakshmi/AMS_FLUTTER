@@ -597,6 +597,12 @@ class _OrganisationScreenState extends State<OrganisationScreen> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               _actionIcon(
+                                  icon: Icons.history_rounded,
+                                  color: AppColors.ink3,
+                                  bg: Colors.white,
+                                  onTap: () => showAuditLogPopup(context, o)),
+                              const SizedBox(width: 8),
+                              _actionIcon(
                                   icon: Icons.visibility_outlined,
                                   color: AppColors.green,
                                   bg: Colors.white,
@@ -665,10 +671,16 @@ class _OrganisationScreenState extends State<OrganisationScreen> {
                                     AppColors.tBlueLt.withValues(alpha: 0.5)))),
                     const SizedBox(width: 24),
                     SizedBox(
-                        width: 110,
+                        width: 150,
                         child: Row(
                             mainAxisAlignment: MainAxisAlignment.end,
                             children: [
+                              _actionIcon(
+                                  icon: Icons.history_rounded,
+                                  color: AppColors.ink3,
+                                  bg: Colors.white,
+                                  onTap: () => showAuditLogPopup(context, o)),
+                              const SizedBox(width: 8),
                               _actionIcon(
                                   icon: Icons.visibility_outlined,
                                   color: AppColors.green,

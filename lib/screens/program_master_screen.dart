@@ -1293,7 +1293,7 @@ class _ProgramListViewState extends State<_ProgramListView> {
                               weight: FontWeight.w700,
                               color: AppColors.ink3))),
                   SizedBox(
-                      width: 150,
+                      width: 180,
                       child: Text('Actions',
                           textAlign: TextAlign.center,
                           style: bodyStyle(
@@ -1395,6 +1395,11 @@ class _ProgramListViewState extends State<_ProgramListView> {
                             mainAxisAlignment: MainAxisAlignment.end,
                             children: [
                               IconButton(
+                                  icon: const Icon(Icons.history_rounded,
+                                      size: 20, color: AppColors.ink3),
+                                  onPressed: () => showAuditLogPopup(context, d),
+                                  tooltip: 'Audit Log'),
+                              IconButton(
                                   icon: const Icon(Icons.visibility_rounded,
                                       size: 20, color: AppColors.tBlue),
                                   onPressed: () => widget.onView(d),
@@ -1463,10 +1468,15 @@ class _ProgramListViewState extends State<_ProgramListView> {
                           ),
                         ),
                         SizedBox(
-                          width: 150,
+                          width: 180,
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
+                              IconButton(
+                                  icon: const Icon(Icons.history_rounded,
+                                      size: 20, color: AppColors.ink3),
+                                  onPressed: () => showAuditLogPopup(context, d),
+                                  tooltip: 'Audit Log'),
                               IconButton(
                                   icon: const Icon(Icons.visibility_rounded,
                                       size: 20, color: AppColors.tBlue),

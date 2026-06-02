@@ -1377,6 +1377,13 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         _actionIcon(
+                          icon: Icons.history_rounded,
+                          color: AppColors.ink3,
+                          bg: Colors.white,
+                          onTap: () => showAuditLogPopup(context, c),
+                        ),
+                        const SizedBox(width: 8),
+                        _actionIcon(
                           icon: Icons.visibility_outlined,
                           color: AppColors.green,
                           bg: Colors.white,
@@ -1480,6 +1487,13 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  _actionIcon(
+                    icon: Icons.history_rounded,
+                    color: AppColors.ink3,
+                    bg: Colors.white,
+                    onTap: () => showAuditLogPopup(context, c),
+                  ),
+                  const SizedBox(width: 8),
                   _actionIcon(
                     icon: Icons.visibility_outlined,
                     color: AppColors.green,
