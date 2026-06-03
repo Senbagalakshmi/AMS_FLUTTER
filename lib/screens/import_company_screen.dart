@@ -2784,140 +2784,230 @@ class _ImportCompanyScreenState extends State<ImportCompanyScreen> {
   }
 
   Widget _buildSelectedFileCard(bool hasError) {
+    final bytesLength = _fileBytes?.length ?? 0;
+    String sizeText = "";
+    if (bytesLength > 0) {
+      final kb = bytesLength / 1024;
+      if (kb > 1024) {
+        sizeText = "${(kb / 1024).toStringAsFixed(2)} MB";
+      } else {
+        sizeText = "${kb.toStringAsFixed(1)} KB";
+      }
+    }
+
+    final String fileExtension = _fileName?.split('.').last.toUpperCase() ?? "";
+
     return Container(
       key: const ValueKey('file_selected_card'),
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(12),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: hasError ? const Color(0xFFEF4444) : const Color(0xFFE2E8F0),
+          color: hasError ? const Color(0xFFEF4444) : const Color(0xFF3B82F6).withOpacity(0.4),
           width: 1.5,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(
-            Icons.insert_drive_file_rounded,
-            color: Color(0xFF3B82F6),
-            size: 48,
-          ),
-          const SizedBox(height: 12),
-          Text(
-            _fileName!,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF0F172A),
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 12),
-          InkWell(
-            onTap: _isUploading ? null : _clearSelectedFile,
-            borderRadius: BorderRadius.circular(8),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(
-                    Icons.delete_outline_rounded,
-                    color: Color(0xFFEF4444),
-                    size: 18,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    "Remove",
-                    style: TextStyle(
-                      color: _isUploading
-                          ? const Color(0xFF94A3B8)
-                          : const Color(0xFF475569),
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Accent color side strip
+              Container(
+                width: 6,
+                color: hasError ? const Color(0xFFEF4444) : const Color(0xFF3B82F6),
               ),
-            ),
-          ),
-          const Divider(
-            color: Color(0xFFE2E8F0),
-            thickness: 1,
-            height: 32,
-          ),
-          Center(
-            child: Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFF3B82F6),
-                borderRadius: BorderRadius.circular(8),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF3B82F6).withOpacity(0.15),
-                    blurRadius: 8,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
-              ),
-              child: IntrinsicHeight(
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    InkWell(
-                      onTap: _isUploading ? null : _pickCSVFile,
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(8),
-                        bottomLeft: Radius.circular(8),
-                      ),
-                      child: const Padding(
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                        child: Text(
-                          "Replace File",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 0.2,
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // File Icon Container with soft background
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: hasError 
+                                  ? const Color(0xFFFEF2F2) 
+                                  : const Color(0xFFEFF6FF),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: hasError 
+                                    ? const Color(0xFFFCA5A5) 
+                                    : const Color(0xFFBFDBFE),
+                                width: 1,
+                              ),
+                            ),
+                            child: Icon(
+                              Icons.insert_drive_file_rounded,
+                              color: hasError 
+                                  ? const Color(0xFFEF4444) 
+                                  : const Color(0xFF3B82F6),
+                              size: 28,
+                            ),
                           ),
+                          const SizedBox(width: 16),
+                          // File Details
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  _fileName ?? "Selected File",
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFF0F172A),
+                                    letterSpacing: -0.2,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    if (sizeText.isNotEmpty) ...[
+                                      Text(
+                                        sizeText,
+                                        style: const TextStyle(
+                                          fontSize: 13,
+                                          color: Color(0xFF64748B),
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      const Text(
+                                        "•",
+                                        style: TextStyle(
+                                          color: Color(0xFFCBD5E1),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 6),
+                                    ],
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFF1F5F9),
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: Text(
+                                        fileExtension,
+                                        style: const TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.bold,
+                                          color: Color(0xFF475569),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+                      // Status Message
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: hasError 
+                              ? const Color(0xFFFFF5F5) 
+                              : const Color(0xFFEFF6FF),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              hasError ? Icons.error_outline_rounded : Icons.check_circle_outline_rounded,
+                              size: 16,
+                              color: hasError ? const Color(0xFFDC2626) : const Color(0xFF2563EB),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                hasError 
+                                    ? "Invalid file structure. Please resolve errors."
+                                    : "File loaded successfully. Ready to map fields.",
+                                style: TextStyle(
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w600,
+                                  color: hasError ? const Color(0xFF991B1B) : const Color(0xFF1E40AF),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ),
-                    Container(
-                      width: 1,
-                      color: Colors.white.withOpacity(0.3),
-                    ),
-                    InkWell(
-                      onTap: _isUploading ? null : _pickCSVFile,
-                      borderRadius: const BorderRadius.only(
-                        topRight: Radius.circular(8),
-                        bottomRight: Radius.circular(8),
+                      const SizedBox(height: 20),
+                      const Divider(color: Color(0xFFF1F5F9), height: 1),
+                      const SizedBox(height: 16),
+                      // Actions Row
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          // Replace File button
+                          OutlinedButton.icon(
+                            onPressed: _isUploading ? null : _pickCSVFile,
+                            icon: const Icon(Icons.sync_rounded, size: 16),
+                            label: const Text(
+                              "Replace File",
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13.5,
+                              ),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: const Color(0xFF3B82F6),
+                              backgroundColor: Colors.white,
+                              side: const BorderSide(color: Color(0xFF3B82F6), width: 1.2),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            ),
+                          ),
+                          // Remove button
+                          TextButton.icon(
+                            onPressed: _isUploading ? null : _clearSelectedFile,
+                            icon: const Icon(Icons.delete_outline_rounded, size: 16),
+                            label: const Text(
+                              "Remove",
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13.5,
+                              ),
+                            ),
+                            style: TextButton.styleFrom(
+                              foregroundColor: const Color(0xFFEF4444),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                            ),
+                          ),
+                        ],
                       ),
-                      child: const Padding(
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-                        child: Icon(
-                          Icons.arrow_drop_down_rounded,
-                          color: Colors.white,
-                          size: 20,
-                        ),
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -3410,11 +3500,11 @@ class _ImportCompanyScreenState extends State<ImportCompanyScreen> {
 
     final Color stateColor = hasError
         ? const Color(0xFFEF4444)
-        : (isFileSelected ? const Color(0xFF10B981) : const Color(0xFFCBD5E1));
+        : (isFileSelected ? const Color(0xFF3B82F6) : const Color(0xFFCBD5E1));
 
     final Color stateBgColor = hasError
         ? const Color(0xFFFEF2F2)
-        : (isFileSelected ? const Color(0xFFF0FDF4) : const Color(0xFFF8FAFC));
+        : (isFileSelected ? const Color(0xFFEFF6FF) : const Color(0xFFF8FAFC));
 
     return Scaffold(
       backgroundColor: const Color(0xFFF1F5F9),
