@@ -1902,29 +1902,16 @@ class _AmsSidebarState extends State<AmsSidebar> {
                       onTap: () => widget.onNavigate('nontran', 'RPT-BS'),
                     ),
                   ],
-
-
-
-
+                  AmsSubSidebarItem(
+                    label: 'File Import',
+                    isCollapsed: widget.isCollapsed,
+                    icon: Icons.upload_file_rounded,
+                    isSelected: widget.selectedProg == 'GL-IMPORT',
+                    onTap: () => widget.onNavigate('nontran', 'GL-IMPORT'),
+                  ),
                 ],
 
                 const SizedBox(height: 16),
-
-                // // 🔹 CLIENTS
-                // AmsSidebarItem(
-                //   label: widget.isCollapsed ? '' : 'Clients',
-                //   icon: Icons.people_outline_rounded,
-                //   isCollapsed: widget.isCollapsed,
-                //   isSelected: widget.selectedProg == 'GL-IMPORT',
-                //   onTap: () {
-                //     setState(() {
-                //       openMenu = '';
-                //     });
-                //     widget.onNavigate('nontran', 'GL-IMPORT');
-                //   },
-                // ),
-
-                // const SizedBox(height: 16),
 
                 if (!widget.isCollapsed) _sectionHeader('SYSTEM'),
 

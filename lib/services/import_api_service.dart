@@ -48,6 +48,9 @@ class ImportApiService {
       final currIdx    = idx(mappings['Currency']);
       final parentIdx  = idx(mappings['Parent Account']);
       final balanceIdx = idx(mappings['Opening Balance']);
+      final debitIdx   = idx(mappings['Debit']);
+      final creditIdx  = idx(mappings['Credit']);
+      final dateIdx    = idx(mappings['Transaction Date']);
 
       // ── 5. Audit fields ────────────────────────────────────────────────
       final now      = DateTime.now().toUtc();
@@ -75,6 +78,9 @@ class ImportApiService {
         final currency = cell(currIdx);
         final parent   = cell(parentIdx);
         final balance  = cell(balanceIdx);
+        final debit    = cell(debitIdx);
+        final credit   = cell(creditIdx);
+        final transDate = cell(dateIdx);
 
         // Skip empty Account Name rows
         if (glName.isEmpty) {
@@ -111,9 +117,21 @@ class ImportApiService {
           glNo = autoGlNo;
         }
 
-        // Opening balance
-        final openingBal = double.tryParse(
-            balance.replaceAll(RegExp(r'[^\d.\-]'), '')) ?? 0.0;
+        // Opening balance calculation: use Opening Balance if mapped,
+        // otherwise calculate from Debit and Credit columns if mapped.
+        double openingBal = 0.0;
+        if (balanceIdx != -1 && balance.isNotEmpty) {
+          openingBal = double.tryParse(
+              balance.replaceAll(RegExp(r'[^\d.\-]'), '')) ?? 0.0;
+        } else {
+          final dr = double.tryParse(
+              debit.replaceAll(RegExp(r'[^\d.\-]'), '')) ?? 0.0;
+          final cr = double.tryParse(
+              credit.replaceAll(RegExp(r'[^\d.\-]'), '')) ?? 0.0;
+          if (debitIdx != -1 || creditIdx != -1) {
+            openingBal = dr - cr;
+          }
+        }
 
         final payload = {
           'orgCode': orgCode,
@@ -125,6 +143,8 @@ class ImportApiService {
           if (currency.isNotEmpty) 'currency':       currency,
           if (parent.isNotEmpty)   'parentAccount':  parent,
           if (openingBal != 0.0)   'openingBalance': openingBal,
+          if (transDate.isNotEmpty) 'transactionDate': transDate,
+          if (transDate.isNotEmpty) 'transDate': transDate,
           // Audit fields — same as GL Master form
           'cUser': cleanUser, 'cuser': cleanUser,
           'cDate': nowIso,    'cdate': nowIso,

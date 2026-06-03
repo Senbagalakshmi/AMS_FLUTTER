@@ -55,14 +55,14 @@ class _ImportCompanyScreenState extends State<ImportCompanyScreen> {
     {"name": "Account Code", "mandatory": false},
     {"name": "Description", "mandatory": false},
     {"name": "Account Type", "mandatory": true},
-    {"name": "Mileage Rate", "mandatory": false},
-    {"name": "Mileage Unit", "mandatory": false},
-    {"name": "IsMileage", "mandatory": false},
+    {"name": "Transaction Date", "mandatory": false},
     {"name": "Account #", "mandatory": false},
     {"name": "Currency", "mandatory": false},
     {"name": "Parent Account", "mandatory": false},
     {"name": "Opening Balance", "mandatory": false},
-    {"name": "Debit or Credit", "mandatory": false},
+    {"name": "Debit", "mandatory": false},
+    {"name": "Credit", "mandatory": false},
+    {"name": "Notes", "mandatory": false},
   ];
 
   // Exact headers matching your PostgreSQL procedure parameter structure
@@ -148,6 +148,10 @@ class _ImportCompanyScreenState extends State<ImportCompanyScreen> {
                   h.toLowerCase().contains("glcattype") ||
                   h.toLowerCase().contains("type"),
               orElse: () => "");
+        } else if (fieldName == "Transaction Date") {
+          matchedHeader = headers.firstWhere(
+              (h) => h.toLowerCase().contains("date"),
+              orElse: () => "");
         } else if (fieldName == "Account #") {
           matchedHeader = headers.firstWhere(
               (h) =>
@@ -169,6 +173,14 @@ class _ImportCompanyScreenState extends State<ImportCompanyScreen> {
               (h) =>
                   h.toLowerCase().contains("balance") ||
                   h.toLowerCase().contains("bal"),
+              orElse: () => "");
+        } else if (fieldName == "Debit") {
+          matchedHeader = headers.firstWhere(
+              (h) => h.toLowerCase() == "debit" || h.toLowerCase().contains("dr"),
+              orElse: () => "");
+        } else if (fieldName == "Credit") {
+          matchedHeader = headers.firstWhere(
+              (h) => h.toLowerCase() == "credit" || h.toLowerCase().contains("cr"),
               orElse: () => "");
         }
 
@@ -404,6 +416,14 @@ class _ImportCompanyScreenState extends State<ImportCompanyScreen> {
       int balanceIdx =
           balanceHeader != null ? headers.indexOf(balanceHeader) : -1;
 
+      String? debitHeader = _mappings["Debit"];
+      int debitIdx =
+          debitHeader != null ? headers.indexOf(debitHeader) : -1;
+
+      String? creditHeader = _mappings["Credit"];
+      int creditIdx =
+          creditHeader != null ? headers.indexOf(creditHeader) : -1;
+
       Set<String> seenAccountCodes = {};
       Set<String> seenAccountNames = {};
 
@@ -440,7 +460,7 @@ class _ImportCompanyScreenState extends State<ImportCompanyScreen> {
 
         if (rowSkipped) continue;
 
-        // 2. Validate Opening Balance as numeric only (not all unmapped columns)
+        // 2. Validate Opening Balance, Debit, and Credit as numeric only (if mapped)
         if (balanceIdx != -1 && balanceIdx < row.length) {
           final val = row[balanceIdx].trim();
           if (val.isNotEmpty) {
@@ -453,6 +473,40 @@ class _ImportCompanyScreenState extends State<ImportCompanyScreen> {
                 columnName: balanceHeader ?? "Opening Balance",
                 errorMessage:
                     "Opening Balance value '$val' is not a valid number.",
+              ));
+              rowSkipped = true;
+            }
+          }
+        }
+
+        if (!rowSkipped && debitIdx != -1 && debitIdx < row.length) {
+          final val = row[debitIdx].trim();
+          if (val.isNotEmpty) {
+            final cleanVal = val.replaceAll(RegExp(r'[^\d\.\-]'), '');
+            final parsed = double.tryParse(cleanVal);
+            if (parsed == null) {
+              skipped.add(SkippedRowInfo(
+                rowNo: i + 1,
+                columnName: debitHeader ?? "Debit",
+                errorMessage:
+                    "Debit value '$val' is not a valid number.",
+              ));
+              rowSkipped = true;
+            }
+          }
+        }
+
+        if (!rowSkipped && creditIdx != -1 && creditIdx < row.length) {
+          final val = row[creditIdx].trim();
+          if (val.isNotEmpty) {
+            final cleanVal = val.replaceAll(RegExp(r'[^\d\.\-]'), '');
+            final parsed = double.tryParse(cleanVal);
+            if (parsed == null) {
+              skipped.add(SkippedRowInfo(
+                rowNo: i + 1,
+                columnName: creditHeader ?? "Credit",
+                errorMessage:
+                    "Credit value '$val' is not a valid number.",
               ));
               rowSkipped = true;
             }
