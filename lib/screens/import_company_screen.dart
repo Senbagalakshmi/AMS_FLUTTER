@@ -66,19 +66,22 @@ class _ImportCompanyScreenState extends State<ImportCompanyScreen> {
   ];
 
   // Exact headers matching your PostgreSQL procedure parameter structure
-  final List<String> _expectedHeaders = [
-    "OrgCode",
-    "CompanyName",
-    "BranchCode",
-    "Currency",
-    "GlCatCd",
-    "GlCatName",
-    "GlCatType",
-    "GlCatSubType",
-    "GlNo",
-    "GlName",
-    "Balance"
-  ];
+final List<String> _expectedHeaders = [
+  "OrgCode",
+  "CompanyName",
+  "BranchCode",
+  "Currency",
+  "GlCatCd",
+  "GlCatName",
+  "GlCatType",
+  "GlCatSubType",
+  "GlNo",
+  "GlName",
+  "OpeningBalance",
+  "DebitCredit",
+  "TotalDebit",
+  "TotalCredit"
+];
 
   // ================= STATE RESET CONTROLLER =================
   void _clearSelectedFile() {
@@ -572,9 +575,9 @@ class _ImportCompanyScreenState extends State<ImportCompanyScreen> {
   // ================= TEMPLATE GENERATOR =================
   void _downloadTemplate() {
     final csvContent = "${_expectedHeaders.join(',')}\n"
-        "101,BBOTS Financials,1,INR,1,Assets,Asset,Current Assets,1001,Cash on Hand,50000.00\n"
-        "101,BBOTS Financials,1,INR,1,Assets,Asset,Current Assets,1002,HDFC Bank Current A/C,250000.00\n"
-        "101,BBOTS Financials,1,INR,2,Liabilities,Liability,Current Liabilities,2001,Accounts Payable,-45000.00\n";
+        "101,BBOTS Financials,1,INR,1,Assets,Asset,Current Assets,1001,Cash on Hand,50000.00,DEBIT,5000.00,15000.00\n"
+        "101,BBOTS Financials,1,INR,1,Assets,Asset,Current Assets,1002,HDFC Bank,250000.00,DEBIT,20000.00,5000.00\n"
+        "101,BBOTS Financials,1,INR,2,Liabilities,Liability,Current Liabilities,2001,Accounts Payable,-45000.00,CREDIT,0.00,45000.00";
 
     final bytes = utf8.encode(csvContent);
     final blob = html.Blob([bytes], 'text/csv;charset=utf-8');
