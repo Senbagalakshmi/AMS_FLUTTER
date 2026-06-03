@@ -631,6 +631,13 @@ class _BranchScreenState extends State<BranchScreen> {
     return AmsSubmitBar(borderColor: AppColors.border, actions: [
       if (!_isViewOnly) ...[
         AmsButton(
+          label: 'Back to List',
+          variant: AmsButtonVariant.outline,
+          icon: Icons.arrow_back_rounded,
+          onPressed: () => setState(() => _showForm = false),
+        ),
+        const SizedBox(width: 12),
+        AmsButton(
           label: _isEditMode ? 'Update' : 'Submit',
           variant: AmsButtonVariant.primary,
           backgroundColor: _isSaving ? Colors.grey : AppColors.sidebar,
