@@ -50,38 +50,88 @@ class _ImportCompanyScreenState extends State<ImportCompanyScreen> {
   bool _saveSelections = false;
   String _characterEncoding = 'UTF-8 (Unicode)';
 
-  final List<Map<String, dynamic>> _mappingFields = [
-    {"name": "Account Name", "mandatory": true},
-    {"name": "Account Code", "mandatory": false},
-    {"name": "Description", "mandatory": false},
-    {"name": "Account Type", "mandatory": true},
-    {"name": "Transaction Date", "mandatory": false},
-    {"name": "Account #", "mandatory": false},
-    {"name": "Currency", "mandatory": false},
-    {"name": "Parent Account", "mandatory": false},
-    {"name": "Opening Balance", "mandatory": false},
-    {"name": "Debit", "mandatory": false},
-    {"name": "Credit", "mandatory": false},
-    {"name": "Notes", "mandatory": false},
-  ];
+  // Import type selection
+  String _importType = 'coa'; // 'coa' or 'journal'
 
-  // Exact headers matching your PostgreSQL procedure parameter structure
-final List<String> _expectedHeaders = [
-  "OrgCode",
-  "CompanyName",
-  "BranchCode",
-  "Currency",
-  "GlCatCd",
-  "GlCatName",
-  "GlCatType",
-  "GlCatSubType",
-  "GlNo",
-  "GlName",
-  "OpeningBalance",
-  "DebitCredit",
-  "TotalDebit",
-  "TotalCredit"
-];
+  // Journal details input fields
+  DateTime _tranDate = DateTime.now();
+  final TextEditingController _notesController = TextEditingController(text: 'Opening balances import');
+  final TextEditingController _refNoController = TextEditingController();
+
+  @override
+  void dispose() {
+    _notesController.dispose();
+    _refNoController.dispose();
+    super.dispose();
+  }
+
+  List<Map<String, dynamic>> get _mappingFields {
+    if (_importType == 'coa') {
+      return [
+        {"name": "Account Name", "mandatory": true},
+        {"name": "Account Code", "mandatory": false},
+        {"name": "Description", "mandatory": false},
+        {"name": "Account Type", "mandatory": true},
+        {"name": "Parent Account", "mandatory": false},
+        {"name": "Currency", "mandatory": false},
+        {"name": "Opening Balance", "mandatory": false},
+        {"name": "Debit or Credit", "mandatory": false},
+        {"name": "Org Code", "mandatory": false},
+        {"name": "Branch Code", "mandatory": false},
+        {"name": "Created By (euser)", "mandatory": false},
+        {"name": "Created Date (edate)", "mandatory": false},
+      ];
+    } else {
+      return [
+        {"name": "Org Code", "mandatory": false},
+        {"name": "Branch Code", "mandatory": false},
+        {"name": "Transaction Date", "mandatory": false},
+        {"name": "Journal No (Tran ID)", "mandatory": false},
+        {"name": "Transaction Status", "mandatory": false},
+        {"name": "Account Code", "mandatory": true},
+        {"name": "Debit or Credit", "mandatory": false},
+        {"name": "Total Credit", "mandatory": false},
+        {"name": "Total Debit", "mandatory": false},
+        {"name": "Narration", "mandatory": false},
+        {"name": "Created By (euser)", "mandatory": false},
+        {"name": "Created Date (edate)", "mandatory": false},
+      ];
+    }
+  }
+
+  List<String> get _expectedHeaders {
+    if (_importType == 'coa') {
+      return [
+        "orgcode",
+        "brncd",
+        "accountname",
+        "account code",
+        "Description",
+        "account type",
+        "parent account",
+        "basecurr",
+        "openingbalance",
+        "debit or credit",
+        "euser",
+        "edate"
+      ];
+    } else {
+      return [
+        "orgcode",
+        "brncd",
+        "trandate",
+        "JournalNo(tranId)",
+        "Transtatus",
+        "accountcode",
+        "debit or credit",
+        "Totalcredit",
+        "TotalDebit",
+        "narration",
+        "euser",
+        "edate"
+      ];
+    }
+  }
 
   // ================= STATE RESET CONTROLLER =================
   void _clearSelectedFile() {
@@ -102,6 +152,10 @@ final List<String> _expectedHeaders = [
       _openDropdownField = null;
       _saveSelections = false;
       _characterEncoding = 'UTF-8 (Unicode)';
+      _tranDate = DateTime.now();
+      _notesController.text = 'Opening balances import';
+      _refNoController.clear();
+      _importType = 'coa';
     });
   }
 
@@ -436,28 +490,42 @@ final List<String> _expectedHeaders = [
 
         bool rowSkipped = false;
 
-        // 1. Mandatory fields validation — Account Name and Account Type cannot be empty
-        if (accountNameIdx != -1 && accountNameIdx < row.length) {
-          if (row[accountNameIdx].trim().isEmpty) {
-            skipped.add(SkippedRowInfo(
-              rowNo: i + 1,
-              columnName: accountNameHeader ?? "Account Name",
-              errorMessage: "Mandatory field 'Account Name' cannot be empty.",
-            ));
-            rowSkipped = true;
+        // 1. Mandatory fields validation
+        if (_importType == 'coa') {
+          if (accountNameIdx != -1 && accountNameIdx < row.length) {
+            if (row[accountNameIdx].trim().isEmpty) {
+              skipped.add(SkippedRowInfo(
+                rowNo: i + 1,
+                columnName: accountNameHeader ?? "Account Name",
+                errorMessage: "Mandatory field 'Account Name' cannot be empty.",
+              ));
+              rowSkipped = true;
+            }
           }
-        }
 
-        if (!rowSkipped &&
-            accountTypeIdx != -1 &&
-            accountTypeIdx < row.length) {
-          if (row[accountTypeIdx].trim().isEmpty) {
-            skipped.add(SkippedRowInfo(
-              rowNo: i + 1,
-              columnName: accountTypeHeader ?? "Account Type",
-              errorMessage: "Mandatory field 'Account Type' cannot be empty.",
-            ));
-            rowSkipped = true;
+          if (!rowSkipped &&
+              accountTypeIdx != -1 &&
+              accountTypeIdx < row.length) {
+            if (row[accountTypeIdx].trim().isEmpty) {
+              skipped.add(SkippedRowInfo(
+                rowNo: i + 1,
+                columnName: accountTypeHeader ?? "Account Type",
+                errorMessage: "Mandatory field 'Account Type' cannot be empty.",
+              ));
+              rowSkipped = true;
+            }
+          }
+        } else {
+          // Journal import: Account Code is mandatory
+          if (accountCodeIdx != -1 && accountCodeIdx < row.length) {
+            if (row[accountCodeIdx].trim().isEmpty) {
+              skipped.add(SkippedRowInfo(
+                rowNo: i + 1,
+                columnName: accountCodeHeader ?? "Account Code",
+                errorMessage: "Mandatory field 'Account Code' cannot be empty.",
+              ));
+              rowSkipped = true;
+            }
           }
         }
 
@@ -518,8 +586,8 @@ final List<String> _expectedHeaders = [
 
         if (rowSkipped) continue;
 
-        // 3. Duplicate validation — checks in-file duplicates and existing system records
-        if (_duplicateHandling == 'skip') {
+        // 3. Duplicate validation — checks in-file duplicates and existing system records (Only for COA)
+        if (_importType == 'coa' && _duplicateHandling == 'skip') {
           bool isDuplicate = false;
           String duplicateDetails = "";
 
@@ -574,17 +642,28 @@ final List<String> _expectedHeaders = [
 
   // ================= TEMPLATE GENERATOR =================
   void _downloadTemplate() {
-    final csvContent = "${_expectedHeaders.join(',')}\n"
-        "101,BBOTS Financials,1,INR,1,Assets,Asset,Current Assets,1001,Cash on Hand,50000.00,DEBIT,5000.00,15000.00\n"
-        "101,BBOTS Financials,1,INR,1,Assets,Asset,Current Assets,1002,HDFC Bank,250000.00,DEBIT,20000.00,5000.00\n"
-        "101,BBOTS Financials,1,INR,2,Liabilities,Liability,Current Liabilities,2001,Accounts Payable,-45000.00,CREDIT,0.00,45000.00";
+    String csvContent = "";
+    String fileName = "";
+    if (_importType == 'coa') {
+      fileName = "chart_of_accounts_template.csv";
+      csvContent = "${_expectedHeaders.join(',')}\n"
+          "50,1,Cash on Hand,1001,Cash balance,Asset,Assets,INR,50000.00,Debit,admin,2026-06-04\n"
+          "50,1,HDFC Bank,1002,Bank account,Asset,Assets,INR,250000.00,Debit,admin,2026-06-04\n"
+          "50,1,Accounts Payable,2001,Accounts payable,Liability,Liabilities,INR,45000.00,Credit,admin,2026-06-04\n";
+    } else {
+      fileName = "journal_entries_template.csv";
+      csvContent = "${_expectedHeaders.join(',')}\n"
+          "50,1,2026-06-04,1,P,1001,Debit,0.00,50000.00,Opening Balance Cash,admin,2026-06-04\n"
+          "50,1,2026-06-04,1,P,1002,Debit,0.00,250000.00,Opening Balance HDFC,admin,2026-06-04\n"
+          "50,1,2026-06-04,1,P,2001,Credit,45000.00,0.00,Opening Balance AP,admin,2026-06-04\n";
+    }
 
     final bytes = utf8.encode(csvContent);
     final blob = html.Blob([bytes], 'text/csv;charset=utf-8');
     final url = html.Url.createObjectUrlFromBlob(blob);
 
     html.AnchorElement(href: url)
-      ..setAttribute("download", "finance_import_template.csv")
+      ..setAttribute("download", fileName)
       ..click();
 
     html.Url.revokeObjectUrl(url);
@@ -725,13 +804,23 @@ final List<String> _expectedHeaders = [
     if (_fileBytes == null || _fileName == null) return;
 
     // Validate mandatory mapping fields before submitting
-    if (_mappings["Account Name"] == null ||
-        _mappings["Account Type"] == null) {
-      setState(() {
-        _validationError =
-            "Please map the mandatory fields 'Account Name' and 'Account Type' before importing.";
-      });
-      return;
+    if (_importType == 'coa') {
+      if (_mappings["Account Name"] == null ||
+          _mappings["Account Type"] == null) {
+        setState(() {
+          _validationError =
+              "Please map the mandatory fields 'Account Name' and 'Account Type' before importing.";
+        });
+        return;
+      }
+    } else {
+      if (_mappings["Account Code"] == null) {
+        setState(() {
+          _validationError =
+              "Please map the mandatory field 'Account Code' before importing.";
+        });
+        return;
+      }
     }
 
     setState(() {
@@ -741,8 +830,26 @@ final List<String> _expectedHeaders = [
     });
 
     final eUser = widget.userName ?? "SYSTEM";
-    final result = await importApiService.importCompanyGlData(
-        _fileBytes!, _fileName!, eUser, _duplicateHandling, _mappings);
+    Map<String, dynamic> result;
+    if (_importType == 'coa') {
+      result = await importApiService.importCoaData(
+        _fileBytes!,
+        _fileName!,
+        eUser,
+        _duplicateHandling,
+        _mappings,
+      );
+    } else {
+      final formattedDate = "${_tranDate.year}-${_tranDate.month.toString().padLeft(2, '0')}-${_tranDate.day.toString().padLeft(2, '0')}";
+      result = await importApiService.importJournalData(
+        _fileBytes!,
+        _fileName!,
+        eUser,
+        _mappings,
+        tranDate: formattedDate,
+        notes: _notesController.text,
+      );
+    }
 
     if (!mounted) return;
 
@@ -1684,8 +1791,9 @@ final List<String> _expectedHeaders = [
     int readyCount = totalFileRows - skippedCount;
     if (readyCount < 0) readyCount = 0;
 
-    final mandatoryMissing =
-        _mappings["Account Name"] == null || _mappings["Account Type"] == null;
+    final bool mandatoryMissing = _importType == 'coa'
+        ? (_mappings["Account Name"] == null || _mappings["Account Type"] == null)
+        : (_mappings["Account Code"] == null);
     final noneCanBeImported = readyCount == 0 || mandatoryMissing;
     final String? previewError =
         mandatoryMissing ? "mandatory fields is missing" : _validationError;
@@ -2378,8 +2486,10 @@ final List<String> _expectedHeaders = [
                 const SizedBox(width: 12),
                 ElevatedButton(
                   onPressed: (_isUploading ||
-                          _mappings["Account Name"] == null ||
-                          _mappings["Account Type"] == null)
+                          (_importType == 'coa'
+                              ? (_mappings["Account Name"] == null ||
+                                  _mappings["Account Type"] == null)
+                              : (_mappings["Account Code"] == null)))
                       ? null
                       : _submitImport,
                   style: ElevatedButton.styleFrom(
@@ -2834,6 +2944,313 @@ final List<String> _expectedHeaders = [
                 ),
               ],
             ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildImportTypeSelector(bool isMobile) {
+    final children = [
+      Expanded(
+        flex: isMobile ? 0 : 1,
+        child: InkWell(
+          onTap: () {
+            setState(() {
+              _importType = 'coa';
+              _mappings.clear();
+              _validationError = null;
+            });
+          },
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+            decoration: BoxDecoration(
+              color: _importType == 'coa' ? const Color(0xFFEFF6FF) : Colors.white,
+              border: Border.all(
+                color: _importType == 'coa' ? const Color(0xFF3B82F6) : const Color(0xFFE2E8F0),
+                width: _importType == 'coa' ? 2 : 1,
+              ),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.account_tree_rounded,
+                  color: _importType == 'coa' ? const Color(0xFF2563EB) : const Color(0xFF64748B),
+                  size: 24,
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: const [
+                      Text(
+                        "Chart of Accounts",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14.5,
+                          color: Color(0xFF1E293B),
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        "Import categories, accounts & opening balances.",
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF64748B),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (_importType == 'coa')
+                  const Icon(
+                    Icons.check_circle_rounded,
+                    color: Color(0xFF2563EB),
+                    size: 20,
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+      SizedBox(width: isMobile ? 0 : 16, height: isMobile ? 12 : 0),
+      Expanded(
+        flex: isMobile ? 0 : 1,
+        child: InkWell(
+          onTap: () {
+            setState(() {
+              _importType = 'journal';
+              _mappings.clear();
+              _validationError = null;
+            });
+          },
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+            decoration: BoxDecoration(
+              color: _importType == 'journal' ? const Color(0xFFEFF6FF) : Colors.white,
+              border: Border.all(
+                color: _importType == 'journal' ? const Color(0xFF3B82F6) : const Color(0xFFE2E8F0),
+                width: _importType == 'journal' ? 2 : 1,
+              ),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.receipt_long_rounded,
+                  color: _importType == 'journal' ? const Color(0xFF2563EB) : const Color(0xFF64748B),
+                  size: 24,
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: const [
+                      Text(
+                        "Journal Entries",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14.5,
+                          color: Color(0xFF1E293B),
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        "Import transaction headers, legs & modify balances.",
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF64748B),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (_importType == 'journal')
+                  const Icon(
+                    Icons.check_circle_rounded,
+                    color: Color(0xFF2563EB),
+                    size: 20,
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          "Import Type *",
+          style: TextStyle(
+            fontSize: 14.5,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF334155),
+          ),
+        ),
+        const SizedBox(height: 10),
+        isMobile
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: children,
+              )
+            : Row(
+                children: children,
+              ),
+      ],
+    );
+  }
+
+  Widget _buildJournalDetailsCard() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          "Journal Entry Details",
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF1E293B),
+          ),
+        ),
+        const SizedBox(height: 4),
+        const Text(
+          "Specify the fallback details for the journal entries if columns are missing from the file.",
+          style: TextStyle(
+            fontSize: 13,
+            color: Color(0xFF64748B),
+          ),
+        ),
+        const SizedBox(height: 16),
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Transaction Date field
+              const Text(
+                "Transaction Date *",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13.5,
+                  color: Color(0xFF334155),
+                ),
+              ),
+              const SizedBox(height: 8),
+              InkWell(
+                onTap: () async {
+                  final picked = await showDatePicker(
+                    context: context,
+                    initialDate: _tranDate,
+                    firstDate: DateTime(2000),
+                    lastDate: DateTime(2100),
+                  );
+                  if (picked != null) {
+                    setState(() {
+                      _tranDate = picked;
+                    });
+                  }
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        "${_tranDate.year}-${_tranDate.month.toString().padLeft(2, '0')}-${_tranDate.day.toString().padLeft(2, '0')}",
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF0F172A),
+                        ),
+                      ),
+                      const Icon(
+                        Icons.calendar_today_rounded,
+                        size: 18,
+                        color: Color(0xFF64748B),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Reference Number field
+              const Text(
+                "Reference Number",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13.5,
+                  color: Color(0xFF334155),
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _refNoController,
+                decoration: InputDecoration(
+                  hintText: "e.g., REF-001",
+                  hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13.5),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  filled: true,
+                  fillColor: const Color(0xFFF8FAFC),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const Color(0xFFE2E8F0) == Colors.transparent ? BorderSide.none : const BorderSide(color: Color(0xFFE2E8F0)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: Color(0xFF3B82F6), width: 1.5),
+                  ),
+                ),
+                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
+              ),
+              const SizedBox(height: 16),
+
+              // Description / Notes field
+              const Text(
+                "Description / Notes",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13.5,
+                  color: Color(0xFF334155),
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _notesController,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  hintText: "Enter description here...",
+                  hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13.5),
+                  contentPadding: const EdgeInsets.all(16),
+                  filled: true,
+                  fillColor: const Color(0xFFF8FAFC),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const Color(0xFFE2E8F0) == Colors.transparent ? BorderSide.none : const BorderSide(color: Color(0xFFE2E8F0)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: Color(0xFF3B82F6), width: 1.5),
+                  ),
+                ),
+                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
+              ),
+            ],
           ),
         ),
       ],
@@ -3658,6 +4075,8 @@ final List<String> _expectedHeaders = [
                               ),
                             ),
                             const SizedBox(height: 24),
+                            _buildImportTypeSelector(isMobile),
+                            const SizedBox(height: 32),
 
                             // 3. Two-Column Split Layout or vertical stacking
                             if (!isMobile)
@@ -3800,10 +4219,12 @@ final List<String> _expectedHeaders = [
                                       width:
                                           48), // Spacious gap between columns
 
-                                  // Right Column: Duplicate Error Handling
+                                  // Right Column: Duplicate Error Handling or Journal Details
                                   Expanded(
                                     flex: 1,
-                                    child: _buildDuplicateHandlingSelector(),
+                                    child: _importType == 'coa'
+                                        ? _buildDuplicateHandlingSelector()
+                                        : _buildJournalDetailsCard(),
                                   ),
                                 ],
                               )
@@ -3903,7 +4324,9 @@ final List<String> _expectedHeaders = [
                                     ),
                                   ],
                                   const SizedBox(height: 28),
-                                  _buildDuplicateHandlingSelector(),
+                                  _importType == 'coa'
+                                      ? _buildDuplicateHandlingSelector()
+                                      : _buildJournalDetailsCard(),
                                   if (hasError) ...[
                                     const SizedBox(height: 20),
                                     _buildErrorBanner(_validationError!),
