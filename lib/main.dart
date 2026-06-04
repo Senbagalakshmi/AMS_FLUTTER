@@ -84,6 +84,7 @@ class _AmsRootState extends State<AmsRoot> {
   String? _modalAuthsl;
   String? _modalAmount;
   bool _showJournalEntry = false;
+  String? _importSource;
 
   void _navigate(String screen) {
     setState(() {
@@ -537,14 +538,16 @@ class _AmsRootState extends State<AmsRoot> {
               onBackToModule: () => _handleProceed('GL'),
               userName: _state.userName,
             );
-          } else {
-            body = JournalListScreen(
+          } body = JournalListScreen(
               onNew: () => setState(() => _showJournalEntry = true),
               onBack: () => _navigate('list'),
               onBackToModule: () => _handleProceed('TRANSACTIONS'),
+              onImport: () {
+                _importSource = 'GL-JRN';
+                _handleSelectProg('GL-IMPORT');
+              },
               userName: _state.userName,
-            );
-          }
+         );
         } else if (_state.selectedProg == 'GL-CUR') {
           body = AllowedCurrencyScreen(
             onBack: () => _navigate('list'),
@@ -594,12 +597,21 @@ class _AmsRootState extends State<AmsRoot> {
           body = ChartOfAccountsScreen(
             onBack: () => _navigate('list'),
             onBackToModule: () => _handleProceed('TRANSACTIONS'),
-            onImport: () => _handleSelectProg('GL-IMPORT'),
+            onImport: () {
+              _importSource = 'RPT-COA';
+              _handleSelectProg('GL-IMPORT');
+              },
             userName: _state.userName,
           );
         } else if (_state.selectedProg == 'GL-IMPORT') {
           body = ImportCompanyScreen(
-            onBack: () => _handleSelectProg('RPT-COA'),
+             onBack: () {
+      if (_importSource == 'GL-JRN') {
+        _handleSelectProg('GL-JRN');
+      } else {
+        _handleSelectProg('RPT-COA');
+      }
+    },
             onBackToModule: () => _handleProceed('Clients'),
             userName: _state.userName,
           );

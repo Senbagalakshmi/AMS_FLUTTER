@@ -4,12 +4,19 @@ import '../theme.dart';
 import '../widgets/widgets.dart';
 import '../services/journal_api_service.dart';
 import '../utils/responsive.dart';
+import 'package:flutter/foundation.dart';
+import 'dart:html' as html;
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
+import 'package:excel/excel.dart' as ex;
 
 class JournalListScreen extends StatefulWidget {
   final VoidCallback onNew;
   final VoidCallback onBack;
   final VoidCallback onBackToModule;
   final String? userName;
+  final onImport;
 
   const JournalListScreen({
     super.key,
@@ -17,6 +24,7 @@ class JournalListScreen extends StatefulWidget {
     required this.onBack,
     required this.onBackToModule,
     this.userName,
+    required this.onImport,
   });
 
   @override
@@ -49,6 +57,162 @@ class _JournalListScreenState extends State<JournalListScreen> {
     }
   }
 
+  void _handleImport() {
+  widget.onImport();
+}
+
+Future<void> _handleExport(String format) async {
+  if (format == 'Excel') {
+    await _exportExcel();
+  } else if (format == 'PDF') {
+    await _exportPdf();
+  }
+}
+
+Future<void> _exportPdf() async {
+  final pdf = pw.Document();
+
+  final font = await PdfGoogleFonts.robotoMedium();
+
+  final headers = [
+    'Tran Date',
+    'Journal No',
+    'Narration',
+    'Status',
+    'Amount',
+    'Created By',
+    'Authorized By'
+  ];
+
+  final rows = _journals.map((j) {
+    String date = '';
+
+    try {
+      if (j['trandate'] != null) {
+        date = DateFormat('dd/MM/yyyy')
+            .format(DateTime.parse(j['trandate'].toString()));
+      }
+    } catch (_) {}
+
+    return [
+      date,
+      j['tranid']?.toString() ?? '',
+      j['narr']?.toString() ?? '',
+      j['transtatus']?.toString() ?? '',
+      NumberFormat('#,##,##0.00')
+          .format(j['totaldebit'] ?? 0),
+      j['euser']?.toString() ?? '',
+      j['auser']?.toString() ?? '',
+    ];
+  }).toList();
+
+  pdf.addPage(
+    pw.MultiPage(
+      pageFormat: PdfPageFormat.a4.landscape,
+      build: (context) => [
+        pw.Text(
+          'Manual Journals',
+          style: pw.TextStyle(
+            font: font,
+            fontSize: 18,
+            fontWeight: pw.FontWeight.bold,
+          ),
+        ),
+        pw.SizedBox(height: 15),
+        pw.Table.fromTextArray(
+          headers: headers,
+          data: rows,
+          headerStyle: pw.TextStyle(
+            font: font,
+            fontWeight: pw.FontWeight.bold,
+          ),
+          cellStyle: pw.TextStyle(font: font),
+          border: pw.TableBorder.all(),
+        ),
+      ],
+    ),
+  );
+
+  final bytes = await pdf.save();
+
+  if (kIsWeb) {
+    final blob = html.Blob([bytes], 'application/pdf');
+
+    final url = html.Url.createObjectUrlFromBlob(blob);
+
+    html.AnchorElement(href: url)
+      ..setAttribute('download', 'Manual_Journals.pdf')
+      ..click();
+
+    html.Url.revokeObjectUrl(url);
+    return;
+  }
+
+  await Printing.sharePdf(
+    bytes: bytes,
+    filename: 'Manual_Journals.pdf',
+  );
+}
+
+Future<void> _exportExcel() async {
+  final workbook = ex.Excel.createExcel();
+
+  final sheet = workbook['Manual Journals'];
+
+  sheet.appendRow([
+    ex.TextCellValue('Tran Date'),
+    ex.TextCellValue('Journal No'),
+    ex.TextCellValue('Narration'),
+    ex.TextCellValue('Status'),
+    ex.TextCellValue('Amount'),
+    ex.TextCellValue('Created By'),
+    ex.TextCellValue('Authorized By'),
+  ]);
+
+  for (final j in _journals) {
+    String date = '';
+
+    try {
+      if (j['trandate'] != null) {
+        date = DateFormat('dd/MM/yyyy')
+            .format(DateTime.parse(j['trandate'].toString()));
+      }
+    } catch (_) {}
+
+    sheet.appendRow([
+      ex.TextCellValue(date),
+      ex.TextCellValue(j['tranid']?.toString() ?? ''),
+      ex.TextCellValue(j['narr']?.toString() ?? ''),
+      ex.TextCellValue(j['transtatus']?.toString() ?? ''),
+      ex.TextCellValue(
+        NumberFormat('#,##,##0.00')
+            .format(j['totaldebit'] ?? 0),
+      ),
+      ex.TextCellValue(j['euser']?.toString() ?? ''),
+      ex.TextCellValue(j['auser']?.toString() ?? ''),
+    ]);
+  }
+
+  final bytes = workbook.save();
+
+  if (bytes == null) return;
+
+  if (kIsWeb) {
+    final blob = html.Blob(
+      [bytes],
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
+
+    final url = html.Url.createObjectUrlFromBlob(blob);
+
+    html.AnchorElement(href: url)
+      ..setAttribute('download', 'Manual_Journals.xlsx')
+      ..click();
+
+    html.Url.revokeObjectUrl(url);
+  }
+}
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -73,6 +237,103 @@ class _JournalListScreenState extends State<JournalListScreen> {
       ),
     );
   }
+
+  Widget _buildImportExportMenu() {
+  return PopupMenuButton<String>(
+    icon: Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(6),
+      child: const Icon(
+        Icons.more_vert,
+        color: AppColors.tBlue,
+        size: 22,
+      ),
+    ),
+    color: Colors.white,
+    elevation: 8,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(14),
+    ),
+    onSelected: (value) {
+      if (value == 'import') {
+        _handleImport();
+      } else if (value == 'export_excel') {
+        _handleExport('Excel');
+      } else if (value == 'export_pdf') {
+        _handleExport('PDF');
+      }
+    },
+    itemBuilder: (context) => [
+      PopupMenuItem<String>(
+        value: 'import',
+        child: Row(
+          children: const [
+            Icon(Icons.download_rounded,
+                size: 18,
+                color: AppColors.tBlue),
+            SizedBox(width: 12),
+            Text('Import Journal'),
+          ],
+        ),
+      ),
+      const PopupMenuDivider(),
+
+      const PopupMenuItem(
+        enabled: false,
+        child: Text(
+          'Export',
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+
+      PopupMenuItem<String>(
+        value: 'export_excel',
+        child: Row(
+          children: const [
+            Icon(Icons.table_chart,
+                size: 18,
+                color: AppColors.tBlue),
+            SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Export Journal as Excel',
+              ),
+            ),
+          ],
+        ),
+      ),
+
+      PopupMenuItem<String>(
+        value: 'export_pdf',
+        child: Row(
+          children: const [
+            Icon(Icons.picture_as_pdf,
+                size: 18,
+                color: AppColors.tBlue),
+            SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Export Journal as PDF',
+              ),
+            ),
+          ],
+        ),
+      ),
+    ],
+  );
+}
 
   Widget _buildHeader() {
     final isMobile = Responsive.isMobile(context);
@@ -129,12 +390,20 @@ class _JournalListScreenState extends State<JournalListScreen> {
               style: bodyStyle(size: 20, weight: FontWeight.w700, color: AppColors.ink),
             ),
             const Spacer(),
-            AmsButton(
-              label: 'New Journal',
-              onPressed: widget.onNew,
-              icon: Icons.add,
-              variant: AmsButtonVariant.primary,
-            ),
+
+const SizedBox(width: 12),
+
+AmsButton(
+  label: 'New Journal',
+  onPressed: widget.onNew,
+  icon: Icons.add,
+  variant: AmsButtonVariant.primary,
+),
+const SizedBox(width: 12),
+
+_buildImportExportMenu(),
+const SizedBox(width: 12),
+
           ],
         );
       }),
