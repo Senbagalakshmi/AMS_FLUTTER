@@ -41,6 +41,7 @@ import 'screens/chart_of_accounts_screen.dart';
 import 'screens/balance_sheet_screen.dart';
 import 'screens/report_dashboard_screen.dart';
 import 'screens/import_company_screen.dart';
+import 'screens/master_dashboard_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -129,7 +130,6 @@ class _AmsRootState extends State<AmsRoot> {
       );
     });
   }
-
 
   Future<void> _refreshData() async {
     if (mounted) {
@@ -272,8 +272,8 @@ class _AmsRootState extends State<AmsRoot> {
     });
   }
 
-  Future<void> _handleNonTranSubmit(String prog, Auth101Config cfg, String authsl,
-      Map<String, dynamic> data) async {
+  Future<void> _handleNonTranSubmit(String prog, Auth101Config cfg,
+      String authsl, Map<String, dynamic> data) async {
     bool success = false;
 
     // Choose API method based on program
@@ -519,7 +519,8 @@ class _AmsRootState extends State<AmsRoot> {
             onBackToModule: () => _handleProceed('GL'),
             userName: _state.userName,
           );
-        } else if (_state.selectedProg == 'GL-MST' || _state.selectedProg == 'GL-MAT') {
+        } else if (_state.selectedProg == 'GL-MST' ||
+            _state.selectedProg == 'GL-MAT') {
           body = GLMasterScreen(
             onBack: () => _navigate('list'),
             onBackToModule: () => _handleProceed('GL'),
@@ -538,16 +539,17 @@ class _AmsRootState extends State<AmsRoot> {
               onBackToModule: () => _handleProceed('GL'),
               userName: _state.userName,
             );
-          } body = JournalListScreen(
-              onNew: () => setState(() => _showJournalEntry = true),
-              onBack: () => _navigate('list'),
-              onBackToModule: () => _handleProceed('TRANSACTIONS'),
-              onImport: () {
-                _importSource = 'GL-JRN';
-                _handleSelectProg('GL-IMPORT');
-              },
-              userName: _state.userName,
-         );
+          }
+          body = JournalListScreen(
+            onNew: () => setState(() => _showJournalEntry = true),
+            onBack: () => _navigate('list'),
+            onBackToModule: () => _handleProceed('TRANSACTIONS'),
+            onImport: () {
+              _importSource = 'GL-JRN';
+              _handleSelectProg('GL-IMPORT');
+            },
+            userName: _state.userName,
+          );
         } else if (_state.selectedProg == 'GL-CUR') {
           body = AllowedCurrencyScreen(
             onBack: () => _navigate('list'),
@@ -566,15 +568,15 @@ class _AmsRootState extends State<AmsRoot> {
             onBackToModule: () => _handleProceed('GL'),
             userName: _state.userName,
           );
-            //trial balance - add
+          //trial balance - add
         } else if (_state.selectedProg == 'RPT-TB') {
           body = TrialBalanceScreen(
             onBack: () => _navigate('list'),
             onBackToModule: () => _handleProceed('TRANSACTIONS'),
             userName: _state.userName,
           );
-           //trial balance - end
-        } 
+          //trial balance - end
+        }
         //profit and loss - add
         else if (_state.selectedProg == 'RPT-PL') {
           body = ProfitAndLossScreen(
@@ -587,9 +589,9 @@ class _AmsRootState extends State<AmsRoot> {
         // balance sheet - add
         else if (_state.selectedProg == 'RPT-BS') {
           body = BalanceSheetScreen(
-          onBack: () => _navigate('list'),
-          onBackToModule: () => _handleProceed('TRANSACTIONS'),
-          userName: _state.userName,
+            onBack: () => _navigate('list'),
+            onBackToModule: () => _handleProceed('TRANSACTIONS'),
+            userName: _state.userName,
           );
         }
 // balance sheet - end
@@ -600,18 +602,18 @@ class _AmsRootState extends State<AmsRoot> {
             onImport: () {
               _importSource = 'RPT-COA';
               _handleSelectProg('GL-IMPORT');
-              },
+            },
             userName: _state.userName,
           );
         } else if (_state.selectedProg == 'GL-IMPORT') {
           body = ImportCompanyScreen(
-             onBack: () {
-      if (_importSource == 'GL-JRN') {
-        _handleSelectProg('GL-JRN');
-      } else {
-        _handleSelectProg('RPT-COA');
-      }
-    },
+            onBack: () {
+              if (_importSource == 'GL-JRN') {
+                _handleSelectProg('GL-JRN');
+              } else {
+                _handleSelectProg('RPT-COA');
+              }
+            },
             onBackToModule: () => _handleProceed('Clients'),
             userName: _state.userName,
           );
@@ -727,9 +729,8 @@ class _AmsRootState extends State<AmsRoot> {
               metric = '$count Cat';
             else if (item.programId == 'GL-MST' || item.programId == 'GL-MAT')
               metric = '$count Mast';
-            else if (item.programId == 'GL-SUB')
-              metric = '4 Modules';
-            
+            else if (item.programId == 'GL-SUB') metric = '4 Modules';
+
             return item.copyWith(metric: metric);
           }).toList();
         } else if (cat == 'GL-SUB') {
@@ -777,8 +778,7 @@ class _AmsRootState extends State<AmsRoot> {
                 metric = '$count Cat';
               else if (item.programId == 'GL-MST' || item.programId == 'GL-MAT')
                 metric = '$count Mast';
-              else if (item.programId == 'GL-SUB')
-                metric = '4 Modules';
+              else if (item.programId == 'GL-SUB') metric = '4 Modules';
 
               return item.copyWith(metric: metric);
             }).toList(),
@@ -789,6 +789,13 @@ class _AmsRootState extends State<AmsRoot> {
         } else if (cat == 'REPORTS') {
           body = ReportDashboardScreen(
             items: reportSubmenus,
+            userName: _state.userName,
+            onBack: () => _navigate('list'),
+            onNavigate: _handleScreenNavigation,
+          );
+        } else if (cat == 'MASTERS') {
+          body = MasterDashboardScreen(
+            items: items,
             userName: _state.userName,
             onBack: () => _navigate('list'),
             onNavigate: _handleScreenNavigation,
