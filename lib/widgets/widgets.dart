@@ -1857,13 +1857,13 @@ class _AmsSidebarState extends State<AmsSidebar> {
                     isSelected: widget.selectedProg == 'RPT-COA',
                     onTap: () => widget.onNavigate('nontran', 'RPT-COA'),
                   ),
-                  // AmsSubSidebarItem(
-                  //   label: 'File Import',
-                  //   isCollapsed: widget.isCollapsed,
-                  //   icon: Icons.upload_file_rounded,
-                  //   isSelected: widget.selectedProg == 'GL-IMPORT',
-                  //   onTap: () => widget.onNavigate('nontran', 'GL-IMPORT'),
-                  // ),
+                  AmsSubSidebarItem(
+                    label: 'File Import',
+                    isCollapsed: widget.isCollapsed,
+                    icon: Icons.upload_file_rounded,
+                    isSelected: widget.selectedProg == 'GL-IMPORT',
+                    onTap: () => widget.onNavigate('nontran', 'GL-IMPORT'),
+                  ),
                    AmsSubSidebarItem(
                     label: 'Reports',
                     isCollapsed: widget.isCollapsed,

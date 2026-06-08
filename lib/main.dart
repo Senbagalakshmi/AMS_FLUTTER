@@ -539,17 +539,18 @@ class _AmsRootState extends State<AmsRoot> {
               onBackToModule: () => _handleProceed('GL'),
               userName: _state.userName,
             );
+          } else {
+            body = JournalListScreen(
+              onNew: () => setState(() => _showJournalEntry = true),
+              onBack: () => _navigate('list'),
+              onBackToModule: () => _handleProceed('TRANSACTIONS'),
+              onImport: () {
+                _importSource = 'GL-JRN';
+                _handleSelectProg('GL-IMPORT');
+              },
+              userName: _state.userName,
+            );
           }
-          body = JournalListScreen(
-            onNew: () => setState(() => _showJournalEntry = true),
-            onBack: () => _navigate('list'),
-            onBackToModule: () => _handleProceed('TRANSACTIONS'),
-            onImport: () {
-              _importSource = 'GL-JRN';
-              _handleSelectProg('GL-IMPORT');
-            },
-            userName: _state.userName,
-          );
         } else if (_state.selectedProg == 'GL-CUR') {
           body = AllowedCurrencyScreen(
             onBack: () => _navigate('list'),
