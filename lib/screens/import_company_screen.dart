@@ -190,25 +190,28 @@ class _ImportCompanyScreenState extends State<ImportCompanyScreen> {
             matchedHeader = headers.firstWhere(
                 (h) =>
                     h.toLowerCase().contains("glname") ||
+                    h.toLowerCase().contains("gl name") ||
                     h.toLowerCase() == "name" ||
                     h.toLowerCase().contains("companyname") ||
                     h.toLowerCase().contains("accountname"),
                 orElse: () => "");
           } else if (fieldName == "Account Code") {
             matchedHeader = headers.firstWhere(
-                (h) => h.toLowerCase() == "glno" || h.toLowerCase() == "code" || h.toLowerCase().contains("accountcode"),
+                (h) => h.toLowerCase() == "glno" || h.toLowerCase().contains("gl code") || h.toLowerCase() == "code" || h.toLowerCase().contains("accountcode"),
                 orElse: () => "");
           } else if (fieldName == "Description" || fieldName == "Narration") {
             matchedHeader = headers.firstWhere(
                 (h) =>
                     h.toLowerCase().contains("description") ||
                     h.toLowerCase().contains("desc") ||
-                    h.toLowerCase().contains("narration"),
+                    h.toLowerCase().contains("narration") ||
+                    h.toLowerCase().contains("remarks"),
                 orElse: () => "");
           } else if (fieldName == "Account Type") {
             matchedHeader = headers.firstWhere(
                 (h) =>
                     h.toLowerCase().contains("glcattype") ||
+                    h.toLowerCase().contains("gl type") ||
                     h.toLowerCase().contains("type"),
                 orElse: () => "");
           } else if (fieldName == "Transaction Date") {
@@ -229,6 +232,7 @@ class _ImportCompanyScreenState extends State<ImportCompanyScreen> {
             matchedHeader = headers.firstWhere(
                 (h) =>
                     h.toLowerCase().contains("parent") ||
+                    h.toLowerCase().contains("gl category") ||
                     h.toLowerCase().contains("subtype"),
                 orElse: () => "");
           } else if (fieldName == "Opening Balance") {
@@ -248,7 +252,7 @@ class _ImportCompanyScreenState extends State<ImportCompanyScreen> {
                 orElse: () => "");
           } else if (fieldName == "Debit or Credit") {
             matchedHeader = headers.firstWhere(
-                (h) => h.toLowerCase() == "debit_credit" || h.toLowerCase().contains("debit or credit") || h.toLowerCase() == "dc" || h.toLowerCase() == "dr/cr",
+                (h) => h.toLowerCase() == "debit_credit" || h.toLowerCase().contains("debit or credit") || h.toLowerCase().contains("credit/debit") || h.toLowerCase() == "dc" || h.toLowerCase() == "dr/cr",
                 orElse: () => "");
           } else if (fieldName == "Journal No (Tran ID)") {
             matchedHeader = headers.firstWhere(
@@ -260,19 +264,19 @@ class _ImportCompanyScreenState extends State<ImportCompanyScreen> {
                 orElse: () => "");
           } else if (fieldName == "Org Code") {
             matchedHeader = headers.firstWhere(
-                (h) => h.toLowerCase().contains("orgcode") || h.toLowerCase() == "org code",
+                (h) => h.toLowerCase().contains("orgcode") || h.toLowerCase() == "org code" || h.toLowerCase().contains("organization"),
                 orElse: () => "");
           } else if (fieldName == "Branch Code") {
             matchedHeader = headers.firstWhere(
-                (h) => h.toLowerCase().contains("brncd") || h.toLowerCase() == "branch code",
+                (h) => h.toLowerCase().contains("brncd") || h.toLowerCase() == "branch code" || h.toLowerCase().contains("branch"),
                 orElse: () => "");
           } else if (fieldName == "Created By (euser)") {
             matchedHeader = headers.firstWhere(
-                (h) => h.toLowerCase().contains("euser") || h.toLowerCase().contains("created by"),
+                (h) => h.toLowerCase().contains("euser") || h.toLowerCase().contains("created by") || h.toLowerCase().contains("enter user"),
                 orElse: () => "");
           } else if (fieldName == "Created Date (edate)") {
             matchedHeader = headers.firstWhere(
-                (h) => h.toLowerCase().contains("edate") || h.toLowerCase().contains("created date"),
+                (h) => h.toLowerCase().contains("edate") || h.toLowerCase().contains("created date") || h.toLowerCase().contains("enter date"),
                 orElse: () => "");
           }
         }
@@ -764,15 +768,15 @@ class _ImportCompanyScreenState extends State<ImportCompanyScreen> {
     if (_importType == 'coa') {
       fileName = "chart_of_accounts_template.csv";
       csvContent = "${_expectedHeaders.join(',')}\n"
-          "50,1,Cash on Hand,1001,Cash balance,Asset,Assets,INR,50000.00,Debit,admin,2026-06-04\n"
-          "50,1,HDFC Bank,1002,Bank account,Asset,Assets,INR,250000.00,Debit,admin,2026-06-04\n"
-          "50,1,Accounts Payable,2001,Accounts payable,Liability,Liabilities,INR,45000.00,Credit,admin,2026-06-04\n";
+          "55,1,Inventory Asset,116,Cash balance,Asset,Asset,INR,0.00,Credit,admin,04-06-2026\n"
+          "55,1,Credit Card,117,Bank account,Liability,Liability,INR,0.00,Debit,admin,04-06-2026\n";
     } else {
       fileName = "journal_entries_template.csv";
       csvContent = "${_expectedHeaders.join(',')}\n"
-          "50,1,2026-06-04,1,P,1001,Debit,0.00,50000.00,Opening Balance Cash,admin,2026-06-04\n"
-          "50,1,2026-06-04,1,P,1002,Debit,0.00,250000.00,Opening Balance HDFC,admin,2026-06-04\n"
-          "50,1,2026-06-04,1,P,2001,Credit,45000.00,0.00,Opening Balance AP,admin,2026-06-04\n";
+          "55,209,2026-06-04,1,P,111,Debit,0.00,50000.00,Opening Balance Cash,admin,2026-06-04\n"
+          "55,209,2026-06-04,1,P,110,Credit,50000.00,0.00,Opening Balance HDFC,admin,2026-06-04\n"
+          "55,209,2026-06-04,1,P,112,Credit,45000.00,0.00,Opening Balance AP,admin,2026-06-04\n"
+          "55,209,2026-06-04,1,P,113,Debit,0.00,45000.00,Opening Balance Capital,admin,2026-06-04\n";
     }
 
     final bytes = utf8.encode(csvContent);
