@@ -773,10 +773,10 @@ class _ImportCompanyScreenState extends State<ImportCompanyScreen> {
     } else {
       fileName = "journal_entries_template.csv";
       csvContent = "${_expectedHeaders.join(',')}\n"
-          "55,209,2026-06-04,1,P,111,Debit,0.00,50000.00,Opening Balance Cash,admin,2026-06-04\n"
-          "55,209,2026-06-04,1,P,110,Credit,50000.00,0.00,Opening Balance HDFC,admin,2026-06-04\n"
-          "55,209,2026-06-04,1,P,112,Credit,45000.00,0.00,Opening Balance AP,admin,2026-06-04\n"
-          "55,209,2026-06-04,1,P,113,Debit,0.00,45000.00,Opening Balance Capital,admin,2026-06-04\n";
+          "55,209,04-06-2026,1,P,111,Debit,0.00,50000.00,Opening Balance Cash,admin,2026-06-04\n"
+          "55,209,04-06-2026,1,P,110,Credit,50000.00,0.00,Opening Balance HDFC,admin,2026-06-04\n"
+          "55,209,04-06-2026,1,P,112,Credit,45000.00,0.00,Opening Balance AP,admin,2026-06-04\n"
+          "55,209,04-06-2026,1,P,113,Debit,0.00,45000.00,Opening Balance Capital,admin,2026-06-04\n";
     }
 
     final bytes = utf8.encode(csvContent);
