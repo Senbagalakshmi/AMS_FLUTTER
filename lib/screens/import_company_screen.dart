@@ -68,6 +68,8 @@ class _ImportCompanyScreenState extends State<ImportCompanyScreen> {
   List<Map<String, dynamic>> get _mappingFields {
     if (_importType == 'coa') {
       return [
+        {"name": "Org Code", "mandatory": false},
+        {"name": "Branch Code", "mandatory": false},
         {"name": "Account Name", "mandatory": true},
         {"name": "Account Code", "mandatory": false},
         {"name": "Description", "mandatory": false},
@@ -76,8 +78,6 @@ class _ImportCompanyScreenState extends State<ImportCompanyScreen> {
         {"name": "Currency", "mandatory": false},
         {"name": "Opening Balance", "mandatory": false},
         {"name": "Debit or Credit", "mandatory": false},
-        {"name": "Org Code", "mandatory": false},
-        {"name": "Branch Code", "mandatory": false},
         {"name": "Created By (euser)", "mandatory": false},
         {"name": "Created Date (edate)", "mandatory": false},
       ];
@@ -179,78 +179,102 @@ class _ImportCompanyScreenState extends State<ImportCompanyScreen> {
       _mappings = {};
       for (var field in _mappingFields) {
         String fieldName = field["name"];
-        String matchedHeader = "";
+        String matchedHeader = headers.firstWhere(
+            (h) =>
+                h.toLowerCase() == fieldName.toLowerCase() ||
+                h.toLowerCase().replaceAll(' ', '') == fieldName.toLowerCase().replaceAll(' ', ''),
+            orElse: () => "");
 
-        if (fieldName == "Account Name") {
-          matchedHeader = headers.firstWhere(
-              (h) =>
-                  h.toLowerCase().contains("glname") ||
-                  h.toLowerCase() == "name" ||
-                  h.toLowerCase().contains("companyname"),
-              orElse: () => "");
-        } else if (fieldName == "Account Code") {
-          matchedHeader = headers.firstWhere(
-              (h) => h.toLowerCase() == "glno" || h.toLowerCase() == "code" || h.toLowerCase().contains("accountcode"),
-              orElse: () => "");
-        } else if (fieldName == "Description" || fieldName == "Narration") {
-          matchedHeader = headers.firstWhere(
-              (h) =>
-                  h.toLowerCase().contains("description") ||
-                  h.toLowerCase().contains("desc") ||
-                  h.toLowerCase().contains("narration"),
-              orElse: () => "");
-        } else if (fieldName == "Account Type") {
-          matchedHeader = headers.firstWhere(
-              (h) =>
-                  h.toLowerCase().contains("glcattype") ||
-                  h.toLowerCase().contains("type"),
-              orElse: () => "");
-        } else if (fieldName == "Transaction Date") {
-          matchedHeader = headers.firstWhere(
-              (h) => h.toLowerCase().contains("date") || h.toLowerCase().contains("trandate"),
-              orElse: () => "");
-        } else if (fieldName == "Account #") {
-          matchedHeader = headers.firstWhere(
-              (h) =>
-                  h.toLowerCase() == "glno" ||
-                  h.toLowerCase().contains("number"),
-              orElse: () => "");
-        } else if (fieldName == "Currency") {
-          matchedHeader = headers.firstWhere(
-              (h) => h.toLowerCase() == "currency" || h.toLowerCase().contains("basecurr"),
-              orElse: () => "");
-        } else if (fieldName == "Parent Account") {
-          matchedHeader = headers.firstWhere(
-              (h) =>
-                  h.toLowerCase().contains("parent") ||
-                  h.toLowerCase().contains("subtype"),
-              orElse: () => "");
-        } else if (fieldName == "Opening Balance") {
-          matchedHeader = headers.firstWhere(
-              (h) =>
-                  h.toLowerCase().contains("balance") ||
-                  h.toLowerCase().contains("bal"),
-              orElse: () => "");
-        } else if (fieldName == "Debit" || fieldName == "Total Debit") {
-          matchedHeader = headers.firstWhere(
-              (h) => h.toLowerCase() == "debit" || h.toLowerCase() == "totaldebit" || h.toLowerCase().contains("total debit"),
-              orElse: () => "");
-        } else if (fieldName == "Credit" || fieldName == "Total Credit") {
-          matchedHeader = headers.firstWhere(
-              (h) => h.toLowerCase() == "credit" || h.toLowerCase() == "totalcredit" || h.toLowerCase().contains("total credit"),
-              orElse: () => "");
-        } else if (fieldName == "Debit or Credit") {
-          matchedHeader = headers.firstWhere(
-              (h) => h.toLowerCase() == "debit_credit" || h.toLowerCase().contains("debit or credit") || h.toLowerCase() == "dc" || h.toLowerCase() == "dr/cr",
-              orElse: () => "");
-        } else if (fieldName == "Journal No (Tran ID)") {
-          matchedHeader = headers.firstWhere(
-              (h) => h.toLowerCase().contains("journalno") || h.toLowerCase().contains("tranid") || h.toLowerCase().contains("journal no"),
-              orElse: () => "");
-        } else if (fieldName == "Transaction Status") {
-          matchedHeader = headers.firstWhere(
-              (h) => h.toLowerCase().contains("status") || h.toLowerCase().contains("transtatus"),
-              orElse: () => "");
+        if (matchedHeader.isEmpty) {
+          if (fieldName == "Account Name") {
+            matchedHeader = headers.firstWhere(
+                (h) =>
+                    h.toLowerCase().contains("glname") ||
+                    h.toLowerCase() == "name" ||
+                    h.toLowerCase().contains("companyname") ||
+                    h.toLowerCase().contains("accountname"),
+                orElse: () => "");
+          } else if (fieldName == "Account Code") {
+            matchedHeader = headers.firstWhere(
+                (h) => h.toLowerCase() == "glno" || h.toLowerCase() == "code" || h.toLowerCase().contains("accountcode"),
+                orElse: () => "");
+          } else if (fieldName == "Description" || fieldName == "Narration") {
+            matchedHeader = headers.firstWhere(
+                (h) =>
+                    h.toLowerCase().contains("description") ||
+                    h.toLowerCase().contains("desc") ||
+                    h.toLowerCase().contains("narration"),
+                orElse: () => "");
+          } else if (fieldName == "Account Type") {
+            matchedHeader = headers.firstWhere(
+                (h) =>
+                    h.toLowerCase().contains("glcattype") ||
+                    h.toLowerCase().contains("type"),
+                orElse: () => "");
+          } else if (fieldName == "Transaction Date") {
+            matchedHeader = headers.firstWhere(
+                (h) => h.toLowerCase().contains("date") || h.toLowerCase().contains("trandate"),
+                orElse: () => "");
+          } else if (fieldName == "Account #") {
+            matchedHeader = headers.firstWhere(
+                (h) =>
+                    h.toLowerCase() == "glno" ||
+                    h.toLowerCase().contains("number"),
+                orElse: () => "");
+          } else if (fieldName == "Currency") {
+            matchedHeader = headers.firstWhere(
+                (h) => h.toLowerCase() == "currency" || h.toLowerCase().contains("basecurr"),
+                orElse: () => "");
+          } else if (fieldName == "Parent Account") {
+            matchedHeader = headers.firstWhere(
+                (h) =>
+                    h.toLowerCase().contains("parent") ||
+                    h.toLowerCase().contains("subtype"),
+                orElse: () => "");
+          } else if (fieldName == "Opening Balance") {
+            matchedHeader = headers.firstWhere(
+                (h) =>
+                    h.toLowerCase().contains("balance") ||
+                    h.toLowerCase().contains("bal") ||
+                    h.toLowerCase().contains("openingbalance"),
+                orElse: () => "");
+          } else if (fieldName == "Debit" || fieldName == "Total Debit") {
+            matchedHeader = headers.firstWhere(
+                (h) => h.toLowerCase() == "debit" || h.toLowerCase() == "totaldebit" || h.toLowerCase().contains("total debit"),
+                orElse: () => "");
+          } else if (fieldName == "Credit" || fieldName == "Total Credit") {
+            matchedHeader = headers.firstWhere(
+                (h) => h.toLowerCase() == "credit" || h.toLowerCase() == "totalcredit" || h.toLowerCase().contains("total credit"),
+                orElse: () => "");
+          } else if (fieldName == "Debit or Credit") {
+            matchedHeader = headers.firstWhere(
+                (h) => h.toLowerCase() == "debit_credit" || h.toLowerCase().contains("debit or credit") || h.toLowerCase() == "dc" || h.toLowerCase() == "dr/cr",
+                orElse: () => "");
+          } else if (fieldName == "Journal No (Tran ID)") {
+            matchedHeader = headers.firstWhere(
+                (h) => h.toLowerCase().contains("journalno") || h.toLowerCase().contains("tranid") || h.toLowerCase().contains("journal no"),
+                orElse: () => "");
+          } else if (fieldName == "Transaction Status") {
+            matchedHeader = headers.firstWhere(
+                (h) => h.toLowerCase().contains("status") || h.toLowerCase().contains("transtatus"),
+                orElse: () => "");
+          } else if (fieldName == "Org Code") {
+            matchedHeader = headers.firstWhere(
+                (h) => h.toLowerCase().contains("orgcode") || h.toLowerCase() == "org code",
+                orElse: () => "");
+          } else if (fieldName == "Branch Code") {
+            matchedHeader = headers.firstWhere(
+                (h) => h.toLowerCase().contains("brncd") || h.toLowerCase() == "branch code",
+                orElse: () => "");
+          } else if (fieldName == "Created By (euser)") {
+            matchedHeader = headers.firstWhere(
+                (h) => h.toLowerCase().contains("euser") || h.toLowerCase().contains("created by"),
+                orElse: () => "");
+          } else if (fieldName == "Created Date (edate)") {
+            matchedHeader = headers.firstWhere(
+                (h) => h.toLowerCase().contains("edate") || h.toLowerCase().contains("created date"),
+                orElse: () => "");
+          }
         }
 
         _mappings[fieldName] = matchedHeader.isNotEmpty ? matchedHeader : null;
@@ -473,32 +497,64 @@ class _ImportCompanyScreenState extends State<ImportCompanyScreen> {
       String? accountCodeHeader = _mappings["Account Code"];
       String? accountNameHeader = _mappings["Account Name"];
       String? accountTypeHeader = _mappings["Account Type"];
-      int accountCodeIdx =
-          accountCodeHeader != null ? headers.indexOf(accountCodeHeader) : -1;
-      int accountNameIdx =
-          accountNameHeader != null ? headers.indexOf(accountNameHeader) : -1;
-      int accountTypeIdx =
-          accountTypeHeader != null ? headers.indexOf(accountTypeHeader) : -1;
+      String? orgCodeHeader = _mappings["Org Code"];
+      String? brnCodeHeader = _mappings["Branch Code"];
+      String? euserHeader = _mappings["Created By (euser)"];
+      String? edateHeader = _mappings["Created Date (edate)"];
+      String? currencyHeader = _mappings["Currency"];
+      String? tranIdHeader = _mappings["Journal No (Tran ID)"];
+
+      int accountCodeIdx = accountCodeHeader != null ? headers.indexOf(accountCodeHeader) : -1;
+      int accountNameIdx = accountNameHeader != null ? headers.indexOf(accountNameHeader) : -1;
+      int accountTypeIdx = accountTypeHeader != null ? headers.indexOf(accountTypeHeader) : -1;
+      int orgCodeIdx = orgCodeHeader != null ? headers.indexOf(orgCodeHeader) : -1;
+      int brnCodeIdx = brnCodeHeader != null ? headers.indexOf(brnCodeHeader) : -1;
+      int euserIdx = euserHeader != null ? headers.indexOf(euserHeader) : -1;
+      int edateIdx = edateHeader != null ? headers.indexOf(edateHeader) : -1;
+      int currencyIdx = currencyHeader != null ? headers.indexOf(currencyHeader) : -1;
+      int tranIdIdx = tranIdHeader != null ? headers.indexOf(tranIdHeader) : -1;
 
       // Validation indices for datatype checks
       String? balanceHeader = _mappings["Opening Balance"];
-      int balanceIdx =
-          balanceHeader != null ? headers.indexOf(balanceHeader) : -1;
+      int balanceIdx = balanceHeader != null ? headers.indexOf(balanceHeader) : -1;
 
       String? debitHeader = _mappings["Debit"] ?? _mappings["Total Debit"];
-      int debitIdx =
-          debitHeader != null ? headers.indexOf(debitHeader) : -1;
+      int debitIdx = debitHeader != null ? headers.indexOf(debitHeader) : -1;
 
       String? creditHeader = _mappings["Credit"] ?? _mappings["Total Credit"];
-      int creditIdx =
-          creditHeader != null ? headers.indexOf(creditHeader) : -1;
+      int creditIdx = creditHeader != null ? headers.indexOf(creditHeader) : -1;
 
       String? dateHeader = _mappings["Transaction Date"];
-      int dateIdx =
-          dateHeader != null ? headers.indexOf(dateHeader) : -1;
+      int dateIdx = dateHeader != null ? headers.indexOf(dateHeader) : -1;
 
       Set<String> seenAccountCodes = {};
       Set<String> seenAccountNames = {};
+
+      // Pre-calculate JRN totals to ensure Debits and Credits match per Transaction ID
+      Map<String, List<double>> jrnTotals = {};
+      if (_importType == 'journal') {
+        for (int i = 1; i < rows.length; i++) {
+          final row = rows[i];
+          if (row.isEmpty) continue;
+          
+          String tId = (tranIdIdx != -1 && tranIdIdx < row.length) ? row[tranIdIdx].trim() : "unknown";
+          
+          double dVal = 0.0;
+          if (debitIdx != -1 && debitIdx < row.length) {
+            final cleanVal = row[debitIdx].trim().replaceAll(RegExp(r'[^\d\.\-]'), '');
+            dVal = double.tryParse(cleanVal) ?? 0.0;
+          }
+          double cVal = 0.0;
+          if (creditIdx != -1 && creditIdx < row.length) {
+            final cleanVal = row[creditIdx].trim().replaceAll(RegExp(r'[^\d\.\-]'), '');
+            cVal = double.tryParse(cleanVal) ?? 0.0;
+          }
+          
+          if (!jrnTotals.containsKey(tId)) jrnTotals[tId] = [0.0, 0.0];
+          jrnTotals[tId]![0] += dVal;
+          jrnTotals[tId]![1] += cVal;
+        }
+      }
 
       for (int i = 1; i < rows.length; i++) {
         final row = rows[i];
@@ -507,38 +563,27 @@ class _ImportCompanyScreenState extends State<ImportCompanyScreen> {
         bool rowSkipped = false;
 
         // 1. Mandatory fields validation
-        if (_importType == 'coa') {
-          if (accountNameIdx != -1 && accountNameIdx < row.length) {
-            if (row[accountNameIdx].trim().isEmpty) {
-              skipped.add(SkippedRowInfo(
-                rowNo: i + 1,
-                columnName: accountNameHeader ?? "Account Name",
-                errorMessage: "Mandatory field 'Account Name' cannot be empty.",
-              ));
-              rowSkipped = true;
-            }
-          }
+        Map<String, int> mandatoryFieldsToCheck = {
+          "Account Code": accountCodeIdx,
+          "Org Code": orgCodeIdx,
+          "Branch Code": brnCodeIdx,
+          "Created By (euser)": euserIdx,
+          "Created Date (edate)": edateIdx,
+        };
 
-          if (!rowSkipped &&
-              accountTypeIdx != -1 &&
-              accountTypeIdx < row.length) {
-            if (row[accountTypeIdx].trim().isEmpty) {
+        if (_importType == 'coa') {
+          mandatoryFieldsToCheck["Account Name"] = accountNameIdx;
+          mandatoryFieldsToCheck["Account Type"] = accountTypeIdx;
+          mandatoryFieldsToCheck["Currency"] = currencyIdx;
+        }
+
+        for (var entry in mandatoryFieldsToCheck.entries) {
+          if (!rowSkipped && entry.value != -1 && entry.value < row.length) {
+            if (row[entry.value].trim().isEmpty) {
               skipped.add(SkippedRowInfo(
                 rowNo: i + 1,
-                columnName: accountTypeHeader ?? "Account Type",
-                errorMessage: "Mandatory field 'Account Type' cannot be empty.",
-              ));
-              rowSkipped = true;
-            }
-          }
-        } else {
-          // Journal import: Account Code is mandatory
-          if (accountCodeIdx != -1 && accountCodeIdx < row.length) {
-            if (row[accountCodeIdx].trim().isEmpty) {
-              skipped.add(SkippedRowInfo(
-                rowNo: i + 1,
-                columnName: accountCodeHeader ?? "Account Code",
-                errorMessage: "Mandatory field 'Account Code' cannot be empty.",
+                columnName: _mappings[entry.key] ?? entry.key,
+                errorMessage: "Mandatory field '${entry.key}' cannot be empty.",
               ));
               rowSkipped = true;
             }
@@ -547,20 +592,60 @@ class _ImportCompanyScreenState extends State<ImportCompanyScreen> {
 
         if (rowSkipped) continue;
 
+        // 1b. Debit/Credit Balance Check for Journal
+        if (_importType == 'journal') {
+            String tId = (tranIdIdx != -1 && tranIdIdx < row.length) ? row[tranIdIdx].trim() : "unknown";
+            if (jrnTotals.containsKey(tId)) {
+               double tDebit = jrnTotals[tId]![0];
+               double tCredit = jrnTotals[tId]![1];
+               if ((tDebit - tCredit).abs() > 0.01) {
+                   skipped.add(SkippedRowInfo(
+                       rowNo: i + 1,
+                       columnName: "Debit/Credit Balance",
+                       errorMessage: "Journal entry '$tId' is unbalanced. Total Debit: $tDebit, Total Credit: $tCredit",
+                   ));
+                   rowSkipped = true;
+               }
+            }
+        }
+
+        if (rowSkipped) continue;
+
         // 2. Data type validation (Dates and Numbers)
-        if (dateIdx != -1 && dateIdx < row.length) {
-          final val = row[dateIdx].trim();
-          if (val.isNotEmpty) {
-            final parsed = DateTime.tryParse(val);
-            // Relaxed check: if it can't parse via tryParse, maybe it's DD/MM/YYYY.
-            // We just ensure it has numbers and separators if tryParse fails.
-            if (parsed == null && !RegExp(r'\d{1,4}[-/\.]\d{1,2}[-/\.]\d{1,4}').hasMatch(val)) {
-              skipped.add(SkippedRowInfo(
-                rowNo: i + 1,
-                columnName: dateHeader ?? "Transaction Date",
-                errorMessage: "Transaction Date '$val' is not a valid date format.",
-              ));
-              rowSkipped = true;
+        List<Map<String, dynamic>> dateFieldsToCheck = [
+          {"idx": dateIdx, "name": dateHeader ?? "Transaction Date", "isEdate": false},
+          {"idx": edateIdx, "name": edateHeader ?? "Created Date (edate)", "isEdate": true},
+        ];
+
+        for (var dField in dateFieldsToCheck) {
+          int dIdx = dField["idx"];
+          bool isEdate = dField["isEdate"];
+          if (!rowSkipped && dIdx != -1 && dIdx < row.length) {
+            final val = row[dIdx].trim();
+            if (val.isNotEmpty) {
+              if (isEdate) {
+                // Strict check for DD-MM-YYYY format
+                if (!RegExp(r'^(0[1-9]|[12][0-9]|3[01])-(0[1-9]|1[012])-\d{4}$').hasMatch(val)) {
+                  skipped.add(SkippedRowInfo(
+                    rowNo: i + 1,
+                    columnName: dField["name"],
+                    errorMessage: "${dField["name"]} '$val' must be in DD-MM-YYYY format.",
+                  ));
+                  rowSkipped = true;
+                }
+              } else {
+                final parsed = DateTime.tryParse(val);
+                // Relaxed check: if it can't parse via tryParse, maybe it's DD/MM/YYYY.
+                // We just ensure it has numbers and separators if tryParse fails.
+                if (parsed == null && !RegExp(r'\d{1,4}[-/\.]\d{1,2}[-/\.]\d{1,4}').hasMatch(val)) {
+                  skipped.add(SkippedRowInfo(
+                    rowNo: i + 1,
+                    columnName: dField["name"],
+                    errorMessage: "${dField["name"]} '$val' is not a valid date format.",
+                  ));
+                  rowSkipped = true;
+                }
+              }
             }
           }
         }
