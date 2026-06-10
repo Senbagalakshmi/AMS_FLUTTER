@@ -28,8 +28,8 @@ class JournalEntryScreen extends StatefulWidget {
 class _JournalEntryScreenState extends State<JournalEntryScreen> {
   final _dateController = TextEditingController(text: _formatDate(DateTime.now()));
   final _journalNoController = TextEditingController(text: 'Auto Generated');
-  final _orgCodeController = TextEditingController(text: '50');
-  final _branchCodeController = TextEditingController(text: '1001');
+  final _orgCodeController = TextEditingController();
+  final _branchCodeController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _currencyController = TextEditingController(text: 'INR - Indian Rupee');
   final _referenceController = TextEditingController();
@@ -44,17 +44,25 @@ class _JournalEntryScreenState extends State<JournalEntryScreen> {
   final JournalApiService _journalApiService = JournalApiService();
 
   List<Map<String, dynamic>> _accounts = [];
-  List<String> _accountOptions = [];
   bool _isLoadingAccounts = true;
+
+  List<String> get _accountOptions {
+    if (_selectedOrgCode == null) return [];
+    final selOrg = _selectedOrgCode.toString().trim();
+    return _accounts.where((e) {
+      final accOrg = (e['orgCode'] ?? e['orgcode'] ?? e['ORGCODE'] ?? e['org_code'] ?? '').toString().trim();
+      return e['glNo'] != null && accOrg == selOrg;
+    }).map((e) => "${e['glNo']} - ${e['glName'] ?? ''}").toList();
+  }
 
   List<Map<String, dynamic>> _orgList = [];
   bool _isLoadingOrgs = false;
-  int? _selectedOrgCode = 50;
+  int? _selectedOrgCode;
   final _orgSearchCtrl = TextEditingController();
 
   List<Map<String, dynamic>> _branchList = [];
   bool _isLoadingBranches = false;
-  int? _selectedBranchCode = 1001;
+  int? _selectedBranchCode;
 
   List<Map<String, dynamic>> get _filteredBranches {
     if (_selectedOrgCode == null) return _branchList;
@@ -109,10 +117,7 @@ class _JournalEntryScreenState extends State<JournalEntryScreen> {
       if (mounted) {
         setState(() {
           _accounts = list ?? [];
-          _accountOptions = _accounts
-              .where((e) => e['glNo'] != null)
-              .map((e) => "${e['glNo']} - ${e['glName'] ?? ''}")
-              .toList();
+          _isLoadingAccounts = false;
           _isLoadingAccounts = false;
         });
       }
@@ -120,7 +125,6 @@ class _JournalEntryScreenState extends State<JournalEntryScreen> {
       if (mounted) {
         setState(() {
           _isLoadingAccounts = false;
-          _accountOptions = [];
         });
       }
     }

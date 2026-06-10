@@ -7,6 +7,7 @@ import '../services/org_api_service.dart';
 import '../services/api_service.dart';
 import '../utils/responsive.dart';
 import 'package:flutter/services.dart';
+import '../services/branch_api_service.dart';
 
 class AllowedBranchScreen extends StatefulWidget {
   final VoidCallback onBack;
@@ -53,13 +54,22 @@ class _AllowedBranchScreenState extends State<AllowedBranchScreen> {
   Map<String, dynamic>? _selectedGlMaster;
 
   /// Branch List
-  List<Map<String, dynamic>> branches = [
-    {"code": "HO", "name": "Head Office", "enabled": true},
-    {"code": "BLR", "name": "Bangalore", "enabled": true},
-    {"code": "MUM", "name": "Mumbai", "enabled": true},
-    {"code": "CHN", "name": "Chennai", "enabled": false},
-    {"code": "DEL", "name": "Delhi", "enabled": false},
-  ];
+  List<Map<String, dynamic>> _apiBranches = [];
+  bool _loadingBranches = false;
+
+  Future<void> _loadBranches() async {
+    setState(() => _loadingBranches = true);
+    final result = await branchApiService.getBranches(page: 0, size: 200);
+    if (mounted) {
+      setState(() {
+        _loadingBranches = false;
+        _apiBranches = result?.items?.map((e) => {
+          ...e,
+          "enabled": false, // local state for toggles
+        }).toList() ?? [];
+      });
+    }
+  }
 
   Future<void> _loadGlMasters() async {
     setState(() => _loadingGlMasters = true);
@@ -122,6 +132,7 @@ class _AllowedBranchScreenState extends State<AllowedBranchScreen> {
   Future<void> initData() async {
     await _loadOrganisations();
     await _loadGlMasters();
+    await _loadBranches();
     await loadSavedBranches();
   }
 
@@ -537,7 +548,7 @@ Widget _buildListView() {
                               orgCodeController.clear();
                               _selectedOrgCode = null;
                               _orgError = null;
-                              for (var b in branches) {
+                              for (var b in _apiBranches) {
                                 b["enabled"] = false;
                               }
                               _editingRecord = {};
@@ -589,7 +600,7 @@ Widget _buildListView() {
                       orgCodeController.clear();
                       _selectedOrgCode = null;
                       _orgError = null;
-                      for (var b in branches) {
+                      for (var b in _apiBranches) {
                         b["enabled"] = false;
                       }
                       _editingRecord = {};
@@ -700,8 +711,9 @@ Widget _buildListView() {
                                           }
                                           _refreshOrgDisplay(item["orgCode"]?.toString() ?? "");
                                           final savedBranches = item["branches"] as List;
-                                          for (var b in branches) {
-                                            b["enabled"] = savedBranches.contains(b["name"]);
+                                          for (var b in _apiBranches) {
+                                            final bName = b["brnName"] ?? b["branchname"] ?? "";
+                                            b["enabled"] = savedBranches.contains(bName);
                                           }
                                         });
                                       },
@@ -724,8 +736,9 @@ Widget _buildListView() {
                                           }
                                           _refreshOrgDisplay(item["orgCode"]?.toString() ?? "");
                                           final savedBranches = item["branches"] as List;
-                                          for (var b in branches) {
-                                            b["enabled"] = savedBranches.contains(b["name"]);
+                                          for (var b in _apiBranches) {
+                                            final bName = b["brnName"] ?? b["branchname"] ?? "";
+                                            b["enabled"] = savedBranches.contains(bName);
                                           }
                                           _editingRecord = Map<String, dynamic>.from(item);
                                         });
@@ -870,8 +883,9 @@ Widget _buildListView() {
                                         }
                                         _refreshOrgDisplay(item["orgCode"]?.toString() ?? "");
                                         final savedBranches = item["branches"] as List;
-                                        for (var b in branches) {
-                                          b["enabled"] = savedBranches.contains(b["name"]);
+                                        for (var b in _apiBranches) {
+                                          final bName = b["brnName"] ?? b["branchname"] ?? "";
+                                          b["enabled"] = savedBranches.contains(bName);
                                         }
                                       });
                                     },
@@ -894,8 +908,9 @@ Widget _buildListView() {
                                         }
                                         _refreshOrgDisplay(item["orgCode"]?.toString() ?? "");
                                         final savedBranches = item["branches"] as List;
-                                        for (var b in branches) {
-                                          b["enabled"] = savedBranches.contains(b["name"]);
+                                        for (var b in _apiBranches) {
+                                          final bName = b["brnName"] ?? b["branchname"] ?? "";
+                                          b["enabled"] = savedBranches.contains(bName);
                                         }
                                         _editingRecord = Map<String, dynamic>.from(item);
                                       });
@@ -1038,9 +1053,9 @@ Widget _buildListView() {
               backgroundColor: AppColors.sidebar,
               onPressed: () async {
 
-                final selectedBranches = branches
+                final selectedBranches = _apiBranches
                 .where((b) => b["enabled"] == true)
-                .map((b) => b["name"])
+                .map((b) => b["brnName"] ?? b["branchname"] ?? "")
                 .toList();
 
                 if (orgCodeController.text.trim().isEmpty) {
@@ -1160,7 +1175,7 @@ Widget _buildListView() {
                   _orgError = null;
                   orgCodeController.clear();
                   _selectedOrgCode = null;
-                  for (var b in branches) {
+                  for (var b in _apiBranches) {
                     b["enabled"] = false;
                   }
                   _editingRecord = {};
@@ -1290,99 +1305,115 @@ Widget _buildListView() {
         const SizedBox(height: 20),
 
         /// Branch List
-        ...branches.map((branch) {
-          final isEnabled = branch["enabled"] == true;
-          return AnimatedContainer(
-            duration: const Duration(milliseconds: 300),
-            margin: const EdgeInsets.only(bottom: 12),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color:
-                  isEnabled ? AppColors.tBlue.withValues(alpha: 0.05) : Colors.white,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(
-                color: isEnabled
-                    ? AppColors.tBlue.withValues(alpha: 0.3)
-                    : AppColors.border,
-                width: 1,
-              ),
-              boxShadow: isEnabled
-                  ? [
-                      BoxShadow(
-                        color: AppColors.tBlue.withValues(alpha: 0.1),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      )
-                    ]
-                  : [],
+        if (_loadingBranches)
+          const Center(
+            child: Padding(
+              padding: EdgeInsets.all(20),
+              child: CircularProgressIndicator(),
             ),
-            child: Stack(
-              children: [
-                // Unique Left Accent Bar
-                if (isEnabled)
-                  Positioned(
-                    left: 0,
-                    top: 0,
-                    bottom: 0,
-                    child: Container(
-                      width: 4,
-                      decoration: BoxDecoration(
-                        color: AppColors.tBlue,
-                        borderRadius: BorderRadius.circular(2),
+          )
+        else if (_apiBranches.isEmpty)
+          const Padding(
+            padding: EdgeInsets.all(20),
+            child: Text("No Branches Found. Please add branches first.", style: TextStyle(color: AppColors.ink3)),
+          )
+        else
+          ..._apiBranches.map((branch) {
+            final isEnabled = branch["enabled"] == true;
+            final code = (branch["brnCd"] ?? branch["branchcd"] ?? "").toString();
+            final name = (branch["brnName"] ?? branch["branchname"] ?? "").toString();
+
+            return AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color:
+                    isEnabled ? AppColors.tBlue.withValues(alpha: 0.05) : Colors.white,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: isEnabled
+                      ? AppColors.tBlue.withValues(alpha: 0.3)
+                      : AppColors.border,
+                  width: 1,
+                ),
+                boxShadow: isEnabled
+                    ? [
+                        BoxShadow(
+                          color: AppColors.tBlue.withValues(alpha: 0.1),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        )
+                      ]
+                    : [],
+              ),
+              child: Stack(
+                children: [
+                  // Unique Left Accent Bar
+                  if (isEnabled)
+                    Positioned(
+                      left: 0,
+                      top: 0,
+                      bottom: 0,
+                      child: Container(
+                        width: 4,
+                        decoration: BoxDecoration(
+                          color: AppColors.tBlue,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
                       ),
                     ),
+                  Padding(
+                    padding: EdgeInsets.only(left: isEnabled ? 12 : 0),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: isEnabled ? AppColors.tBlueLt : AppColors.bg,
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(
+                              color: isEnabled
+                                  ? AppColors.tBlue.withValues(alpha: 0.2)
+                                  : AppColors.border,
+                            ),
+                          ),
+                          child: Text(
+                            code.isEmpty ? "-" : code,
+                            style: bodyStyle(
+                              size: 11,
+                              weight: FontWeight.w800,
+                              color: isEnabled ? AppColors.tBlue : AppColors.ink2,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 20),
+                        Expanded(
+                          child: Text(
+                            name,
+                            style: bodyStyle(
+                              color: isEnabled ? AppColors.ink : AppColors.ink3,
+                              weight:
+                                  isEnabled ? FontWeight.w600 : FontWeight.normal,
+                            ),
+                          ),
+                        ),
+                        _PremiumToggle(
+                          value: branch["enabled"] == true,
+                          onChanged: (v) {
+                            setState(() {
+                              branch["enabled"] = v;
+                            });
+                          },
+                        ),
+                      ],
+                    ),
                   ),
-                Padding(
-                  padding: EdgeInsets.only(left: isEnabled ? 12 : 0),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: isEnabled ? AppColors.tBlueLt : AppColors.bg,
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(
-                            color: isEnabled
-                                ? AppColors.tBlue.withValues(alpha: 0.2)
-                                : AppColors.border,
-                          ),
-                        ),
-                        child: Text(
-                          branch["code"],
-                          style: bodyStyle(
-                            size: 11,
-                            weight: FontWeight.w800,
-                            color: isEnabled ? AppColors.tBlue : AppColors.ink2,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 20),
-                      Expanded(
-                        child: Text(
-                          branch["name"],
-                          style: bodyStyle(
-                            color: isEnabled ? AppColors.ink : AppColors.ink3,
-                            weight:
-                                isEnabled ? FontWeight.w600 : FontWeight.normal,
-                          ),
-                        ),
-                      ),
-                      _PremiumToggle(
-                        value: branch["enabled"],
-                        onChanged: (v) {
-                          setState(() {
-                            branch["enabled"] = v;
-                          });
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          );
-        }),
+                ],
+              ),
+            );
+          }),
         const SizedBox(height: 20),
       ],
     );
