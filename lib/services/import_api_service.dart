@@ -191,10 +191,8 @@ class ImportApiService {
     Uint8List bytes,
     String filename,
     String eUser,
-    Map<String, String?> mappings, {
-    String? tranDate,
-    String? notes,
-  }) async {
+    Map<String, String?> mappings,
+  ) async {
     try {
       final csvString = utf8.decode(bytes);
       final rows = _parseCSV(csvString);
@@ -225,10 +223,6 @@ class ImportApiService {
       final euserIdx      = idx(mappings['Created By (euser)']);
       final edateIdx      = idx(mappings['Created Date (edate)']);
 
-      final defaultDate = (tranDate != null && tranDate.isNotEmpty)
-          ? tranDate
-          : DateTime.now().toIso8601String().split('T').first;
-      final defaultNotes = (notes != null && notes.isNotEmpty) ? notes : 'Journal Entry import';
       final cleanUser = eUser.contains('@') ? eUser.split('@').first : eUser;
       final now = DateTime.now().toUtc();
       final nowIso = '${now.toIso8601String().split('.').first}.000+00:00';
@@ -256,15 +250,15 @@ class ImportApiService {
 
         final rowOrgCode = cell(orgIdx).isNotEmpty ? cell(orgIdx) : orgCode.toString();
         final rowBranch = cell(branchIdx).isNotEmpty ? cell(branchIdx) : '1';
-        final rowDate = cell(dateIdx).isNotEmpty ? cell(dateIdx) : defaultDate;
+        final rowDate = cell(dateIdx);
         final rowTranId = cell(tranIdIdx).isNotEmpty ? cell(tranIdIdx) : '0';
         final rowStatus = cell(statusIdx).isNotEmpty ? cell(statusIdx) : 'P';
         final rowDc = cell(dcIdx).isNotEmpty ? cell(dcIdx) : 'Debit';
         final rowTotCredit = cell(totCreditIdx).isNotEmpty ? cell(totCreditIdx) : '0.00';
         final rowTotDebit = cell(totDebitIdx).isNotEmpty ? cell(totDebitIdx) : '0.00';
-        final rowNarration = cell(narrationIdx).isNotEmpty ? cell(narrationIdx) : defaultNotes;
+        final rowNarration = cell(narrationIdx); // taken strictly from file
         final rowEuser = cell(euserIdx).isNotEmpty ? cell(euserIdx) : cleanUser;
-        final rowEdate = cell(edateIdx).isNotEmpty ? cell(edateIdx) : nowIso;
+        final rowEdate = cell(edateIdx); // taken strictly from file (DD-MM-YYYY)
 
         final line = [
           _escapeCsvValue(rowOrgCode),
@@ -296,8 +290,6 @@ class ImportApiService {
       final uri = Uri.parse('${ApiService.baseUrl}/imports/journal').replace(
         queryParameters: {
           'eUser': cleanUser,
-          if (defaultDate.isNotEmpty) 'tranDate': defaultDate,
-          if (defaultNotes.isNotEmpty) 'notes': defaultNotes,
         },
       );
 

@@ -53,17 +53,7 @@ class _ImportCompanyScreenState extends State<ImportCompanyScreen> {
   // Import type selection
   String _importType = 'coa'; // 'coa' or 'journal'
 
-  // Journal details input fields
-  DateTime _tranDate = DateTime.now();
-  final TextEditingController _notesController = TextEditingController(text: 'Opening balances import');
-  final TextEditingController _refNoController = TextEditingController();
-
-  @override
-  void dispose() {
-    _notesController.dispose();
-    _refNoController.dispose();
-    super.dispose();
-  }
+  // Removed fallback input fields as requested
 
   List<Map<String, dynamic>> get _mappingFields {
     if (_importType == 'coa') {
@@ -152,9 +142,6 @@ class _ImportCompanyScreenState extends State<ImportCompanyScreen> {
       _openDropdownField = null;
       _saveSelections = false;
       _characterEncoding = 'UTF-8 (Unicode)';
-      _tranDate = DateTime.now();
-      _notesController.text = 'Opening balances import';
-      _refNoController.clear();
       _importType = 'coa';
     });
   }
@@ -205,6 +192,9 @@ class _ImportCompanyScreenState extends State<ImportCompanyScreen> {
                     h.toLowerCase().contains("description") ||
                     h.toLowerCase().contains("desc") ||
                     h.toLowerCase().contains("narration") ||
+                    h.toLowerCase().contains("narr") ||
+                    h.toLowerCase().contains("notes") ||
+                    h.toLowerCase().contains("note") ||
                     h.toLowerCase().contains("remarks"),
                 orElse: () => "");
           } else if (fieldName == "Account Type") {
@@ -961,14 +951,11 @@ class _ImportCompanyScreenState extends State<ImportCompanyScreen> {
         _mappings,
       );
     } else {
-      final formattedDate = "${_tranDate.year}-${_tranDate.month.toString().padLeft(2, '0')}-${_tranDate.day.toString().padLeft(2, '0')}";
       result = await importApiService.importJournalData(
         _fileBytes!,
         _fileName!,
         eUser,
         _mappings,
-        tranDate: formattedDate,
-        notes: _notesController.text,
       );
     }
 
@@ -2908,7 +2895,255 @@ class _ImportCompanyScreenState extends State<ImportCompanyScreen> {
     );
   }
 
+  /// Info card shown on the right panel when Journal Entries is selected
+  Widget _buildJournalInfoCard() {
+    final columns = [
+      {"col": "orgcode",        "desc": "Organisation Code",       "example": "55",             "req": true},
+      {"col": "brncd",          "desc": "Branch Code",             "example": "209",            "req": true},
+      {"col": "trandate",       "desc": "Transaction Date",        "example": "04-06-2026",     "req": true},
+      {"col": "tranid",         "desc": "Journal / Tran ID",       "example": "5",              "req": true},
+      {"col": "transtatus",     "desc": "Status (P / A)",          "example": "P",              "req": false},
+      {"col": "accountcode",    "desc": "GL Account Code",         "example": "116",            "req": true},
+      {"col": "debit_credit",   "desc": "Debit or Credit",         "example": "Debit",          "req": true},
+      {"col": "totalcredit",    "desc": "Total Credit Amount",     "example": "0.00",           "req": true},
+      {"col": "totaldebit",     "desc": "Total Debit Amount",      "example": "50.00",          "req": true},
+      {"col": "narration",      "desc": "Description / Notes",     "example": "Opening Balance","req": false},
+      {"col": "euser",          "desc": "Created By (username)",   "example": "admin",          "req": true},
+      {"col": "edate",          "desc": "Created Date",            "example": "05-05-2026",     "req": true},
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // ── Header ──────────────────────────────────────────────────────────
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEFF6FF),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(Icons.info_outline_rounded,
+                  color: Color(0xFF2563EB), size: 18),
+            ),
+            const SizedBox(width: 10),
+            const Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text("Journal CSV Format Guide",
+                    style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1E293B))),
+                Text("Required columns and format rules",
+                    style: TextStyle(
+                        fontSize: 12, color: Color(0xFF64748B))),
+              ],
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
+
+        // ── Sample CSV preview ───────────────────────────────────────────────
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: const Color(0xFF0F172A),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.terminal_rounded,
+                      color: Color(0xFF94A3B8), size: 14),
+                  const SizedBox(width: 6),
+                  const Text("Sample CSV",
+                      style: TextStyle(
+                          fontSize: 11,
+                          color: Color(0xFF94A3B8),
+                          fontFamily: 'monospace')),
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1E293B),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: const Text("DD-MM-YYYY",
+                        style: TextStyle(
+                            fontSize: 10,
+                            color: Color(0xFF38BDF8),
+                            fontFamily: 'monospace')),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                "orgcode,brncd,trandate,tranid,transtatus,\n"
+                "accountcode,debit_credit,totalcredit,\n"
+                "totaldebit,narration,euser,edate\n\n"
+                "55,209,04-06-2026,5,P,116,Debit,\n"
+                "0.00,50.00,Opening Balance,admin,05-05-2026\n\n"
+                "55,209,04-06-2026,5,P,117,Credit,\n"
+                "50.00,0.00,Opening Balance,admin,05-05-2026",
+                style: TextStyle(
+                    fontSize: 11,
+                    color: Color(0xFF4ADE80),
+                    fontFamily: 'monospace',
+                    height: 1.6),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 14),
+
+        // ── Column reference table ────────────────────────────────────────────
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Column(
+            children: [
+              // Table header
+              Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 12, vertical: 8),
+                decoration: const BoxDecoration(
+                  color: Color(0xFFF1F5F9),
+                  borderRadius:
+                      BorderRadius.vertical(top: Radius.circular(10)),
+                ),
+                child: const Row(
+                  children: [
+                    Expanded(
+                        flex: 3,
+                        child: Text("Column",
+                            style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF475569)))),
+                    Expanded(
+                        flex: 4,
+                        child: Text("Description",
+                            style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF475569)))),
+                    Expanded(
+                        flex: 3,
+                        child: Text("Example",
+                            style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF475569)))),
+                    SizedBox(
+                        width: 38,
+                        child: Text("Req",
+                            style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF475569)))),
+                  ],
+                ),
+              ),
+              // Table rows
+              ...columns.asMap().entries.map((entry) {
+                final isEven = entry.key.isEven;
+                final c = entry.value;
+                return Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 7),
+                  color: isEven
+                      ? Colors.white
+                      : const Color(0xFFF8FAFC),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        flex: 3,
+                        child: Text(c["col"] as String,
+                            style: const TextStyle(
+                                fontSize: 11,
+                                fontFamily: 'monospace',
+                                color: Color(0xFF0F172A),
+                                fontWeight: FontWeight.w600)),
+                      ),
+                      Expanded(
+                        flex: 4,
+                        child: Text(c["desc"] as String,
+                            style: const TextStyle(
+                                fontSize: 11,
+                                color: Color(0xFF475569))),
+                      ),
+                      Expanded(
+                        flex: 3,
+                        child: Text(c["example"] as String,
+                            style: const TextStyle(
+                                fontSize: 11,
+                                fontFamily: 'monospace',
+                                color: Color(0xFF7C3AED))),
+                      ),
+                      SizedBox(
+                        width: 38,
+                        child: (c["req"] as bool)
+                            ? const Icon(
+                                Icons.check_circle_rounded,
+                                size: 14,
+                                color: Color(0xFF16A34A))
+                            : const Icon(
+                                Icons.remove_rounded,
+                                size: 14,
+                                color: Color(0xFFCBD5E1)),
+                      ),
+                    ],
+                  ),
+                );
+              }),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        // ── Balance rule banner ───────────────────────────────────────────────
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFFFBEB),
+            border: Border.all(color: const Color(0xFFFDE68A)),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: const Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.balance_rounded,
+                  size: 16, color: Color(0xFFD97706)),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  "For each Journal No (tranid), the Total Debit must equal Total Credit. "
+                  "Unbalanced entries will be skipped automatically.\n"
+                  "Date format must be DD-MM-YYYY for both trandate and edate.",
+                  style: TextStyle(
+                      fontSize: 11.5,
+                      color: Color(0xFF92400E),
+                      height: 1.5),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildDuplicateHandlingSelector() {
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -3222,158 +3457,6 @@ class _ImportCompanyScreenState extends State<ImportCompanyScreen> {
             : Row(
                 children: children,
               ),
-      ],
-    );
-  }
-
-  Widget _buildJournalDetailsCard() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          "Journal Entry Details",
-          style: TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF1E293B),
-          ),
-        ),
-        const SizedBox(height: 4),
-        const Text(
-          "Specify the fallback details for the journal entries if columns are missing from the file.",
-          style: TextStyle(
-            fontSize: 13,
-            color: Color(0xFF64748B),
-          ),
-        ),
-        const SizedBox(height: 16),
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            border: Border.all(color: const Color(0xFFE2E8F0)),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Transaction Date field
-              const Text(
-                "Transaction Date *",
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13.5,
-                  color: Color(0xFF334155),
-                ),
-              ),
-              const SizedBox(height: 8),
-              InkWell(
-                onTap: () async {
-                  final picked = await showDatePicker(
-                    context: context,
-                    initialDate: _tranDate,
-                    firstDate: DateTime(2000),
-                    lastDate: DateTime(2100),
-                  );
-                  if (picked != null) {
-                    setState(() {
-                      _tranDate = picked;
-                    });
-                  }
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFC),
-                    border: Border.all(color: const Color(0xFFE2E8F0)),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        "${_tranDate.year}-${_tranDate.month.toString().padLeft(2, '0')}-${_tranDate.day.toString().padLeft(2, '0')}",
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF0F172A),
-                        ),
-                      ),
-                      const Icon(
-                        Icons.calendar_today_rounded,
-                        size: 18,
-                        color: Color(0xFF64748B),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Reference Number field
-              const Text(
-                "Reference Number",
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13.5,
-                  color: Color(0xFF334155),
-                ),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: _refNoController,
-                decoration: InputDecoration(
-                  hintText: "e.g., REF-001",
-                  hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13.5),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  filled: true,
-                  fillColor: const Color(0xFFF8FAFC),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: const Color(0xFFE2E8F0) == Colors.transparent ? BorderSide.none : const BorderSide(color: Color(0xFFE2E8F0)),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: Color(0xFF3B82F6), width: 1.5),
-                  ),
-                ),
-                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
-              ),
-              const SizedBox(height: 16),
-
-              // Description / Notes field
-              const Text(
-                "Description / Notes",
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13.5,
-                  color: Color(0xFF334155),
-                ),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: _notesController,
-                maxLines: 3,
-                decoration: InputDecoration(
-                  hintText: "Enter description here...",
-                  hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13.5),
-                  contentPadding: const EdgeInsets.all(16),
-                  filled: true,
-                  fillColor: const Color(0xFFF8FAFC),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: const Color(0xFFE2E8F0) == Colors.transparent ? BorderSide.none : const BorderSide(color: Color(0xFFE2E8F0)),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: Color(0xFF3B82F6), width: 1.5),
-                  ),
-                ),
-                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
-              ),
-            ],
-          ),
-        ),
       ],
     );
   }
@@ -4345,7 +4428,7 @@ class _ImportCompanyScreenState extends State<ImportCompanyScreen> {
                                     flex: 1,
                                     child: _importType == 'coa'
                                         ? _buildDuplicateHandlingSelector()
-                                        : _buildJournalDetailsCard(),
+                                        : _buildJournalInfoCard(),
                                   ),
                                 ],
                               )
@@ -4445,9 +4528,8 @@ class _ImportCompanyScreenState extends State<ImportCompanyScreen> {
                                     ),
                                   ],
                                   const SizedBox(height: 28),
-                                  _importType == 'coa'
-                                      ? _buildDuplicateHandlingSelector()
-                                      : _buildJournalDetailsCard(),
+                                  if (_importType == 'coa') _buildDuplicateHandlingSelector()
+                                  else _buildJournalInfoCard(),
                                   if (hasError) ...[
                                     const SizedBox(height: 20),
                                     _buildErrorBanner(_validationError!),
