@@ -366,14 +366,19 @@ Future<void> _exportExcel() async {
                 ],
               ),
               const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: AmsButton(
-                  label: 'New Journal',
-                  onPressed: widget.onNew,
-                  icon: Icons.add,
-                  variant: AmsButtonVariant.primary,
-                ),
+              Row(
+                children: [
+                  Expanded(
+                    child: AmsButton(
+                      label: 'New Journal',
+                      onPressed: widget.onNew,
+                      icon: Icons.add,
+                      variant: AmsButtonVariant.primary,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  _buildImportExportMenu(),
+                ],
               ),
             ],
           );

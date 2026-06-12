@@ -1624,6 +1624,7 @@ class _ImportCompanyScreenState extends State<ImportCompanyScreen> {
   }
 
   Widget _buildStepSegment(int stepNum, String title, IconData icon) {
+    final isMobile = Responsive.isMobile(context);
     bool isCompleted = _currentStep > stepNum;
     bool isActive = _currentStep == stepNum;
 
@@ -1643,7 +1644,8 @@ class _ImportCompanyScreenState extends State<ImportCompanyScreen> {
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
-      padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
+      padding: EdgeInsets.symmetric(
+          vertical: 18, horizontal: isMobile ? 8 : 16),
       decoration: BoxDecoration(
         color: bgColor,
         border: isActive
@@ -1655,23 +1657,26 @@ class _ImportCompanyScreenState extends State<ImportCompanyScreen> {
               )
             : null,
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
+      child: Wrap(
+        alignment: WrapAlignment.center,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: 6,
+        runSpacing: 4,
         children: [
           Icon(
             isCompleted ? Icons.check_circle_rounded : icon,
             color: iconColor,
-            size: 20,
+            size: isMobile ? 16 : 20,
           ),
-          const SizedBox(width: 10),
           Text(
             title,
+            textAlign: TextAlign.center,
             style: TextStyle(
               color: textColor,
               fontWeight: isActive
                   ? FontWeight.w800
                   : (isCompleted ? FontWeight.bold : FontWeight.w600),
-              fontSize: 14.5,
+              fontSize: isMobile ? 12 : 14.5,
               letterSpacing: -0.2,
             ),
           ),
@@ -2533,12 +2538,16 @@ class _ImportCompanyScreenState extends State<ImportCompanyScreen> {
         const SizedBox(height: 24),
 
         // Action Buttons Footer Row persistent at the bottom
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        Wrap(
+          alignment: WrapAlignment.spaceBetween,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 12,
+          runSpacing: 12,
           children: [
             // Left: Previous and Import
-            Row(
-              mainAxisSize: MainAxisSize.min,
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
               children: [
                 OutlinedButton(
                   onPressed: () => setState(() {
@@ -3598,8 +3607,11 @@ class _ImportCompanyScreenState extends State<ImportCompanyScreen> {
                       const Divider(color: Color(0xFFF1F5F9), height: 1),
                       const SizedBox(height: 16),
                       // Actions Row
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      Wrap(
+                        alignment: WrapAlignment.spaceBetween,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        spacing: 8,
+                        runSpacing: 8,
                         children: [
                           // Replace File button
                           OutlinedButton.icon(
@@ -3706,12 +3718,16 @@ class _ImportCompanyScreenState extends State<ImportCompanyScreen> {
                 ),
               ),
               const SizedBox(height: 6),
-              const Text(
-                "Accepting text files, spreadsheets, and database formats",
-                style: TextStyle(
-                    fontSize: 13,
-                    color: Color(0xFF64748B),
-                    fontWeight: FontWeight.w500),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 24),
+                child: Text(
+                  "Accepting text files, spreadsheets, and database formats",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                      fontSize: 13,
+                      color: Color(0xFF64748B),
+                      fontWeight: FontWeight.w500),
+                ),
               ),
             ],
           ),
@@ -3901,7 +3917,10 @@ class _ImportCompanyScreenState extends State<ImportCompanyScreen> {
         _buildStepper(),
 
         // 1. Heading "Map Fields" with file chip tag
-        Row(
+        Wrap(
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 12,
+          runSpacing: 12,
           children: [
             const Text(
               "Map Fields",
@@ -3911,8 +3930,8 @@ class _ImportCompanyScreenState extends State<ImportCompanyScreen> {
                 color: Color(0xFF0F172A),
               ),
             ),
-            const SizedBox(width: 12),
             Container(
+              constraints: const BoxConstraints(maxWidth: 240),
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
                 color: const Color(0xFFF1F5F9),
@@ -3925,12 +3944,15 @@ class _ImportCompanyScreenState extends State<ImportCompanyScreen> {
                   const Icon(Icons.insert_drive_file_outlined,
                       size: 14, color: Color(0xFF64748B)),
                   const SizedBox(width: 6),
-                  Text(
-                    _fileName ?? "",
-                    style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF475569)),
+                  Flexible(
+                    child: Text(
+                      _fileName ?? "",
+                      style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF475569)),
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 ],
               ),
@@ -4038,12 +4060,16 @@ class _ImportCompanyScreenState extends State<ImportCompanyScreen> {
         ],
 
         // 5. Action Buttons Footer persistent at the bottom
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        Wrap(
+          alignment: WrapAlignment.spaceBetween,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 12,
+          runSpacing: 12,
           children: [
             // Left Group: Previous and Next
-            Row(
-              mainAxisSize: MainAxisSize.min,
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
               children: [
                 OutlinedButton(
                   onPressed: () => setState(() {
@@ -4175,15 +4201,17 @@ class _ImportCompanyScreenState extends State<ImportCompanyScreen> {
                       size: 20, color: Color(0xFF334155)),
                 ),
                 const SizedBox(width: 12),
-                const Text(
-                  "Import Company GL & Balances",
-                  style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w800,
-                      color: Color(0xFF1E293B),
-                      letterSpacing: -0.5),
+                Expanded(
+                  child: Text(
+                    "Import Company GL & Balances",
+                    style: TextStyle(
+                        fontSize: isMobile ? 18 : 22,
+                        fontWeight: FontWeight.w800,
+                        color: const Color(0xFF1E293B),
+                        letterSpacing: -0.5),
+                  ),
                 ),
-                const Spacer(),
+                if (!isMobile) const Spacer(),
                 if (!isMobile)
                   ElevatedButton.icon(
                     onPressed: _downloadTemplate,

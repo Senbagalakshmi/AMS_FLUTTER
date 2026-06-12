@@ -690,65 +690,129 @@ class _ChartOfAccountsScreenState extends State<ChartOfAccountsScreen>
                             border: Border(
                                 bottom: BorderSide(color: Color(0xFFE2E8F0))),
                           ),
-                          child: Row(
-                            children: [
-                              Text(
-                                _tabs[_tabController.index].toUpperCase(),
-                                style: bodyStyle(
-                                  size: 15,
-                                  weight: FontWeight.w800,
-                                  color: AppColors.ink,
+                          child: isMobile
+                              ? Column(
+                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  children: [
+                                    Text(
+                                      _tabs[_tabController.index].toUpperCase(),
+                                      style: bodyStyle(
+                                        size: 15,
+                                        weight: FontWeight.w800,
+                                        color: AppColors.ink,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: SizedBox(
+                                            height: 38,
+                                            child: TextField(
+                                              onChanged: (val) {
+                                                setState(() {
+                                                  _searchQuery = val;
+                                                });
+                                              },
+                                              decoration: InputDecoration(
+                                                hintText: "Search...",
+                                                hintStyle: const TextStyle(
+                                                    color: Color(0xFF94A3B8), fontSize: 13),
+                                                prefixIcon: const Icon(Icons.search_rounded,
+                                                    color: Color(0xFF64748B), size: 16),
+                                                isDense: true,
+                                                contentPadding: const EdgeInsets.symmetric(
+                                                    horizontal: 10, vertical: 10),
+                                                border: OutlineInputBorder(
+                                                  borderRadius: BorderRadius.circular(8),
+                                                  borderSide: const BorderSide(
+                                                      color: Color(0xFFCBD5E1)),
+                                                ),
+                                                enabledBorder: OutlineInputBorder(
+                                                  borderRadius: BorderRadius.circular(8),
+                                                  borderSide: const BorderSide(
+                                                      color: Color(0xFFE2E8F0)),
+                                                ),
+                                                focusedBorder: OutlineInputBorder(
+                                                  borderRadius: BorderRadius.circular(8),
+                                                  borderSide: const BorderSide(
+                                                      color: AppColors.tBlue),
+                                                ),
+                                              ),
+                                              style: const TextStyle(fontSize: 13.5),
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        AmsButton(
+                                          label: 'Filters',
+                                          icon: Icons.filter_list_rounded,
+                                          variant: AmsButtonVariant.outline,
+                                          onPressed: _showFiltersDialog,
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                )
+                              : Row(
+                                  children: [
+                                    Text(
+                                      _tabs[_tabController.index].toUpperCase(),
+                                      style: bodyStyle(
+                                        size: 15,
+                                        weight: FontWeight.w800,
+                                        color: AppColors.ink,
+                                      ),
+                                    ),
+                                    const Spacer(),
+                                    // Clean Search Input Field
+                                    SizedBox(
+                                      width: 240,
+                                      height: 38,
+                                      child: TextField(
+                                        onChanged: (val) {
+                                          setState(() {
+                                            _searchQuery = val;
+                                          });
+                                        },
+                                        decoration: InputDecoration(
+                                          hintText: "Search name or number...",
+                                          hintStyle: const TextStyle(
+                                              color: Color(0xFF94A3B8), fontSize: 13),
+                                          prefixIcon: const Icon(Icons.search_rounded,
+                                              color: Color(0xFF64748B), size: 16),
+                                          isDense: true,
+                                          contentPadding: const EdgeInsets.symmetric(
+                                              horizontal: 10, vertical: 10),
+                                          border: OutlineInputBorder(
+                                            borderRadius: BorderRadius.circular(8),
+                                            borderSide: const BorderSide(
+                                                color: Color(0xFFCBD5E1)),
+                                          ),
+                                          enabledBorder: OutlineInputBorder(
+                                            borderRadius: BorderRadius.circular(8),
+                                            borderSide: const BorderSide(
+                                                color: Color(0xFFE2E8F0)),
+                                          ),
+                                          focusedBorder: OutlineInputBorder(
+                                            borderRadius: BorderRadius.circular(8),
+                                            borderSide: const BorderSide(
+                                                color: AppColors.tBlue),
+                                          ),
+                                        ),
+                                        style: const TextStyle(fontSize: 13.5),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    // Filters Button
+                                    AmsButton(
+                                      label: 'Filters',
+                                      icon: Icons.filter_list_rounded,
+                                      variant: AmsButtonVariant.outline,
+                                      onPressed: _showFiltersDialog,
+                                    ),
+                                  ],
                                 ),
-                              ),
-                              const Spacer(),
-                              // Clean Search Input Field
-                              SizedBox(
-                                width: isMobile ? 160 : 240,
-                                height: 38,
-                                child: TextField(
-                                  onChanged: (val) {
-                                    setState(() {
-                                      _searchQuery = val;
-                                    });
-                                  },
-                                  decoration: InputDecoration(
-                                    hintText: "Search name or number...",
-                                    hintStyle: const TextStyle(
-                                        color: Color(0xFF94A3B8), fontSize: 13),
-                                    prefixIcon: const Icon(Icons.search_rounded,
-                                        color: Color(0xFF64748B), size: 16),
-                                    isDense: true,
-                                    contentPadding: const EdgeInsets.symmetric(
-                                        horizontal: 10, vertical: 10),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                      borderSide: const BorderSide(
-                                          color: Color(0xFFCBD5E1)),
-                                    ),
-                                    enabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                      borderSide: const BorderSide(
-                                          color: Color(0xFFE2E8F0)),
-                                    ),
-                                    focusedBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                      borderSide: const BorderSide(
-                                          color: AppColors.tBlue),
-                                    ),
-                                  ),
-                                  style: const TextStyle(fontSize: 13.5),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              // Filters Button
-                              AmsButton(
-                                label: 'Filters',
-                                icon: Icons.filter_list_rounded,
-                                variant: AmsButtonVariant.outline,
-                                onPressed: _showFiltersDialog,
-                              ),
-                            ],
-                          ),
                         ),
 
                         // Active Filters Row
@@ -763,7 +827,10 @@ class _ChartOfAccountsScreenState extends State<ChartOfAccountsScreen>
                               border: Border(
                                   bottom: BorderSide(color: Color(0xFFE2E8F0))),
                             ),
-                            child: Row(
+                            child: Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              crossAxisAlignment: WrapCrossAlignment.center,
                               children: [
                                 const Text(
                                   "Active Filters: ",
@@ -773,7 +840,6 @@ class _ChartOfAccountsScreenState extends State<ChartOfAccountsScreen>
                                     color: Color(0xFF64748B),
                                   ),
                                 ),
-                                const SizedBox(width: 8),
                                 if (_searchQuery.isNotEmpty)
                                   _buildFilterChip("Search: '$_searchQuery'",
                                       () {
@@ -795,7 +861,6 @@ class _ChartOfAccountsScreenState extends State<ChartOfAccountsScreen>
                                       _selectedBalanceFilter = "All";
                                     });
                                   }),
-                                const Spacer(),
                                 TextButton(
                                   onPressed: () {
                                     setState(() {
@@ -824,34 +889,35 @@ class _ChartOfAccountsScreenState extends State<ChartOfAccountsScreen>
                           ),
 
                         // Table Column Headers
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              vertical: 14.0, horizontal: 24),
-                          decoration: const BoxDecoration(
-                            border: Border(
-                                bottom: BorderSide(color: Color(0xFFE2E8F0))),
-                            color: Color(0xFFF8FAFC),
+                        if (!isMobile)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                vertical: 14.0, horizontal: 24),
+                            decoration: const BoxDecoration(
+                              border: Border(
+                                  bottom: BorderSide(color: Color(0xFFE2E8F0))),
+                              color: Color(0xFFF8FAFC),
+                            ),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                    flex: 4,
+                                    child: _buildColHeader(
+                                        'ACCOUNT / PARENT ACCOUNT')),
+                                Expanded(
+                                    flex: 2,
+                                    child: _buildColHeader('ACCOUNT NUMBER')),
+                                Expanded(
+                                    flex: 3,
+                                    child: _buildColHeader(
+                                        'ACCOUNT TYPE / SUB TYPE')),
+                                Expanded(
+                                    flex: 2,
+                                    child: _buildColHeader('BALANCE',
+                                        alignRight: true)),
+                              ],
+                            ),
                           ),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                  flex: 4,
-                                  child: _buildColHeader(
-                                      'ACCOUNT / PARENT ACCOUNT')),
-                              Expanded(
-                                  flex: 2,
-                                  child: _buildColHeader('ACCOUNT NUMBER')),
-                              Expanded(
-                                  flex: 3,
-                                  child: _buildColHeader(
-                                      'ACCOUNT TYPE / SUB TYPE')),
-                              Expanded(
-                                  flex: 2,
-                                  child: _buildColHeader('BALANCE',
-                                      alignRight: true)),
-                            ],
-                          ),
-                        ),
 
                         // Data Content List
                         Expanded(
@@ -898,6 +964,7 @@ class _ChartOfAccountsScreenState extends State<ChartOfAccountsScreen>
   }
 
   Widget _buildAccountRow(Map<String, dynamic> acc) {
+    final isMobile = Responsive.isMobile(context);
     final formatCurrency = NumberFormat.currency(
         symbol: 'Rs.', decimalDigits: 2, customPattern: '\u00A4#,##0.00');
     final balance = (acc['balance'] as num?)?.toDouble() ?? 0.0;
@@ -906,6 +973,98 @@ class _ChartOfAccountsScreenState extends State<ChartOfAccountsScreen>
 
     final String typeStr = acc['accountType']?.toString() ?? '';
     final theme = _getAccountTypeTheme(typeStr);
+
+    if (isMobile) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 32,
+                        height: 32,
+                        margin: const EdgeInsets.only(right: 12),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: theme['bg'] as Color,
+                          border: Border.all(
+                              color: theme['border'] as Color, width: 1.0),
+                        ),
+                        child: Center(
+                          child: Icon(
+                            theme['icon'] as IconData,
+                            size: 14,
+                            color: theme['text'] as Color,
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: Text(
+                          acc['accountName']?.toString() ?? '',
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: bodyStyle(
+                            size: 14.5,
+                            weight: FontWeight.w600,
+                            color: const Color(0xFF1E293B),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  '${formatCurrency.format(balance.abs())} $currency',
+                  style: bodyStyle(
+                    size: 14.5,
+                    weight: FontWeight.w700,
+                    color: isNegative ? AppColors.red : const Color(0xFF0F172A),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: Text(
+                    acc['accountNumber']?.toString() ?? '—',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontFamily: 'monospace',
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF475569),
+                    ),
+                  ),
+                ),
+                Text(
+                  acc['accountType']?.toString() ?? '',
+                  style: bodyStyle(
+                    size: 12,
+                    weight: FontWeight.w500,
+                    color: const Color(0xFF64748B),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    }
 
     return InkWell(
       onTap: () {},

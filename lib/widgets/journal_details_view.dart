@@ -121,40 +121,84 @@ class _JournalDetailsViewState extends State<JournalDetailsView> {
           decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.border)),
           child: Column(
             children: [
-              Row(
-                children: [
-                  Container(width: 48, height: 48, decoration: BoxDecoration(color: AppColors.tBlueLt, borderRadius: BorderRadius.circular(10)), child: const Icon(Icons.description_outlined, color: AppColors.tBlue)),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+              if (isMobile)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
                       children: [
-                        Text('Journal Entry #$tranId', style: bodyStyle(size: 18, weight: FontWeight.w800)),
-                        const SizedBox(height: 4),
-                        Text(formattedDate, style: monoStyle(size: 12, color: AppColors.ink3)),
+                        Container(width: 48, height: 48, decoration: BoxDecoration(color: AppColors.tBlueLt, borderRadius: BorderRadius.circular(10)), child: const Icon(Icons.description_outlined, color: AppColors.tBlue)),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Journal Entry #$tranId', style: bodyStyle(size: 16, weight: FontWeight.w800)),
+                              const SizedBox(height: 4),
+                              Text(formattedDate, style: monoStyle(size: 12, color: AppColors.ink3)),
+                            ],
+                          ),
+                        ),
                       ],
                     ),
-                  ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text('TOTAL AMOUNT', style: monoStyle(size: 10, color: AppColors.ink4)),
-                      const SizedBox(height: 4),
-                      Text('INR ${NumberFormat('#,##,##0.00').format(displayAmount)}', style: bodyStyle(size: 20, weight: FontWeight.w900, color: AppColors.ink)),
-                    ],
-                  ),
-                ],
-              ),
+                    const SizedBox(height: 16),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('TOTAL AMOUNT', style: monoStyle(size: 10, color: AppColors.ink4)),
+                        const SizedBox(height: 4),
+                        Text('INR ${NumberFormat('#,##,##0.00').format(displayAmount)}', style: bodyStyle(size: 20, weight: FontWeight.w900, color: AppColors.ink)),
+                      ],
+                    ),
+                  ],
+                )
+              else
+                Row(
+                  children: [
+                    Container(width: 48, height: 48, decoration: BoxDecoration(color: AppColors.tBlueLt, borderRadius: BorderRadius.circular(10)), child: const Icon(Icons.description_outlined, color: AppColors.tBlue)),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Journal Entry #$tranId', style: bodyStyle(size: 18, weight: FontWeight.w800)),
+                          const SizedBox(height: 4),
+                          Text(formattedDate, style: monoStyle(size: 12, color: AppColors.ink3)),
+                        ],
+                      ),
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text('TOTAL AMOUNT', style: monoStyle(size: 10, color: AppColors.ink4)),
+                        const SizedBox(height: 4),
+                        Text('INR ${NumberFormat('#,##,##0.00').format(displayAmount)}', style: bodyStyle(size: 20, weight: FontWeight.w900, color: AppColors.ink)),
+                      ],
+                    ),
+                  ],
+                ),
               const SizedBox(height: 24),
               const Divider(height: 1, color: AppColors.border2),
               const SizedBox(height: 24),
-              Row(
-                children: [
-                  Expanded(child: _infoItem('ORGANIZATION', org)),
-                  Expanded(child: _infoItem('BRANCH', branch)),
-                  Expanded(child: _infoItem('DESCRIPTION', desc, flex: 2)),
-                ],
-              ),
+              if (isMobile)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _infoItem('ORGANIZATION', org),
+                    const SizedBox(height: 12),
+                    _infoItem('BRANCH', branch),
+                    const SizedBox(height: 12),
+                    _infoItem('DESCRIPTION', desc),
+                  ],
+                )
+              else
+                Row(
+                  children: [
+                    Expanded(child: _infoItem('ORGANIZATION', org)),
+                    Expanded(child: _infoItem('BRANCH', branch)),
+                    Expanded(child: _infoItem('DESCRIPTION', desc, flex: 2)),
+                  ],
+                ),
             ],
           ),
         ),

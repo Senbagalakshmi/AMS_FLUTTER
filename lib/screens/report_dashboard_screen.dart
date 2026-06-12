@@ -254,8 +254,10 @@ class _ReportDashboardScreenState extends State<ReportDashboardScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
+                Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 12,
+                  runSpacing: 8,
                   children: [
                     Text(
                       'Financial Reports',
@@ -264,7 +266,6 @@ class _ReportDashboardScreenState extends State<ReportDashboardScreen>
                         color: AppColors.ink,
                       ),
                     ),
-                    const SizedBox(width: 12),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
@@ -283,7 +284,8 @@ class _ReportDashboardScreenState extends State<ReportDashboardScreen>
                   ],
                 ),
                 const SizedBox(height: 6),
-                Row(
+                Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
                     Icon(Icons.home_outlined, size: 14, color: Colors.grey[400]),
                     const SizedBox(width: 4),
@@ -389,14 +391,15 @@ class _ReportDashboardScreenState extends State<ReportDashboardScreen>
     ];
  
     if (isMobile) {
-      return GridView.count(
-        crossAxisCount: 2,
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
-        childAspectRatio: 1.5,
-        children: cards,
+      return Column(
+        children: cards
+            .map(
+              (e) => Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: e,
+              ),
+            )
+            .toList(),
       );
     }
  

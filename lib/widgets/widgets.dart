@@ -411,8 +411,11 @@ class AmsField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = Responsive.isMobile(context);
+    final isLabelAbove = labelAbove || isMobile;
+
     final labelWidget = SizedBox(
-      width: labelAbove ? double.infinity : 180,
+      width: isLabelAbove ? double.infinity : 180,
       child: RichText(
         text: TextSpan(
           children: [
@@ -484,7 +487,7 @@ class AmsField extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: labelAbove
+      child: isLabelAbove
           ? Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [

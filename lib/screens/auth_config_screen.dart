@@ -69,15 +69,18 @@ class _AuthConfigScreenState extends State<AuthConfigScreen> {
                     return Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Program Configurations',
-                                style: bodyStyle(size: 24, weight: FontWeight.w800)),
-                            Text('Table: AUTH101 — Capture authorization rules and procedures',
-                                style: monoStyle(color: AppColors.ink3, size: 12)),
-                          ],
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Program Configurations',
+                                  style: bodyStyle(size: 24, weight: FontWeight.w800)),
+                              Text('Table: AUTH101 — Capture authorization rules and procedures',
+                                  style: monoStyle(color: AppColors.ink3, size: 12)),
+                            ],
+                          ),
                         ),
+                        const SizedBox(width: 16),
                         SizedBox(
                           width: 300,
                           child: AmsTextInput(
@@ -211,7 +214,9 @@ class _ConfigTable extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Approval Required', style: bodyStyle(size: 13, color: AppColors.ink2)),
+                    Expanded(
+                      child: Text('Approval Required', style: bodyStyle(size: 13, color: AppColors.ink2)),
+                    ),
                     Switch(
                       value: cfg.approvalReq,
                       activeThumbColor: AppColors.green,
@@ -401,8 +406,7 @@ class _AdvancedConfigDialogState extends State<_AdvancedConfigDialog> {
       children: [
         Row(
           children: [
-            Text(title, style: bodyStyle(weight: FontWeight.w700)),
-            const Spacer(),
+            Expanded(child: Text(title, style: bodyStyle(weight: FontWeight.w700))),
             Switch(value: active, onChanged: onToggle),
           ],
         ),

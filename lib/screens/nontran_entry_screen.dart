@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:ams_flutter/utils/responsive.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -439,7 +440,8 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
         '2026-${(100 + (DateTime.now().millisecondsSinceEpoch % 900)).toString().padLeft(4, '0')}';
 
     if (_selProg == 'USR-CRT') {
-      String nowIso = "${DateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").format(DateTime.now().toUtc())}+00:00";
+      String nowIso =
+          "${DateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").format(DateTime.now().toUtc())}+00:00";
       String cleanUser = (widget.userName ?? "admin");
       if (cleanUser.contains('@')) {
         cleanUser = cleanUser.split('@').first;
@@ -450,10 +452,12 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
       // ── Audit: creator ───────────────────────────────────────────────────
       // Preserved from DB on edit; set to logged-in user on create.
       String cUserVal = _isEditMode
-          ? (originalRecord['cUser'] ?? originalRecord['cuser'] ?? cleanUser).toString()
+          ? (originalRecord['cUser'] ?? originalRecord['cuser'] ?? cleanUser)
+              .toString()
           : cleanUser;
       String cDateVal = _isEditMode
-          ? (originalRecord['cDate'] ?? originalRecord['cdate'] ?? nowIso).toString()
+          ? (originalRecord['cDate'] ?? originalRecord['cdate'] ?? nowIso)
+              .toString()
           : nowIso;
 
       // ── Audit: last editor ───────────────────────────────────────────────
@@ -467,15 +471,11 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
       // • On CREATE → default to submitter (eUser/eDate) so column is never null.
       // • On EDIT   → keep existing DB approver value; fall back to eUser if not yet set.
       String aUserVal = _isEditMode
-          ? (originalRecord['aUser'] ??
-                  originalRecord['auser'] ??
-                  eUserVal)
+          ? (originalRecord['aUser'] ?? originalRecord['auser'] ?? eUserVal)
               .toString()
           : eUserVal;
       String aDateVal = _isEditMode
-          ? (originalRecord['aDate'] ??
-                  originalRecord['adate'] ??
-                  eDateVal)
+          ? (originalRecord['aDate'] ?? originalRecord['adate'] ?? eDateVal)
               .toString()
           : eDateVal;
 
@@ -498,7 +498,8 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
 
     // ── ROLE-CRT: inject audit fields ─────────────────────────────────────────
     if (_selProg == 'ROLE-CRT') {
-      String nowIso = "${DateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").format(DateTime.now().toUtc())}+00:00";
+      String nowIso =
+          "${DateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").format(DateTime.now().toUtc())}+00:00";
       String cleanUser = (widget.userName ?? "admin");
       if (cleanUser.contains('@')) {
         cleanUser = cleanUser.split('@').first;
@@ -508,10 +509,12 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
 
       // ── Audit: creator ───────────────────────────────────────────────────
       String cUserVal = _isEditMode
-          ? (originalRecord['cUser'] ?? originalRecord['cuser'] ?? cleanUser).toString()
+          ? (originalRecord['cUser'] ?? originalRecord['cuser'] ?? cleanUser)
+              .toString()
           : cleanUser;
       String cDateVal = _isEditMode
-          ? (originalRecord['cDate'] ?? originalRecord['cdate'] ?? nowIso).toString()
+          ? (originalRecord['cDate'] ?? originalRecord['cdate'] ?? nowIso)
+              .toString()
           : nowIso;
 
       // ── Audit: last editor ───────────────────────────────────────────────
@@ -522,15 +525,11 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
       // DB procedure copies AUTH002 datablock verbatim into ACCESS001.
       // Non-null at submission: default to eUser on create; preserve DB value on edit.
       String aUserVal = _isEditMode
-          ? (originalRecord['aUser'] ??
-                  originalRecord['auser'] ??
-                  eUserVal)
+          ? (originalRecord['aUser'] ?? originalRecord['auser'] ?? eUserVal)
               .toString()
           : eUserVal;
       String aDateVal = _isEditMode
-          ? (originalRecord['aDate'] ??
-                  originalRecord['adate'] ??
-                  eDateVal)
+          ? (originalRecord['aDate'] ?? originalRecord['adate'] ?? eDateVal)
               .toString()
           : eDateVal;
 
@@ -553,7 +552,8 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
 
     // ── MOD-CRT: inject audit fields ──────────────────────────────────────────
     if (_selProg == 'MOD-CRT') {
-      String nowIso = "${DateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").format(DateTime.now().toUtc())}+00:00";
+      String nowIso =
+          "${DateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").format(DateTime.now().toUtc())}+00:00";
       String cleanUser = (widget.userName ?? "admin");
       if (cleanUser.contains('@')) {
         cleanUser = cleanUser.split('@').first;
@@ -563,10 +563,12 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
 
       // ── Audit: creator ───────────────────────────────────────────────────
       String cUserVal = _isEditMode
-          ? (originalRecord['cUser'] ?? originalRecord['cuser'] ?? cleanUser).toString()
+          ? (originalRecord['cUser'] ?? originalRecord['cuser'] ?? cleanUser)
+              .toString()
           : cleanUser;
       String cDateVal = _isEditMode
-          ? (originalRecord['cDate'] ?? originalRecord['cdate'] ?? nowIso).toString()
+          ? (originalRecord['cDate'] ?? originalRecord['cdate'] ?? nowIso)
+              .toString()
           : nowIso;
 
       // ── Audit: last editor ───────────────────────────────────────────────
@@ -577,15 +579,11 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
       // DB procedure copies AUTH002 datablock verbatim into MODULE001.
       // Non-null at submission: default to eUser on create; preserve DB value on edit.
       String aUserVal = _isEditMode
-          ? (originalRecord['aUser'] ??
-                  originalRecord['auser'] ??
-                  eUserVal)
+          ? (originalRecord['aUser'] ?? originalRecord['auser'] ?? eUserVal)
               .toString()
           : eUserVal;
       String aDateVal = _isEditMode
-          ? (originalRecord['aDate'] ??
-                  originalRecord['adate'] ??
-                  eDateVal)
+          ? (originalRecord['aDate'] ?? originalRecord['adate'] ?? eDateVal)
               .toString()
           : eDateVal;
 
@@ -1629,90 +1627,180 @@ class _ModuleListViewState extends State<_ModuleListView> {
                 return AmsCard(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 44,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          color: AppColors.tBlueLt,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Center(
-                          child: Text(
-                            moduleName.isNotEmpty
-                                ? moduleName[0].toUpperCase()
-                                : 'M',
-                            style: bodyStyle(
-                                weight: FontWeight.bold,
-                                color: AppColors.tBlue,
-                                size: 16),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
+                  child: Responsive.isMobile(context)
+                      ? Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(moduleName,
-                                style: bodyStyle(
-                                    size: 15, weight: FontWeight.w600)),
-                            const SizedBox(height: 4),
-                            Text(
-                                'Module Code: $moduleCd  |  ORG: ${d['orgCode'] ?? d['orgcode'] ?? 50}',
-                                style:
-                                    bodyStyle(color: AppColors.ink3, size: 12)),
+                            Row(
+                              children: [
+                                Container(
+                                  width: 44,
+                                  height: 44,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.tBlueLt,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      moduleName.isNotEmpty
+                                          ? moduleName[0].toUpperCase()
+                                          : 'M',
+                                      style: bodyStyle(
+                                          weight: FontWeight.bold,
+                                          color: AppColors.tBlue,
+                                          size: 16),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(moduleName,
+                                          style: bodyStyle(
+                                              size: 15,
+                                              weight: FontWeight.w600)),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                          'Module Code: $moduleCd  |  ORG: ${d['orgCode'] ?? d['orgcode'] ?? 50}',
+                                          style: bodyStyle(
+                                              color: AppColors.ink3, size: 12)),
+                                    ],
+                                  ),
+                                ),
+                                AmsBadge(
+                                  label: (d['status']?.toString() == '0')
+                                      ? 'Disabled'
+                                      : 'Enabled',
+                                  background: (d['status']?.toString() == '0')
+                                      ? AppColors.grayLt
+                                      : AppColors.nTealLt,
+                                  color: (d['status']?.toString() == '0')
+                                      ? AppColors.ink3
+                                      : AppColors.nTeal,
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: [
+                                _ActionButton(
+                                  icon: Icons.history_rounded,
+                                  color: AppColors.ink3,
+                                  onTap: () => showAuditLogPopup(context, d),
+                                ),
+                                _ActionButton(
+                                  icon: Icons.visibility_outlined,
+                                  color: Colors.green,
+                                  onTap: () => widget.onView?.call(d),
+                                ),
+                                _ActionButton(
+                                  icon: Icons.edit_outlined,
+                                  color: AppColors.tBlue,
+                                  onTap: () => widget.onEdit?.call(d),
+                                ),
+                                _ActionButton(
+                                  icon: Icons.delete_outline_rounded,
+                                  color: Colors.red,
+                                  onTap: () async {
+                                    if (widget.onDelete != null) {
+                                      await widget.onDelete!(d);
+                                      _load(1);
+                                    }
+                                  },
+                                ),
+                              ],
+                            ),
+                          ],
+                        )
+                      : Row(
+                          children: [
+                            Container(
+                              width: 44,
+                              height: 44,
+                              decoration: BoxDecoration(
+                                color: AppColors.tBlueLt,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  moduleName.isNotEmpty
+                                      ? moduleName[0].toUpperCase()
+                                      : 'M',
+                                  style: bodyStyle(
+                                      weight: FontWeight.bold,
+                                      color: AppColors.tBlue,
+                                      size: 16),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(moduleName,
+                                      style: bodyStyle(
+                                          size: 15, weight: FontWeight.w600)),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                      'Module Code: $moduleCd  |  ORG: ${d['orgCode'] ?? d['orgcode'] ?? 50}',
+                                      style: bodyStyle(
+                                          color: AppColors.ink3, size: 12)),
+                                ],
+                              ),
+                            ),
+                            AmsBadge(
+                              label: (d['status']?.toString() == '0')
+                                  ? 'Disabled'
+                                  : 'Enabled',
+                              background: (d['status']?.toString() == '0')
+                                  ? AppColors.grayLt
+                                  : AppColors.nTealLt,
+                              color: (d['status']?.toString() == '0')
+                                  ? AppColors.ink3
+                                  : AppColors.nTeal,
+                            ),
+                            const SizedBox(width: 16),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                _ActionButton(
+                                  icon: Icons.history_rounded,
+                                  color: AppColors.ink3,
+                                  onTap: () => showAuditLogPopup(context, d),
+                                ),
+                                const SizedBox(width: 8),
+                                _ActionButton(
+                                  icon: Icons.visibility_outlined,
+                                  color: Colors.green,
+                                  onTap: () => widget.onView?.call(d),
+                                ),
+                                const SizedBox(width: 8),
+                                _ActionButton(
+                                  icon: Icons.edit_outlined,
+                                  color: AppColors.tBlue,
+                                  onTap: () => widget.onEdit?.call(d),
+                                ),
+                                const SizedBox(width: 8),
+                                _ActionButton(
+                                  icon: Icons.delete_outline_rounded,
+                                  color: Colors.red,
+                                  onTap: () async {
+                                    if (widget.onDelete != null) {
+                                      await widget.onDelete!(d);
+                                      _load(1);
+                                    }
+                                  },
+                                ),
+                              ],
+                            ),
                           ],
                         ),
-                      ),
-                      AmsBadge(
-                        label: (d['status']?.toString() == '0')
-                            ? 'Disabled'
-                            : 'Enabled',
-                        background: (d['status']?.toString() == '0')
-                            ? AppColors.grayLt
-                            : AppColors.nTealLt,
-                        color: (d['status']?.toString() == '0')
-                            ? AppColors.ink3
-                            : AppColors.nTeal,
-                      ),
-                      const SizedBox(width: 16),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          _ActionButton(
-                            icon: Icons.history_rounded,
-                            color: AppColors.ink3,
-                            onTap: () => showAuditLogPopup(context, d),
-                          ),
-                          const SizedBox(width: 8),
-                          _ActionButton(
-                            icon: Icons.visibility_outlined,
-                            color: Colors.green,
-                            onTap: () => widget.onView?.call(d),
-                          ),
-                          const SizedBox(width: 8),
-                          _ActionButton(
-                            icon: Icons.edit_outlined,
-                            color: AppColors.tBlue,
-                            onTap: () => widget.onEdit?.call(d),
-                          ),
-                          const SizedBox(width: 8),
-                          _ActionButton(
-                            icon: Icons.delete_outline_rounded,
-                            color: Colors.red,
-                            onTap: () async {
-                              if (widget.onDelete != null) {
-                                await widget.onDelete!(d);
-                                _load(1);
-                              }
-                            },
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
                 );
               },
             ),
@@ -1812,60 +1900,122 @@ class _AuthCtrlListViewState extends State<_AuthCtrlListView> {
                 final rec = c.toMap();
                 return AmsCard(
                   padding: const EdgeInsets.all(16),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
+                  child: Responsive.isMobile(context)
+                      ? Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(c.name.toString(),
-                                style: bodyStyle(
-                                    size: 15, weight: FontWeight.w600)),
-                            const SizedBox(height: 4),
-                            Text(
-                                'Approval Req: ${c.approvalReq ? 'Yes' : 'No'}  |  Levels: ${c.levels}',
-                                style:
-                                    bodyStyle(color: AppColors.ink3, size: 12)),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(c.name.toString(),
+                                          style: bodyStyle(
+                                              size: 15,
+                                              weight: FontWeight.w600)),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                          'Approval Req: ${c.approvalReq ? 'Yes' : 'No'}  |  Levels: ${c.levels}',
+                                          style: bodyStyle(
+                                              color: AppColors.ink3, size: 12)),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                AmsBadge(label: c.id.toString()),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: [
+                                _ActionButton(
+                                  icon: Icons.history_rounded,
+                                  color: AppColors.ink3,
+                                  onTap: () => showAuditLogPopup(context, rec),
+                                ),
+                                _ActionButton(
+                                  icon: Icons.visibility_outlined,
+                                  color: Colors.green,
+                                  onTap: () => widget.onView?.call(rec),
+                                ),
+                                _ActionButton(
+                                  icon: Icons.edit_outlined,
+                                  color: AppColors.tBlue,
+                                  onTap: () => widget.onEdit?.call(rec),
+                                ),
+                                _ActionButton(
+                                  icon: Icons.delete_outline_rounded,
+                                  color: Colors.red,
+                                  onTap: () async {
+                                    if (widget.onDelete != null) {
+                                      await widget.onDelete!(rec);
+                                      _load();
+                                    }
+                                  },
+                                ),
+                              ],
+                            ),
+                          ],
+                        )
+                      : Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(c.name.toString(),
+                                      style: bodyStyle(
+                                          size: 15, weight: FontWeight.w600)),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                      'Approval Req: ${c.approvalReq ? 'Yes' : 'No'}  |  Levels: ${c.levels}',
+                                      style: bodyStyle(
+                                          color: AppColors.ink3, size: 12)),
+                                ],
+                              ),
+                            ),
+                            AmsBadge(label: c.id.toString()),
+                            const SizedBox(width: 16),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                _ActionButton(
+                                  icon: Icons.history_rounded,
+                                  color: AppColors.ink3,
+                                  onTap: () => showAuditLogPopup(context, rec),
+                                ),
+                                const SizedBox(width: 8),
+                                _ActionButton(
+                                  icon: Icons.visibility_outlined,
+                                  color: Colors.green,
+                                  onTap: () => widget.onView?.call(rec),
+                                ),
+                                const SizedBox(width: 8),
+                                _ActionButton(
+                                  icon: Icons.edit_outlined,
+                                  color: AppColors.tBlue,
+                                  onTap: () => widget.onEdit?.call(rec),
+                                ),
+                                const SizedBox(width: 8),
+                                _ActionButton(
+                                  icon: Icons.delete_outline_rounded,
+                                  color: Colors.red,
+                                  onTap: () async {
+                                    if (widget.onDelete != null) {
+                                      await widget.onDelete!(rec);
+                                      _load();
+                                    }
+                                  },
+                                ),
+                              ],
+                            ),
                           ],
                         ),
-                      ),
-                      AmsBadge(label: c.id.toString()),
-                      const SizedBox(width: 16),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          _ActionButton(
-                            icon: Icons.history_rounded,
-                            color: AppColors.ink3,
-                            onTap: () => showAuditLogPopup(context, rec),
-                          ),
-                          const SizedBox(width: 8),
-                          _ActionButton(
-                            icon: Icons.visibility_outlined,
-                            color: Colors.green,
-                            onTap: () => widget.onView?.call(rec),
-                          ),
-                          const SizedBox(width: 8),
-                          _ActionButton(
-                            icon: Icons.edit_outlined,
-                            color: AppColors.tBlue,
-                            onTap: () => widget.onEdit?.call(rec),
-                          ),
-                          const SizedBox(width: 8),
-                          _ActionButton(
-                            icon: Icons.delete_outline_rounded,
-                            color: Colors.red,
-                            onTap: () async {
-                              if (widget.onDelete != null) {
-                                await widget.onDelete!(rec);
-                                _load();
-                              }
-                            },
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
                 );
               },
             ),
@@ -2676,13 +2826,10 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
               data['modulecd'] ??
               '')
           .toString();
-      _mNameCtrl.text = (data['modname'] ??
-              data['modulename'] ??
-              data['module_name'] ??
-              '')
-          .toString();
-      _subModuleEnabled =
-          (data['submodule'] == true || data['submodule'] == 1);
+      _mNameCtrl.text =
+          (data['modname'] ?? data['modulename'] ?? data['module_name'] ?? '')
+              .toString();
+      _subModuleEnabled = (data['submodule'] == true || data['submodule'] == 1);
       _mStatus = int.tryParse((data['status'] ?? '1').toString()) ?? 1;
 
       if (data['submodules'] is List) {
@@ -2785,9 +2932,11 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
           isValid = false;
         } else {
           try {
-            final dobDate = DateFormat('dd-MMM-yyyy').parse(_uDobCtrl.text.trim());
+            final dobDate =
+                DateFormat('dd-MMM-yyyy').parse(_uDobCtrl.text.trim());
             final today = DateTime.now();
-            final ageLimitDate = DateTime(today.year - 18, today.month, today.day);
+            final ageLimitDate =
+                DateTime(today.year - 18, today.month, today.day);
             if (dobDate.isAfter(ageLimitDate)) {
               _errors['dob'] = 'User must be at least 18 years old';
               isValid = false;
@@ -2815,13 +2964,15 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
           final mobileStr = _mobileCtrl.text.trim();
           final callCodeStr = _callCodeCtrl.text.trim();
           if (mobileStr.length < 10 || mobileStr.length > 15) {
-            _errors['mobile'] = 'Mobile number must be between 10 and 15 digits';
+            _errors['mobile'] =
+                'Mobile number must be between 10 and 15 digits';
             isValid = false;
           } else if (callCodeStr.isNotEmpty) {
             try {
               final phone = PhoneNumber.parse('+$callCodeStr$mobileStr');
               if (!phone.isValid()) {
-                _errors['mobile'] = 'Invalid mobile number for selected country';
+                _errors['mobile'] =
+                    'Invalid mobile number for selected country';
                 isValid = false;
               }
             } catch (e) {
@@ -3243,7 +3394,8 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                   onTap: () async {
                     if (widget.isViewMode) return;
                     final now = DateTime.now();
-                    final eighteenYearsAgo = DateTime(now.year - 18, now.month, now.day);
+                    final eighteenYearsAgo =
+                        DateTime(now.year - 18, now.month, now.day);
                     final picked = await showDatePicker(
                       context: context,
                       initialDate: eighteenYearsAgo,
@@ -3281,8 +3433,8 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                         onChanged: (v) {
                           if (v == null || v.isEmpty) {
                             setState(() {
-                               _countryCtrl.text = '';
-                               _callCodeCtrl.text = '';
+                              _countryCtrl.text = '';
+                              _callCodeCtrl.text = '';
                             });
                             widget.onChanged('country', 0);
                             widget.onChanged('callCode', 0);
@@ -3471,36 +3623,44 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                         readOnly: true,
                       )
                     : AmsFilePicker(
-                  initialValue:
-                      _uPictureCtrl.text.isNotEmpty ? _uPictureCtrl.text : null,
-                  onFileSelected: (name, bytes) async {
-                    if (bytes != null) {
-                      final userscd = _uScdCtrl.text.trim();
-                      if (userscd.isEmpty) {
-                        showAmsSnack(context, 'Please enter User Code first to upload picture.', type: 'e');
-                        return;
-                      }
-                      
-                      showAmsSnack(context, 'Uploading picture...', type: 'i');
-                      final url = await apiService.uploadUserPicture(userscd, name, bytes);
-                      
-                      if (url != null) {
-                        setState(() {
-                          _uPictureCtrl.text = url;
-                        });
-                        widget.onChanged('picture', url);
-                        showAmsSnack(context, 'Picture uploaded successfully!', type: 's');
-                      } else {
-                        showAmsSnack(context, 'Failed to upload picture.', type: 'e');
-                      }
-                    } else {
-                      setState(() {
-                        _uPictureCtrl.text = name;
-                      });
-                      widget.onChanged('picture', name);
-                    }
-                  },
-                ),
+                        initialValue: _uPictureCtrl.text.isNotEmpty
+                            ? _uPictureCtrl.text
+                            : null,
+                        onFileSelected: (name, bytes) async {
+                          if (bytes != null) {
+                            final userscd = _uScdCtrl.text.trim();
+                            if (userscd.isEmpty) {
+                              showAmsSnack(context,
+                                  'Please enter User Code first to upload picture.',
+                                  type: 'e');
+                              return;
+                            }
+
+                            showAmsSnack(context, 'Uploading picture...',
+                                type: 'i');
+                            final url = await apiService.uploadUserPicture(
+                                userscd, name, bytes);
+
+                            if (url != null) {
+                              setState(() {
+                                _uPictureCtrl.text = url;
+                              });
+                              widget.onChanged('picture', url);
+                              showAmsSnack(
+                                  context, 'Picture uploaded successfully!',
+                                  type: 's');
+                            } else {
+                              showAmsSnack(context, 'Failed to upload picture.',
+                                  type: 'e');
+                            }
+                          } else {
+                            setState(() {
+                              _uPictureCtrl.text = name;
+                            });
+                            widget.onChanged('picture', name);
+                          }
+                        },
+                      ),
               ),
             ],
           ),
@@ -3836,7 +3996,8 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                           if (v.trim().isEmpty) {
                             _errors['modCd'] = 'Module Code required';
                           } else if (int.tryParse(v.trim()) == null) {
-                            _errors['modCd'] = 'Module Code must be a valid number';
+                            _errors['modCd'] =
+                                'Module Code must be a valid number';
                           } else {
                             _errors['modCd'] = null;
                           }
@@ -4045,10 +4206,17 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                               try {
                                 if (_authPgmCtrl.text.isEmpty) return '';
                                 final seek = _authPgmCtrl.text;
-                                final matches = _programList.where((p) => (p['pgmId']?.toString() ?? p['programId']?.toString() ?? '') == seek);
+                                final matches = _programList.where((p) =>
+                                    (p['pgmId']?.toString() ??
+                                        p['programId']?.toString() ??
+                                        '') ==
+                                    seek);
                                 if (matches.isNotEmpty) {
                                   final match = matches.first;
-                                  final name = match['programDescription']?.toString() ?? match['descn']?.toString() ?? '';
+                                  final name =
+                                      match['programDescription']?.toString() ??
+                                          match['descn']?.toString() ??
+                                          '';
                                   return '$seek - $name';
                                 }
                                 return seek;
@@ -4064,20 +4232,50 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                                 final seek = _authPgmCtrl.text;
                                 if (seek.isEmpty) return null;
                                 final matches = _programList.where((p) {
-                                  final pId = p['pgm_id']?.toString() ?? p['programid']?.toString() ?? p['pgmid']?.toString() ?? p['programId']?.toString() ?? p['pgmId']?.toString() ?? '';
+                                  final pId = p['pgm_id']?.toString() ??
+                                      p['programid']?.toString() ??
+                                      p['pgmid']?.toString() ??
+                                      p['programId']?.toString() ??
+                                      p['pgmId']?.toString() ??
+                                      '';
                                   return pId == seek;
                                 });
                                 if (matches.isEmpty) return null;
                                 final p = matches.first;
-                                final id = p['pgm_id']?.toString() ?? p['programid']?.toString() ?? p['pgmid']?.toString() ?? p['programId']?.toString() ?? p['pgmId']?.toString() ?? '';
-                                final name = p['programdescription']?.toString() ?? p['descn']?.toString() ?? p['description']?.toString() ?? p['programname']?.toString() ?? p['programDescription']?.toString() ?? '';
+                                final id = p['pgm_id']?.toString() ??
+                                    p['programid']?.toString() ??
+                                    p['pgmid']?.toString() ??
+                                    p['programId']?.toString() ??
+                                    p['pgmId']?.toString() ??
+                                    '';
+                                final name =
+                                    p['programdescription']?.toString() ??
+                                        p['descn']?.toString() ??
+                                        p['description']?.toString() ??
+                                        p['programname']?.toString() ??
+                                        p['programDescription']?.toString() ??
+                                        '';
                                 final formatted = '$id - $name';
-                                
-                                final allItems = _programList.map((x) {
-                                  final xId = x['pgm_id']?.toString() ?? x['programid']?.toString() ?? x['pgmid']?.toString() ?? x['programId']?.toString() ?? x['pgmId']?.toString() ?? '';
-                                  final xName = x['programdescription']?.toString() ?? x['descn']?.toString() ?? x['description']?.toString() ?? x['programname']?.toString() ?? x['programDescription']?.toString() ?? '';
-                                  return '$xId - $xName';
-                                }).toSet().toList();
+
+                                final allItems = _programList
+                                    .map((x) {
+                                      final xId = x['pgm_id']?.toString() ??
+                                          x['programid']?.toString() ??
+                                          x['pgmid']?.toString() ??
+                                          x['programId']?.toString() ??
+                                          x['pgmId']?.toString() ??
+                                          '';
+                                      final xName = x['programdescription']
+                                              ?.toString() ??
+                                          x['descn']?.toString() ??
+                                          x['description']?.toString() ??
+                                          x['programname']?.toString() ??
+                                          x['programDescription']?.toString() ??
+                                          '';
+                                      return '$xId - $xName';
+                                    })
+                                    .toSet()
+                                    .toList();
                                 if (!allItems.contains(formatted)) return null;
                                 return formatted;
                               } catch (e) {
@@ -4087,24 +4285,41 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                             placeholder: 'Select Program',
                             items: () {
                               try {
-                                final mapped = _programList.map((p) {
-                                  final id = p['pgm_id']?.toString() ?? p['programid']?.toString() ?? p['pgmid']?.toString() ?? p['programId']?.toString() ?? p['pgmId']?.toString() ?? '';
-                                  final name = p['programdescription']?.toString() ?? p['descn']?.toString() ?? p['description']?.toString() ?? p['programname']?.toString() ?? p['programDescription']?.toString() ?? '';
-                                  return '$id - $name';
-                                }).toSet().toList();
+                                final mapped = _programList
+                                    .map((p) {
+                                      final id = p['pgm_id']?.toString() ??
+                                          p['programid']?.toString() ??
+                                          p['pgmid']?.toString() ??
+                                          p['programId']?.toString() ??
+                                          p['pgmId']?.toString() ??
+                                          '';
+                                      final name = p['programdescription']
+                                              ?.toString() ??
+                                          p['descn']?.toString() ??
+                                          p['description']?.toString() ??
+                                          p['programname']?.toString() ??
+                                          p['programDescription']?.toString() ??
+                                          '';
+                                      return '$id - $name';
+                                    })
+                                    .toSet()
+                                    .toList();
                                 return mapped.isEmpty ? <String>[] : mapped;
                               } catch (e) {
                                 return <String>[];
                               }
                             }(),
                             errorText: _errors['authPgm'],
-                            isValid: _errors['authPgm'] == null && _authPgmCtrl.text.isNotEmpty,
+                            isValid: _errors['authPgm'] == null &&
+                                _authPgmCtrl.text.isNotEmpty,
                             onChanged: (v) {
                               final parts = v?.split(' - ') ?? [];
                               final val = parts.isNotEmpty ? parts[0] : '';
                               setState(() {
                                 _authPgmCtrl.text = val;
-                                _errors['authPgm'] = val.trim().isEmpty ? 'Program Id required' : null;
+                                _errors['authPgm'] = val.trim().isEmpty
+                                    ? 'Program Id required'
+                                    : null;
                               });
                               widget.onChanged('programId', val);
                             },
