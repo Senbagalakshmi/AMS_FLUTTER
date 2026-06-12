@@ -50,8 +50,6 @@ class ImportApiService {
       final dcIdx         = idx(mappings['Debit or Credit']);
       final orgIdx        = idx(mappings['Org Code']);
       final branchIdx     = idx(mappings['Branch Code']);
-      final euserIdx      = idx(mappings['Created By (euser)']);
-      final edateIdx      = idx(mappings['Created Date (edate)']);
 
       final cleanUser = eUser.contains('@') ? eUser.split('@').first : eUser;
       final now = DateTime.now().toUtc();
@@ -63,7 +61,7 @@ class ImportApiService {
       final Set<String>  seenNames = {};
 
       final StringBuffer normalizedCsv = StringBuffer();
-      normalizedCsv.writeln("orgcode,brncd,accountname,accountcode,description,accounttype,parentaccount,basecurr,openingbalance,debit_credit,euser,edate");
+      normalizedCsv.writeln("orgcode,brncd,accountname,accountcode,description,accounttype,parentaccount,basecurr,openingbalance,debit_credit");
 
       for (int i = 0; i < dataRows.length; i++) {
         final row    = dataRows[i];
@@ -109,10 +107,29 @@ class ImportApiService {
         final rowDesc = cell(descIdx);
         final rowParent = cell(parentIdx);
         final rowCurr = cell(currIdx).isNotEmpty ? cell(currIdx) : 'INR';
-        final rowBalance = cell(balanceIdx).isNotEmpty ? cell(balanceIdx) : '0.00';
-        final rowDc = cell(dcIdx).isNotEmpty ? cell(dcIdx) : 'Debit';
-        final rowEuser = cell(euserIdx).isNotEmpty ? cell(euserIdx) : cleanUser;
-        final rowEdate = cell(edateIdx).isNotEmpty ? cell(edateIdx) : nowIso;
+        String rowBalance = cell(balanceIdx).isNotEmpty ? cell(balanceIdx) : '';
+        String rowDc = cell(dcIdx).isNotEmpty ? cell(dcIdx) : '';
+
+        // if (rowBalance.isEmpty) {
+        //   final debitStr = debitIdx != -1 ? cell(debitIdx) : '';
+        //   final creditStr = creditIdx != -1 ? cell(creditIdx) : '';
+          
+        //   final debitVal = double.tryParse(debitStr.replaceAll(RegExp(r'[^\d\.\-]'), '')) ?? 0.0;
+        //   final creditVal = double.tryParse(creditStr.replaceAll(RegExp(r'[^\d\.\-]'), '')) ?? 0.0;
+
+        //   if (debitVal > 0) {
+        //     rowBalance = debitVal.toStringAsFixed(2);
+        //     rowDc = 'Debit';
+        //   } else if (creditVal > 0) {
+        //     rowBalance = creditVal.toStringAsFixed(2);
+        //     rowDc = 'Credit';
+        //   } else {
+        //     rowBalance = '0.00';
+        //     rowDc = 'Debit';
+        //   }
+        // } else if (rowDc.isEmpty) {
+        //   rowDc = 'Debit';
+        // }
 
         final line = [
           _escapeCsvValue(rowOrgCode),
@@ -125,8 +142,6 @@ class ImportApiService {
           _escapeCsvValue(rowCurr),
           _escapeCsvValue(rowBalance),
           _escapeCsvValue(rowDc),
-          _escapeCsvValue(rowEuser),
-          _escapeCsvValue(rowEdate),
         ].join(',');
 
         normalizedCsv.writeln(line);
@@ -220,8 +235,6 @@ class ImportApiService {
       final totCreditIdx  = idx(mappings['Total Credit']);
       final totDebitIdx   = idx(mappings['Total Debit']);
       final narrationIdx  = idx(mappings['Narration']);
-      final euserIdx      = idx(mappings['Created By (euser)']);
-      final edateIdx      = idx(mappings['Created Date (edate)']);
 
       final cleanUser = eUser.contains('@') ? eUser.split('@').first : eUser;
       final now = DateTime.now().toUtc();
@@ -231,7 +244,7 @@ class ImportApiService {
       final List<String> errors = [];
 
       final StringBuffer normalizedCsv = StringBuffer();
-      normalizedCsv.writeln("orgcode,brncd,trandate,tranid,transtatus,accountcode,debit_credit,totalcredit,totaldebit,narration,euser,edate");
+      normalizedCsv.writeln("orgcode,brncd,trandate,tranid,transtatus,accountcode,debit_credit,totalcredit,totaldebit,narration");
 
       for (int i = 0; i < dataRows.length; i++) {
         final row    = dataRows[i];
@@ -257,8 +270,6 @@ class ImportApiService {
         final rowTotCredit = cell(totCreditIdx).isNotEmpty ? cell(totCreditIdx) : '0.00';
         final rowTotDebit = cell(totDebitIdx).isNotEmpty ? cell(totDebitIdx) : '0.00';
         final rowNarration = cell(narrationIdx); // taken strictly from file
-        final rowEuser = cell(euserIdx).isNotEmpty ? cell(euserIdx) : cleanUser;
-        final rowEdate = cell(edateIdx); // taken strictly from file (DD-MM-YYYY)
 
         final line = [
           _escapeCsvValue(rowOrgCode),
@@ -271,8 +282,6 @@ class ImportApiService {
           _escapeCsvValue(rowTotCredit),
           _escapeCsvValue(rowTotDebit),
           _escapeCsvValue(rowNarration),
-          _escapeCsvValue(rowEuser),
-          _escapeCsvValue(rowEdate),
         ].join(',');
 
         normalizedCsv.writeln(line);
@@ -377,8 +386,8 @@ class ImportApiService {
       final totCreditIdx  = idx(mappings['Total Credit']);
       final totDebitIdx   = idx(mappings['Total Debit']);
       final narrationIdx  = idx(mappings['Narration']);
-      final euserIdx      = idx(mappings['Created By (euser)']);
-      final edateIdx      = idx(mappings['Created Date (edate)']);
+      // final euserIdx      = idx(mappings['Created By (euser)']);
+      // final edateIdx      = idx(mappings['Created Date (edate)']);
 
       final defaultDate = (tranDate != null && tranDate.isNotEmpty)
           ? tranDate
@@ -448,8 +457,8 @@ class ImportApiService {
         final rowTotCredit = cell(totCreditIdx).isNotEmpty ? cell(totCreditIdx) : '0.00';
         final rowTotDebit = cell(totDebitIdx).isNotEmpty ? cell(totDebitIdx) : '0.00';
         final rowNarration = cell(narrationIdx).isNotEmpty ? cell(narrationIdx) : defaultNotes;
-        final rowEuser = cell(euserIdx).isNotEmpty ? cell(euserIdx) : cleanUser;
-        final rowEdate = cell(edateIdx).isNotEmpty ? cell(edateIdx) : nowIso;
+        // final rowEuser = cell(euserIdx).isNotEmpty ? cell(euserIdx) : cleanUser;
+        // final rowEdate = cell(edateIdx).isNotEmpty ? cell(edateIdx) : nowIso;
 
         final line = [
           _escapeCsvValue(rowOrgCode),
@@ -468,8 +477,8 @@ class ImportApiService {
           _escapeCsvValue(rowTotCredit),
           _escapeCsvValue(rowTotDebit),
           _escapeCsvValue(rowNarration),
-          _escapeCsvValue(rowEuser),
-          _escapeCsvValue(rowEdate),
+          // _escapeCsvValue(rowEuser),
+          // _escapeCsvValue(rowEdate),
         ].join(',');
 
         normalizedCsv.writeln(line);

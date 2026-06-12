@@ -68,8 +68,8 @@ class _ImportCompanyScreenState extends State<ImportCompanyScreen> {
         {"name": "Currency", "mandatory": false},
         {"name": "Opening Balance", "mandatory": false},
         {"name": "Debit or Credit", "mandatory": false},
-        {"name": "Created By (euser)", "mandatory": false},
-        {"name": "Created Date (edate)", "mandatory": false},
+        // {"name": "Debit", "mandatory": false},
+        // {"name": "Credit", "mandatory": false},
       ];
     } else {
       return [
@@ -83,8 +83,6 @@ class _ImportCompanyScreenState extends State<ImportCompanyScreen> {
         {"name": "Total Credit", "mandatory": false},
         {"name": "Total Debit", "mandatory": false},
         {"name": "Narration", "mandatory": false},
-        {"name": "Created By (euser)", "mandatory": false},
-        {"name": "Created Date (edate)", "mandatory": false},
       ];
     }
   }
@@ -101,9 +99,7 @@ class _ImportCompanyScreenState extends State<ImportCompanyScreen> {
         "parent account",
         "basecurr",
         "openingbalance",
-        "debit or credit",
-        "euser",
-        "edate"
+        "debit or credit"
       ];
     } else {
       return [
@@ -116,9 +112,7 @@ class _ImportCompanyScreenState extends State<ImportCompanyScreen> {
         "debit or credit",
         "Totalcredit",
         "TotalDebit",
-        "narration",
-        "euser",
-        "edate"
+        "narration"
       ];
     }
   }
@@ -259,14 +253,6 @@ class _ImportCompanyScreenState extends State<ImportCompanyScreen> {
           } else if (fieldName == "Branch Code") {
             matchedHeader = headers.firstWhere(
                 (h) => h.toLowerCase().contains("brncd") || h.toLowerCase() == "branch code" || h.toLowerCase().contains("branch"),
-                orElse: () => "");
-          } else if (fieldName == "Created By (euser)") {
-            matchedHeader = headers.firstWhere(
-                (h) => h.toLowerCase().contains("euser") || h.toLowerCase().contains("created by") || h.toLowerCase().contains("enter user"),
-                orElse: () => "");
-          } else if (fieldName == "Created Date (edate)") {
-            matchedHeader = headers.firstWhere(
-                (h) => h.toLowerCase().contains("edate") || h.toLowerCase().contains("created date") || h.toLowerCase().contains("enter date"),
                 orElse: () => "");
           }
         }
@@ -493,8 +479,6 @@ class _ImportCompanyScreenState extends State<ImportCompanyScreen> {
       String? accountTypeHeader = _mappings["Account Type"];
       String? orgCodeHeader = _mappings["Org Code"];
       String? brnCodeHeader = _mappings["Branch Code"];
-      String? euserHeader = _mappings["Created By (euser)"];
-      String? edateHeader = _mappings["Created Date (edate)"];
       String? currencyHeader = _mappings["Currency"];
       String? tranIdHeader = _mappings["Journal No (Tran ID)"];
 
@@ -503,8 +487,6 @@ class _ImportCompanyScreenState extends State<ImportCompanyScreen> {
       int accountTypeIdx = accountTypeHeader != null ? headers.indexOf(accountTypeHeader) : -1;
       int orgCodeIdx = orgCodeHeader != null ? headers.indexOf(orgCodeHeader) : -1;
       int brnCodeIdx = brnCodeHeader != null ? headers.indexOf(brnCodeHeader) : -1;
-      int euserIdx = euserHeader != null ? headers.indexOf(euserHeader) : -1;
-      int edateIdx = edateHeader != null ? headers.indexOf(edateHeader) : -1;
       int currencyIdx = currencyHeader != null ? headers.indexOf(currencyHeader) : -1;
       int tranIdIdx = tranIdHeader != null ? headers.indexOf(tranIdHeader) : -1;
 
@@ -561,8 +543,6 @@ class _ImportCompanyScreenState extends State<ImportCompanyScreen> {
           "Account Code": accountCodeIdx,
           "Org Code": orgCodeIdx,
           "Branch Code": brnCodeIdx,
-          "Created By (euser)": euserIdx,
-          "Created Date (edate)": edateIdx,
         };
 
         if (_importType == 'coa') {
@@ -607,38 +587,24 @@ class _ImportCompanyScreenState extends State<ImportCompanyScreen> {
 
         // 2. Data type validation (Dates and Numbers)
         List<Map<String, dynamic>> dateFieldsToCheck = [
-          {"idx": dateIdx, "name": dateHeader ?? "Transaction Date", "isEdate": false},
-          {"idx": edateIdx, "name": edateHeader ?? "Created Date (edate)", "isEdate": true},
+          {"idx": dateIdx, "name": dateHeader ?? "Transaction Date"},
         ];
 
         for (var dField in dateFieldsToCheck) {
           int dIdx = dField["idx"];
-          bool isEdate = dField["isEdate"];
           if (!rowSkipped && dIdx != -1 && dIdx < row.length) {
             final val = row[dIdx].trim();
             if (val.isNotEmpty) {
-              if (isEdate) {
-                // Strict check for DD-MM-YYYY format
-                if (!RegExp(r'^(0[1-9]|[12][0-9]|3[01])-(0[1-9]|1[012])-\d{4}$').hasMatch(val)) {
-                  skipped.add(SkippedRowInfo(
-                    rowNo: i + 1,
-                    columnName: dField["name"],
-                    errorMessage: "${dField["name"]} '$val' must be in DD-MM-YYYY format.",
-                  ));
-                  rowSkipped = true;
-                }
-              } else {
-                final parsed = DateTime.tryParse(val);
-                // Relaxed check: if it can't parse via tryParse, maybe it's DD/MM/YYYY.
-                // We just ensure it has numbers and separators if tryParse fails.
-                if (parsed == null && !RegExp(r'\d{1,4}[-/\.]\d{1,2}[-/\.]\d{1,4}').hasMatch(val)) {
-                  skipped.add(SkippedRowInfo(
-                    rowNo: i + 1,
-                    columnName: dField["name"],
-                    errorMessage: "${dField["name"]} '$val' is not a valid date format.",
-                  ));
-                  rowSkipped = true;
-                }
+              final parsed = DateTime.tryParse(val);
+              // Relaxed check: if it can't parse via tryParse, maybe it's DD/MM/YYYY.
+              // We just ensure it has numbers and separators if tryParse fails.
+              if (parsed == null && !RegExp(r'\d{1,4}[-/\.]\d{1,2}[-/\.]\d{1,4}').hasMatch(val)) {
+                skipped.add(SkippedRowInfo(
+                  rowNo: i + 1,
+                  columnName: dField["name"],
+                  errorMessage: "${dField["name"]} '$val' is not a valid date format.",
+                ));
+                rowSkipped = true;
               }
             }
           }
@@ -758,15 +724,15 @@ class _ImportCompanyScreenState extends State<ImportCompanyScreen> {
     if (_importType == 'coa') {
       fileName = "chart_of_accounts_template.csv";
       csvContent = "${_expectedHeaders.join(',')}\n"
-          "55,1,Inventory Asset,116,Cash balance,Asset,Asset,INR,0.00,Credit,admin,04-06-2026\n"
-          "55,1,Credit Card,117,Bank account,Liability,Liability,INR,0.00,Debit,admin,04-06-2026\n";
+          "55,1,Inventory Asset,116,Cash balance,Asset,Asset,INR,0.00,Credit\n"
+          "55,1,Credit Card,117,Bank account,Liability,Liability,INR,0.00,Debit\n";
     } else {
       fileName = "journal_entries_template.csv";
       csvContent = "${_expectedHeaders.join(',')}\n"
-          "55,209,04-06-2026,1,P,111,Debit,0.00,50000.00,Opening Balance Cash,admin,04-06-2026\n"
-          "55,209,04-06-2026,1,P,110,Credit,50000.00,0.00,Opening Balance HDFC,admin,04-06-2026\n"
-          "55,209,04-06-2026,1,P,112,Credit,45000.00,0.00,Opening Balance AP,admin,04-06-2026\n"
-          "55,209,04-06-2026,1,P,113,Debit,0.00,45000.00,Opening Balance Capital,admin,04-06-2026\n";
+          "55,209,04-06-2026,1,P,111,Debit,0.00,50000.00,Opening Balance Cash\n"
+          "55,209,04-06-2026,1,P,110,Credit,50000.00,0.00,Opening Balance HDFC\n"
+          "55,209,04-06-2026,1,P,112,Credit,45000.00,0.00,Opening Balance AP\n"
+          "55,209,04-06-2026,1,P,113,Debit,0.00,45000.00,Opening Balance Capital\n";
     }
 
     final bytes = utf8.encode(csvContent);
@@ -2907,9 +2873,7 @@ class _ImportCompanyScreenState extends State<ImportCompanyScreen> {
       {"col": "debit_credit",   "desc": "Debit or Credit",         "example": "Debit",          "req": true},
       {"col": "totalcredit",    "desc": "Total Credit Amount",     "example": "0.00",           "req": true},
       {"col": "totaldebit",     "desc": "Total Debit Amount",      "example": "50.00",          "req": true},
-      {"col": "narration",      "desc": "Description / Notes",     "example": "Opening Balance","req": false},
-      {"col": "euser",          "desc": "Created By (username)",   "example": "admin",          "req": true},
-      {"col": "edate",          "desc": "Created Date",            "example": "05-05-2026",     "req": true},
+      {"col": "narration",      "desc": "Description/Notes",       "example": "Opening Balance", "req": false},
     ];
 
     return Column(
@@ -2986,11 +2950,11 @@ class _ImportCompanyScreenState extends State<ImportCompanyScreen> {
               const Text(
                 "orgcode,brncd,trandate,tranid,transtatus,\n"
                 "accountcode,debit_credit,totalcredit,\n"
-                "totaldebit,narration,euser,edate\n\n"
+                "totaldebit,narration\n\n"
                 "55,209,04-06-2026,5,P,116,Debit,\n"
-                "0.00,50.00,Opening Balance,admin,05-05-2026\n\n"
+                "0.00,50.00,Opening Balance\n\n"
                 "55,209,04-06-2026,5,P,117,Credit,\n"
-                "50.00,0.00,Opening Balance,admin,05-05-2026",
+                "50.00,0.00,Opening Balance",
                 style: TextStyle(
                     fontSize: 11,
                     color: Color(0xFF4ADE80),
@@ -3128,7 +3092,7 @@ class _ImportCompanyScreenState extends State<ImportCompanyScreen> {
                 child: Text(
                   "For each Journal No (tranid), the Total Debit must equal Total Credit. "
                   "Unbalanced entries will be skipped automatically.\n"
-                  "Date format must be DD-MM-YYYY for both trandate and edate.",
+                  "Date format must be DD-MM-YYYY for trandate.",
                   style: TextStyle(
                       fontSize: 11.5,
                       color: Color(0xFF92400E),
