@@ -87,4 +87,32 @@ class ReportApiService {
       date: date,
     );
   }
+
+  // =========================
+  // ACCOUNT TRANSACTIONS
+  // =========================
+  Future<List<Map<String, dynamic>>?> getAccountTransactions({
+    required String glno,
+    required String fromDate,
+    required String toDate,
+  }) async {
+    try {
+      final uri = Uri.parse(
+        '${ApiService.baseUrl}/reports/account-transactions'
+        '?glno=$glno&fromDate=$fromDate&toDate=$toDate',
+      );
+
+      final response = await http.get(uri, headers: apiService.headers);
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        return data.cast<Map<String, dynamic>>();
+      } else {
+        print('getAccountTransactions Error: ${response.statusCode} - ${response.body}');
+      }
+    } catch (e) {
+      print('getAccountTransactions Error: $e');
+    }
+    return null;
+  }
 }

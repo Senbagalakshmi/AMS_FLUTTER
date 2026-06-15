@@ -8,6 +8,7 @@ import 'package:universal_html/html.dart' as html;
 import 'package:flutter/foundation.dart' show kIsWeb;
 
 import '../services/report_api_service.dart';
+import 'account_transactions_screen.dart';
 
 class BalanceSheetScreen extends StatefulWidget {
   final VoidCallback onBack;
@@ -483,11 +484,11 @@ class _BalanceSheetScreenState extends State<BalanceSheetScreen> {
                             const SizedBox(height: 24),
 
                             // DYNAMIC TABLES
-                            _buildTable("ASSETS", assetItems, totalAssets, Colors.blue),
+                            _buildTable("ASSETS", assetItems, totalAssets, Colors.blue, "ASSET"),
                             const SizedBox(height: 16),
-                            _buildTable("LIABILITIES", liabilityItems, totalLiabilities, Colors.orange),
+                            _buildTable("LIABILITIES", liabilityItems, totalLiabilities, Colors.orange, "LIABILITY"),
                             const SizedBox(height: 16),
-                            _buildTable("EQUITY", equityItems, totalEquity, Colors.green),
+                            _buildTable("EQUITY", equityItems, totalEquity, Colors.green, "EQUITY"),
                           ],
                         ),
                       ),
@@ -535,7 +536,25 @@ class _BalanceSheetScreenState extends State<BalanceSheetScreen> {
   }
 
   // ================= INDIVIDUAL DATA GRID TABLE BUILDER =================
-  Widget _buildTable(String title, List<Map<String, dynamic>> items, double total, Color color) {
+  // Navigate to account transaction drill-down
+  void _openAccountTransactions(Map<String, dynamic> item, String gltype) {
+    final glno = (item['glno'] ?? item['accountNumber'] ?? '').toString();
+    final glname = (item['glname'] ?? item['accountName'] ?? '').toString();
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AccountTransactionsScreen(
+          glno: glno,
+          glname: glname,
+          gltype: gltype,
+          fromDate: _startDate,
+          toDate: _endDate,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTable(String title, List<Map<String, dynamic>> items, double total, Color color, String gltype) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -579,16 +598,50 @@ class _BalanceSheetScreenState extends State<BalanceSheetScreen> {
           else
             ...items.map((e) {
               final amt = (e['amount'] ?? 0).toDouble();
-              return Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                decoration: const BoxDecoration(
-                  border: Border(bottom: BorderSide(color: Color(0xFFF1F5F9))),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(child: Text(e['glname'] ?? '', style: TextStyle(color: Colors.grey.shade800, fontSize: 14))),
-                    Text(currency.format(amt), style: const TextStyle(fontSize: 14)),
-                  ],
+              return InkWell(
+                onTap: () => _openAccountTransactions(e, gltype),
+                hoverColor: color.withOpacity(0.04),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: const BoxDecoration(
+                    border: Border(bottom: BorderSide(color: Color(0xFFF1F5F9))),
+                  ),
+                  child: Row(
+                    children: [
+                      // Clickable GL name — underlined to hint interactivity
+                      Expanded(
+                        child: Row(
+                          children: [
+                            Flexible(
+                              child: Text(
+                                e['glname'] ?? '',
+                                style: TextStyle(
+                                  color: color.withOpacity(0.85),
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  decoration: TextDecoration.underline,
+                                  decorationColor: color.withOpacity(0.4),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Icon(Icons.open_in_new, size: 13, color: color.withOpacity(0.5)),
+                          ],
+                        ),
+                      ),
+                      // Clickable amount
+                      Text(
+                        currency.format(amt),
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: color.withOpacity(0.9),
+                          decoration: TextDecoration.underline,
+                          decorationColor: color.withOpacity(0.4),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               );
             }),
