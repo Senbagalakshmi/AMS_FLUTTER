@@ -129,6 +129,9 @@ class _AmsRootState extends State<AmsRoot> {
         clearProg: p == null,
       );
     });
+    if (s == 'nontranauth') {
+      _refreshData();
+    }
   }
 
   Future<void> _refreshData() async {
@@ -241,6 +244,7 @@ class _AmsRootState extends State<AmsRoot> {
     }
     if (type == 'nontranauth') {
       setState(() => _state = _state.copyWith(screen: 'nontranauth'));
+      _refreshData();
       return;
     }
     setState(() => _state = _state.copyWith(
