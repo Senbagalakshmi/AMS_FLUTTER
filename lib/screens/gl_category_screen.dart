@@ -1189,7 +1189,8 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
                   'Capital',
                   'Income',
                   'Expense',
-                  'Equity'
+                  'Equity',
+                  'All Categories'
                 ],
               ),
             ),
@@ -1209,6 +1210,49 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
             ),
           ],
         ),
+        // ── All Categories Info Banner ─────────────────────────────────
+        if (_selectedCategoryType == 'All Categories') ...
+          [
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFFBEB),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFFFCD34D)),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.info_rounded,
+                      size: 18, color: Color(0xFF92400E)),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'All Categories — Auto-Balance Account',
+                          style: bodyStyle(
+                              size: 13,
+                              weight: FontWeight.w700,
+                              color: const Color(0xFF92400E)),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'This category covers all account types (Asset, Liability, Capital, Income, Expense). '
+                          'It is used as the automatic balancing account when a journal import has a debit/credit mismatch. '
+                          'The difference amount will be posted to this account to keep the ledger balanced.',
+                          style: bodyStyle(
+                              size: 12, color: const Color(0xFF92400E)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         const SizedBox(height: 16),
         Text('* Required fields',
             style: bodyStyle(
@@ -1302,6 +1346,9 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
         } else if (type == 'Expense') {
           typeBg = AppColors.amberLt.withValues(alpha: 0.5);
           typeFg = AppColors.amber;
+        } else if (type == 'All Categories') {
+          typeBg = const Color(0xFFFFF3CD);
+          typeFg = const Color(0xFF856404);
         }
 
         final isActive = status == 'Active';
@@ -1570,7 +1617,7 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
       _catNameController.text = _getName(c);
       _subTypeController.text = _getSubType(c);
       _selectedCategoryType =
-          ['Asset', 'Liability', 'Capital', 'Income', 'Expense'].contains(type)
+          ['Asset', 'Liability', 'Capital', 'Income', 'Expense', 'All Categories'].contains(type)
               ? type
               : null;
       _orgError = null;
@@ -1592,7 +1639,7 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
       _catNameController.text = _getName(c);
       _subTypeController.text = _getSubType(c);
       _selectedCategoryType =
-          ['Asset', 'Liability', 'Capital', 'Income', 'Expense'].contains(type)
+          ['Asset', 'Liability', 'Capital', 'Income', 'Expense', 'All Categories'].contains(type)
               ? type
               : null;
       _orgError = null;
