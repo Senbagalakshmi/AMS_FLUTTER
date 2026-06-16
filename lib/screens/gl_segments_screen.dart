@@ -1712,7 +1712,7 @@ class _AddEditFormState extends State<_AddEditForm> {
                       controller: _segValueCtrl,
                       onChanged: _validateSegValue,
                       style: const TextStyle(color: kTextDark, fontSize: 14),
-                      decoration: dec('e.g. Finance, Payroll', _segValueValid),
+                      decoration: dec('e.g. Accounting, Payroll', _segValueValid),
                     ),
                     info: 'Display value or description',
                     errorWidget:

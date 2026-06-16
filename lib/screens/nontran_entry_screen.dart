@@ -4014,7 +4014,7 @@ class DynamicNTFieldsState extends State<DynamicNTFields> {
                     child: AmsTextInput(
                       controller: _mNameCtrl,
                       readOnly: widget.isViewMode,
-                      placeholder: 'e.g. Finance',
+                      placeholder: 'e.g. Accounting',
                       textInputAction: TextInputAction.done,
                       errorText: _errors['modName'],
                       isValid: _errors['modName'] == null &&

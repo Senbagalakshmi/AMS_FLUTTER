@@ -1025,7 +1025,7 @@ class AmsTopBar extends StatelessWidget {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(8),
                   child: Image.asset(
-                    'assets/images/logo.jpg',
+                    'assets/images/logo.png',
                     fit: BoxFit.cover,
                   ),
                 ),
@@ -2156,7 +2156,7 @@ class _AmsShellState extends State<AmsShell> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text("FINANCE",
+                  Text("ACCOUNTING",
                       style: bodyStyle(
                           size: 18,
                           weight: FontWeight.w800,
@@ -2241,7 +2241,7 @@ class _HoverTopBarState extends State<_HoverTopBar> {
             ),
             const SizedBox(width: 8),
             Text(
-              "FINANCE",
+              "ACCOUNTING",
               style: bodyStyle(
                 size: 15,
                 weight: FontWeight.w800,
@@ -2304,7 +2304,7 @@ class _HoverTopBarState extends State<_HoverTopBar> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        "FINANCE",
+                        "ACCOUNTING",
                         style: bodyStyle(
                           size: 16,
                           weight: FontWeight.w800,
@@ -2465,7 +2465,7 @@ class _PremiumAppLauncherState extends State<_PremiumAppLauncher> {
     if (t.contains('lock')) return Icons.lock_outline;
     if (t.contains('org') || t.contains('organization'))
       return Icons.apartment_outlined;
-    if (t.contains('finance')) return Icons.account_balance_outlined;
+    if (t.contains('finance') || t.contains('accounting')) return Icons.account_balance_outlined;
     return Icons.apps;
   }
 
@@ -2489,7 +2489,7 @@ class _PremiumAppLauncherState extends State<_PremiumAppLauncher> {
             (p['prodname'] ?? p['name'] ?? '').toString().toLowerCase();
         final homeUrl = (p['homeUrl'] ?? p['url'] ?? '').toString();
         final code = (p['prodcode'] ?? '').toString();
-        if (name.contains('finance')) continue; // skip current app
+        if (name.contains('finance') || name.contains('accounting')) continue; // skip current app
         final key = '$code|$homeUrl';
         if (seen.contains(key)) continue; // skip duplicates
         seen.add(key);

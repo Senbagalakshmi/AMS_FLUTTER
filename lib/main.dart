@@ -55,7 +55,7 @@ class AmsApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'FMS - Finance Management System',
+      title: 'AMS - Accounting Management System',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.theme,
       home: const AmsRoot(),
@@ -95,12 +95,12 @@ class _AmsRootState extends State<AmsRoot> {
         clearCategory: screen == 'list' || screen == 'login',
       );
     });
-    // Keep browser URL in sync: /finance for app, / for login
+    // Keep browser URL in sync: /accounting for app, / for login
     if (kIsWeb) {
       if (screen == 'login') {
         html.window.history.pushState(null, '', '/');
       } else if (screen == 'list') {
-        html.window.history.pushState(null, '', '/finance');
+        html.window.history.pushState(null, '', '/accounting');
       }
     }
   }
@@ -214,9 +214,9 @@ class _AmsRootState extends State<AmsRoot> {
           token: token,
           userName: userName,
         ));
-    // Push /finance to browser URL so dashboard has its own address
+    // Push /accounting to browser URL so dashboard has its own address
     if (kIsWeb) {
-      html.window.history.pushState(null, '', '/finance');
+      html.window.history.pushState(null, '', '/accounting');
     }
     _refreshData();
     _fetchModuleCounts();

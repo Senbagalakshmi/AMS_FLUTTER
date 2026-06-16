@@ -75,7 +75,7 @@ class _SplashScreenState extends State<SplashScreen>
 
     if (kIsWeb) {
       final uri = Uri.base;
-      currentPath = uri.path; // e.g. '/' or '/finance'
+      currentPath = uri.path; // e.g. '/' or '/accounting'
 
       // Standard query param: ?token=...
       motherToken = uri.queryParameters['token'];
@@ -108,8 +108,8 @@ class _SplashScreenState extends State<SplashScreen>
         _setStatus('Restoring session…');
         await Future.delayed(const Duration(milliseconds: 400));
         apiService.updateToken(saved);
-        // Ensure URL shows /finance when restoring a session
-        html.window.history.replaceState(null, '', '/finance');
+        // Ensure URL shows /accounting when restoring a session
+        html.window.history.replaceState(null, '', '/accounting');
         _goToList(saved, userName);
         return;
       }
@@ -118,7 +118,7 @@ class _SplashScreenState extends State<SplashScreen>
     // ── Step 3: no token found ─────────────────────────────────────────────
     // If the user typed /finance directly with no session, redirect to login
     // and correct the URL back to /
-    if (kIsWeb && currentPath == '/finance') {
+    if (kIsWeb && currentPath == '/accounting') {
       html.window.history.replaceState(null, '', '/');
     }
     await Future.delayed(const Duration(milliseconds: 500));
@@ -214,8 +214,8 @@ class _SplashScreenState extends State<SplashScreen>
         html.window.sessionStorage['role_type']    = roleType;
         html.window.sessionStorage['user_data']    = jsonEncode(userJson);
 
-        // Clean ?token= from address bar, show /finance
-        html.window.history.replaceState(null, '', '/finance');
+        // Clean ?token= from address bar, show /accounting
+        html.window.history.replaceState(null, '', '/accounting');
         print('✅ SSO complete. user=$userName  roleType=$roleType');
       }
 
@@ -302,7 +302,7 @@ class _SplashScreenState extends State<SplashScreen>
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(20),
                         child: Image.asset(
-                          'assets/images/logo.jpg',
+                          'assets/images/logo.png',
                           fit: BoxFit.cover,
                         ),
                       ),
@@ -311,7 +311,7 @@ class _SplashScreenState extends State<SplashScreen>
 
                     // App name
                     Text(
-                      'FMS',
+                      'AMS',
                       style: TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.w800,
@@ -328,7 +328,7 @@ class _SplashScreenState extends State<SplashScreen>
                     ),
                     const SizedBox(height: 4),
                     const Text(
-                      'Finance Management System',
+                      'Accounting Management System',
                       style: TextStyle(
                         fontSize: 12,
                         color: Color(0xFF5D7FA0),

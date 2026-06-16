@@ -160,14 +160,14 @@ class _LoginScreenState extends State<LoginScreen>
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(20),
                                 child: Image.asset(
-                                  'assets/images/logo.jpg',
+                                  'assets/images/logo.png',
                                   fit: BoxFit.cover,
                                 ),
                               ),
                             ),
                             const SizedBox(height: 16),
                             Text(
-                              'BBOTS Management',
+                              'BBOTS Accounting',
                               style: GoogleFonts.spaceGrotesk(
                                 fontSize: titleFontSize,
                                 fontWeight: FontWeight.w800,
