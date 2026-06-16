@@ -724,15 +724,17 @@ class _ImportCompanyScreenState extends State<ImportCompanyScreen> {
     if (_importType == 'coa') {
       fileName = "chart_of_accounts_template.csv";
       csvContent = "${_expectedHeaders.join(',')}\n"
-          "55,1,Inventory Asset,116,Cash balance,Asset,Asset,INR,0.00,Credit\n"
-          "55,1,Credit Card,117,Bank account,Liability,Liability,INR,0.00,Debit\n";
+          "55,1,Inventory Asset,101,Cash balance,Asset,Asset,INR,0.00,Credit\n"
+          "55,1,Credit Card,102,Bank account,Liability,Liability,INR,0.00,Debit\n"
+          "55,1,Office Supplies,103,Expense account,Expense,Expense,INR,0.00,Debit\n"
+          "55,1,Sales Revenue,104,Revenue account,Revenue,Revenue,INR,0.00,Credit\n";
     } else {
       fileName = "journal_entries_template.csv";
       csvContent = "${_expectedHeaders.join(',')}\n"
           "55,209,04-06-2026,1,P,111,Debit,0.00,50000.00,Opening Balance Cash\n"
-          "55,209,04-06-2026,1,P,110,Credit,50000.00,0.00,Opening Balance HDFC\n"
-          "55,209,04-06-2026,1,P,112,Credit,45000.00,0.00,Opening Balance AP\n"
-          "55,209,04-06-2026,1,P,113,Debit,0.00,45000.00,Opening Balance Capital\n";
+          "55,209,04-06-2026,1,P,112,Credit,50000.00,0.00,Opening Balance HDFC\n"
+          "55,209,04-06-2026,1,P,113,Credit,45000.00,0.00,Opening Balance AP\n"
+          "55,209,04-06-2026,1,P,114,Debit,0.00,45000.00,Opening Balance Capital\n";
     }
 
     final bytes = utf8.encode(csvContent);
