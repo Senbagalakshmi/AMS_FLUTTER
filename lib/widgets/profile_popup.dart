@@ -150,7 +150,7 @@ class _ProfilePopupState extends State<ProfilePopup> {
       final userScdRaw = fetchedUser['userScd'] ?? fetchedUser['usersCd'];
       final orgCodeRaw = fetchedUser['orgCode'];
       if (userScdRaw != null) {
-        final uCode = userScdRaw is int ? userScdRaw : int.tryParse(userScdRaw.toString()) ?? 0;
+        final uCode = userScdRaw.toString();
         final oCode = orgCodeRaw is int ? orgCodeRaw : int.tryParse(orgCodeRaw?.toString() ?? '0') ?? 0;
         final userDetails = await apiService.getUserDetails(uCode, oCode);
         if (userDetails != null) {
