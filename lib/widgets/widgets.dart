@@ -2141,30 +2141,11 @@ class _AmsShellState extends State<AmsShell> {
           /// 🔹 LOGO
           Row(
             children: [
-              Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  color: AppColors.tBlue,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(Icons.shield_rounded,
-                    color: Colors.white, size: 22),
-              ),
-              const SizedBox(width: 10),
-              Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text("ACCOUNTING",
-                      style: bodyStyle(
-                          size: 18,
-                          weight: FontWeight.w800,
-                          color: Colors.white)),
-                  Text("Management System",
-                      style: bodyStyle(size: 10, color: Colors.white70)),
-                ],
-              ),
+              Text("ACCOUNTING",
+                  style: bodyStyle(
+                      size: 18,
+                      weight: FontWeight.w800,
+                      color: Colors.white)),
             ],
           ),
 
@@ -2286,19 +2267,6 @@ class _HoverTopBarState extends State<_HoverTopBar> {
                   _PremiumAppLauncher(),
                   const SizedBox(width: 12),
 
-                  Container(
-                    width: 34,
-                    height: 34,
-                    decoration: BoxDecoration(
-                      color: AppColors.tBlue,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(Icons.shield_rounded,
-                        color: Colors.white, size: 20),
-                  ),
-
-                  const SizedBox(width: 10),
-
                   Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -2311,14 +2279,7 @@ class _HoverTopBarState extends State<_HoverTopBar> {
                           color: Colors.white,
                         ),
                       ),
-                      if (_hover)
-                        Text(
-                          "Management System",
-                          style: bodyStyle(
-                            size: 10,
-                            color: Colors.white70,
-                          ),
-                        ),
+                      
                     ],
                   ),
 

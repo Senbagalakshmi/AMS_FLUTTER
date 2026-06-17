@@ -56,7 +56,7 @@ class AmsApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'AMS - Accounting Management System',
+      title: 'Accounting',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.theme,
       home: const AmsRoot(),
