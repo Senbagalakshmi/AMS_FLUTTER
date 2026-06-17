@@ -42,6 +42,7 @@ import 'screens/balance_sheet_screen.dart';
 import 'screens/report_dashboard_screen.dart';
 import 'screens/import_company_screen.dart';
 import 'screens/master_dashboard_screen.dart';
+import 'screens/accountant_desk_dashboard_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -765,6 +766,13 @@ class _AmsRootState extends State<AmsRoot> {
             }
             return item;
           }).toList();
+        } else if (cat == 'TRANSACTIONS') {
+          body = AccountantDeskDashboardScreen(
+            items: items,
+            userName: _state.userName,
+            onBack: () => _navigate('list'),
+            onNavigate: _handleScreenNavigation,
+          );
         } else if (cat == 'TRANSACTIONS') {
           title = 'Transactions';
           items = transactionSubmenus;
