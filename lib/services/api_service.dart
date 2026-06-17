@@ -115,7 +115,7 @@ class ApiService {
       final userScdRaw = userData?['userScd'] ?? userData?['usersCd'];
       final orgCodeRaw = userData?['orgCode'];
       if (userScdRaw != null) {
-        final uCode = userScdRaw is int ? userScdRaw : int.tryParse(userScdRaw.toString()) ?? 0;
+        final uCode = userScdRaw.toString() ?? ''; 
         final oCode = orgCodeRaw is int ? orgCodeRaw : int.tryParse(orgCodeRaw?.toString() ?? '0') ?? 0;
         print('👤 Fetching user details (Step 3) for userCode=$uCode, orgCode=$oCode');
         userDetails = await getUserDetails(uCode, oCode);
@@ -154,6 +154,57 @@ class ApiService {
     } catch (e) {
       print('❌ login error: $e');
       return null;
+    }
+  }
+
+  Future<String?> forgotPasswordRequest(String email) async {
+    try {
+      final res = await http.post(
+        Uri.parse('$baseUrl/auth/forgot-password/request'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': email}),
+      );
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        return data['tokenKey'];
+      }
+      return null;
+    } catch (e) {
+      print('Forgot password request error: $e');
+      return null;
+    }
+  }
+
+  Future<bool> forgotPasswordVerify(String tokenKey, String otp) async {
+    try {
+      final res = await http.post(
+        Uri.parse('$baseUrl/auth/forgot-password/verify'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'tokenKey': tokenKey, 'otp': otp}),
+      );
+      return res.statusCode == 200;
+    } catch (e) {
+      print('Forgot password verify error: $e');
+      return false;
+    }
+  }
+
+  Future<bool> forgotPasswordReset(
+      String tokenKey, String newPassword, String confirmPassword) async {
+    try {
+      final res = await http.post(
+        Uri.parse('$baseUrl/auth/forgot-password/reset'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'tokenKey': tokenKey,
+          'newPassword': newPassword,
+          'confirmPassword': confirmPassword
+        }),
+      );
+      return res.statusCode == 200;
+    } catch (e) {
+      print('Forgot password reset error: $e');
+      return false;
     }
   }
 
@@ -1086,7 +1137,7 @@ class ApiService {
   // ── Get full user profile after SSO exchange ───────────────────────────────
   // Endpoint: GET /am/get-user?userCode=<userCode>&orgCode=<orgCode> (uses host without /api)
   //   Header: Authorization: Bearer <child_token>
-  Future<Map<String, dynamic>?> getUserDetails(int userCode, int orgCode) async {
+  Future<Map<String, dynamic>?> getUserDetails(String userCode, int orgCode) async {
     try {
       final host = baseUrl.replaceFirst('/api', '');
       final url = '$host/am/get-user?userCode=$userCode&orgCode=$orgCode';
