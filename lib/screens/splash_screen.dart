@@ -172,7 +172,7 @@ class _SplashScreenState extends State<SplashScreen>
       _setStatus('Loading user profile…');
       Map<String, dynamic>? userDetails;
       if (userScd != null) {
-        final uCode = userScd is int ? userScd : int.tryParse(userScd.toString()) ?? 0;
+        final uCode = userScd.toString();
         final oCode = orgCode is int ? orgCode : int.tryParse(orgCode?.toString() ?? '0') ?? 0;
         userDetails = await apiService.getUserDetails(uCode, oCode);
       }
