@@ -89,6 +89,9 @@ class _AmsRootState extends State<AmsRoot> {
   String? _importSource;
 
   void _navigate(String screen) {
+    if (screen == 'login') {
+      apiService.logout();
+    }
     setState(() {
       _state = _state.copyWith(
         screen: screen,

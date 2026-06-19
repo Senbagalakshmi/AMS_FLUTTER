@@ -33,6 +33,28 @@ class ApiService {
 
   Map<String, String> get headers => _headers;
 
+  Future<void> logout() async {
+    try {
+      final t = _token ?? (kIsWeb ? html.window.sessionStorage['mother_token'] : null);
+      if (t != null) {
+        await http.post(
+          Uri.parse('$baseUrl/auth/logout'),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $t',
+          },
+        );
+      }
+    } catch (e) {
+      print('Logout API call failed: $e');
+    }
+    
+    _token = null;
+    if (kIsWeb) {
+      html.window.sessionStorage.clear();
+    }
+  }
+
   PaginatedResult<Map<String, dynamic>> _parsePaginated(dynamic decoded) {
     if (decoded is List) {
       // Backend returned a plain array instead of a paginated object.
@@ -137,12 +159,12 @@ class ApiService {
         }
 
         // Ensure products are mapped to session user_data so nine dots works
-        if (loginData['products'] != null) {
-          finalUser['products'] = loginData['products'];
+        if (userDetails != null && userDetails['products'] != null) {
+          finalUser['products'] = userDetails['products'];
         } else if (exchangeData['products'] != null) {
           finalUser['products'] = exchangeData['products'];
-        } else if (userDetails != null && userDetails['products'] != null) {
-          finalUser['products'] = userDetails['products'];
+        } else if (loginData['products'] != null) {
+          finalUser['products'] = loginData['products'];
         }
 
         html.window.sessionStorage['user_data'] = jsonEncode(finalUser);

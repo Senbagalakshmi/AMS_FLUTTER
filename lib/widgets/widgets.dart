@@ -1607,6 +1607,15 @@ class _AmsSidebarState extends State<AmsSidebar> {
 
   @override
   Widget build(BuildContext context) {
+    String currentRole = '';
+    try {
+      if (kIsWeb) {
+        currentRole = (html.window.sessionStorage['role_type'] ?? '').toLowerCase();
+      }
+    } catch (_) {}
+    
+    bool isSysAdmin = currentRole == 'sysadmin';
+
     return AnimatedContainer(
       duration: const Duration(milliseconds: 250),
       width: widget.isCollapsed ? 70 : 240,
@@ -1640,97 +1649,84 @@ class _AmsSidebarState extends State<AmsSidebar> {
                   },
                 ),
 
-                const SizedBox(height: 16),
+                if (isSysAdmin) ...[
+                  const SizedBox(height: 16),
 
-                // 🔹 MASTERS
-                AmsSidebarItem(
-                  label: widget.isCollapsed ? '' : 'Masters',
-                  icon: openMenu == 'masters'
-                      ? Icons.folder_open_rounded
-                      : Icons.folder_shared_rounded,
-                  isCollapsed: widget.isCollapsed,
-                  isSelected: (widget.currentScreen == 'submenu_dashboard' &&
-                      widget.selectedProg == 'MASTERS'),
-                  onTap: () {
-                    setState(() {
-                      openMenu = openMenu == 'masters' ? '' : 'masters';
-                    });
-                    widget.onNavigate('submenu_dashboard', 'MASTERS');
-                  },
-                ),
+                  // 🔹 MASTERS
+                  AmsSidebarItem(
+                    label: widget.isCollapsed ? '' : 'Masters',
+                    icon: openMenu == 'masters'
+                        ? Icons.folder_open_rounded
+                        : Icons.folder_shared_rounded,
+                    isCollapsed: widget.isCollapsed,
+                    isSelected: (widget.currentScreen == 'submenu_dashboard' &&
+                        widget.selectedProg == 'MASTERS'),
+                    onTap: () {
+                      setState(() {
+                        openMenu = openMenu == 'masters' ? '' : 'masters';
+                      });
+                      widget.onNavigate('submenu_dashboard', 'MASTERS');
+                    },
+                  ),
 
-                if (openMenu == 'masters') ...[
-                  AmsSubSidebarItem(
-                    label: 'Organisation',
-                    isCollapsed: widget.isCollapsed,
-                    icon: Icons.business_rounded,
-                    isSelected: widget.selectedProg == 'ORG-CRT',
-                    onTap: () => widget.onNavigate('nontran', 'ORG-CRT'),
-                  ),
-                  AmsSubSidebarItem(
-                    label: 'Branch',
-                    isCollapsed: widget.isCollapsed,
-                    icon: Icons.store_rounded,
-                    isSelected: widget.selectedProg == 'BRN-CRT',
-                    onTap: () => widget.onNavigate('nontran', 'BRN-CRT'),
-                  ),
-                  AmsSubSidebarItem(
-                    label: 'User',
-                    isCollapsed: widget.isCollapsed,
-                    icon: Icons.person_add_rounded,
-                    isSelected: widget.selectedProg == 'USR-CRT',
-                    onTap: () => widget.onNavigate('nontran', 'USR-CRT'),
-                  ),
-                  // AmsSubSidebarItem(
-                  //   label: 'User Role Assign',
-                  //   isCollapsed: widget.isCollapsed,
-                  //   icon: Icons.assignment_ind_rounded,
-                  //   isSelected: widget.selectedProg == 'USR-ROLE',
-                  //   onTap: () => widget.onNavigate('nontran', 'USR-ROLE'),
-                  // ),
-
-                  AmsSubSidebarItem(
-                    label: ' Access',
-                    isCollapsed: widget.isCollapsed,
-                    icon: Icons.supervised_user_circle_rounded,
-                    isSelected: widget.selectedProg == 'ROLE-CRT',
-                    onTap: () => widget.onNavigate('nontran', 'ROLE-CRT'),
-                  ),
-                  AmsSubSidebarItem(
-                    label: 'User Access Mapping',
-                    isCollapsed: widget.isCollapsed,
-                    icon: Icons.assignment_ind_rounded,
-                    isSelected: widget.selectedProg == 'USR-ACCESS',
-                    onTap: () => widget.onNavigate('nontran', 'USR-ACCESS'),
-                  ),
-                  AmsSubSidebarItem(
-                    label: 'Modules',
-                    isCollapsed: widget.isCollapsed,
-                    icon: Icons.view_module_rounded,
-                    isSelected: widget.selectedProg == 'MOD-CRT',
-                    onTap: () => widget.onNavigate('nontran', 'MOD-CRT'),
-                  ),
-                  AmsSubSidebarItem(
-                    label: 'Program',
-                    isCollapsed: widget.isCollapsed,
-                    icon: Icons.app_settings_alt_rounded,
-                    isSelected: widget.selectedProg == 'PROG-CRT',
-                    onTap: () => widget.onNavigate('nontran', 'PROG-CRT'),
-                  ),
-                  AmsSubSidebarItem(
-                    label: 'Menu Master',
-                    isCollapsed: widget.isCollapsed,
-                    icon: Icons.menu_open_rounded,
-                    isSelected: widget.selectedProg == 'MENU-MST',
-                    onTap: () => widget.onNavigate('nontran', 'MENU-MST'),
-                  ),
-                  // AmsSubSidebarItem(
-                  //   label: 'Clients',
-                  //   isCollapsed: widget.isCollapsed,
-                  //   icon: Icons.upload_file_rounded,
-                  //   isSelected: widget.selectedProg == 'GL-IMPORT',
-                  //   onTap: () => widget.onNavigate('nontran', 'GL-IMPORT'),
-                  // ),
+                  if (openMenu == 'masters') ...[
+                    AmsSubSidebarItem(
+                      label: 'Organisation',
+                      isCollapsed: widget.isCollapsed,
+                      icon: Icons.business_rounded,
+                      isSelected: widget.selectedProg == 'ORG-CRT',
+                      onTap: () => widget.onNavigate('nontran', 'ORG-CRT'),
+                    ),
+                    AmsSubSidebarItem(
+                      label: 'Branch',
+                      isCollapsed: widget.isCollapsed,
+                      icon: Icons.store_rounded,
+                      isSelected: widget.selectedProg == 'BRN-CRT',
+                      onTap: () => widget.onNavigate('nontran', 'BRN-CRT'),
+                    ),
+                    AmsSubSidebarItem(
+                      label: 'User',
+                      isCollapsed: widget.isCollapsed,
+                      icon: Icons.person_add_rounded,
+                      isSelected: widget.selectedProg == 'USR-CRT',
+                      onTap: () => widget.onNavigate('nontran', 'USR-CRT'),
+                    ),
+                    AmsSubSidebarItem(
+                      label: ' Access',
+                      isCollapsed: widget.isCollapsed,
+                      icon: Icons.supervised_user_circle_rounded,
+                      isSelected: widget.selectedProg == 'ROLE-CRT',
+                      onTap: () => widget.onNavigate('nontran', 'ROLE-CRT'),
+                    ),
+                    AmsSubSidebarItem(
+                      label: 'User Access Mapping',
+                      isCollapsed: widget.isCollapsed,
+                      icon: Icons.assignment_ind_rounded,
+                      isSelected: widget.selectedProg == 'USR-ACCESS',
+                      onTap: () => widget.onNavigate('nontran', 'USR-ACCESS'),
+                    ),
+                    AmsSubSidebarItem(
+                      label: 'Modules',
+                      isCollapsed: widget.isCollapsed,
+                      icon: Icons.view_module_rounded,
+                      isSelected: widget.selectedProg == 'MOD-CRT',
+                      onTap: () => widget.onNavigate('nontran', 'MOD-CRT'),
+                    ),
+                    AmsSubSidebarItem(
+                      label: 'Program',
+                      isCollapsed: widget.isCollapsed,
+                      icon: Icons.app_settings_alt_rounded,
+                      isSelected: widget.selectedProg == 'PROG-CRT',
+                      onTap: () => widget.onNavigate('nontran', 'PROG-CRT'),
+                    ),
+                    AmsSubSidebarItem(
+                      label: 'Menu Master',
+                      isCollapsed: widget.isCollapsed,
+                      icon: Icons.menu_open_rounded,
+                      isSelected: widget.selectedProg == 'MENU-MST',
+                      onTap: () => widget.onNavigate('nontran', 'MENU-MST'),
+                    ),
+                  ],
                 ],
 
                 const SizedBox(height: 16),
@@ -2524,9 +2520,11 @@ class _PremiumAppLauncherState extends State<_PremiumAppLauncher> {
                             (p['prodname'] ?? p['name'] ?? 'App').toString();
                         final homeUrl =
                             (p['homeUrl'] ?? p['url'] ?? '').toString();
+                        final logoUrl = (p['logo'] ?? '').toString();
                         final icon = _makeIcon(name);
                         return _AppTile(
                           icon: icon,
+                          logoUrl: logoUrl.isNotEmpty ? logoUrl : null,
                           label: name,
                           onTap: () => _navigate(homeUrl),
                         );
@@ -2543,10 +2541,12 @@ class _PremiumAppLauncherState extends State<_PremiumAppLauncher> {
 // ── Single tile inside the nine-dots popup ────────────────────
 class _AppTile extends StatefulWidget {
   final IconData icon;
+  final String? logoUrl;
   final String label;
   final VoidCallback onTap;
   const _AppTile({
     required this.icon,
+    this.logoUrl,
     required this.label,
     required this.onTap,
   });
@@ -2556,6 +2556,30 @@ class _AppTile extends StatefulWidget {
 
 class _AppTileState extends State<_AppTile> {
   bool _hovered = false;
+  late String _viewId;
+  bool _viewRegistered = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (kIsWeb && widget.logoUrl != null && widget.logoUrl!.isNotEmpty) {
+      _viewId = 'img-${widget.logoUrl.hashCode}';
+      try {
+        ui_web.platformViewRegistry.registerViewFactory(
+          _viewId,
+          (int viewId) => html.ImageElement()
+            ..src = widget.logoUrl!
+            ..style.width = '100%'
+            ..style.height = '100%'
+            ..style.objectFit = 'contain',
+        );
+        _viewRegistered = true;
+      } catch (e) {
+        // Ignore if already registered
+        _viewRegistered = true;
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -2600,7 +2624,17 @@ class _AppTileState extends State<_AppTile> {
                       ),
                     ],
                   ),
-                  child: Icon(widget.icon, color: Colors.white, size: 22),
+                  child: _viewRegistered
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: AbsorbPointer(
+                              child: HtmlElementView(viewType: _viewId),
+                            ),
+                          ),
+                        )
+                      : Icon(widget.icon, color: Colors.white, size: 22),
                 ),
               ),
               const SizedBox(height: 6),
