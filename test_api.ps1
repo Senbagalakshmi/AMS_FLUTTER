@@ -1,4 +1,4 @@
-$baseUrl = "http://localhost:8080/api"
+$baseUrl = "http://localhost:8085/api"
 
 Write-Host "Logging in..."
 $loginBody = @{

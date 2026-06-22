@@ -1,5 +1,5 @@
 {
+  "localbaseUrl": "https://bbots.co.in/ams/api",
   "baseUrl": "http://localhost:8085/fms/api",
-  "amBaseUrl": "http://localhost:8082/accessmanager",
   "productCode": 8
 }
