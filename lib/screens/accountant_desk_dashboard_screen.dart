@@ -418,7 +418,7 @@ class _AccountantDeskDashboardScreenState
               accentColor: AppColors.tBlue,
               accentLt: AppColors.tBlueLt,
               accentMd: AppColors.tBlueMd,
-              showBack: false,
+              onBack: widget.onBack,
             ),
           ),
 
@@ -552,6 +552,7 @@ class _AccountantDeskDashboardScreenState
         numericTarget: _journalCount,
         icon: Icons.description_rounded,
         color: const Color(0xFF4F46E5),
+        onTap: () => widget.onNavigate('nontran', 'GL-JRN'),
       ),
       _StatCard(
         title: 'Chart of Accounts',
@@ -559,6 +560,7 @@ class _AccountantDeskDashboardScreenState
         numericTarget: _coaCount,
         icon: Icons.list_alt_rounded,
         color: const Color(0xFF0EA5E9),
+        onTap: () => widget.onNavigate('nontran', 'RPT-COA'),
       ),
       _StatCard(
         title: 'Reports',
@@ -909,7 +911,7 @@ class _AccountantDeskDashboardScreenState
                       weight: FontWeight.w700,
                       color: const Color(0xFF0F172A))),
               TextButton(
-                onPressed: () => widget.onNavigate('list', 'RPT-COA'),
+                onPressed: () => widget.onNavigate('nontran', 'RPT-COA'),
                 child: const Text('View All',
                     style: TextStyle(
                         color: Color(0xFF4F46E5),
@@ -1072,7 +1074,7 @@ class _AccountantDeskDashboardScreenState
                         style: bodyStyle(color: const Color(0xFF64748B))),
                     const SizedBox(height: 8),
                     TextButton(
-                      onPressed: () => widget.onNavigate('list', 'GL-JRN'),
+                      onPressed: () => widget.onNavigate('nontran', 'GL-JRN'),
                       child: const Text('Create your first entry',
                           style: TextStyle(
                               color: Color(0xFF4F46E5),
