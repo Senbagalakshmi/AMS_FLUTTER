@@ -5,6 +5,7 @@ import '../models/models.dart';
 import '../utils/responsive.dart';
 import '../services/api_service.dart';
 import '../services/org_api_service.dart';
+import 'package:intl/intl.dart';
 
 class ProgramListScreen extends StatefulWidget {
   final Map<String, Auth101Config> authConfigs;
@@ -290,7 +291,83 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
           Padding(
             padding: EdgeInsets.fromLTRB(
                 isMobile ? 16 : 32, 28, isMobile ? 16 : 32, 32),
-            child: _greetingBlock(pending, processed, isMobile),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(child: _greetingBlock(pending, processed, isMobile)),
+                if (!isMobile) _dateBlock(),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _dateBlock() {
+    final now = DateTime.now();
+    final dayFormat = DateFormat('dd');
+    final monthFormat = DateFormat('MMM yyyy');
+    final dayNameFormat = DateFormat('EEEE');
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          )
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                dayNameFormat.format(now).toUpperCase(),
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.7),
+                  fontSize: 10,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1.5,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                monthFormat.format(now).toUpperCase(),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(width: 16),
+          Container(
+            height: 34,
+            width: 1.5,
+            color: Colors.white.withValues(alpha: 0.3),
+          ),
+          const SizedBox(width: 16),
+          Text(
+            dayFormat.format(now),
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 38,
+              fontWeight: FontWeight.w900,
+              height: 1.0,
+            ),
           ),
         ],
       ),
@@ -325,18 +402,27 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
           ),
         ),
         const SizedBox(height: 8),
-        Wrap(
-          spacing: 6,
-          runSpacing: 6,
-          children: [
-            _infoBadge(Icons.inbox_rounded, '$pending pending',
-                const Color(0xFFFBBF24)),
-            _infoBadge(Icons.check_circle_rounded, '$processed processed',
-                const Color(0xFF34D399)),
-            _infoBadge(Icons.category_rounded, '$_glCategories categories',
-                const Color(0xFF818CF8)),
-          ],
+        Text(
+          'Welcome back! Here is your system overview for today.',
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.8),
+            fontSize: isMobile ? 13 : 15,
+            fontWeight: FontWeight.w500,
+          ),
         ),
+        const SizedBox(height: 8),
+        // Wrap(
+        //   spacing: 6,
+        //   runSpacing: 6,
+        //   children: [
+        //     _infoBadge(Icons.inbox_rounded, '$pending pending',
+        //         const Color(0xFFFBBF24)),
+        //     _infoBadge(Icons.check_circle_rounded, '$processed processed',
+        //         const Color(0xFF34D399)),
+        //     _infoBadge(Icons.category_rounded, '$_glCategories categories',
+        //         const Color(0xFF818CF8)),
+        //   ],
+        // ),
       ],
     );
   }
@@ -371,40 +457,57 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
           const Color(0xFF6366F1),
           '+18% vs last week',
           () => widget.onProceed('AUTH')),
-      _KpiData(
-          'Organisations',
-          '$_totalOrgCount',
-          Icons.business_rounded,
-          const Color(0xFFF59E0B),
-          'registered orgs',
-          () => widget.onSelect('ORG-CRT')),
+      // _KpiData(
+      //     'Organisations',
+      //     '$_totalOrgCount',
+      //     Icons.business_rounded,
+      //     const Color(0xFFF59E0B),
+      //     'registered orgs',
+      //     () => widget.onSelect('ORG-CRT')),
       _KpiData(
           'Chart of Accounts',
           '$_totalCoaCount',
           Icons.account_tree_rounded,
-          const Color(0xFF10B981),
+          const Color(0xFFF59E0B),
           'total accounts',
           () => widget.onSelect('RPT-COA')),
       _KpiData('GL Categories', '$_glCategories', Icons.category_rounded,
           const Color(0xFF3B82F6), 'configured', () => widget.onProceed('GL')),
+      // _KpiData(
+      //     'Total Users',
+      //     '$_totalUsersCount',
+      //     Icons.group_rounded,
+      //     const Color(0xFFEC4899),
+      //     'registered',
+      //     () => widget.onProceed('MASTERS')),
       _KpiData(
-          'Total Users',
-          '$_totalUsersCount',
-          Icons.group_rounded,
-          const Color(0xFFEC4899),
-          'registered',
-          () => widget.onProceed('MASTERS')),
+          'Reports',
+          'Available',
+          Icons.pie_chart_rounded,
+          const Color(0xFF10B981),
+          'view all reports',
+          () => widget.onProceed('REPORTS'))
     ];
 
-    return Wrap(
-      spacing: 12,
-      runSpacing: 12,
-      children: cards.map((c) {
-        return SizedBox(
-          width: isMobile ? double.infinity : 190,
+    if (isMobile) {
+      return Column(
+        children: cards.map((c) => Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: SizedBox(
+            width: double.infinity,
+            child: _KpiCard(data: c, isLoading: _isLoading),
+          ),
+        )).toList(),
+      );
+    }
+
+    return Row(
+      children: cards.map((c) => Expanded(
+        child: Padding(
+          padding: EdgeInsets.only(right: c != cards.last ? 16 : 0),
           child: _KpiCard(data: c, isLoading: _isLoading),
-        );
-      }).toList(),
+        ),
+      )).toList(),
     );
   }
 
