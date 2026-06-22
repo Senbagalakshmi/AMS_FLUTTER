@@ -227,21 +227,21 @@ class _GlDashboardScreenState extends State<GlDashboardScreen> with SingleTicker
         title: 'GL Categories',
         value: _isLoading ? '...' : _glCategoriesCount.toString(),
         icon: Icons.category_rounded,
-        color: const Color(0xFF6366F1),
+        gradientColors: const [Color(0xFF818CF8), Color(0xFF6366F1)],
         delay: 0,
       ),
       _SummaryCard3D(
         title: 'Ledger Masters',
         value: _isLoading ? '...' : _ledgerMastersCount.toString(),
         icon: Icons.account_balance_rounded,
-        color: const Color(0xFF10B981),
+        gradientColors: const [Color(0xFF34D399), Color(0xFF10B981)],
         delay: 0.05,
       ),
       _SummaryCard3D(
         title: 'Branches',
         value: _isLoading ? '...' : _branchesCount.toString(),
         icon: Icons.business_rounded,
-        color: const Color(0xFFEF4444),
+        gradientColors: const [Color(0xFF67E8F9), Color(0xFF0EA5E9)],
         delay: 0.1,
       ),
     ];
@@ -360,14 +360,14 @@ class _GlDashboardScreenState extends State<GlDashboardScreen> with SingleTicker
         children: [
           _MondayGroup(
             title: 'Core Ledger Setup',
-            color: const Color(0xFF579BFF),
+            color: const Color(0xFF3A57E8),
             items: setupItems,
             onNavigate: widget.onNavigate,
           ),
           const SizedBox(height: 32),
           _MondayGroup(
             title: 'Control Parameters',
-            color: const Color(0xFF00C875),
+            color: AppColors.green,
             items: controlItems,
             onNavigate: widget.onNavigate,
           ),
@@ -560,14 +560,14 @@ class _SummaryCard3D extends StatefulWidget {
   final String title;
   final String value;
   final IconData icon;
-  final Color color;
+  final List<Color> gradientColors;
   final double delay;
 
   const _SummaryCard3D({
     required this.title,
     required this.value,
     required this.icon,
-    required this.color,
+    required this.gradientColors,
     required this.delay,
   });
 
@@ -579,6 +579,7 @@ class _SummaryCard3DState extends State<_SummaryCard3D> {
 
   @override
   Widget build(BuildContext context) {
+    final activeColor = widget.gradientColors.last;
     return RepaintBoundary(
       child: TweenAnimationBuilder<double>(
         tween: Tween(begin: 0, end: 1),
@@ -598,15 +599,15 @@ class _SummaryCard3DState extends State<_SummaryCard3D> {
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [Colors.white, _isHovered ? widget.color.withOpacity(0.05) : Colors.white],
+                      colors: [Colors.white, _isHovered ? activeColor.withValues(alpha: 0.05) : Colors.white],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: _isHovered ? widget.color : AppColors.border, width: _isHovered ? 2 : 1),
+                    border: Border.all(color: _isHovered ? activeColor : AppColors.border, width: _isHovered ? 2 : 1),
                     boxShadow: [
                       BoxShadow(
-                        color: _isHovered ? widget.color.withOpacity(0.1) : Colors.black.withOpacity(0.03),
+                        color: _isHovered ? activeColor.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.03),
                         blurRadius: _isHovered ? 20 : 10,
                         offset: Offset(0, _isHovered ? 12 : 5),
                       ),
@@ -617,10 +618,21 @@ class _SummaryCard3DState extends State<_SummaryCard3D> {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: widget.color.withOpacity(0.1),
-                          shape: BoxShape.circle,
+                          gradient: LinearGradient(
+                            colors: widget.gradientColors,
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(14),
+                          boxShadow: [
+                            BoxShadow(
+                              color: activeColor.withValues(alpha: 0.25),
+                              blurRadius: 8,
+                              offset: const Offset(0, 4),
+                            )
+                          ],
                         ),
-                        child: Icon(widget.icon, color: widget.color, size: 28),
+                        child: Icon(widget.icon, color: Colors.white, size: 28),
                       ),
                       const SizedBox(width: 16),
                       Expanded(
@@ -711,20 +723,20 @@ class _ModernPieChartState extends State<_ModernPieChart> {
   List<PieChartSectionData> _getDistSections() {
     final s = widget.seed;
     return [
-      _pieSection(0, 35.0 + (s % 12), 'Income', const Color(0xFF34D399), Icons.trending_up_rounded), // Lighter Green
-      _pieSection(1, 25.0 - (s % 8), 'Asset', const Color(0xFF818CF8), Icons.account_balance_rounded), // Lighter Indigo
-      _pieSection(2, 25.0 + (s % 5), 'Liability', const Color(0xFFFBBF24), Icons.account_balance_wallet_rounded), // Lighter Amber
-      _pieSection(3, 15.0 - (s % 3), 'Expense', const Color(0xFFFB7185), Icons.trending_down_rounded), // Lighter Rose/Red
+      _pieSection(0, 35.0 + (s % 12), 'Income', const Color(0xFF0D9488), Icons.trending_up_rounded),
+      _pieSection(1, 25.0 - (s % 8), 'Asset', const Color(0xFF3B82F6), Icons.account_balance_rounded),
+      _pieSection(2, 25.0 + (s % 5), 'Liability', const Color(0xFF818CF8), Icons.account_balance_wallet_rounded),
+      _pieSection(3, 15.0 - (s % 3), 'Expense', const Color(0xFFF43F5E), Icons.trending_down_rounded),
     ];
   }
 
   List<PieChartSectionData> _getAuthSections() {
     final s = widget.seed;
     return [
-      _pieSection(0, 40.0 - (s % 10), 'Approver', const Color(0xFF818CF8), Icons.verified_user_rounded), // Lighter Purple
-      _pieSection(1, 30.0 + (s % 5), 'Checker', const Color(0xFFFDBA74), Icons.fact_check_rounded), // Lighter Orange
-      _pieSection(2, 20.0 + (s % 8), 'Maker', const Color(0xFF38BDF8), Icons.edit_note_rounded), // Lighter Sky Blue
-      _pieSection(3, 10.0, 'Posted', const Color(0xFFF472B6), Icons.cloud_done_rounded), // Lighter Pink
+      _pieSection(0, 40.0 - (s % 10), 'Approver', AppColors.tBlue, Icons.verified_user_rounded),
+      _pieSection(1, 30.0 + (s % 5), 'Checker', const Color(0xFF3A57E8), Icons.fact_check_rounded),
+      _pieSection(2, 20.0 + (s % 8), 'Maker', const Color(0xFF6366F1), Icons.edit_note_rounded),
+      _pieSection(3, 10.0, 'Posted', const Color(0xFF93C5FD), Icons.cloud_done_rounded),
     ];
   }
 
@@ -864,9 +876,9 @@ class _AuthorizationStepper extends StatelessWidget {
 
   Widget _step(String label, IconData icon, bool done, bool active) {
     Color color;
-    if (label == 'Maker') color = const Color(0xFF0EA5E9);
-    else if (label == 'Approver') color = const Color(0xFF8B5CF6);
-    else color = active ? (isSelected ? AppColors.tBlue : AppColors.tBlue) : (done ? const Color(0xFF10B981) : AppColors.border);
+    if (label == 'Maker') color = const Color(0xFF3A57E8);
+    else if (label == 'Approver') color = AppColors.purple;
+    else color = active ? AppColors.tBlue : (done ? AppColors.green : AppColors.border);
     
     return Expanded(
       child: Column(
@@ -895,7 +907,7 @@ class _AuthorizationStepper extends StatelessWidget {
       height: 3,
       margin: const EdgeInsets.only(bottom: 20),
       decoration: BoxDecoration(
-        color: active ? const Color(0xFF10B981) : AppColors.border2,
+        color: active ? AppColors.green : AppColors.border2,
         borderRadius: BorderRadius.circular(2),
       ),
     );
@@ -1112,12 +1124,12 @@ class _MondayGroup extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: (isDone ? const Color(0xFF10B981) : AppColors.tBlue).withValues(alpha: 0.1),
+          color: (isDone ? AppColors.green : AppColors.tBlue).withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(6),
         ),
         child: Text(
           isDone ? 'LIVE' : 'ACTIVE',
-          style: bodyStyle(size: 10, weight: FontWeight.w800, color: isDone ? const Color(0xFF10B981) : AppColors.tBlue),
+          style: bodyStyle(size: 10, weight: FontWeight.w800, color: isDone ? AppColors.green : AppColors.tBlue),
         ),
       ),
     );
@@ -1272,7 +1284,14 @@ class _GanttChart extends StatelessWidget {
     );
   }
   Color _getGanttColor(int i) {
-    final colors = [const Color(0xFF6366F1), const Color(0xFF10B981), const Color(0xFFF59E0B), const Color(0xFFEF4444), const Color(0xFF8B5CF6), const Color(0xFFEC4899)];
+    final colors = [
+      AppColors.tBlue,
+      const Color(0xFF3A57E8),
+      AppColors.purple,
+      AppColors.green,
+      AppColors.amber,
+      AppColors.red,
+    ];
     return colors[i % colors.length];
   }
 }
@@ -1291,9 +1310,9 @@ class _ModuleIntelligencePanel extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // 🔹 CORE PERFORMANCE METRICS
-            _intelRow('Verification', '${intel.ver}%', const Color(0xFF8B5CF6)),
-            _intelRow('Sync Stability', '${intel.stab}%', const Color(0xFF0EA5E9)),
-            _intelRow('Anomalies', '${intel.anom}%', const Color(0xFFEF4444)),
+            _intelRow('Verification', '${intel.ver}%', AppColors.purple),
+            _intelRow('Sync Stability', '${intel.stab}%', const Color(0xFF3A57E8)),
+            _intelRow('Anomalies', '${intel.anom}%', AppColors.red),
             
             const SizedBox(height: 16),
             const Divider(height: 1),
