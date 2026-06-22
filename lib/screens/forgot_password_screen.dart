@@ -2,23 +2,28 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme.dart';
 import '../services/api_service.dart';
-import 'forgot_password_screen.dart';
 
-class LoginScreen extends StatefulWidget {
-  final Function(String token, String userName) onLogin;
-  const LoginScreen({super.key, required this.onLogin});
+class ForgotPasswordScreen extends StatefulWidget {
+  const ForgotPasswordScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen>
+class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
     with SingleTickerProviderStateMixin {
-  String _org = 'ORG001';
-  final _uidCtrl = TextEditingController();
-  final _pwdCtrl = TextEditingController();
+  final _emailCtrl = TextEditingController();
+  final _otpCtrl = TextEditingController();
+  final _newPwdCtrl = TextEditingController();
+  final _confirmPwdCtrl = TextEditingController();
+  
   final Map<String, String?> _errors = {};
   bool _isLoading = false;
+  
+  int _step = 0; // 0: Request, 1: Verify OTP, 2: Reset Password
+  String? _tokenKey;
+  Map<String, dynamic>? _passwordPolicy;
+  
   late AnimationController _animCtrl;
   late Animation<double> _fadeAnim;
   late Animation<Offset> _slideAnim;
@@ -38,55 +43,229 @@ class _LoginScreenState extends State<LoginScreen>
   @override
   void dispose() {
     _animCtrl.dispose();
-    _uidCtrl.dispose();
-    _pwdCtrl.dispose();
+    _emailCtrl.dispose();
+    _otpCtrl.dispose();
+    _newPwdCtrl.dispose();
+    _confirmPwdCtrl.dispose();
     super.dispose();
   }
 
-  Future<void> _submit() async {
-    if (_isLoading) return;
-
-    final uid = _uidCtrl.text.trim();
-    final pwd = _pwdCtrl.text.trim();
-
+  Future<void> _submitRequest() async {
+    final email = _emailCtrl.text.trim();
     setState(() {
-      _errors['org'] = _org.isEmpty ? 'Organization is required' : null;
-      _errors['uid'] = uid.isEmpty ? 'Email ID is required' : null;
-      _errors['pwd'] = pwd.isEmpty ? 'Password is required' : null;
+      _errors.clear();
+      if (email.isEmpty) _errors['email'] = 'Email ID is required';
     });
 
-    if (_errors.values.every((e) => e == null)) {
+    if (_errors.isEmpty) {
       setState(() => _isLoading = true);
-
-      final token = await apiService.login(uid, pwd);
-
+      final apiService = ApiService();
+      final token = await apiService.forgotPasswordRequest(email);
       if (mounted) {
         setState(() => _isLoading = false);
         if (token != null) {
-          apiService.updateToken(token);
-          widget.onLogin(token, uid);
+          _tokenKey = token;
+          setState(() => _step = 1);
         } else {
-          setState(() {
-            _errors['pwd'] = 'Invalid credentials or server error';
-          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Failed to request OTP. Check your email.')),
+          );
         }
       }
     }
+  }
+
+  Future<void> _submitVerify() async {
+    final otp = _otpCtrl.text.trim();
+    setState(() {
+      _errors.clear();
+      if (otp.isEmpty) _errors['otp'] = 'OTP is required';
+    });
+
+    if (_errors.isEmpty && _tokenKey != null) {
+      setState(() => _isLoading = true);
+      final apiService = ApiService();
+      final success = await apiService.forgotPasswordVerify(_tokenKey!, otp);
+      if (mounted) {
+        if (success) {
+          final policy = await apiService.getPasswordPolicy();
+          setState(() {
+            _isLoading = false;
+            _passwordPolicy = policy;
+            _step = 2;
+          });
+        } else {
+          setState(() => _isLoading = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Invalid OTP. Please try again.')),
+          );
+        }
+      }
+    }
+  }
+
+  Future<void> _submitReset() async {
+    final newPwd = _newPwdCtrl.text.trim();
+    final confirmPwd = _confirmPwdCtrl.text.trim();
+    
+    setState(() {
+      _errors.clear();
+      if (newPwd.isEmpty) _errors['newPwd'] = 'New password is required';
+      if (confirmPwd.isEmpty) _errors['confirmPwd'] = 'Confirm password is required';
+      if (newPwd.isNotEmpty && confirmPwd.isNotEmpty && newPwd != confirmPwd) {
+        _errors['confirmPwd'] = 'Passwords do not match';
+      }
+    });
+
+    if (_errors.isEmpty && _tokenKey != null) {
+      setState(() => _isLoading = true);
+      final apiService = ApiService();
+      final success = await apiService.forgotPasswordReset(_tokenKey!, newPwd, confirmPwd);
+      if (mounted) {
+        setState(() => _isLoading = false);
+        if (success) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Password reset successfully!')),
+          );
+          Navigator.of(context).pop();
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Failed to reset password. Please try again.')),
+          );
+        }
+      }
+    }
+  }
+
+  void _submit() {
+    if (_isLoading) return;
+    if (_step == 0) {
+      _submitRequest();
+    } else if (_step == 1) {
+      _submitVerify();
+    } else if (_step == 2) {
+      _submitReset();
+    }
+  }
+
+  Widget _buildStep0() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const _DarkLabel('Email ID'),
+        const SizedBox(height: 5),
+        _DarkInput(
+          controller: _emailCtrl,
+          placeholder: 'e.g. arjun@bbots.com',
+          hasError: _errors['email'] != null,
+          keyboardType: TextInputType.emailAddress,
+          textInputAction: TextInputAction.done,
+          onSubmit: _submit,
+        ),
+        if (_errors['email'] != null) _errorText(_errors['email']!),
+      ],
+    );
+  }
+
+  Widget _buildStep1() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const _DarkLabel('Enter OTP'),
+        const SizedBox(height: 5),
+        _DarkInput(
+          controller: _otpCtrl,
+          placeholder: 'e.g. 123456',
+          hasError: _errors['otp'] != null,
+          keyboardType: TextInputType.number,
+          textInputAction: TextInputAction.done,
+          onSubmit: _submit,
+        ),
+        if (_errors['otp'] != null) _errorText(_errors['otp']!),
+      ],
+    );
+  }
+
+  Widget _buildStep2() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (_passwordPolicy != null) ...[
+          Container(
+            padding: const EdgeInsets.all(12),
+            margin: const EdgeInsets.only(bottom: 16),
+            decoration: BoxDecoration(
+              color: const Color(0xFF60A5FA).withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: const Color(0xFF60A5FA).withValues(alpha: 0.3)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Password Policy Note',
+                  style: GoogleFonts.spaceGrotesk(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF60A5FA),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                if (_passwordPolicy!['minLength'] != null)
+                  _PolicyRow('Minimum Length', '${_passwordPolicy!['minLength']}'),
+                if (_passwordPolicy!['maxLength'] != null)
+                  _PolicyRow('Maximum Length', '${_passwordPolicy!['maxLength']}'),
+                if (_passwordPolicy!['requireUppercase'] == true)
+                  _PolicyRow('Require Uppercase', 'Yes'),
+                if (_passwordPolicy!['requireLowercase'] == true)
+                  _PolicyRow('Require Lowercase', 'Yes'),
+                if (_passwordPolicy!['requireNumber'] == true)
+                  _PolicyRow('Require Number', 'Yes'),
+                if (_passwordPolicy!['requireSpecialChar'] == true)
+                  _PolicyRow('Require Special Character', 'Yes'),
+              ],
+            ),
+          ),
+        ],
+        const _DarkLabel('New Password'),
+        const SizedBox(height: 5),
+        _DarkInput(
+          controller: _newPwdCtrl,
+          placeholder: '••••••••',
+          obscure: true,
+          hasError: _errors['newPwd'] != null,
+          textInputAction: TextInputAction.next,
+        ),
+        if (_errors['newPwd'] != null) _errorText(_errors['newPwd']!),
+        const SizedBox(height: 14),
+        const _DarkLabel('Confirm Password'),
+        const SizedBox(height: 5),
+        _DarkInput(
+          controller: _confirmPwdCtrl,
+          placeholder: '••••••••',
+          obscure: true,
+          hasError: _errors['confirmPwd'] != null,
+          textInputAction: TextInputAction.done,
+          onSubmit: _submit,
+        ),
+        if (_errors['confirmPwd'] != null) _errorText(_errors['confirmPwd']!),
+      ],
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     // ── Responsive breakpoints ──────────────────────────────────────────────
     final screenW = MediaQuery.of(context).size.width;
-    final isCompact = screenW < 480; // phone portrait
+    final isCompact = screenW < 480;
     final cardWidth = isCompact
-        ? double.infinity // full-width on phone
+        ? double.infinity
         : screenW < 768
-            ? screenW * 0.82 // tablet-ish
-            : 440.0; // desktop cap
+            ? screenW * 0.82
+            : 440.0;
 
-    final hPad = isCompact ? 16.0 : 24.0; // horizontal outer padding
-    final cardPad = isCompact ? 20.0 : 28.0; // inner card padding
+    final hPad = isCompact ? 16.0 : 24.0;
+    final cardPad = isCompact ? 20.0 : 28.0;
     final logoSize = isCompact ? 80.0 : 100.0;
     final titleFontSize = isCompact ? 20.0 : 24.0;
     // ───────────────────────────────────────────────────────────────────────
@@ -107,11 +286,7 @@ class _LoginScreenState extends State<LoginScreen>
         ),
         child: Stack(
           children: [
-            // Grid overlay
-            Positioned.fill(
-              child: CustomPaint(painter: _GridPainter()),
-            ),
-            // Radial glow
+            Positioned.fill(child: CustomPaint(painter: _GridPainter())),
             Positioned.fill(
               child: DecoratedBox(
                 decoration: const BoxDecoration(
@@ -127,14 +302,25 @@ class _LoginScreenState extends State<LoginScreen>
                 ),
               ),
             ),
-            // ── Content ───────────────────────────────────────────────────
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Color(0xFF253D54)),
+                  onPressed: () {
+                    if (_step > 0) {
+                      setState(() => _step--);
+                    } else {
+                      Navigator.of(context).pop();
+                    }
+                  },
+                ),
+              ),
+            ),
             SafeArea(
               child: Center(
                 child: SingleChildScrollView(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: hPad,
-                    vertical: 24,
-                  ),
+                  padding: EdgeInsets.symmetric(horizontal: hPad, vertical: 24),
                   child: FadeTransition(
                     opacity: _fadeAnim,
                     child: SlideTransition(
@@ -144,7 +330,6 @@ class _LoginScreenState extends State<LoginScreen>
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            // Logo
                             Container(
                               width: logoSize,
                               height: logoSize,
@@ -161,14 +346,14 @@ class _LoginScreenState extends State<LoginScreen>
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(20),
                                 child: Image.asset(
-                                  'assets/images/logo.png',
+                                  'assets/images/logo.jpg',
                                   fit: BoxFit.cover,
                                 ),
                               ),
                             ),
                             const SizedBox(height: 16),
                             Text(
-                              'BBOTS Accounting',
+                              'Forgot Password',
                               style: GoogleFonts.spaceGrotesk(
                                 fontSize: titleFontSize,
                                 fontWeight: FontWeight.w800,
@@ -178,14 +363,17 @@ class _LoginScreenState extends State<LoginScreen>
                             ),
                             const SizedBox(height: 5),
                             Text(
-                              'LOGIN TO YOUR ACCOUNT',
+                              _step == 0 
+                                  ? 'RESET YOUR ACCOUNT PASSWORD' 
+                                  : _step == 1 
+                                      ? 'VERIFY YOUR IDENTITY' 
+                                      : 'CREATE NEW PASSWORD',
                               style: GoogleFonts.jetBrainsMono(
                                 fontSize: 11,
                                 color: const Color(0xFF5D7FA0),
                               ),
                             ),
                             const SizedBox(height: 24),
-                            // ── Login card ─────────────────────────────
                             Container(
                               width: double.infinity,
                               padding: EdgeInsets.all(cardPad),
@@ -199,89 +387,25 @@ class _LoginScreenState extends State<LoginScreen>
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  _DarkLabel('Organization (ORGCODE)'),
-                                  const SizedBox(height: 5),
-                                  _DarkDropdown(
-                                    value: _org,
-                                    items: const {
-                                      'ORG001': 'ORG001 — Head Office, Chennai',
-                                      'ORG002':
-                                          'ORG002 — Head Office, Bangalore',
-                                      'ORG003':
-                                          'ORG003 — Head Office, Hyderabad',
-                                    },
-                                    hasError: _errors['org'] != null,
-                                    onChanged: (v) =>
-                                        setState(() => _org = v ?? _org),
-                                  ),
-                                  if (_errors['org'] != null)
-                                    _errorText(_errors['org']!),
-                                  const SizedBox(height: 14),
-                                  _DarkLabel('Email ID'),
-                                  const SizedBox(height: 5),
-                                  _DarkInput(
-                                    controller: _uidCtrl,
-                                    placeholder: 'e.g. arjun@bbots.com',
-                                    hasError: _errors['uid'] != null,
-                                    keyboardType: TextInputType.emailAddress,
-                                    textInputAction: TextInputAction.next,
-                                  ),
-                                  if (_errors['uid'] != null)
-                                    _errorText(_errors['uid']!),
-                                  const SizedBox(height: 14),
-                                  _DarkLabel('Password'),
-                                  const SizedBox(height: 5),
-                                  _DarkInput(
-                                    controller: _pwdCtrl,
-                                    placeholder: '••••••••',
-                                    obscure: true,
-                                    hasError: _errors['pwd'] != null,
-                                    textInputAction: TextInputAction.done,
-                                    onSubmit: _submit,
-                                  ),
-                                  if (_errors['pwd'] != null)
-                                    _errorText(_errors['pwd']!),
-                                  const SizedBox(height: 12),
-                                  Align(
-                                    alignment: Alignment.centerRight,
-                                    child: GestureDetector(
-                                      onTap: () {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) => const ForgotPasswordScreen(),
-                                          ),
-                                        );
-                                      },
-                                      child: Text(
-                                        'Forgot Password?',
-                                        style: GoogleFonts.spaceGrotesk(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w600,
-                                          color: const Color(0xFF60A5FA),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
+                                  if (_step == 0) _buildStep0(),
+                                  if (_step == 1) _buildStep1(),
+                                  if (_step == 2) _buildStep2(),
+                                  
                                   const SizedBox(height: 18),
                                   Container(
                                     height: 1,
                                     color: Colors.white.withValues(alpha: 0.1),
                                   ),
                                   const SizedBox(height: 18),
-                                  // Sign-in button
                                   GestureDetector(
                                     onTap: _submit,
                                     child: AnimatedContainer(
-                                      duration:
-                                          const Duration(milliseconds: 150),
+                                      duration: const Duration(milliseconds: 150),
                                       width: double.infinity,
-                                      padding: const EdgeInsets.symmetric(
-                                          vertical: 13),
+                                      padding: const EdgeInsets.symmetric(vertical: 13),
                                       decoration: BoxDecoration(
                                         color: _isLoading
-                                            ? AppColors.tBlue
-                                                .withValues(alpha: 0.7)
+                                            ? AppColors.tBlue.withValues(alpha: 0.7)
                                             : AppColors.tBlue,
                                         borderRadius: BorderRadius.circular(11),
                                         boxShadow: [
@@ -298,14 +422,17 @@ class _LoginScreenState extends State<LoginScreen>
                                             ? const SizedBox(
                                                 width: 18,
                                                 height: 18,
-                                                child:
-                                                    CircularProgressIndicator(
+                                                child: CircularProgressIndicator(
                                                   strokeWidth: 2,
                                                   color: Colors.white,
                                                 ),
                                               )
                                             : Text(
-                                                'Sign In →',
+                                                _step == 0 
+                                                    ? 'Get OTP →' 
+                                                    : _step == 1 
+                                                        ? 'Verify OTP →' 
+                                                        : 'Reset Password →',
                                                 style: GoogleFonts.spaceGrotesk(
                                                   fontSize: 14,
                                                   fontWeight: FontWeight.w700,
@@ -355,7 +482,31 @@ class _LoginScreenState extends State<LoginScreen>
       );
 }
 
-// ── Sub-widgets ──────────────────────────────────────────────────────────────
+class _PolicyRow extends StatelessWidget {
+  final String label;
+  final String value;
+  const _PolicyRow(this.label, this.value);
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        children: [
+          Icon(Icons.check_circle, size: 12, color: const Color(0xFF60A5FA)),
+          const SizedBox(width: 8),
+          Text(
+            '$label: $value',
+            style: GoogleFonts.spaceGrotesk(
+              fontSize: 11,
+              color: Colors.white70,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 class _DarkLabel extends StatelessWidget {
   final String text;
@@ -408,14 +559,11 @@ class _DarkInput extends StatelessWidget {
         ),
         filled: true,
         fillColor: Colors.white.withValues(alpha: 0.07),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(9),
           borderSide: BorderSide(
-            color: hasError
-                ? const Color(0xFFF87171)
-                : Colors.white.withValues(alpha: 0.12),
+            color: hasError ? const Color(0xFFF87171) : Colors.white.withValues(alpha: 0.12),
             width: 1.5,
           ),
         ),
@@ -424,63 +572,6 @@ class _DarkInput extends StatelessWidget {
           borderSide: const BorderSide(color: Color(0xFF60A5FA), width: 1.5),
         ),
       ),
-    );
-  }
-}
-
-class _DarkDropdown extends StatelessWidget {
-  final String value;
-  final Map<String, String> items;
-  final bool hasError;
-  final void Function(String?) onChanged;
-
-  const _DarkDropdown({
-    required this.value,
-    required this.items,
-    required this.hasError,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return DropdownButtonFormField<String>(
-      initialValue: value.isEmpty ? null : value,
-      isExpanded: true, // prevents overflow on narrow screens
-      style: GoogleFonts.spaceGrotesk(fontSize: 13, color: Colors.white),
-      dropdownColor: const Color(0xFF0D2040),
-      decoration: InputDecoration(
-        filled: true,
-        fillColor: Colors.white.withValues(alpha: 0.07),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(9),
-          borderSide: BorderSide(
-            color: hasError
-                ? const Color(0xFFF87171)
-                : Colors.white.withValues(alpha: 0.12),
-            width: 1.5,
-          ),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(9),
-          borderSide: const BorderSide(color: Color(0xFF60A5FA), width: 1.5),
-        ),
-      ),
-      items: items.entries
-          .map((e) => DropdownMenuItem(
-                value: e.key,
-                child: Text(
-                  e.value,
-                  overflow: TextOverflow.ellipsis, // safe on small screens
-                  style: GoogleFonts.spaceGrotesk(
-                    fontSize: 13,
-                    color: Colors.white,
-                  ),
-                ),
-              ))
-          .toList(),
-      onChanged: onChanged,
     );
   }
 }

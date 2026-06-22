@@ -181,10 +181,25 @@ class ApiService {
 
   Future<String?> forgotPasswordRequest(String email) async {
     try {
-      final res = await http.post(
-        Uri.parse('$baseUrl/auth/forgot-password/request'),
+      final verifyRes = await http.post(
+        Uri.parse('$baseUrl/auth/verify-email'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'email': email}),
+      );
+      if (verifyRes.statusCode != 200) return null;
+
+      final verifyData = jsonDecode(verifyRes.body);
+
+      final res = await http.post(
+        Uri.parse('$baseUrl/auth/generate-otp'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'email': email,
+          'firstName': verifyData['firstName'],
+          'userScd': verifyData['userScd'],
+          'orgCode': verifyData['orgCode'],
+          'productCode': AppConfig.instance.productCode,
+        }),
       );
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body);
@@ -200,7 +215,7 @@ class ApiService {
   Future<bool> forgotPasswordVerify(String tokenKey, String otp) async {
     try {
       final res = await http.post(
-        Uri.parse('$baseUrl/auth/forgot-password/verify'),
+        Uri.parse('$baseUrl/auth/verify-otp'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'tokenKey': tokenKey, 'otp': otp}),
       );
@@ -215,7 +230,7 @@ class ApiService {
       String tokenKey, String newPassword, String confirmPassword) async {
     try {
       final res = await http.post(
-        Uri.parse('$baseUrl/auth/forgot-password/reset'),
+        Uri.parse('$baseUrl/auth/forgot-password/reset-password'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'tokenKey': tokenKey,
@@ -227,6 +242,22 @@ class ApiService {
     } catch (e) {
       print('Forgot password reset error: $e');
       return false;
+    }
+  }
+
+  Future<Map<String, dynamic>?> getPasswordPolicy() async {
+    try {
+      final res = await http.get(
+        Uri.parse('$baseUrl/auth/get-password-policy'),
+        headers: _headers,
+      );
+      if (res.statusCode == 200) {
+        return jsonDecode(res.body) as Map<String, dynamic>;
+      }
+      return null;
+    } catch (e) {
+      print('Get password policy error: $e');
+      return null;
     }
   }
 
