@@ -826,7 +826,6 @@ class _AccountantDeskDashboardScreenState
   Widget _buildActivityFeed({bool stretch = false}) {
     return Container(
       width: double.infinity,
-      height: stretch ? double.infinity : null,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -885,7 +884,6 @@ class _AccountantDeskDashboardScreenState
   Widget _buildClientQuickView({bool stretch = false}) {
     return Container(
       width: double.infinity,
-      height: stretch ? double.infinity : null,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -1314,8 +1312,8 @@ class _BarGroupState extends State<_BarGroup> {
 
   @override
   Widget build(BuildContext context) {
-    final revenueH = _grown ? widget.revenueRatio * widget.maxHeight : 0.0;
-    final expenseH = _grown ? widget.expenseRatio * widget.maxHeight : 0.0;
+    final revenueH = _grown ? (widget.revenueRatio * widget.maxHeight).clamp(0.0, double.infinity) : 0.0;
+    final expenseH = _grown ? (widget.expenseRatio * widget.maxHeight).clamp(0.0, double.infinity) : 0.0;
     return Column(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
@@ -1345,8 +1343,9 @@ class _Bar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final safeHeight = height.clamp(0.0, double.infinity);
     return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0, end: height),
+      tween: Tween(begin: 0, end: safeHeight),
       duration: const Duration(milliseconds: 750),
       curve: Curves.easeOutCubic,
       builder: (context, h, child) => Container(
