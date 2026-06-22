@@ -769,14 +769,7 @@ class _AmsRootState extends State<AmsRoot> {
             }
             return item;
           }).toList();
-        } else if (cat == 'TRANSACTIONS') {
-          body = AccountantDeskDashboardScreen(
-            items: items,
-            userName: _state.userName,
-            onBack: () => _navigate('list'),
-            onNavigate: _handleScreenNavigation,
-          );
-        } else if (cat == 'TRANSACTIONS') {
+        }  else if (cat == 'TRANSACTIONS') {
           title = 'Transactions';
           items = transactionSubmenus;
         } else if (cat == 'REPORTS') {
@@ -811,6 +804,13 @@ class _AmsRootState extends State<AmsRoot> {
           );
         } else if (cat == 'MASTERS') {
           body = MasterDashboardScreen(
+            items: items,
+            userName: _state.userName,
+            onBack: () => _navigate('list'),
+            onNavigate: _handleScreenNavigation,
+          );
+        }else if (cat == 'TRANSACTIONS') {
+          body = AccountantDeskDashboardScreen(
             items: items,
             userName: _state.userName,
             onBack: () => _navigate('list'),
