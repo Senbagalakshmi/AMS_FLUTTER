@@ -371,7 +371,7 @@ class _ProgramMasterScreenState extends State<ProgramMasterScreen> {
             ],
             onBack: (_showForm == true)
                 ? () => setState(() => _showForm = false)
-                : widget.onBack,
+                : (widget.onBackToModule ?? widget.onBack),
             actions: [
               if (isListView == true)
                 AmsButton(

@@ -667,6 +667,7 @@ class _AmsRootState extends State<AmsRoot> {
             initialProg: _state.selectedProg,
             onSubmit: _handleNonTranSubmit,
             onBack: () => _navigate('list'),
+            onBackToModule: () => _handleProceed('MASTERS'),
             userName: _state.userName,
           );
         }

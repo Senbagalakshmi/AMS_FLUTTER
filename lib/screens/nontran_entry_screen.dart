@@ -206,6 +206,7 @@ class NonTranEntryScreen extends StatefulWidget {
   final Future<void> Function(String prog, Auth101Config cfg, String authsl,
       Map<String, dynamic> data) onSubmit;
   final VoidCallback onBack;
+  final VoidCallback? onBackToModule;
   final String? initialProg;
   final String? userName;
 
@@ -215,6 +216,7 @@ class NonTranEntryScreen extends StatefulWidget {
     required this.nonTranPrograms,
     required this.onSubmit,
     required this.onBack,
+    this.onBackToModule,
     this.initialProg,
     this.userName,
   });
@@ -709,7 +711,7 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
                 accentMd: AppColors.tBlueMd,
                 breadcrumbs: [
                   HeaderBreadcrumb(label: 'Home', onTap: widget.onBack),
-                  HeaderBreadcrumb(label: 'Masters', onTap: widget.onBack),
+                  HeaderBreadcrumb(label: 'Masters', onTap: widget.onBackToModule ?? widget.onBack),
                   if (_selProg != null)
                     HeaderBreadcrumb(
                         label: _cfg?.name ?? _selProg ?? 'Unknown'),
@@ -724,7 +726,7 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
                         ].contains(_selProg ?? '') &&
                         _showForm
                     ? () => setState(() => _showForm = false)
-                    : widget.onBack,
+                    : (widget.onBackToModule ?? widget.onBack),
                 actions: [
                   if (isAnyList)
                     AmsButton(

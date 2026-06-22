@@ -194,7 +194,7 @@ class _MenuMasterScreenState extends State<MenuMasterScreen> {
               HeaderBreadcrumb(label: 'Masters', onTap: widget.onBackToModule ?? widget.onBack),
               HeaderBreadcrumb(label: 'Menu Master'),
             ],
-            onBack: _showForm ? () => setState(() => _showForm = false) : widget.onBack,
+            onBack: _showForm ? () => setState(() => _showForm = false) : (widget.onBackToModule ?? widget.onBack),
             actions: [
               if (!_showForm)
                 AmsButton(

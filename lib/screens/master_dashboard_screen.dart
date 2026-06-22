@@ -35,6 +35,17 @@ class _MasterDashboardScreenState extends State<MasterDashboardScreen> {
   int _newUsers = 0;
   int _pendingApprovals = 0;
   bool _isLoading = true;
+  List<Map<String, dynamic>> _recentActivities = [];
+
+  List<BarChartGroupData> _branchGroups = [
+    BarChartGroupData(x: 0, barRods: [BarChartRodData(toY: 0, color: const Color(0xFF3C50E0), width: 12, borderRadius: BorderRadius.circular(4)), BarChartRodData(toY: 0, color: const Color(0xFF00B4D8), width: 12, borderRadius: BorderRadius.circular(4))])
+  ];
+  List<String> _branchLabels = ['System'];
+  double _maxBranchUsers = 100;
+
+  int _staffCount = 50;
+  int _managerCount = 35;
+  int _adminCount = 15;
 
   // bumped whenever fresh KPI data lands, so count-up animations replay
   int _kpiRevision = 0;
@@ -48,6 +59,7 @@ class _MasterDashboardScreenState extends State<MasterDashboardScreen> {
   Future<void> _fetchDynamicData() async {
     try {
       final res = await apiService.getUsers(page: 0, size: 100);
+      List<Map<String, dynamic>> tempActivities = [];
       if (res != null) {
         if (mounted) {
           setState(() {
@@ -55,6 +67,78 @@ class _MasterDashboardScreenState extends State<MasterDashboardScreen> {
             final active = res.items.where((u) => u['userStat'] == 'A' || u['status'] == 'Active' || u['userStat'] == 'Active').length;
             _activeUsers = active > 0 ? active : (_totalUsers * 0.9).round();
             _newUsers = (_totalUsers * 0.05).round(); // Estimated if missing created date API
+            
+            // Process dynamic branch wise users
+            Map<String, Map<String, int>> branchStats = {};
+            for (var u in res.items) {
+              final String org = u['orgCode']?.toString() ?? 'System';
+              final bool isActive = u['userStat'] == 'A' || u['status'] == 'Active' || u['userStat'] == 'Active';
+              branchStats.putIfAbsent(org, () => {'active': 0, 'inactive': 0});
+              if (isActive) {
+                branchStats[org]!['active'] = branchStats[org]!['active']! + 1;
+              } else {
+                branchStats[org]!['inactive'] = branchStats[org]!['inactive']! + 1;
+              }
+            }
+
+            final topBranches = branchStats.entries.toList()
+              ..sort((a, b) => (b.value['active']! + b.value['inactive']!).compareTo(a.value['active']! + a.value['inactive']!));
+            final displayBranches = topBranches.take(7).toList();
+
+            if (displayBranches.isNotEmpty) {
+              _branchLabels.clear();
+              _branchGroups.clear();
+              double maxUsers = 0;
+
+              for (int i = 0; i < displayBranches.length; i++) {
+                final org = displayBranches[i].key;
+                final activeCount = displayBranches[i].value['active']!.toDouble();
+                final inactiveCount = displayBranches[i].value['inactive']!.toDouble();
+                
+                if (activeCount + inactiveCount > maxUsers) {
+                  maxUsers = activeCount + inactiveCount;
+                }
+
+                _branchLabels.add(org);
+                _branchGroups.add(BarChartGroupData(
+                  x: i,
+                  barRods: [
+                    BarChartRodData(toY: activeCount, color: const Color(0xFF3C50E0), width: 12, borderRadius: BorderRadius.circular(4)),
+                    BarChartRodData(toY: inactiveCount, color: const Color(0xFF00B4D8), width: 12, borderRadius: BorderRadius.circular(4)),
+                  ],
+                ));
+              }
+              _maxBranchUsers = maxUsers < 10 ? 10 : (maxUsers * 1.2).ceilToDouble();
+            }
+
+            int admin = 0;
+            int manager = 0;
+            int staff = 0;
+            
+            for (var u in res.items) {
+               final String role = (u['roleCd'] ?? u['ROLECD'] ?? u['roleName'] ?? '').toString().toLowerCase();
+               if (role.contains('admin') || role == '1') admin++;
+               else if (role.contains('mgr') || role.contains('manager') || role == '10' || role == '2') manager++;
+               else staff++; 
+            }
+            if (admin == 0 && manager == 0 && staff == 0 && res.items.isNotEmpty) {
+               staff = res.items.length;
+            }
+            _adminCount = admin;
+            _managerCount = manager;
+            _staffCount = staff;
+
+            final recentUsers = res.items.take(3).toList();
+            tempActivities.addAll(recentUsers.map((u) {
+              return {
+                'title': 'User Profile Updated',
+                'desc': 'User ${u['usersCd'] ?? u['userName'] ?? 'Unknown'} updated in org ${u['orgCode'] ?? 'System'}',
+                'time': u['entryDate'] != null ? _formatDate(u['entryDate'].toString()) : 'Recently',
+                'icon': Icons.person_add,
+                'color': const Color(0xFF10B981)
+              };
+            }));
+            
             _isLoading = false;
             _kpiRevision++;
           });
@@ -65,10 +149,24 @@ class _MasterDashboardScreenState extends State<MasterDashboardScreen> {
         }
       }
 
-      final authRes = await apiService.getAuthQueue(page: 0, size: 1);
+      final authRes = await apiService.getAuthQueue(page: 0, size: 5);
       if (authRes != null && mounted) {
         setState(() {
           _pendingApprovals = authRes.totalElements;
+          
+          final recentAuths = authRes.items.take(5).toList();
+          tempActivities.addAll(recentAuths.map((auth) {
+            return {
+              'title': 'Pending Approval: ${auth.programId}',
+              'desc': auth.displayRemarks.isNotEmpty ? auth.displayRemarks : 'Auth request by ${auth.eUser}',
+              'time': auth.eDate.isNotEmpty ? _formatDate(auth.eDate) : 'Recently',
+              'icon': Icons.pending_actions,
+              'color': const Color(0xFFF59E0B)
+            };
+          }));
+          
+          _recentActivities = tempActivities;
+          
           _kpiRevision++;
         });
       }
@@ -76,6 +174,19 @@ class _MasterDashboardScreenState extends State<MasterDashboardScreen> {
       if (mounted) {
         setState(() => _isLoading = false);
       }
+    }
+  }
+
+  String _formatDate(String dateStr) {
+    try {
+      final date = DateTime.parse(dateStr);
+      final now = DateTime.now();
+      final diff = now.difference(date);
+      if (diff.inMinutes < 60) return '${diff.inMinutes} mins ago';
+      if (diff.inHours < 24) return '${diff.inHours} hours ago';
+      return '${diff.inDays} days ago';
+    } catch (_) {
+      return dateStr;
     }
   }
 
@@ -284,16 +395,6 @@ class _MasterDashboardScreenState extends State<MasterDashboardScreen> {
   }
 
   Widget _buildBranchWiseUsersBarChart() {
-    final rawGroups = [
-      BarChartGroupData(x: 0, barRods: [BarChartRodData(toY: 65, color: const Color(0xFF3C50E0), width: 12, borderRadius: BorderRadius.circular(4)), BarChartRodData(toY: 15, color: const Color(0xFF00B4D8), width: 12, borderRadius: BorderRadius.circular(4))]),
-      BarChartGroupData(x: 1, barRods: [BarChartRodData(toY: 45, color: const Color(0xFF3C50E0), width: 12, borderRadius: BorderRadius.circular(4)), BarChartRodData(toY: 10, color: const Color(0xFF00B4D8), width: 12, borderRadius: BorderRadius.circular(4))]),
-      BarChartGroupData(x: 2, barRods: [BarChartRodData(toY: 80, color: const Color(0xFF3C50E0), width: 12, borderRadius: BorderRadius.circular(4)), BarChartRodData(toY: 20, color: const Color(0xFF00B4D8), width: 12, borderRadius: BorderRadius.circular(4))]),
-      BarChartGroupData(x: 3, barRods: [BarChartRodData(toY: 55, color: const Color(0xFF3C50E0), width: 12, borderRadius: BorderRadius.circular(4)), BarChartRodData(toY: 5, color: const Color(0xFF00B4D8), width: 12, borderRadius: BorderRadius.circular(4))]),
-      BarChartGroupData(x: 4, barRods: [BarChartRodData(toY: 70, color: const Color(0xFF3C50E0), width: 12, borderRadius: BorderRadius.circular(4)), BarChartRodData(toY: 25, color: const Color(0xFF00B4D8), width: 12, borderRadius: BorderRadius.circular(4))]),
-      BarChartGroupData(x: 5, barRods: [BarChartRodData(toY: 90, color: const Color(0xFF3C50E0), width: 12, borderRadius: BorderRadius.circular(4)), BarChartRodData(toY: 10, color: const Color(0xFF00B4D8), width: 12, borderRadius: BorderRadius.circular(4))]),
-      BarChartGroupData(x: 6, barRods: [BarChartRodData(toY: 40, color: const Color(0xFF3C50E0), width: 12, borderRadius: BorderRadius.circular(4)), BarChartRodData(toY: 15, color: const Color(0xFF00B4D8), width: 12, borderRadius: BorderRadius.circular(4))]),
-    ];
-
     return _GlowCard(
       accentColor: const Color(0xFF3C50E0),
       child: Column(
@@ -334,7 +435,7 @@ class _MasterDashboardScreenState extends State<MasterDashboardScreen> {
               builder: (progress) => BarChart(
                 BarChartData(
                   alignment: BarChartAlignment.spaceAround,
-                  maxY: 100,
+                  maxY: _maxBranchUsers,
                   barTouchData: BarTouchData(
                     enabled: progress > 0.95,
                     touchTooltipData: BarTouchTooltipData(
@@ -358,12 +459,11 @@ class _MasterDashboardScreenState extends State<MasterDashboardScreen> {
                       sideTitles: SideTitles(
                         showTitles: true,
                         getTitlesWidget: (value, meta) {
-                          const branches = ['BR-01', 'BR-02', 'BR-03', 'BR-04', 'BR-05', 'BR-06', 'BR-07'];
-                          if (value.toInt() >= 0 && value.toInt() < branches.length) {
+                          if (value.toInt() >= 0 && value.toInt() < _branchLabels.length) {
                             return Padding(
                               padding: const EdgeInsets.only(top: 8.0),
                               child: Text(
-                                branches[value.toInt()],
+                                _branchLabels[value.toInt()],
                                 style: GoogleFonts.outfit(color: const Color(0xFF64748B), fontSize: 12),
                               ),
                             );
@@ -375,10 +475,10 @@ class _MasterDashboardScreenState extends State<MasterDashboardScreen> {
                     leftTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
-                        interval: 20,
+                        interval: _maxBranchUsers / 5 > 0 ? (_maxBranchUsers / 5).ceilToDouble() : 20,
                         reservedSize: 30,
                         getTitlesWidget: (value, meta) {
-                          if (value == 100) return const SizedBox.shrink();
+                          if (value == _maxBranchUsers) return const SizedBox.shrink();
                           return Text(
                             value.toInt().toString(),
                             style: GoogleFonts.outfit(color: const Color(0xFF64748B), fontSize: 12),
@@ -397,7 +497,7 @@ class _MasterDashboardScreenState extends State<MasterDashboardScreen> {
                     ),
                   ),
                   borderData: FlBorderData(show: false),
-                  barGroups: _scaleBarGroups(rawGroups, progress),
+                  barGroups: _scaleBarGroups(_branchGroups, progress, _maxBranchUsers),
                 ),
               ),
             ),
@@ -407,7 +507,7 @@ class _MasterDashboardScreenState extends State<MasterDashboardScreen> {
     );
   }
 
-  static List<BarChartGroupData> _scaleBarGroups(List<BarChartGroupData> groups, double progress) {
+  static List<BarChartGroupData> _scaleBarGroups(List<BarChartGroupData> groups, double progress, double maxY) {
     return groups
         .map((g) => BarChartGroupData(
               x: g.x,
@@ -419,7 +519,7 @@ class _MasterDashboardScreenState extends State<MasterDashboardScreen> {
                         borderRadius: r.borderRadius,
                         backDrawRodData: BackgroundBarChartRodData(
                           show: true,
-                          toY: 100,
+                          toY: maxY,
                           color: const Color(0xFFF8FAFC),
                         ),
                       ))
@@ -494,7 +594,11 @@ class _MasterDashboardScreenState extends State<MasterDashboardScreen> {
           const SizedBox(height: 24),
           SizedBox(
             height: 220,
-            child: _AnimatedPieChart(),
+            child: _AnimatedPieChart(
+              staffCount: _staffCount,
+              managerCount: _managerCount,
+              adminCount: _adminCount,
+            ),
           ),
           const SizedBox(height: 24),
           Wrap(
@@ -502,9 +606,9 @@ class _MasterDashboardScreenState extends State<MasterDashboardScreen> {
             spacing: 16,
             runSpacing: 8,
             children: [
-              _buildLegendDot(const Color(0xFF3C50E0), 'Staff'),
-              _buildLegendDot(const Color(0xFF00B4D8), 'Manager'),
-              _buildLegendDot(const Color(0xFF8B5CF6), 'Admin'),
+              _buildLegendDot(const Color(0xFF3C50E0), 'Staff ($_staffCount)'),
+              _buildLegendDot(const Color(0xFF00B4D8), 'Manager ($_managerCount)'),
+              _buildLegendDot(const Color(0xFF8B5CF6), 'Admin ($_adminCount)'),
             ],
           )
         ],
@@ -513,7 +617,7 @@ class _MasterDashboardScreenState extends State<MasterDashboardScreen> {
   }
 
   Widget _buildRecentActivities() {
-    final activities = [
+    final activities = _recentActivities.isNotEmpty ? _recentActivities : [
       {'title': 'New User Created', 'desc': 'Admin created a new user profile for BR-01', 'time': '2 mins ago', 'icon': Icons.person_add, 'color': const Color(0xFF10B981)},
       {'title': 'Role Permissions Updated', 'desc': 'Manager role permissions modified in HQ', 'time': '1 hour ago', 'icon': Icons.security, 'color': const Color(0xFF3C50E0)},
       {'title': 'Password Reset Requested', 'desc': 'User requested a password reset link', 'time': '3 hours ago', 'icon': Icons.lock_reset, 'color': const Color(0xFFF59E0B)},
@@ -559,8 +663,13 @@ class _MasterDashboardScreenState extends State<MasterDashboardScreen> {
   }
 
   Widget _buildModulesGrid(bool isMobile) {
+    final filteredItems = widget.items
+        .where((item) =>
+            item.programId != 'ROLE-CRT' && item.programId != 'USR-ROLE')
+        .toList();
+
     return _ProtractorModules(
-      items: widget.items,
+      items: filteredItems,
       onNavigate: widget.onNavigate,
     );
   }
@@ -1265,13 +1374,14 @@ class _ActivityRowState extends State<_ActivityRow> {
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
+      hitTestBehavior: HitTestBehavior.opaque,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
         curve: Curves.easeOut,
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         transform: Matrix4.identity()..translate(_isHovered ? 4.0 : 0.0, 0.0),
         decoration: BoxDecoration(
-          color: _isHovered ? const Color(0xFFF8FAFC) : Colors.transparent,
+          color: _isHovered ? widget.color.withValues(alpha: 0.08) : Colors.transparent,
           borderRadius: BorderRadius.circular(10),
         ),
         child: Row(
@@ -1529,6 +1639,17 @@ class _AnimatedLineChartState extends State<_AnimatedLineChart> with TickerProvi
 /// Pie chart that grows in, supports touch highlight of a slice, and shows
 /// an animated total in the donut hole.
 class _AnimatedPieChart extends StatefulWidget {
+  final int staffCount;
+  final int managerCount;
+  final int adminCount;
+
+  const _AnimatedPieChart({
+    Key? key,
+    required this.staffCount,
+    required this.managerCount,
+    required this.adminCount,
+  }) : super(key: key);
+
   @override
   State<_AnimatedPieChart> createState() => _AnimatedPieChartState();
 }
@@ -1536,11 +1657,19 @@ class _AnimatedPieChart extends StatefulWidget {
 class _AnimatedPieChartState extends State<_AnimatedPieChart> {
   int? _touchedIndex;
 
-  static const _sections = [
-    {'color': Color(0xFF3C50E0), 'value': 50.0},
-    {'color': Color(0xFF00B4D8), 'value': 35.0},
-    {'color': Color(0xFF8B5CF6), 'value': 15.0},
-  ];
+  List<Map<String, dynamic>> get _sections {
+    final total = widget.staffCount + widget.managerCount + widget.adminCount;
+    if (total == 0) {
+      return [
+        {'color': const Color(0xFFE2E8F0), 'value': 100.0},
+      ];
+    }
+    return [
+      {'color': const Color(0xFF3C50E0), 'value': (widget.staffCount / total) * 100},
+      {'color': const Color(0xFF00B4D8), 'value': (widget.managerCount / total) * 100},
+      {'color': const Color(0xFF8B5CF6), 'value': (widget.adminCount / total) * 100},
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1589,7 +1718,7 @@ class _AnimatedPieChartState extends State<_AnimatedPieChart> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text('100%', style: GoogleFonts.outfit(fontSize: 22, fontWeight: FontWeight.w800, color: const Color(0xFF1C2434))),
+                Text('${widget.staffCount + widget.managerCount + widget.adminCount}', style: GoogleFonts.outfit(fontSize: 22, fontWeight: FontWeight.w800, color: const Color(0xFF1C2434))),
                 Text('Total Roles', style: GoogleFonts.outfit(fontSize: 11, color: const Color(0xFF94A3B8))),
               ],
             ),
@@ -1703,14 +1832,15 @@ class _ProtractorModulesState extends State<_ProtractorModules> with SingleTicke
         availableWidth -= (iconSelectedSize + 32);
 
         // Clamp maximum size so it doesn't look gigantic on large screens
-        if (availableWidth > 550) availableWidth = 550;
+        // Reduced max width to reduce the gap between items
+        if (availableWidth > 450) availableWidth = 450;
         if (availableWidth < 250) availableWidth = 250;
 
         // Radius dynamically adjusts
         final double radius = availableWidth / 2;
 
-        // Center panel scales proportionally
-        final double centerDetailsRadius = isMobile ? radius * 0.75 : radius * 0.65;
+        // Center panel scales proportionally - increased ratio to reduce empty space
+        final double centerDetailsRadius = isMobile ? radius * 0.85 : radius * 0.80;
 
         // Offset to ensure the bottom items are not cut off and are perfectly centered
         final double bottomOffset = iconSelectedSize / 2;
