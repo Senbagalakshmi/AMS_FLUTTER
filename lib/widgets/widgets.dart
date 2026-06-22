@@ -2525,9 +2525,11 @@ class _PremiumAppLauncherState extends State<_PremiumAppLauncher> {
                         final homeUrl =
                             (p['homeUrl'] ?? p['url'] ?? '').toString();
                         final icon = _makeIcon(name);
+                        final logoUrl = (p['logo'] ?? '').toString();
                         return _AppTile(
                           icon: icon,
                           label: name,
+                          logoUrl: logoUrl,
                           onTap: () => _navigate(homeUrl),
                         );
                       }).toList(),
@@ -2540,14 +2542,104 @@ class _PremiumAppLauncherState extends State<_PremiumAppLauncher> {
   }
 }
 
+// ─────────────────────────────────────────────────────────────
+class _WebAppIcon extends StatefulWidget {
+  final String url;
+  final double size;
+  final Widget errorFallback;
+
+  const _WebAppIcon({
+    required this.url,
+    required this.size,
+    required this.errorFallback,
+  });
+
+  @override
+  State<_WebAppIcon> createState() => _WebAppIconState();
+}
+
+class _WebAppIconState extends State<_WebAppIcon> {
+  bool _hasError = false;
+  late String _viewId;
+
+  @override
+  void initState() {
+    super.initState();
+    _initView();
+  }
+
+  @override
+  void didUpdateWidget(covariant _WebAppIcon oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.url != widget.url) {
+      _hasError = false;
+      _initView();
+    }
+  }
+
+  void _initView() {
+    if (kIsWeb) {
+      _viewId = 'app-icon-${widget.url.hashCode}-${DateTime.now().millisecondsSinceEpoch}';
+      ui_web.platformViewRegistry.registerViewFactory(
+        _viewId,
+        (int viewId) {
+          final img = html.ImageElement()
+            ..src = widget.url
+            ..style.width = '100%'
+            ..style.height = '100%'
+            ..style.objectFit = 'contain'
+            ..style.borderRadius = '12px';
+            
+          img.onError.listen((_) {
+            if (mounted) {
+              setState(() {
+                _hasError = true;
+              });
+            }
+          });
+          return img;
+        },
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_hasError) return widget.errorFallback;
+    if (kIsWeb) {
+      return IgnorePointer(
+        child: SizedBox(
+          width: widget.size,
+          height: widget.size,
+          child: HtmlElementView(viewType: _viewId),
+        ),
+      );
+    }
+    return IgnorePointer(
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Image.network(
+          widget.url,
+          width: widget.size,
+          height: widget.size,
+          fit: BoxFit.contain,
+          errorBuilder: (context, error, stackTrace) => widget.errorFallback,
+        ),
+      ),
+    );
+  }
+}
+
 // ── Single tile inside the nine-dots popup ────────────────────
 class _AppTile extends StatefulWidget {
   final IconData icon;
   final String label;
+  final String? logoUrl;
   final VoidCallback onTap;
   const _AppTile({
     required this.icon,
     required this.label,
+    this.logoUrl,
     required this.onTap,
   });
   @override
@@ -2600,7 +2692,13 @@ class _AppTileState extends State<_AppTile> {
                       ),
                     ],
                   ),
-                  child: Icon(widget.icon, color: Colors.white, size: 22),
+                  child: widget.logoUrl != null && widget.logoUrl!.isNotEmpty
+                      ? _WebAppIcon(
+                          url: widget.logoUrl!,
+                          size: 32,
+                          errorFallback: Icon(widget.icon, color: Colors.white, size: 22),
+                        )
+                      : Icon(widget.icon, color: Colors.white, size: 22),
                 ),
               ),
               const SizedBox(height: 6),
