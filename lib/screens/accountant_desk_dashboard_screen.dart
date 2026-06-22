@@ -418,7 +418,7 @@ class _AccountantDeskDashboardScreenState
               accentColor: AppColors.tBlue,
               accentLt: AppColors.tBlueLt,
               accentMd: AppColors.tBlueMd,
-              showBack: false,
+              onBack: widget.onBack,
             ),
           ),
 
@@ -552,6 +552,7 @@ class _AccountantDeskDashboardScreenState
         numericTarget: _journalCount,
         icon: Icons.description_rounded,
         color: const Color(0xFF4F46E5),
+        onTap: () => widget.onNavigate('nontran', 'GL-JRN'),
       ),
       _StatCard(
         title: 'Chart of Accounts',
@@ -559,6 +560,7 @@ class _AccountantDeskDashboardScreenState
         numericTarget: _coaCount,
         icon: Icons.list_alt_rounded,
         color: const Color(0xFF0EA5E9),
+        onTap: () => widget.onNavigate('nontran', 'RPT-COA'),
       ),
       _StatCard(
         title: 'Reports',
@@ -826,7 +828,6 @@ class _AccountantDeskDashboardScreenState
   Widget _buildActivityFeed({bool stretch = false}) {
     return Container(
       width: double.infinity,
-      height: stretch ? double.infinity : null,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -885,7 +886,6 @@ class _AccountantDeskDashboardScreenState
   Widget _buildClientQuickView({bool stretch = false}) {
     return Container(
       width: double.infinity,
-      height: stretch ? double.infinity : null,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -911,7 +911,7 @@ class _AccountantDeskDashboardScreenState
                       weight: FontWeight.w700,
                       color: const Color(0xFF0F172A))),
               TextButton(
-                onPressed: () => widget.onNavigate('list', 'RPT-COA'),
+                onPressed: () => widget.onNavigate('nontran', 'RPT-COA'),
                 child: const Text('View All',
                     style: TextStyle(
                         color: Color(0xFF4F46E5),
@@ -1074,7 +1074,7 @@ class _AccountantDeskDashboardScreenState
                         style: bodyStyle(color: const Color(0xFF64748B))),
                     const SizedBox(height: 8),
                     TextButton(
-                      onPressed: () => widget.onNavigate('list', 'GL-JRN'),
+                      onPressed: () => widget.onNavigate('nontran', 'GL-JRN'),
                       child: const Text('Create your first entry',
                           style: TextStyle(
                               color: Color(0xFF4F46E5),
@@ -1314,8 +1314,8 @@ class _BarGroupState extends State<_BarGroup> {
 
   @override
   Widget build(BuildContext context) {
-    final revenueH = _grown ? widget.revenueRatio * widget.maxHeight : 0.0;
-    final expenseH = _grown ? widget.expenseRatio * widget.maxHeight : 0.0;
+    final revenueH = _grown ? (widget.revenueRatio * widget.maxHeight).clamp(0.0, double.infinity) : 0.0;
+    final expenseH = _grown ? (widget.expenseRatio * widget.maxHeight).clamp(0.0, double.infinity) : 0.0;
     return Column(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
@@ -1345,8 +1345,9 @@ class _Bar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final safeHeight = height.clamp(0.0, double.infinity);
     return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0, end: height),
+      tween: Tween(begin: 0, end: safeHeight),
       duration: const Duration(milliseconds: 750),
       curve: Curves.easeOutCubic,
       builder: (context, h, child) => Container(

@@ -5,6 +5,7 @@ import '../models/models.dart';
 import '../utils/responsive.dart';
 import '../services/api_service.dart';
 import '../services/org_api_service.dart';
+import 'package:intl/intl.dart';
 
 class ProgramListScreen extends StatefulWidget {
   final Map<String, Auth101Config> authConfigs;
@@ -290,7 +291,83 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
           Padding(
             padding: EdgeInsets.fromLTRB(
                 isMobile ? 16 : 32, 28, isMobile ? 16 : 32, 32),
-            child: _greetingBlock(pending, processed, isMobile),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(child: _greetingBlock(pending, processed, isMobile)),
+                if (!isMobile) _dateBlock(),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _dateBlock() {
+    final now = DateTime.now();
+    final dayFormat = DateFormat('dd');
+    final monthFormat = DateFormat('MMM yyyy');
+    final dayNameFormat = DateFormat('EEEE');
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          )
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                dayNameFormat.format(now).toUpperCase(),
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.7),
+                  fontSize: 10,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1.5,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                monthFormat.format(now).toUpperCase(),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(width: 16),
+          Container(
+            height: 34,
+            width: 1.5,
+            color: Colors.white.withValues(alpha: 0.3),
+          ),
+          const SizedBox(width: 16),
+          Text(
+            dayFormat.format(now),
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 38,
+              fontWeight: FontWeight.w900,
+              height: 1.0,
+            ),
           ),
         ],
       ),
@@ -325,18 +402,27 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
           ),
         ),
         const SizedBox(height: 8),
-        Wrap(
-          spacing: 6,
-          runSpacing: 6,
-          children: [
-            _infoBadge(Icons.inbox_rounded, '$pending pending',
-                AppColors.amber),
-            _infoBadge(Icons.check_circle_rounded, '$processed processed',
-                AppColors.green),
-            _infoBadge(Icons.category_rounded, '$_glCategories categories',
-                AppColors.tBlueMd),
-          ],
+        Text(
+          'Welcome back! Here is your system overview for today.',
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.8),
+            fontSize: isMobile ? 13 : 15,
+            fontWeight: FontWeight.w500,
+          ),
         ),
+        const SizedBox(height: 8),
+        // Wrap(
+        //   spacing: 6,
+        //   runSpacing: 6,
+        //   children: [
+        //     _infoBadge(Icons.inbox_rounded, '$pending pending',
+        //         const Color(0xFFFBBF24)),
+        //     _infoBadge(Icons.check_circle_rounded, '$processed processed',
+        //         const Color(0xFF34D399)),
+        //     _infoBadge(Icons.category_rounded, '$_glCategories categories',
+        //         const Color(0xFF818CF8)),
+        //   ],
+        // ),
       ],
     );
   }
@@ -345,9 +431,9 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.2),
+        color: color.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withValues(alpha: 0.35)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -355,8 +441,8 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
           Icon(icon, size: 12, color: color),
           const SizedBox(width: 5),
           Text(label,
-              style: const TextStyle(
-                  color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700)),
+              style: TextStyle(
+                  color: color, fontSize: 11, fontWeight: FontWeight.w700)),
         ],
       ),
     );
@@ -368,44 +454,60 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
           'Total Auth Queue',
           '$_totalAuthQueue',
           Icons.inbox_rounded,
-          const [Color(0xFF818CF8), Color(0xFF6366F1)],
+          const Color(0xFF6366F1),
           '+18% vs last week',
           () => widget.onProceed('AUTH')),
-      _KpiData(
-          'Organisations',
-          '$_totalOrgCount',
-          Icons.business_rounded,
-          const [Color(0xFFFCD34D), Color(0xFFF59E0B)],
-          'registered orgs',
-          () => widget.onSelect('ORG-CRT')),
+      // _KpiData(
+      //     'Organisations',
+      //     '$_totalOrgCount',
+      //     Icons.business_rounded,
+      //     const Color(0xFFF59E0B),
+      //     'registered orgs',
+      //     () => widget.onSelect('ORG-CRT')),
       _KpiData(
           'Chart of Accounts',
           '$_totalCoaCount',
           Icons.account_tree_rounded,
-          const [Color(0xFF34D399), Color(0xFF10B981)],
+          const Color(0xFFF59E0B),
           'total accounts',
           () => widget.onSelect('RPT-COA')),
       _KpiData('GL Categories', '$_glCategories', Icons.category_rounded,
-          const [Color(0xFF67E8F9), Color(0xFF0EA5E9)],
-          'configured', () => widget.onProceed('GL')),
+          const Color(0xFF3B82F6), 'configured', () => widget.onProceed('GL')),
+      // _KpiData(
+      //     'Total Users',
+      //     '$_totalUsersCount',
+      //     Icons.group_rounded,
+      //     const Color(0xFFEC4899),
+      //     'registered',
+      //     () => widget.onProceed('MASTERS')),
       _KpiData(
-          'Total Users',
-          '$_totalUsersCount',
-          Icons.group_rounded,
-          const [Color(0xFFF472B6), Color(0xFFD946EF)],
-          'registered',
-          () => widget.onProceed('MASTERS')),
+          'Reports',
+          'Available',
+          Icons.pie_chart_rounded,
+          const Color(0xFF10B981),
+          'view all reports',
+          () => widget.onProceed('REPORTS'))
     ];
 
-    return Wrap(
-      spacing: 12,
-      runSpacing: 12,
-      children: cards.map((c) {
-        return SizedBox(
-          width: isMobile ? double.infinity : 190,
+    if (isMobile) {
+      return Column(
+        children: cards.map((c) => Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: SizedBox(
+            width: double.infinity,
+            child: _KpiCard(data: c, isLoading: _isLoading),
+          ),
+        )).toList(),
+      );
+    }
+
+    return Row(
+      children: cards.map((c) => Expanded(
+        child: Padding(
+          padding: EdgeInsets.only(right: c != cards.last ? 16 : 0),
           child: _KpiCard(data: c, isLoading: _isLoading),
-        );
-      }).toList(),
+        ),
+      )).toList(),
     );
   }
 
@@ -448,16 +550,16 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
           const SizedBox(height: 8),
           _DonutRing(
             segments: [
-              _DonutSeg(processed / total, AppColors.green),
-              _DonutSeg(pending / total, AppColors.amber),
+              _DonutSeg(processed / total, const Color(0xFF6366F1)),
+              _DonutSeg(pending / total, const Color(0xFF10B981)),
             ],
             centerLabel: '$_totalAuthQueue',
             centerSub: 'Total',
           ),
           const SizedBox(height: 12),
-          _legend(AppColors.green, 'Processed'),
+          _legend(const Color(0xFF6366F1), 'Processed'),
           const SizedBox(height: 4),
-          _legend(AppColors.amber, 'Pending'),
+          _legend(const Color(0xFF10B981), 'Pending'),
         ],
       ),
     );
@@ -622,7 +724,7 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
   Widget _queueRow(AuthRecord r) {
     final isPending = r.flUser == null || r.flUser == '0' || r.flUser!.isEmpty;
     final statusColor =
-        isPending ? AppColors.amber : AppColors.green;
+        isPending ? const Color(0xFFF59E0B) : const Color(0xFF10B981);
     final statusLabel = isPending ? 'Pending' : 'In Review';
     return InkWell(
       onTap: () => widget.onProceed('AUTH'),
@@ -773,31 +875,31 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
                       flex: _coaDistribution[0],
                       child: Container(
                           height: 12,
-                          color: const Color(0xFF3A57E8))), // Assets
+                          color: const Color(0xFF3B82F6))), // Assets
                 if (_coaDistribution[1] > 0)
                   Expanded(
                       flex: _coaDistribution[1],
                       child: Container(
                           height: 12,
-                          color: AppColors.amber)), // Liabilities
+                          color: const Color(0xFFF59E0B))), // Liabilities
                 if (_coaDistribution[2] > 0)
                   Expanded(
                       flex: _coaDistribution[2],
                       child: Container(
                           height: 12,
-                          color: AppColors.purple)), // Equity
+                          color: const Color(0xFF8B5CF6))), // Equity
                 if (_coaDistribution[3] > 0)
                   Expanded(
                       flex: _coaDistribution[3],
                       child: Container(
                           height: 12,
-                          color: AppColors.green)), // Income
+                          color: const Color(0xFF10B981))), // Income
                 if (_coaDistribution[4] > 0)
                   Expanded(
                       flex: _coaDistribution[4],
                       child: Container(
                           height: 12,
-                          color: AppColors.red)), // Expenses
+                          color: const Color(0xFFEF4444))), // Expenses
                 if (_coaDistribution.every((v) => v == 0))
                   Expanded(
                       flex: 1,
@@ -815,15 +917,15 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
             runSpacing: 16,
             children: [
               _coaLegend(
-                  'Assets', '${_coaDistribution[0]}%', const Color(0xFF3A57E8)),
+                  'Assets', '${_coaDistribution[0]}%', const Color(0xFF3B82F6)),
               _coaLegend('Liabilities', '${_coaDistribution[1]}%',
-                  AppColors.amber),
+                  const Color(0xFFF59E0B)),
               _coaLegend(
-                  'Equity', '${_coaDistribution[2]}%', AppColors.purple),
+                  'Equity', '${_coaDistribution[2]}%', const Color(0xFF8B5CF6)),
               _coaLegend(
-                  'Income', '${_coaDistribution[3]}%', AppColors.green),
+                  'Income', '${_coaDistribution[3]}%', const Color(0xFF10B981)),
               _coaLegend('Expenses', '${_coaDistribution[4]}%',
-                  AppColors.red),
+                  const Color(0xFFEF4444)),
             ],
           ),
         ],
@@ -863,21 +965,21 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
   Widget _buildQuickActions() {
     final actions = [
       _ActionItem(Icons.security_rounded, 'Auth Queue', 'Review pending items',
-          AppColors.tBlue, () => widget.onProceed('AUTH')),
+          const Color(0xFF6366F1), () => widget.onProceed('AUTH')),
       _ActionItem(Icons.account_balance_rounded, 'GL Module', 'Manage ledgers',
-          AppColors.tBlue, () => widget.onProceed('GL')),
+          const Color(0xFF10B981), () => widget.onProceed('GL')),
       _ActionItem(
           Icons.account_tree_rounded,
           'Chart of Accounts',
           'View ledger hierarchy',
-          AppColors.tBlue,
+          const Color(0xFF8B5CF6),
           () => widget.onSelect('RPT-COA')),
       _ActionItem(Icons.people_rounded, 'Masters', 'Users & roles',
-          AppColors.tBlue, () => widget.onProceed('MASTERS')),
+          const Color(0xFF3B82F6), () => widget.onProceed('MASTERS')),
       _ActionItem(Icons.description_rounded, 'Journals', 'Post transactions',
-          AppColors.tBlue, () => widget.onSelect('GL-JRN')),
+          const Color(0xFFF59E0B), () => widget.onSelect('GL-JRN')),
       _ActionItem(Icons.bar_chart_rounded, 'Reports', 'Financial reports',
-          AppColors.tBlue, () => widget.onProceed('REPORTS')),
+          const Color(0xFFEC4899), () => widget.onProceed('REPORTS')),
     ];
     return _DashCard(
       title: 'Quick Actions',
@@ -897,19 +999,18 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
           margin: const EdgeInsets.only(bottom: 8),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
-            color: const Color(0xFFF8FAFC),
+            color: a.color.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: const Color(0xFFE2E8F0)),
+            border: Border.all(color: a.color.withValues(alpha: 0.15)),
           ),
           child: Row(
             children: [
               Container(
                 padding: const EdgeInsets.all(7),
                 decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: const Color(0xFFE2E8F0))),
-                child: Icon(a.icon, size: 16, color: AppColors.tBlue),
+                    color: a.color.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(8)),
+                child: Icon(a.icon, size: 16, color: a.color),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -927,7 +1028,7 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
                   ],
                 ),
               ),
-              const Icon(Icons.chevron_right_rounded, size: 16, color: Color(0xFF94A3B8)),
+              Icon(Icons.chevron_right_rounded, size: 16, color: a.color),
             ],
           ),
         ),
@@ -960,11 +1061,11 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
 
     final maxVal = displayItems.isEmpty ? 1 : displayItems.first.value;
     final colors = [
-      AppColors.tBlue,
-      const Color(0xFF3A57E8),
       const Color(0xFF6366F1),
-      const Color(0xFF00A389),
-      AppColors.ink3,
+      const Color(0xFF10B981),
+      const Color(0xFF3B82F6),
+      const Color(0xFFF59E0B),
+      const Color(0xFFEC4899),
     ];
 
     return _DashCard(
@@ -1031,55 +1132,17 @@ class _KpiData {
   final String title;
   final String value;
   final IconData icon;
-  final List<Color> gradientColors;
+  final Color color;
   final String trend;
   final VoidCallback? onTap;
   _KpiData(
-      this.title, this.value, this.icon, this.gradientColors, this.trend, this.onTap);
+      this.title, this.value, this.icon, this.color, this.trend, this.onTap);
 }
 
 class _KpiCard extends StatelessWidget {
   final _KpiData data;
   final bool isLoading;
   const _KpiCard({required this.data, required this.isLoading});
-
-  Widget _buildTrendBadge(String trend) {
-    Color textColor;
-    Color bgColor;
-    Color borderColor;
-
-    if (trend.startsWith('+')) {
-      textColor = AppColors.green;
-      bgColor = AppColors.green.withValues(alpha: 0.08);
-      borderColor = AppColors.green.withValues(alpha: 0.15);
-    } else if (trend.startsWith('-')) {
-      textColor = AppColors.red;
-      bgColor = AppColors.red.withValues(alpha: 0.08);
-      borderColor = AppColors.red.withValues(alpha: 0.15);
-    } else {
-      textColor = AppColors.ink2;
-      bgColor = AppColors.ink4.withValues(alpha: 0.08);
-      borderColor = AppColors.ink4.withValues(alpha: 0.15);
-    }
-
-    return Container(
-      margin: const EdgeInsets.only(top: 4),
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        color: bgColor,
-        border: Border.all(color: borderColor, width: 1),
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Text(
-        trend,
-        style: TextStyle(
-          fontSize: 9,
-          color: textColor,
-          fontWeight: FontWeight.w800,
-        ),
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -1101,20 +1164,9 @@ class _KpiCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: data.gradientColors,
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: data.gradientColors.last.withValues(alpha: 0.25),
-                    blurRadius: 8,
-                    offset: const Offset(0, 4),
-                  )
-                ]),
-            child: Icon(data.icon, color: Colors.white, size: 22),
+                color: data.color.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10)),
+            child: Icon(data.icon, color: data.color, size: 22),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -1131,7 +1183,12 @@ class _KpiCard extends StatelessWidget {
                         fontSize: 11,
                         color: Color(0xFF64748B),
                         fontWeight: FontWeight.w600)),
-                _buildTrendBadge(data.trend),
+                const SizedBox(height: 2),
+                Text(data.trend,
+                    style: TextStyle(
+                        fontSize: 10,
+                        color: data.color,
+                        fontWeight: FontWeight.w700)),
               ],
             ),
           ),
@@ -1175,7 +1232,7 @@ class _BarItem extends StatelessWidget {
                 fontSize: 9,
                 fontWeight: FontWeight.w700,
                 color: isHighlight
-                    ? const Color(0xFF3A57E8)
+                    ? const Color(0xFF6366F1)
                     : const Color(0xFF94A3B8))),
         const SizedBox(height: 4),
         AnimatedContainer(
@@ -1185,7 +1242,7 @@ class _BarItem extends StatelessWidget {
           width: 28,
           decoration: BoxDecoration(
             color: isHighlight
-                ? const Color(0xFF3A57E8)
+                ? const Color(0xFF6366F1)
                 : const Color(0xFF1E2B5E).withValues(alpha: 0.25),
             borderRadius: BorderRadius.circular(6),
           ),
