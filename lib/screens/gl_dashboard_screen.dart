@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:intl/intl.dart';
+import '../models/models.dart';
 import '../widgets/widgets.dart';
 import '../theme.dart';
 import '../data.dart';
@@ -7,6 +9,7 @@ import '../screens/submenu_dashboard_screen.dart';
 import '../utils/responsive.dart';
 import '../services/api_service.dart';
 import '../services/gl_api_service.dart';
+
 
 class GlDashboardScreen extends StatefulWidget {
   final List<SubmenuItem> items;
@@ -27,7 +30,6 @@ class GlDashboardScreen extends StatefulWidget {
 }
 
 class _GlDashboardScreenState extends State<GlDashboardScreen> with SingleTickerProviderStateMixin {
-  int _activeTab = 0; // 0: Overview, 1: Table, 2: Gantt
   int _selectedScenario = 0;
   late AnimationController _entryController;
 
@@ -36,6 +38,10 @@ class _GlDashboardScreenState extends State<GlDashboardScreen> with SingleTicker
   int _ledgerMastersCount = 0;
   int _branchesCount = 0;
   bool _isLoading = true;
+
+  Map<String, Map<String, int>> _submoduleRecordStats = {};
+  List<Map<String, dynamic>> _glActivities = [];
+
 
   @override
   void initState() {
@@ -51,15 +57,136 @@ class _GlDashboardScreenState extends State<GlDashboardScreen> with SingleTicker
   Future<void> _fetchDashboardData() async {
     setState(() => _isLoading = true);
     try {
-      final glCategories = await apiService.getAllGlCategories(size: 1);
-      final ledgerMasters = await _glApiService.getGlList();
-      final branches = await _glApiService.getGl104List();
+      final results = await Future.wait([
+        apiService.getAllGlCategories(size: 1000),
+        apiService.getAllGlMasters(size: 1000),
+        _glApiService.getGl104List(),
+        _glApiService.getGl103List(),
+        _glApiService.getAllGlSegments(),
+        GLApiService.getAllGlAttributes(),
+        apiService.getAuthQueue(page: 0, size: 100),
+      ]);
+
+      final glCategories = results[0] as PaginatedResult<Map<String, dynamic>>?;
+      final glMasters = results[1] as PaginatedResult<Map<String, dynamic>>?;
+      final branches = results[2] as List<dynamic>? ?? [];
+      final currencies = results[3] as List<dynamic>? ?? [];
+      final segments = results[4] as List<dynamic>? ?? [];
+      final attributes = results[5] as List<dynamic>? ?? [];
+      final authQueueRes = results[6] as PaginatedResult<AuthRecord>?;
+
+      final dbCounts = {
+        'GL-CAT': glCategories?.totalElements ?? 0,
+        'GL-MST': glMasters?.totalElements ?? 0,
+        'GL-BRN': branches.length,
+        'GL-CUR': currencies.length,
+        'GL-SEG': segments.length,
+        'GL-ATT': attributes.length,
+      };
+
+      final authQueue = authQueueRes?.items ?? [];
+
+      final Map<String, Map<String, int>> recordStats = {};
+      final submodules = ['GL-CAT', 'GL-MST', 'GL-BRN', 'GL-CUR', 'GL-SEG', 'GL-ATT'];
+      for (final sub in submodules) {
+        recordStats[sub] = {
+          'inserted': dbCounts[sub] ?? 0,
+          'updated': 0,
+          'deleted': 0,
+          'remaining': 0,
+        };
+      }
+
+      for (final rec in authQueue) {
+        final sub = rec.programId == 'GL-MAT' ? 'GL-MST' : rec.programId;
+        if (recordStats.containsKey(sub)) {
+          final remarks = rec.displayRemarks.toLowerCase();
+          if (remarks.contains('delete') || remarks.contains('remove')) {
+            recordStats[sub]!['deleted'] = (recordStats[sub]!['deleted'] ?? 0) + 1;
+          } else if (remarks.contains('update') || remarks.contains('modify') || remarks.contains('edit') || remarks.contains('change')) {
+            recordStats[sub]!['updated'] = (recordStats[sub]!['updated'] ?? 0) + 1;
+          } else {
+            recordStats[sub]!['remaining'] = (recordStats[sub]!['remaining'] ?? 0) + 1;
+          }
+        }
+      }
+
+      final glProgs = {'GL-CAT', 'GL-MST', 'GL-MAT', 'GL-CUR', 'GL-BRN', 'GL-SEG', 'GL-ATT'};
+      final glAuthRecords = authQueue.where((r) => glProgs.contains(r.programId)).toList();
+      glAuthRecords.sort((a, b) => b.eDate.compareTo(a.eDate));
+
+      final List<Map<String, dynamic>> glActivities = [];
+      for (final rec in glAuthRecords) {
+        IconData icon = Icons.pending_actions_rounded;
+        Color color = AppColors.tBlue;
+        final remarks = rec.displayRemarks.toLowerCase();
+        
+        if (remarks.contains('delete') || remarks.contains('remove')) {
+          icon = Icons.delete_outline_rounded;
+          color = AppColors.red;
+        } else if (remarks.contains('update') || remarks.contains('modify') || remarks.contains('edit') || remarks.contains('change')) {
+          icon = Icons.edit_calendar_rounded;
+          color = AppColors.purple;
+        } else if (remarks.contains('create') || remarks.contains('insert') || remarks.contains('add') || remarks.contains('new')) {
+          icon = Icons.add_circle_outline_rounded;
+          color = AppColors.green;
+        }
+        
+        glActivities.add({
+          'icon': icon,
+          'color': color,
+          'title': rec.displayRemarks.isNotEmpty ? rec.displayRemarks : 'Auth Request: ${rec.programId}',
+          'time': _formatRelativeTime(rec.eDate),
+          'subtitle': 'By ${rec.eUser} • ${rec.programId}',
+        });
+      }
+
+      if (glActivities.isEmpty) {
+        if ((dbCounts['GL-CAT'] ?? 0) > 0) {
+          glActivities.add({
+            'icon': Icons.category_rounded,
+            'color': AppColors.green,
+            'title': 'GL Categories Configured',
+            'time': 'Active',
+            'subtitle': '${dbCounts['GL-CAT']} categories found in database',
+          });
+        }
+        if ((dbCounts['GL-MST'] ?? 0) > 0) {
+          glActivities.add({
+            'icon': Icons.account_balance_rounded,
+            'color': AppColors.green,
+            'title': 'GL Masters Configured',
+            'time': 'Active',
+            'subtitle': '${dbCounts['GL-MST']} master ledgers found in database',
+          });
+        }
+        if ((dbCounts['GL-BRN'] ?? 0) > 0) {
+          glActivities.add({
+            'icon': Icons.location_city_rounded,
+            'color': AppColors.green,
+            'title': 'Allowed Branches Set',
+            'time': 'Active',
+            'subtitle': '${dbCounts['GL-BRN']} branches configured for GL access',
+          });
+        }
+        if ((dbCounts['GL-CUR'] ?? 0) > 0) {
+          glActivities.add({
+            'icon': Icons.currency_exchange_rounded,
+            'color': AppColors.green,
+            'title': 'Allowed Currencies Set',
+            'time': 'Active',
+            'subtitle': '${dbCounts['GL-CUR']} currencies configured',
+          });
+        }
+      }
 
       if (mounted) {
         setState(() {
           _glCategoriesCount = glCategories?.totalElements ?? 0;
-          _ledgerMastersCount = ledgerMasters?.length ?? 0;
+          _ledgerMastersCount = glMasters?.totalElements ?? 0;
           _branchesCount = branches.length;
+          _submoduleRecordStats = recordStats;
+          _glActivities = glActivities;
           _isLoading = false;
         });
       }
@@ -67,6 +194,21 @@ class _GlDashboardScreenState extends State<GlDashboardScreen> with SingleTicker
       if (mounted) setState(() => _isLoading = false);
     }
   }
+
+  String _formatRelativeTime(String? dateStr) {
+    if (dateStr == null || dateStr.isEmpty) return '—';
+    final date = DateTime.tryParse(dateStr);
+    if (date == null) return dateStr.split(' ').first;
+
+    final diff = DateTime.now().difference(date);
+    if (diff.inMinutes < 1) return 'Just now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes} mins ago';
+    if (diff.inHours < 24) return '${diff.inHours} hours ago';
+    if (diff.inDays == 1) return 'Yesterday';
+    if (diff.inDays < 7) return '${diff.inDays} days ago';
+    return DateFormat('dd MMM yyyy').format(date);
+  }
+
 
   @override
   void dispose() {
@@ -84,30 +226,15 @@ class _GlDashboardScreenState extends State<GlDashboardScreen> with SingleTicker
           // 🔹 PREMIUM HEADER
           _buildHeader(),
 
-          // 🔹 TAB NAV
-          _buildTabNav(),
-
           const Divider(height: 1, color: AppColors.border),
 
           // 🔹 VIEW CONTENT
           Expanded(
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 300),
-              child: _buildCurrentView(),
-            ),
+            child: _buildOverview(),
           ),
         ],
       ),
     );
-  }
-
-  Widget _buildCurrentView() {
-    switch (_activeTab) {
-      case 0: return _buildOverview();
-      case 1: return _buildMainTable();
-      case 2: return _buildGanttView();
-      default: return _buildOverview();
-    }
   }
 
   Widget _buildHeader() {
@@ -141,68 +268,9 @@ class _GlDashboardScreenState extends State<GlDashboardScreen> with SingleTicker
                   ],
                 ),
               ),
-              if (!isMobile) ...[
-                _HeaderMetric(label: 'Health', value: '${96 + (_selectedScenario % 4)}%'),
-                const SizedBox(width: 16),
-                _HeaderMetric(
-                  label: 'Status', 
-                  value: _selectedScenario % 2 == 0 ? 'Syncing' : 'Optimized'
-                ),
-              ],
             ],
           ),
-          if (isMobile) ...[
-            const SizedBox(height: 12),
-            const Divider(height: 1, color: AppColors.border),
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _HeaderMetric(label: 'Health', value: '${96 + (_selectedScenario % 4)}%'),
-                _HeaderMetric(
-                  label: 'Status', 
-                  value: _selectedScenario % 2 == 0 ? 'Syncing' : 'Optimized'
-                ),
-              ],
-            ),
-          ],
         ],
-      ),
-    );
-  }
-
-  Widget _buildTabNav() {
-    return Container(
-      color: Colors.white,
-      width: double.infinity,
-      height: 60,
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Row(
-          children: [
-            _TabItem(
-              label: 'Overview',
-              icon: Icons.dashboard_customize_rounded,
-              isActive: _activeTab == 0,
-              onTap: () => setState(() => _activeTab = 0),
-            ),
-            const SizedBox(width: 8),
-            _TabItem(
-              label: 'Data Grid',
-              icon: Icons.table_chart_rounded,
-              isActive: _activeTab == 1,
-              onTap: () => setState(() => _activeTab = 1),
-            ),
-            const SizedBox(width: 8),
-            _TabItem(
-              label: 'Timeline',
-              icon: Icons.analytics_rounded,
-              isActive: _activeTab == 2,
-              onTap: () => setState(() => _activeTab = 2),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -231,16 +299,16 @@ class _GlDashboardScreenState extends State<GlDashboardScreen> with SingleTicker
         delay: 0,
       ),
       _SummaryCard3D(
-        title: 'Ledger Masters',
+        title: 'GL Masters',
         value: _isLoading ? '...' : _ledgerMastersCount.toString(),
         icon: Icons.account_balance_rounded,
         gradientColors: const [Color(0xFF34D399), Color(0xFF10B981)],
         delay: 0.05,
       ),
       _SummaryCard3D(
-        title: 'Branches',
-        value: _isLoading ? '...' : _branchesCount.toString(),
-        icon: Icons.business_rounded,
+        title: 'Configuration',
+        value: '4',
+        icon: Icons.settings_rounded,
         gradientColors: const [Color(0xFF67E8F9), Color(0xFF0EA5E9)],
         delay: 0.1,
       ),
@@ -312,9 +380,12 @@ class _GlDashboardScreenState extends State<GlDashboardScreen> with SingleTicker
                 ),
                 const SizedBox(height: 16),
                 _ChartFrame(
-                  title: 'Module Intelligence',
+                  title: 'GL Module Activity',
                   onRefresh: _fetchDashboardData,
-                  child: _ModuleIntelligencePanel(selectedItem: selectedItem),
+                  child: _ModuleIntelligencePanel(
+                    submoduleStats: _submoduleRecordStats,
+                    activities: _glActivities,
+                  ),
                 ),
               ],
             )
@@ -338,9 +409,12 @@ class _GlDashboardScreenState extends State<GlDashboardScreen> with SingleTicker
                 Expanded(
                   flex: 3,
                   child: _ChartFrame(
-                    title: 'Module Intelligence',
+                    title: 'GL Module Activity',
                     onRefresh: _fetchDashboardData,
-                    child: _ModuleIntelligencePanel(selectedItem: selectedItem),
+                    child: _ModuleIntelligencePanel(
+                      submoduleStats: _submoduleRecordStats,
+                      activities: _glActivities,
+                    ),
                   ),
                 ),
               ],
@@ -350,58 +424,13 @@ class _GlDashboardScreenState extends State<GlDashboardScreen> with SingleTicker
     );
   }
 
-  Widget _buildMainTable() {
-    final setupItems = widget.items.where((i) => ['GL-CAT', 'GL-MST', 'GL-MAT', 'GL-SEG'].contains(i.programId)).toList();
-    final controlItems = widget.items.where((i) => !setupItems.contains(i)).toList();
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        children: [
-          _MondayGroup(
-            title: 'Core Ledger Setup',
-            color: const Color(0xFF3A57E8),
-            items: setupItems,
-            onNavigate: widget.onNavigate,
-          ),
-          const SizedBox(height: 32),
-          _MondayGroup(
-            title: 'Control Parameters',
-            color: AppColors.green,
-            items: controlItems,
-            onNavigate: widget.onNavigate,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildGanttView() {
-    return _GanttChart(items: widget.items);
-  }
 }
 
 // -----------------------------------------------------------------------------
 // UI COMPONENTS
 // -----------------------------------------------------------------------------
 
-class _HeaderMetric extends StatelessWidget {
-  final String label;
-  final String value;
-  const _HeaderMetric({required this.label, required this.value});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Text(label, style: bodyStyle(size: 10, color: AppColors.ink4, weight: FontWeight.w700)),
-        Text(value, style: bodyStyle(size: 14, color: AppColors.ink, weight: FontWeight.w800)),
-      ],
-    );
-  }
-}
 
 class _Animated3DIcon extends StatefulWidget {
   @override
@@ -452,35 +481,6 @@ class _Animated3DIconState extends State<_Animated3DIcon> with SingleTickerProvi
   }
 }
 
-class _TabItem extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final bool isActive;
-  final VoidCallback onTap;
-
-  const _TabItem({required this.label, required this.icon, required this.isActive, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        height: 60,
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        decoration: BoxDecoration(
-          border: Border(bottom: BorderSide(color: isActive ? AppColors.tBlue : Colors.transparent, width: 3)),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, size: 20, color: isActive ? AppColors.tBlue : AppColors.ink3),
-            const SizedBox(width: 8),
-            Text(label, style: bodyStyle(size: 14, weight: isActive ? FontWeight.w800 : FontWeight.w500, color: isActive ? AppColors.tBlue : AppColors.ink3)),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 class _ChartFrame extends StatefulWidget {
   final String title;
@@ -529,19 +529,22 @@ class _ChartFrameState extends State<_ChartFrame> {
                 ),
               ),
               const SizedBox(width: 12),
-              PopupMenuButton<String>(
-                icon: _isRefreshing 
-                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation(AppColors.tBlue)))
-                  : const Icon(Icons.more_horiz_rounded, color: AppColors.ink4),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                itemBuilder: (context) => [
-                  PopupMenuItem(value: 'export', child: Row(children: [const Icon(Icons.download_rounded, size: 18), const SizedBox(width: 8), Text('Export Data', style: bodyStyle(size: 13))])),
-                  PopupMenuItem(value: 'refresh', child: Row(children: [const Icon(Icons.refresh_rounded, size: 18), const SizedBox(width: 8), Text('Refresh', style: bodyStyle(size: 13))])),
-                ],
-                onSelected: (val) {
-                  if (val == 'refresh') _handleRefresh();
-                },
-              ),
+              _isRefreshing 
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation(AppColors.tBlue),
+                    ),
+                  )
+                : IconButton(
+                    icon: const Icon(Icons.sync_rounded, color: AppColors.ink4, size: 20),
+                    onPressed: _handleRefresh,
+                    splashRadius: 20,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
             ],
           ),
           const SizedBox(height: 12),
@@ -918,583 +921,185 @@ class _AuthorizationStepper extends StatelessWidget {
 // ORIGINAL TABLE COMPONENTS (Refined)
 // -----------------------------------------------------------------------------
 
-class _MondayGroup extends StatelessWidget {
-  final String title;
-  final Color color;
-  final List<SubmenuItem> items;
-  final void Function(String screen, String? prog) onNavigate;
 
-  const _MondayGroup({required this.title, required this.color, required this.items, required this.onNavigate});
-
-  @override
-  Widget build(BuildContext context) {
-    final isMobile = Responsive.isMobile(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.ink3, size: 20),
-            const SizedBox(width: 4),
-            Text(title, style: bodyStyle(size: 18, weight: FontWeight.w800, color: color)),
-            const SizedBox(width: 8),
-            Text('(${items.length} items)', style: bodyStyle(size: 12, color: AppColors.ink4)),
-          ],
-        ),
-        const SizedBox(height: 16),
-        if (!isMobile) _buildTableHeader(),
-        const SizedBox(height: 8),
-        ...items.map((item) => _build3DRow(context, item)),
-      ],
-    );
-  }
-
-  Widget _buildTableHeader() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
-        children: [
-          const SizedBox(width: 12),
-          Expanded(flex: 4, child: Text('Account Name', style: bodyStyle(size: 13, weight: FontWeight.w700, color: AppColors.ink2))),
-          Expanded(flex: 2, child: Center(child: Text('Status', style: bodyStyle(size: 13, weight: FontWeight.w700, color: AppColors.ink2)))),
-          Expanded(flex: 2, child: Center(child: Text('Program ID', style: bodyStyle(size: 13, weight: FontWeight.w700, color: AppColors.ink2)))),
-          Expanded(flex: 3, child: Center(child: Text('Timeline', style: bodyStyle(size: 13, weight: FontWeight.w700, color: AppColors.ink2)))),
-          const SizedBox(width: 48),
-        ],
-      ),
-    );
-  }
-
-  Widget _build3DRow(BuildContext context, SubmenuItem item) {
-    final isMobile = Responsive.isMobile(context);
-    
-    if (isMobile) {
-      return _HoverElevation(
-        onTap: () => onNavigate(item.screen, item.programId),
-        child: Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.border.withValues(alpha: 0.8), width: 1),
-            boxShadow: [
-              BoxShadow(
-                color: color.withValues(alpha: 0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 4,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: color,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(item.label, style: bodyStyle(size: 15, weight: FontWeight.w800, color: AppColors.ink)),
-                    if (item.subtitle != null && item.subtitle!.isNotEmpty) ...[
-                      const SizedBox(height: 2),
-                      Text(item.subtitle!, style: bodyStyle(size: 11, color: AppColors.ink3), maxLines: 1, overflow: TextOverflow.ellipsis),
-                    ],
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: AppColors.bg,
-                            border: Border.all(color: AppColors.border2),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(item.programId, style: monoStyle(size: 10, color: AppColors.ink3, weight: FontWeight.w700)),
-                        ),
-                        const SizedBox(width: 8),
-                        _buildStatusCell(item),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              const Icon(Icons.chevron_right_rounded, color: AppColors.ink4),
-            ],
-          ),
-        ),
-      );
-    }
-
-    return _HoverElevation(
-      onTap: () => onNavigate(item.screen, item.programId),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        height: 80,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: AppColors.border.withValues(alpha: 0.8), width: 1),
-          boxShadow: [
-            BoxShadow(
-              color: color.withValues(alpha: 0.08),
-              blurRadius: 15,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(20),
-          child: Stack(
-            children: [
-              Positioned(
-                left: 0, top: 0, bottom: 0,
-                child: Container(
-                  width: 6,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [color, color.withValues(alpha: 0.5)],
-                    ),
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(28, 0, 0, 0),
-                child: Row(
-                  children: [
-                    Expanded(
-                      flex: 4,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(item.label, style: bodyStyle(size: 16, weight: FontWeight.w900, color: AppColors.ink)),
-                          const SizedBox(height: 2),
-                          Text(item.subtitle ?? '', style: bodyStyle(size: 11, color: AppColors.ink3), maxLines: 1, overflow: TextOverflow.ellipsis),
-                        ],
-                      ),
-                    ),
-                    Expanded(flex: 2, child: _buildStatusCell(item)),
-                    Expanded(
-                      flex: 2,
-                      child: Center(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: AppColors.bg,
-                            borderRadius: BorderRadius.circular(6),
-                            border: Border.all(color: AppColors.border2),
-                          ),
-                          child: Text(
-                            item.programId ?? 'N/A', 
-                            style: monoStyle(size: 10, weight: FontWeight.w800, color: AppColors.ink3)
-                          ),
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      flex: 3,
-                      child: _buildTimelineCell(item),
-                    ),
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 20),
-                      child: Icon(Icons.chevron_right_rounded, color: AppColors.border),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatusCell(SubmenuItem item) {
-    final bool isDone = item.trend == 'Stable' || item.trend == 'Audited';
-    return Center(
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: (isDone ? AppColors.green : AppColors.tBlue).withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: Text(
-          isDone ? 'LIVE' : 'ACTIVE',
-          style: bodyStyle(size: 10, weight: FontWeight.w800, color: isDone ? AppColors.green : AppColors.tBlue),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTimelineCell(SubmenuItem item) {
-    double progress = 0.7;
-    if (item.programId?.contains('CAT') ?? false) progress = 1.0;
-    
-    return Center(
-      child: Container(
-        width: 140,
-        height: 12,
-        decoration: BoxDecoration(color: const Color(0xFFE2E8F0), borderRadius: BorderRadius.circular(6)),
-        clipBehavior: Clip.antiAlias,
-        child: Stack(
-          children: [
-            FractionallySizedBox(
-              widthFactor: progress,
-              child: Container(decoration: BoxDecoration(color: color, gradient: LinearGradient(colors: [color, color.withValues(alpha: 0.8)]))),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _HoverElevation extends StatefulWidget {
-  final Widget child;
-  final VoidCallback onTap;
-  const _HoverElevation({required this.child, required this.onTap});
-
-  @override
-  State<_HoverElevation> createState() => _HoverElevationState();
-}
-
-class _HoverElevationState extends State<_HoverElevation> {
-  bool _hover = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (_) => setState(() => _hover = true),
-      onExit: (_) => setState(() => _hover = false),
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          transform: Matrix4.identity()..translate(_hover ? 0.0 : 0.0, _hover ? -8.0 : 0.0),
-          child: widget.child,
-        ),
-      ),
-    );
-  }
-}
-
-class _GanttChart extends StatelessWidget {
-  final List<SubmenuItem> items;
-  const _GanttChart({required this.items});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      color: Colors.white,
-      child: Row(
-        children: [
-          Container(
-            width: 260,
-            decoration: const BoxDecoration(color: Colors.white, border: Border(right: BorderSide(color: AppColors.border, width: 1))),
-            child: Column(
-              children: [
-                Container(height: 60, padding: const EdgeInsets.symmetric(horizontal: 24), alignment: Alignment.centerLeft, child: Text('GL Master Plan', style: bodyStyle(size: 16, weight: FontWeight.w800, color: AppColors.ink))),
-                const Divider(height: 1),
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: items.length,
-                    itemBuilder: (context, i) => Container(
-                      height: 54,
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      alignment: Alignment.centerLeft,
-                      decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: AppColors.border2))),
-                      child: Row(
-                        children: [
-                          Container(width: 8, height: 8, decoration: BoxDecoration(color: _getGanttColor(i), shape: BoxShape.circle)),
-                          const SizedBox(width: 12),
-                          Expanded(child: Text(items[i].label, style: bodyStyle(size: 13, weight: FontWeight.w600), overflow: TextOverflow.ellipsis)),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: SizedBox(
-                width: 1200,
-                child: Stack(
-                  children: [
-                    Column(
-                      children: [
-                        Container(
-                          height: 60,
-                          child: Row(
-                            children: List.generate(12, (i) => Container(
-                              width: 100,
-                              alignment: Alignment.center,
-                              decoration: const BoxDecoration(border: Border(left: BorderSide(color: Color(0xFFF1F5F9)))),
-                              child: Text('Week ${i+1}', style: bodyStyle(size: 11, color: AppColors.ink4, weight: FontWeight.w700)),
-                            )),
-                          ),
-                        ),
-                        const Divider(height: 1),
-                        Expanded(child: ListView.builder(
-                          itemCount: items.length,
-                          itemBuilder: (context, i) => Container(
-                            height: 54,
-                            decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFFF1F5F9)))),
-                            child: Stack(
-                              children: [
-                                Positioned(
-                                  left: 80.0 * (i % 6) + 40,
-                                  top: 14,
-                                  bottom: 14,
-                                  child: AnimatedContainer(
-                                    duration: const Duration(milliseconds: 800),
-                                    width: 200 + (i * 30.0),
-                                    decoration: BoxDecoration(
-                                      gradient: LinearGradient(colors: [_getGanttColor(i), _getGanttColor(i).withValues(alpha: 0.8)]),
-                                      borderRadius: BorderRadius.circular(10),
-                                      boxShadow: [BoxShadow(color: _getGanttColor(i).withValues(alpha: 0.2), blurRadius: 6, offset: const Offset(0, 3))],
-                                    ),
-                                    child: Center(child: Text(items[i].metric ?? '', style: bodyStyle(size: 10, color: Colors.white, weight: FontWeight.w800))),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        )),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-  Color _getGanttColor(int i) {
-    final colors = [
-      AppColors.tBlue,
-      const Color(0xFF3A57E8),
-      AppColors.purple,
-      AppColors.green,
-      AppColors.amber,
-      AppColors.red,
-    ];
-    return colors[i % colors.length];
-  }
-}
 
 class _ModuleIntelligencePanel extends StatelessWidget {
-  final SubmenuItem selectedItem;
-  const _ModuleIntelligencePanel({required this.selectedItem});
+  final Map<String, Map<String, int>> submoduleStats;
+  final List<Map<String, dynamic>> activities;
+
+  const _ModuleIntelligencePanel({
+    required this.submoduleStats,
+    required this.activities,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final intel = _getScenarioIntel(selectedItem);
-    
+    final subList = [
+      {'id': 'GL-CAT', 'name': 'GL Category', 'icon': Icons.category_rounded},
+      {'id': 'GL-MST', 'name': 'GL Master', 'icon': Icons.account_balance_wallet_rounded},
+      {'id': 'GL-BRN', 'name': 'Allowed Branches', 'icon': Icons.location_city_rounded},
+      {'id': 'GL-CUR', 'name': 'Allowed Currencies', 'icon': Icons.currency_exchange_rounded},
+      {'id': 'GL-SEG', 'name': 'GL Segments', 'icon': Icons.segment_rounded},
+      {'id': 'GL-ATT', 'name': 'GL Attributes', 'icon': Icons.settings_input_component_rounded},
+    ];
+
     return RepaintBoundary(
-      child: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 🔹 CORE PERFORMANCE METRICS
-            _intelRow('Verification', '${intel.ver}%', AppColors.purple),
-            _intelRow('Sync Stability', '${intel.stab}%', const Color(0xFF3A57E8)),
-            _intelRow('Anomalies', '${intel.anom}%', AppColors.red),
-            
-            const SizedBox(height: 16),
-            const Divider(height: 1),
-            const SizedBox(height: 16),
-      
-            // 🔹 ANIMATED SECTOR ALLOCATION
-            Text('Ledger Integrity', style: bodyStyle(size: 12, weight: FontWeight.w800, color: AppColors.ink)),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _circularMeter('MAKER', 0.92, const Color(0xFF0EA5E9)),
-                _circularMeter('CHECK', 0.78, const Color(0xFF10B981)),
-                _circularMeter('APPROV', 0.85, const Color(0xFF8B5CF6)),
-              ],
-            ),
-      
-            const SizedBox(height: 24),
-      
-            // 🔹 CONTEXTUAL NARRATIVE (Dynamic)
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: const Color(0xFF6366F1).withValues(alpha: 0.05),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFF6366F1).withValues(alpha: 0.1)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 🔹 GL SUBMODULES OVERVIEW SECTION (Data Table)
+          Text(
+            'GL Submodules Overview',
+            style: bodyStyle(size: 13, weight: FontWeight.w800, color: AppColors.ink),
+          ),
+          const SizedBox(height: 16),
+          Table(
+            columnWidths: const {
+              0: FlexColumnWidth(2.6),
+              1: FlexColumnWidth(1.0),
+              2: FlexColumnWidth(1.0),
+              3: FlexColumnWidth(1.0),
+            },
+            defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+            children: [
+              // Header Row
+              TableRow(
+                decoration: const BoxDecoration(
+                  border: Border(bottom: BorderSide(color: AppColors.border, width: 1.5)),
+                ),
                 children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.shield_rounded, size: 14, color: Color(0xFF6366F1)),
-                      const SizedBox(width: 8),
-                      Text('Policy Analysis: ${selectedItem.label}', style: bodyStyle(size: 11, weight: FontWeight.w800, color: const Color(0xFF6366F1))),
-                    ],
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Text('Submodule', style: bodyStyle(size: 10, weight: FontWeight.w800, color: AppColors.ink3)),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    intel.description,
-                    style: bodyStyle(size: 10, color: AppColors.ink2, height: 1.5),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Center(child: Text('Ins', style: bodyStyle(size: 10, weight: FontWeight.w800, color: AppColors.ink3))),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Center(child: Text('Upd', style: bodyStyle(size: 10, weight: FontWeight.w800, color: AppColors.ink3))),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Center(child: Text('Del', style: bodyStyle(size: 10, weight: FontWeight.w800, color: AppColors.ink3))),
                   ),
                 ],
               ),
-            ),
-      
-            const SizedBox(height: 24),
-            
-            // 🔹 PROFESSIONAL GL ACTIVITY FEED
-            Row(
-              children: [
-                Text('GL Activity Feed', style: bodyStyle(size: 12, weight: FontWeight.w800, color: AppColors.ink)),
-                const Spacer(),
-                const _StatusBadge(label: 'LIVE', color: Color(0xFF10B981)),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Column(
-              children: _buildScenarioActivities(selectedItem),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+              // Data Rows
+              ...subList.map((sub) {
+                final id = sub['id'] as String;
+                final name = sub['name'] as String;
+                final icon = sub['icon'] as IconData;
+                final stats = submoduleStats[id] ?? {'inserted': 0, 'updated': 0, 'deleted': 0};
 
-  List<Widget> _buildScenarioActivities(SubmenuItem item) {
-    // Generate minutes based on item property to keep it consistent but dynamic
-    final int hash = item.label.length; 
-    
-    if (item.label.contains('Category')) {
-      return [
-        _activityItem(Icons.fact_check_rounded, 'Hierarchy Validated', 'Approver confirmed root structure', _formatAgo(2 + hash % 5), const Color(0xFF8B5CF6)),
-        _activityItem(Icons.note_add_rounded, 'Maker Update', 'Added 3 sub-nodes to ${item.programId}', _formatAgo(60 + hash * 2), const Color(0xFF0EA5E9)),
-        _activityItem(Icons.sync_rounded, 'Sync Complete', 'Distributed schemas aligned', _formatAgo(240 + hash * 10), const Color(0xFF10B981)),
-      ];
-    } else if (item.label.contains('Master')) {
-      return [
-        _activityItem(Icons.account_balance_wallet_rounded, 'Balance Review', 'Checker verified opening balances', 'Just now', const Color(0xFF10B981)),
-        _activityItem(Icons.security_rounded, 'Policy Audit', 'Enhanced security protocols applied', _formatAgo(15 + hash % 10), const Color(0xFF8B5CF6)),
-        _activityItem(Icons.rule_rounded, 'Maker Modified', 'Account mappings revised for GL-MST', _formatAgo(120 + hash * 5), const Color(0xFF0EA5E9)),
-      ];
-    } else if (item.label.contains('Currency')) {
-      return [
-        _activityItem(Icons.currency_exchange_rounded, 'Rate Flash', 'Updated base rates from Gateway', '5s ago', const Color(0xFFF59E0B)),
-        _activityItem(Icons.verified_user_rounded, 'Factor Verified', 'Approver signed conversion node', _formatAgo(10 + hash % 8), const Color(0xFF8B5CF6)),
-        _activityItem(Icons.history_edu_rounded, 'Log Finalized', 'Currency matrix snapshot archived', _formatAgo(90 + hash * 3), const Color(0xFF0EA5E9)),
-      ];
-    }
-    return [
-      _activityItem(Icons.bolt_rounded, 'Live Pulse', 'System is monitoring ${item.label}', 'Active', const Color(0xFF10B981)),
-      _activityItem(Icons.info_outline_rounded, 'Idle Notification', 'No pending authorizations for this node', _formatAgo(120), AppColors.ink3),
-    ];
-  }
-
-  String _formatAgo(int minutes) {
-    if (minutes < 60) return '${minutes}m ago';
-    int hours = minutes ~/ 60;
-    if (hours < 24) return '${hours}h ago';
-    return '${hours ~/ 24}d ago';
-  }
-
-  _ScenarioIntel _getScenarioIntel(SubmenuItem item) {
-    if (item.label.contains('Category')) {
-      return _ScenarioIntel(98, 94, 0.1, 'Classification tree validated. All category hierarchies are consistent with global financial standards.');
-    } else if (item.label.contains('Master')) {
-      return _ScenarioIntel(99, 97, 0.05, 'Ledger sum integrity verified. The current master plan is optimized for multi-branch reconciliation.');
-    } else if (item.label.contains('Currency')) {
-      return _ScenarioIntel(96, 91, 0.8, 'Exchange rate gateway online. Real-time conversion factors are being pulled from authorized sources.');
-    }
-    return _ScenarioIntel(92, 88, 1.2, 'General ledger health is optimal. Distributed data nodes are in sync with the primary controller.');
-  }
-
-  List<PieChartSectionData> _getPieData(int seed, PieType type) {
-    // Generate truly dynamic data based on the seed (safeIndex)
-    final double base = 15.0 + (seed * 2.1) % 10.0;
-    
-    if (type == PieType.distribution) {
-      return [
-        PieChartSectionData(color: const Color(0xFF6366F1), value: base + 20, title: 'Inbound', radius: 55, showTitle: false),
-        PieChartSectionData(color: const Color(0xFF10B981), value: base + 15, title: 'Outbound', radius: 48, showTitle: false),
-        PieChartSectionData(color: const Color(0xFFF59E0B), value: base + 10, title: 'Pending', radius: 42, showTitle: false),
-        PieChartSectionData(color: const Color(0xFFEF4444), value: base + 5, title: 'Internal', radius: 38, showTitle: false),
-      ];
-    } else {
-      return [
-        PieChartSectionData(color: const Color(0xFF8B5CF6), value: base + 30, title: 'Approved', radius: 55, showTitle: false),
-        PieChartSectionData(color: const Color(0xFFEC4899), value: base + 12, title: 'Draft', radius: 48, showTitle: false),
-        PieChartSectionData(color: const Color(0xFF0EA5E9), value: base + 18, title: 'Reviewed', radius: 42, showTitle: false),
-      ];
-    }
-  }
-
-  Widget _circularMeter(String label, double val, Color color) {
-    return Column(
-      children: [
-        SizedBox(
-          width: 45, height: 45,
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              CircularProgressIndicator(
-                value: val,
-                strokeWidth: 4,
-                backgroundColor: color.withValues(alpha: 0.1),
-                valueColor: AlwaysStoppedAnimation(color),
-              ),
-              Center(
-                child: Text('${(val * 100).toInt()}%', style: bodyStyle(size: 10, weight: FontWeight.w900, color: color)),
-              ),
+                return TableRow(
+                  decoration: const BoxDecoration(
+                    border: Border(bottom: BorderSide(color: AppColors.border, width: 0.5)),
+                  ),
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: Row(
+                        children: [
+                          Icon(icon, size: 13, color: AppColors.ink3),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              name,
+                              style: bodyStyle(size: 11, weight: FontWeight.w800, color: AppColors.ink),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: Center(child: _badge('${stats['inserted']}', const Color(0xFF10B981))),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: Center(child: _badge('${stats['updated']}', const Color(0xFF3B82F6))),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: Center(child: _badge('${stats['deleted']}', const Color(0xFFEF4444))),
+                    ),
+                  ],
+                );
+              }),
             ],
           ),
-        ),
-        const SizedBox(height: 8),
-        Text(label, style: bodyStyle(size: 9, weight: FontWeight.w800, color: AppColors.ink3)),
-      ],
-    );
-  }
+          const SizedBox(height: 24),
+          const Divider(height: 1, color: AppColors.border),
+          const SizedBox(height: 20),
 
-  Widget _intelRow(String label, String val, Color color) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        children: [
-          Container(
-            width: 8, height: 8,
-            decoration: BoxDecoration(
-              color: color, 
-              shape: BoxShape.circle,
-              boxShadow: [BoxShadow(color: color.withValues(alpha: 0.4), blurRadius: 4, spreadRadius: 1)],
-            ),
+          // 🔹 GL RECENT ACTIVITIES FEED
+          Row(
+            children: [
+              Text(
+                'Recent Activities',
+                style: bodyStyle(size: 13, weight: FontWeight.w800, color: AppColors.ink),
+              ),
+              const Spacer(),
+              const _StatusBadge(label: 'LIVE', color: Color(0xFF10B981)),
+            ],
           ),
-          const SizedBox(width: 12),
-          Text(label, style: bodyStyle(size: 12, weight: FontWeight.w600, color: AppColors.ink2)),
-          const Spacer(),
-          Text(val, style: bodyStyle(size: 12, weight: FontWeight.w800, color: color)),
+          const SizedBox(height: 16),
+          if (activities.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 24),
+              child: Center(
+                child: Text(
+                  'No recent activities',
+                  style: bodyStyle(size: 11, color: AppColors.ink4),
+                ),
+              ),
+            )
+          else
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: activities.length > 5 ? 5 : activities.length,
+              itemBuilder: (context, index) {
+                final activity = activities[index];
+                return _activityItem(
+                  activity['icon'] as IconData,
+                  activity['title'] as String,
+                  activity['subtitle'] as String,
+                  activity['time'] as String,
+                  activity['color'] as Color,
+                );
+              },
+            ),
         ],
       ),
     );
   }
 
-  Widget _activityItem(IconData icon, String title, String msg, String time, Color color) {
+  Widget _badge(String text, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: color.withValues(alpha: 0.15)),
+      ),
+      child: Text(
+        text,
+        style: bodyStyle(size: 9, weight: FontWeight.w700, color: color),
+      ),
+    );
+  }
+
+  Widget _activityItem(
+    IconData icon,
+    String title,
+    String msg,
+    String time,
+    Color color,
+  ) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Row(
@@ -1502,7 +1107,10 @@ class _ModuleIntelligencePanel extends StatelessWidget {
         children: [
           Container(
             padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
             child: Icon(icon, size: 14, color: color),
           ),
           const SizedBox(width: 12),
@@ -1513,12 +1121,28 @@ class _ModuleIntelligencePanel extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(title, style: bodyStyle(size: 11, weight: FontWeight.w800, color: AppColors.ink)),
-                    Text(time, style: bodyStyle(size: 9, color: AppColors.ink4)),
+                    Expanded(
+                      child: Text(
+                        title,
+                        style: bodyStyle(size: 11, weight: FontWeight.w800, color: AppColors.ink),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      time,
+                      style: bodyStyle(size: 9, color: AppColors.ink4),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 2),
-                Text(msg, style: bodyStyle(size: 10, color: AppColors.ink3), maxLines: 1, overflow: TextOverflow.ellipsis),
+                Text(
+                  msg,
+                  style: bodyStyle(size: 10, color: AppColors.ink3),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ],
             ),
           ),
@@ -1544,12 +1168,5 @@ class _StatusBadge extends StatelessWidget {
   }
 }
 
-class _ScenarioIntel {
-  final int ver;
-  final int stab;
-  final double anom;
-  final String description;
-  _ScenarioIntel(this.ver, this.stab, this.anom, this.description);
-}
 
 
