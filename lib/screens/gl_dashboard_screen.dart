@@ -291,26 +291,35 @@ class _GlDashboardScreenState extends State<GlDashboardScreen> with SingleTicker
     final selectedItem = scenarios[safeIndex];
 
     final summaryCards = [
-      _SummaryCard3D(
-        title: 'GL Categories',
-        value: _isLoading ? '...' : _glCategoriesCount.toString(),
-        icon: Icons.category_rounded,
-        gradientColors: const [Color(0xFF818CF8), Color(0xFF6366F1)],
-        delay: 0,
+      GestureDetector(
+        onTap: () => widget.onNavigate('nontran', 'GL-CAT'),
+        child: _SummaryCard3D(
+          title: 'GL Categories',
+          value: _isLoading ? '...' : _glCategoriesCount.toString(),
+          icon: Icons.category_rounded,
+          gradientColors: const [Color(0xFF818CF8), Color(0xFF6366F1)],
+          delay: 0,
+        ),
       ),
-      _SummaryCard3D(
-        title: 'GL Masters',
-        value: _isLoading ? '...' : _ledgerMastersCount.toString(),
-        icon: Icons.account_balance_rounded,
-        gradientColors: const [Color(0xFF34D399), Color(0xFF10B981)],
-        delay: 0.05,
+      GestureDetector(
+        onTap: () => widget.onNavigate('nontran', 'GL-MST'),
+        child: _SummaryCard3D(
+          title: 'GL Masters',
+          value: _isLoading ? '...' : _ledgerMastersCount.toString(),
+          icon: Icons.account_balance_rounded,
+          gradientColors: const [Color(0xFF34D399), Color(0xFF10B981)],
+          delay: 0.05,
+        ),
       ),
-      _SummaryCard3D(
-        title: 'Configuration',
-        value: '4',
-        icon: Icons.settings_rounded,
-        gradientColors: const [Color(0xFF67E8F9), Color(0xFF0EA5E9)],
-        delay: 0.1,
+      GestureDetector(
+        onTap: () => widget.onNavigate('submenu_dashboard', 'GL-SUB'),
+        child: _SummaryCard3D(
+          title: 'Configuration',
+          value: '4',
+          icon: Icons.settings_rounded,
+          gradientColors: const [Color(0xFF67E8F9), Color(0xFF0EA5E9)],
+          delay: 0.1,
+        ),
       ),
     ];
 

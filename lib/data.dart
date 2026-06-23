@@ -522,24 +522,7 @@ final List<SubmenuItem> glSubmenus = [
   ),
 ];
 
-final List<SubmenuItem> transactionSubmenus = [
-  SubmenuItem(
-    label: 'Journals',
-    icon: Icons.description_rounded,
-    programId: 'GL-JRN',
-    subtitle: 'Create and manage ledger journal entries.',
-    metric: 'New',
-    trend: 'Daily',
-  ),
-  SubmenuItem(
-    label: 'Chart of Accounts',
-    icon: Icons.list_alt_rounded,
-    programId: 'RPT-COA',
-    subtitle: 'View and manage organization accounts structure.',
-    metric: 'Active',
-    trend: 'Standard',
-  ),
-];
+final List<SubmenuItem> transactionSubmenus = [];
 
 final List<SubmenuItem> glSubCategorySubmenus = [
   SubmenuItem(
