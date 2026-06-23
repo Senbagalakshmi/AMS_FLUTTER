@@ -2504,6 +2504,7 @@ class _PremiumAppLauncherState extends State<_PremiumAppLauncher> {
 
     return PopupMenuButton<void>(
       offset: const Offset(0, 50),
+      constraints: const BoxConstraints(maxWidth: 360, minWidth: 360),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: MouseRegion(
         onEnter: (_) => setState(() => _hover = true),
@@ -2536,7 +2537,7 @@ class _PremiumAppLauncherState extends State<_PremiumAppLauncher> {
                   ),
                 )
               : SizedBox(
-                  width: 260,
+                  width: 340,
                   child: Padding( 
                     padding: const EdgeInsets.all(12),
                     child: Wrap(
@@ -2611,7 +2612,10 @@ class _WebAppIconState extends State<_WebAppIcon> {
             ..style.width = '100%'
             ..style.height = '100%'
             ..style.objectFit = 'contain'
-            ..style.borderRadius = '12px';
+            ..style.borderRadius = '12px'
+            ..style.border = 'none'
+            ..style.outline = 'none'
+            ..style.background = 'transparent';
             
           img.onError.listen((_) {
             if (mounted) {
@@ -2701,27 +2705,16 @@ class _AppTileState extends State<_AppTile> {
                   width: 44,
                   height: 44,
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF3D6EBE), Color(0xFF2D5BA8)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
+                    color: Colors.transparent,
                     borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF3D6EBE).withOpacity(0.25),
-                        blurRadius: 8,
-                        offset: const Offset(0, 3),
-                      ),
-                    ],
                   ),
                   child: widget.logoUrl != null && widget.logoUrl!.isNotEmpty
                       ? _WebAppIcon(
                           url: widget.logoUrl!,
                           size: 32,
-                          errorFallback: Icon(widget.icon, color: Colors.white, size: 22),
+                          errorFallback: Icon(widget.icon, color: const Color(0xFF3D6EBE), size: 22),
                         )
-                      : Icon(widget.icon, color: Colors.white, size: 22),
+                      : Icon(widget.icon, color: const Color(0xFF3D6EBE), size: 22),
                 ),
               ),
               const SizedBox(height: 6),
