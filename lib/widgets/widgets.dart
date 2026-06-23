@@ -1565,6 +1565,27 @@ class _AmsSidebarState extends State<AmsSidebar> {
   bool openGlSubCategory = false;
   bool openReportsSubCategory = false;
 
+  bool get _isSysAdmin {
+    if (!kIsWeb) return false;
+    final userDataStr = html.window.sessionStorage['user_data'];
+    if (userDataStr != null && userDataStr.isNotEmpty) {
+      try {
+        final userData = jsonDecode(userDataStr);
+        final String? role1 = userData['roleType']?.toString().toUpperCase();
+        final String? role2 = userData['roletype']?.toString().toUpperCase();
+        return userData['sysadminaccess'] == 1 ||
+               userData['sysadminaccess'] == '1' ||
+               userData['sysadminaccess'] == true ||
+               userData['sysadmin_access'] == 1 ||
+               userData['sysadmin_access'] == '1' ||
+               userData['sysadmin_access'] == true ||
+               role1 == 'SYSADMIN' ||
+               role2 == 'SYSADMIN';
+      } catch (_) {}
+    }
+    return false;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -1642,24 +1663,25 @@ class _AmsSidebarState extends State<AmsSidebar> {
 
                 const SizedBox(height: 16),
 
-                // 🔹 MASTERS
-                AmsSidebarItem(
-                  label: widget.isCollapsed ? '' : 'Masters',
-                  icon: openMenu == 'masters'
-                      ? Icons.folder_open_rounded
-                      : Icons.folder_shared_rounded,
-                  isCollapsed: widget.isCollapsed,
-                  isSelected: (widget.currentScreen == 'submenu_dashboard' &&
-                      widget.selectedProg == 'MASTERS'),
-                  onTap: () {
-                    setState(() {
-                      openMenu = openMenu == 'masters' ? '' : 'masters';
-                    });
-                    widget.onNavigate('submenu_dashboard', 'MASTERS');
-                  },
-                ),
+                if (_isSysAdmin) ...[
+                  // 🔹 MASTERS
+                  AmsSidebarItem(
+                    label: widget.isCollapsed ? '' : 'Masters',
+                    icon: openMenu == 'masters'
+                        ? Icons.folder_open_rounded
+                        : Icons.folder_shared_rounded,
+                    isCollapsed: widget.isCollapsed,
+                    isSelected: (widget.currentScreen == 'submenu_dashboard' &&
+                        widget.selectedProg == 'MASTERS'),
+                    onTap: () {
+                      setState(() {
+                        openMenu = openMenu == 'masters' ? '' : 'masters';
+                      });
+                      widget.onNavigate('submenu_dashboard', 'MASTERS');
+                    },
+                  ),
 
-                if (openMenu == 'masters') ...[
+                  if (openMenu == 'masters') ...[
                   AmsSubSidebarItem(
                     label: 'Organisation',
                     isCollapsed: widget.isCollapsed,
@@ -1731,6 +1753,7 @@ class _AmsSidebarState extends State<AmsSidebar> {
                   //   isSelected: widget.selectedProg == 'GL-IMPORT',
                   //   onTap: () => widget.onNavigate('nontran', 'GL-IMPORT'),
                   // ),
+                ],
                 ],
 
                 const SizedBox(height: 16),

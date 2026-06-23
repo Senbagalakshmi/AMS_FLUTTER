@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
+import 'dart:convert';
+import 'dart:html' as html;
+import 'package:flutter/foundation.dart';
 import '../theme.dart';
 import '../models/models.dart';
 import '../utils/responsive.dart';
@@ -41,6 +44,28 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
   int _processedToday = 0;
   int _glCategories = 0;
   int _glMasters = 0;
+
+  bool get _isSysAdmin {
+    if (!kIsWeb) return false;
+    final userDataStr = html.window.sessionStorage['user_data'];
+    if (userDataStr != null && userDataStr.isNotEmpty) {
+      try {
+        final userData = jsonDecode(userDataStr);
+        final String? role1 = userData['roleType']?.toString().toUpperCase();
+        final String? role2 = userData['roletype']?.toString().toUpperCase();
+        return userData['sysadminaccess'] == 1 ||
+               userData['sysadminaccess'] == '1' ||
+               userData['sysadminaccess'] == true ||
+               userData['sysadmin_access'] == 1 ||
+               userData['sysadmin_access'] == '1' ||
+               userData['sysadmin_access'] == true ||
+               role1 == 'SYSADMIN' ||
+               role2 == 'SYSADMIN';
+      } catch (_) {}
+    }
+    return false;
+  }
+
   int _totalUsersCount = 0;
   int _totalOrgCount = 0;
   int _totalCoaCount = 0;
@@ -974,8 +999,9 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
           'View ledger hierarchy',
           const Color(0xFF8B5CF6),
           () => widget.onSelect('RPT-COA')),
-      _ActionItem(Icons.people_rounded, 'Masters', 'Users & roles',
-          const Color(0xFF3B82F6), () => widget.onProceed('MASTERS')),
+      if (_isSysAdmin)
+        _ActionItem(Icons.people_rounded, 'Masters', 'Users & roles',
+            const Color(0xFF3B82F6), () => widget.onProceed('MASTERS')),
       _ActionItem(Icons.description_rounded, 'Journals', 'Post transactions',
           const Color(0xFFF59E0B), () => widget.onSelect('GL-JRN')),
       _ActionItem(Icons.bar_chart_rounded, 'Reports', 'Financial reports',
