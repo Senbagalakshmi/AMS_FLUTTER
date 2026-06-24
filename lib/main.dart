@@ -231,7 +231,7 @@ class _AmsRootState extends State<AmsRoot> {
   }
 
   void _handleProceed(String type) {
-    if (['MASTERS', 'GL', 'CONFIG', 'AUTH', 'REPORTS'].contains(type)) {
+    if (['MASTERS', 'GL', 'CONFIG', 'AUTH', 'REPORTS', 'TRANSACTIONS'].contains(type)) {
       setState(() {
         _state = _state.copyWith(
           screen: 'submenu_dashboard',
@@ -581,7 +581,7 @@ class _AmsRootState extends State<AmsRoot> {
         } else if (_state.selectedProg == 'RPT-TB') {
           body = TrialBalanceScreen(
             onBack: () => _navigate('list'),
-            onBackToModule: () => _handleProceed('TRANSACTIONS'),
+            onBackToModule: () => _handleProceed('REPORTS'),
             userName: _state.userName,
           );
           //trial balance - end
@@ -590,7 +590,7 @@ class _AmsRootState extends State<AmsRoot> {
         else if (_state.selectedProg == 'RPT-PL') {
           body = ProfitAndLossScreen(
             onBack: () => _navigate('list'),
-            onBackToModule: () => _handleProceed('TRANSACTIONS'),
+            onBackToModule: () => _handleProceed('REPORTS'),
             userName: _state.userName,
           );
         }
@@ -599,7 +599,7 @@ class _AmsRootState extends State<AmsRoot> {
         else if (_state.selectedProg == 'RPT-BS') {
           body = BalanceSheetScreen(
             onBack: () => _navigate('list'),
-            onBackToModule: () => _handleProceed('TRANSACTIONS'),
+            onBackToModule: () => _handleProceed('REPORTS'),
             userName: _state.userName,
           );
         }
@@ -718,7 +718,7 @@ class _AmsRootState extends State<AmsRoot> {
         body = AuthConfigScreen(
           configs: _state.authConfigs,
           onUpdate: _handleConfigUpdate,
-          onBack: () => _navigate('list'),
+          onBack: () => _handleProceed('CONFIG'),
           userName: _state.userName,
         );
       case 'submenu_dashboard':
@@ -800,7 +800,7 @@ class _AmsRootState extends State<AmsRoot> {
           body = ReportDashboardScreen(
             items: reportSubmenus,
             userName: _state.userName,
-            onBack: () => _navigate('list'),
+            onBack: () => _handleProceed('TRANSACTIONS'),
             onNavigate: _handleScreenNavigation,
           );
         } else if (cat == 'MASTERS') {

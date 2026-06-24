@@ -735,7 +735,12 @@ class _GLMasterScreenState extends State<GLMasterScreen> {
                   label: 'GL Module', onTap: widget.onBackToModule),
               HeaderBreadcrumb(label: 'GL Master'),
             ],
-            onBack: widget.onBackToModule,
+            onBack: _showForm
+                ? () => setState(() {
+                      _showForm = false;
+                      _clearFields();
+                    })
+                : widget.onBackToModule,
           ),
           Expanded(
             child: Padding(

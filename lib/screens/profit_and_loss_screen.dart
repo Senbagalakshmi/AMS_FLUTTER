@@ -7,6 +7,8 @@ import 'package:excel/excel.dart' as ex;
 import 'package:universal_html/html.dart' as html;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import '../services/report_api_service.dart';
+import '../theme.dart';
+import '../widgets/widgets.dart';
 
 class ProfitAndLossScreen extends StatefulWidget {
   final VoidCallback onBack;
@@ -413,9 +415,30 @@ class _ProfitAndLossScreenState extends State<ProfitAndLossScreen> {
           body: Column(
             children: [
               // ================= HEADER =================
-              _buildHeader(isMobile),
-
-              const Divider(height: 1, color: Color(0xFFEEEEEE)),
+              AmsIdentityHeader(
+                icon: const Icon(Icons.analytics_rounded, size: 28, color: AppColors.tBlue),
+                title: 'Profit & Loss',
+                subtitle: 'Financial Performance Report',
+                badges: const [],
+                accentColor: AppColors.tBlue,
+                accentLt: AppColors.tBlueLt,
+                accentMd: AppColors.tBlueMd,
+                breadcrumbs: [
+                  HeaderBreadcrumb(label: 'Home', onTap: widget.onBack),
+                  HeaderBreadcrumb(label: 'Reports Dashboard', onTap: widget.onBackToModule),
+                  HeaderBreadcrumb(label: 'Profit & Loss'),
+                ],
+                onBack: widget.onBackToModule,
+                actions: [
+                  AmsButton(
+                    label: 'Customize Report',
+                    variant: AmsButtonVariant.outline,
+                    small: true,
+                    icon: Icons.settings_outlined,
+                    onPressed: () {},
+                  ),
+                ],
+              ),
 
               // ================= TOOLBAR =================
               _buildToolbar(isMobile),
@@ -484,7 +507,7 @@ class _ProfitAndLossScreenState extends State<ProfitAndLossScreen> {
                 Row(
                   children: [
                     IconButton(
-                      onPressed: widget.onBack,
+                      onPressed: widget.onBackToModule,
                       icon: const Icon(Icons.arrow_back_ios,
                           color: Colors.black, size: 20),
                     ),
@@ -528,7 +551,7 @@ class _ProfitAndLossScreenState extends State<ProfitAndLossScreen> {
           : Row(
               children: [
                 IconButton(
-                  onPressed: widget.onBack,
+                  onPressed: widget.onBackToModule,
                   icon: const Icon(Icons.arrow_back_ios,
                       color: Colors.black, size: 20),
                 ),

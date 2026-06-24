@@ -94,103 +94,36 @@ class _NonTranAuthScreenState extends State<NonTranAuthScreen> {
       backgroundColor: AppColors.bg,
       body: Column(
         children: [
+          AmsIdentityHeader(
+            icon: const Icon(Icons.security_rounded, size: 28, color: AppColors.tBlue),
+            title: 'Authorization',
+            subtitle: 'Select a record from the queue to review and authorize.',
+            badges: [],
+            accentColor: AppColors.tBlue,
+            accentLt: AppColors.tBlueLt,
+            accentMd: AppColors.tBlueMd,
+            breadcrumbs: [
+              HeaderBreadcrumb(label: 'Home', onTap: widget.onBack),
+              HeaderBreadcrumb(label: 'Authorization Queue'),
+            ],
+            onBack: widget.onBack,
+            actions: [
+              if (widget.onRefresh != null)
+                AmsButton(
+                  label: 'Refresh',
+                  variant: AmsButtonVariant.outline,
+                  small: true,
+                  icon: Icons.refresh_rounded,
+                  onPressed: widget.onRefresh!,
+                ),
+            ],
+          ),
           Expanded(
             child: SingleChildScrollView(
               padding: EdgeInsets.all(isMobile ? 16 : 28),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // ── Header ────────────────────────────────────────────
-                  if (isMobile)
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Authorization',
-                              style: bodyStyle(
-                                  size: 22,
-                                  weight: FontWeight.w700,
-                                  color: AppColors.ink),
-                            ),
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                if (widget.onRefresh != null)
-                                  IconButton(
-                                    icon: const Icon(Icons.refresh_rounded, color: AppColors.tBlue, size: 20),
-                                    onPressed: widget.onRefresh!,
-                                    padding: EdgeInsets.zero,
-                                    constraints: const BoxConstraints(),
-                                  ),
-                                if (widget.onRefresh != null) const SizedBox(width: 12),
-                                IconButton(
-                                  icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.tBlue, size: 18),
-                                  onPressed: widget.onBack,
-                                  padding: EdgeInsets.zero,
-                                  constraints: const BoxConstraints(),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          'Select a record from the queue to review and authorize.',
-                          style: bodyStyle(size: 13, color: AppColors.ink3),
-                        ),
-                      ],
-                    )
-                  else
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Authorization',
-                                style: bodyStyle(
-                                    size: 22,
-                                    weight: FontWeight.w700,
-                                    color: AppColors.ink),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'Select a record from the queue to review and authorize.',
-                                style: bodyStyle(size: 13, color: AppColors.ink3),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Row(
-                          children: [
-                            if (widget.onRefresh != null)
-                              Padding(
-                                padding: const EdgeInsets.only(right: 8),
-                                child: AmsButton(
-                                  label: 'Refresh',
-                                  variant: AmsButtonVariant.outline,
-                                  small: true,
-                                  icon: Icons.refresh_rounded,
-                                  onPressed: widget.onRefresh!,
-                                ),
-                              ),
-                            AmsButton(
-                              label: 'Back',
-                              variant: AmsButtonVariant.outline,
-                              small: true,
-                              icon: Icons.arrow_back_ios_new_rounded,
-                              onPressed: widget.onBack,
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  const SizedBox(height: 24),
 
                   // ── Queue Table ───────────────────────────────────────
                   if (widget.isLoading)

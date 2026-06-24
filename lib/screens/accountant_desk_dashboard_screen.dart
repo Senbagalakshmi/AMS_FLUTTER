@@ -1302,17 +1302,13 @@ class _AccountantDeskDashboardScreenState
               ),
             ),
             )
-          : SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Container(
-                constraints: BoxConstraints(minWidth: isMobile ? 500 : 800),
-                child: Table(
+          : Table(
                   columnWidths: const {
-                    0: FlexColumnWidth(2),
+                    0: FlexColumnWidth(2.5),
                     1: FlexColumnWidth(4),
                     2: FlexColumnWidth(2),
-                    3: FlexColumnWidth(2),
-                    4: FlexColumnWidth(2),
+                    3: FlexColumnWidth(2.5),
+                    4: FlexColumnWidth(2.5),
                   },
                   border: TableBorder(
                     horizontalInside:
@@ -1385,8 +1381,6 @@ class _AccountantDeskDashboardScreenState
                     }),
                   ],
                 ),
-              ),
-            ),
           ),
         ],
       ),

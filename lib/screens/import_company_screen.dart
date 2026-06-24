@@ -6,6 +6,7 @@ import '../services/import_api_service.dart';
 import '../services/gl_api_service.dart';
 import '../utils/responsive.dart';
 import '../theme.dart';
+import '../widgets/widgets.dart';
 
 class ImportCompanyScreen extends StatefulWidget {
   final VoidCallback onBack;
@@ -4181,59 +4182,30 @@ class _ImportCompanyScreenState extends State<ImportCompanyScreen> {
       body: Column(
         children: [
           // HEADER DESIGN CONTROLLER
-          Container(
-            padding: EdgeInsets.symmetric(
-              horizontal: isMobile ? 16 : 32,
-              vertical: 18,
-            ),
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(
-                    color: Color(0x0A000000),
-                    blurRadius: 4,
-                    offset: Offset(0, 2)),
-              ],
-            ),
-            child: Row(
-              children: [
-                IconButton(
-                  onPressed: widget.onBack,
-                  icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                      size: 20, color: Color(0xFF334155)),
+          AmsIdentityHeader(
+            icon: const Icon(Icons.upload_file_rounded, size: 28, color: AppColors.tBlue),
+            title: 'File Import',
+            subtitle: 'Import Company GL & Balances',
+            badges: const [],
+            accentColor: AppColors.tBlue,
+            accentLt: AppColors.tBlueLt,
+            accentMd: AppColors.tBlueMd,
+            breadcrumbs: [
+              HeaderBreadcrumb(label: 'Home', onTap: widget.onBackToModule),
+              HeaderBreadcrumb(label: 'Accountant Desk', onTap: widget.onBack),
+              HeaderBreadcrumb(label: 'File Import'),
+            ],
+            onBack: widget.onBack,
+            actions: [
+              if (!isMobile)
+                AmsButton(
+                  label: 'Download Template CSV',
+                  variant: AmsButtonVariant.primary,
+                  small: false,
+                  icon: Icons.download_rounded,
+                  onPressed: _downloadTemplate,
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    "Import Company GL & Balances",
-                    style: TextStyle(
-                        fontSize: isMobile ? 18 : 22,
-                        fontWeight: FontWeight.w800,
-                        color: const Color(0xFF1E293B),
-                        letterSpacing: -0.5),
-                  ),
-                ),
-                if (!isMobile) const Spacer(),
-                if (!isMobile)
-                  ElevatedButton.icon(
-                    onPressed: _downloadTemplate,
-                    icon: const Icon(Icons.download_rounded, size: 18),
-                    label: const Text("Download Template CSV",
-                        style: TextStyle(fontWeight: FontWeight.bold)),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: const Color(0xFF1967D2),
-                      side: const BorderSide(
-                          color: Color(0xFF1967D2), width: 1.5),
-                      elevation: 0,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 16),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8)),
-                    ),
-                  ),
-              ],
-            ),
+            ],
           ),
 
           // SCROLL CONTENT COMPONENT BOX

@@ -9,6 +9,7 @@ import 'submenu_dashboard_screen.dart';
 import '../utils/responsive.dart';
 import '../theme.dart';
 import '../services/api_service.dart';
+import '../widgets/widgets.dart';
 
 class MasterDashboardScreen extends StatefulWidget {
   final VoidCallback? onBack;
@@ -198,32 +199,31 @@ class _MasterDashboardScreenState extends State<MasterDashboardScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF1F5F9), // Light grayish-blue background from image
-      body: Stack(
+      body: Column(
         children: [
-          const Positioned.fill(child: _AnimatedBackgroundBlobs()),
-          SingleChildScrollView(
-            padding: EdgeInsets.all(isMobile ? 16 : 32),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          AmsIdentityHeader(
+            icon: const Icon(Icons.dashboard_rounded, size: 28, color: AppColors.tBlue),
+            title: 'Master Dashboard',
+            subtitle: 'Overview of modules and key metrics',
+            badges: const [_LiveBadge()],
+            accentColor: AppColors.tBlue,
+            accentLt: AppColors.tBlueLt,
+            accentMd: AppColors.tBlueMd,
+            breadcrumbs: [
+              HeaderBreadcrumb(label: 'Home', onTap: widget.onBack),
+              HeaderBreadcrumb(label: 'Master Dashboard'),
+            ],
+            onBack: widget.onBack,
+          ),
+          Expanded(
+            child: Stack(
               children: [
-                _FadeSlideIn(
-                  index: 0,
-                  child: Row(
+                const Positioned.fill(child: _AnimatedBackgroundBlobs()),
+                SingleChildScrollView(
+                  padding: EdgeInsets.all(isMobile ? 16 : 32),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Master Dashboard',
-                        style: GoogleFonts.outfit(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: const Color(0xFF1C2434),
-                        ),
-                      ),
-                      const SizedBox(width: 14),
-                      const _LiveBadge(),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 24),
 
                 // 1. KPI Cards Row
                 if (isMobile)
@@ -331,6 +331,9 @@ class _MasterDashboardScreenState extends State<MasterDashboardScreen> {
                 const SizedBox(height: 16),
               ],
             ),
+          ),
+        ],
+      ),
           ),
         ],
       ),

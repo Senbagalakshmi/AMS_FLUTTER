@@ -675,7 +675,12 @@ class _GLCategoryScreenState extends State<GLCategoryScreen> {
                   label: 'GL Module', onTap: widget.onBackToModule),
               HeaderBreadcrumb(label: 'GL Category'),
             ],
-            onBack: widget.onBackToModule,
+            onBack: _showForm
+                ? () => setState(() {
+                      _showForm = false;
+                      _clearFields();
+                    })
+                : widget.onBackToModule,
           ),
 
           /// 🔥 FULL WIDTH SWITCH (NO ROW)
