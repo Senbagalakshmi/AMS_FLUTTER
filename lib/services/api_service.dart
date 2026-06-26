@@ -167,6 +167,10 @@ class ApiService {
           finalUser['products'] = loginData['products'];
         }
 
+        if (exchangeData['roleType'] != null) {
+          finalUser['roleType'] = exchangeData['roleType'];
+        }
+
         html.window.sessionStorage['user_data'] = jsonEncode(finalUser);
         print('💾 Session user_data saved: ${jsonEncode(finalUser)}');
       }
@@ -810,12 +814,12 @@ class ApiService {
     return payload;
   }
 
-  Future<bool> deleteAuthConfig(String programId) async {
+  Future<bool> deleteAuthConfig(int orgCode, String programId) async {
   try {
     print('AUTHCTL: Deleting $programId');
 
     final res = await http.delete(
-      Uri.parse('$baseUrl/auth/authctl/delete/$programId'),
+      Uri.parse('$baseUrl/auth/authctl/delete/$programId/$orgCode'),
       headers: _headers,
     );
 

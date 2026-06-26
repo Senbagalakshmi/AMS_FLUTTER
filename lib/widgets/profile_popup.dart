@@ -156,6 +156,15 @@ class _ProfilePopupState extends State<ProfilePopup> {
         if (userDetails != null) {
           fetchedUser.addAll(userDetails);
           if (kIsWeb) {
+            try {
+              final str = html.window.sessionStorage['user_data'];
+              if (str != null && str.isNotEmpty) {
+                final oldData = jsonDecode(str);
+                if (oldData['roleType'] != null) {
+                  fetchedUser['roleType'] = oldData['roleType'];
+                }
+              }
+            } catch (_) {}
             html.window.sessionStorage['user_data'] = jsonEncode(fetchedUser);
           }
         }

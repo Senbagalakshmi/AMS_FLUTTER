@@ -139,12 +139,20 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
 
   void _submit() {
     if (_isLoading) return;
+    setState(() => _isLoading = true);
+    
     if (_step == 0) {
-      _submitRequest();
+      _submitRequest().whenComplete(() {
+        if (mounted && _step == 0) setState(() => _isLoading = false);
+      });
     } else if (_step == 1) {
-      _submitVerify();
+      _submitVerify().whenComplete(() {
+        if (mounted && _step == 1) setState(() => _isLoading = false);
+      });
     } else if (_step == 2) {
-      _submitReset();
+      _submitReset().whenComplete(() {
+        if (mounted && _step == 2) setState(() => _isLoading = false);
+      });
     }
   }
 

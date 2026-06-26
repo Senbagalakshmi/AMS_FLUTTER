@@ -409,12 +409,14 @@ class _NonTranEntryScreenState extends State<NonTranEntryScreen> {
     );
     if (confirm == true) {
       final pgmId = (record['programId'] ?? record['id'] ?? '').toString();
+      final orgCodeRaw = record['orgCode'] ?? record['orgcode'] ?? 50;
+      final orgCode = int.tryParse(orgCodeRaw.toString()) ?? 50;
       if (pgmId.isEmpty) {
         showAmsSnack(context, 'Invalid Program ID', icon: '⚠️');
         return;
       }
       setState(() => _isLoading = true);
-      final success = await apiService.deleteAuthConfig(pgmId);
+      final success = await apiService.deleteAuthConfig(orgCode, pgmId);
       if (success) {
         showAmsSnack(context, 'Authorization deleted successfully', icon: '✅');
         setState(() {});
