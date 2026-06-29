@@ -194,6 +194,28 @@ class _JournalEntryScreenState extends State<JournalEntryScreen> {
   double get _totalDebit => _rows.fold(0, (sum, row) => sum + row.debit);
   double get _totalCredit => _rows.fold(0, (sum, row) => sum + row.credit);
 
+  Future<void> _updateAccountBalance(JournalRow row) async {
+    if (row.accountNo.isEmpty || _selectedOrgCode == null) {
+      row.balanceCtrl.text = '0.00';
+      return;
+    }
+    final glNo = int.tryParse(row.accountNo);
+    if (glNo == null) {
+      row.balanceCtrl.text = '0.00';
+      return;
+    }
+    final bal = await _glApiService.getGlBalance(
+      _selectedOrgCode!,
+      glNo,
+      _selectedBranchCode,
+    );
+    if (mounted) {
+      setState(() {
+        row.balanceCtrl.text = bal.toStringAsFixed(2);
+      });
+    }
+  }
+
   Future<void> _submitJournal() async {
     // Basic Validation
     if (_orgCodeController.text.isEmpty || _branchCodeController.text.isEmpty) {
@@ -482,6 +504,8 @@ class _JournalEntryScreenState extends State<JournalEntryScreen> {
                                 children: [
                                   Expanded(flex: 2, child: Text('Account No', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
                                   SizedBox(width: 24), // Added space
+                                  Expanded(flex: 1, child: Text('Balance', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
+                                  SizedBox(width: 24), // Added space
                                   Expanded(flex: 1, child: Text('Debit', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
                                   Expanded(flex: 1, child: Text('Credit', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
                                   Expanded(flex: 4, child: Text('Remarks', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
@@ -664,8 +688,18 @@ class _JournalEntryScreenState extends State<JournalEntryScreen> {
                         } else {
                           row.accountNo = v ?? '';
                         }
+                        _updateAccountBalance(row);
                       },
                     ),
+            ),
+            const SizedBox(height: 12),
+            AmsField(
+              label: 'Balance',
+              child: AmsTextInput(
+                controller: row.balanceCtrl,
+                readOnly: true,
+                placeholder: '0.00',
+              ),
             ),
             const SizedBox(height: 12),
             Row(
@@ -755,8 +789,22 @@ class _JournalEntryScreenState extends State<JournalEntryScreen> {
                         row.accountNo = v?.trim() ?? '';
                         row.accountName = '';
                       }
+                      _updateAccountBalance(row);
                     },
                   ),
+          ),
+          const SizedBox(width: 24), // Added space
+          Expanded(
+            flex: 1,
+            child: TextField(
+              controller: row.balanceCtrl,
+              readOnly: true,
+              decoration: const InputDecoration(
+                border: InputBorder.none,
+                isDense: true,
+              ),
+              style: bodyStyle(size: 14, color: AppColors.ink3, weight: FontWeight.w600),
+            ),
           ),
           const SizedBox(width: 24), // Added space
           Expanded(
@@ -830,6 +878,7 @@ class JournalRow {
   final TextEditingController debitCtrl;
   final TextEditingController creditCtrl;
   final TextEditingController remarksCtrl;
+  final TextEditingController balanceCtrl;
 
   JournalRow({
     this.accountNo = '',
@@ -839,11 +888,13 @@ class JournalRow {
     this.remarks = '',
   })  : debitCtrl = TextEditingController(text: debit > 0 ? debit.toStringAsFixed(2) : ''),
         creditCtrl = TextEditingController(text: credit > 0 ? credit.toStringAsFixed(2) : ''),
-        remarksCtrl = TextEditingController(text: remarks);
+        remarksCtrl = TextEditingController(text: remarks),
+        balanceCtrl = TextEditingController(text: '0.00');
 
   void dispose() {
     debitCtrl.dispose();
     creditCtrl.dispose();
     remarksCtrl.dispose();
+    balanceCtrl.dispose();
   }
 }

@@ -489,7 +489,20 @@ class GLApiService {
       return false;
     }
   }
-  //////////////////////////////////
+
+  Future<double> getGlBalance(int orgCode, int glNo, int? brnCd) async {
+    try {
+      String url = "${ApiService.baseUrl}/gl-master/$glNo/balance?orgCode=$orgCode";
+      if (brnCd != null && brnCd > 0) {
+        url += "&brnCd=$brnCd";
+      }
+      final response = await http.get(Uri.parse(url), headers: apiService.headers);
+      if (response.statusCode == 200) {
+        return double.tryParse(response.body) ?? 0.0;
+      }
+    } catch (e) {
+      print("getGlBalance error: $e");
+    }
+    return 0.0;
+  }
 }
-
-
