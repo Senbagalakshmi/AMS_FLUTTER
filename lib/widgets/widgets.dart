@@ -4,8 +4,8 @@ import 'package:flutter/services.dart';
 import 'dart:ui' as ui;
 import 'dart:convert';
 // ignore: avoid_web_libraries_in_flutter
-import 'dart:html' as html;
-import 'dart:ui_web' as ui_web;
+import 'package:universal_html/html.dart' as html;
+import '../utils/platform_view_registry.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/picker.dart';
 import '../theme.dart';
@@ -1035,7 +1035,7 @@ class AmsTopBar extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('BBOTS Management',
+                  Text('B-Bots Management',
                       style: bodyStyle(size: 14, weight: FontWeight.w700)),
                   Text(brandSub,
                       style: monoStyle(size: 9, color: AppColors.ink3)),
@@ -1566,7 +1566,6 @@ class _AmsSidebarState extends State<AmsSidebar> {
   bool openReportsSubCategory = false;
 
   bool get _isSysAdmin {
-    if (!kIsWeb) return false;
     final userDataStr = html.window.sessionStorage['user_data'];
     if (userDataStr != null && userDataStr.isNotEmpty) {
       try {
@@ -2073,36 +2072,41 @@ class _AmsShellState extends State<AmsShell> {
           width: 240,
           child: Container(
             color: AppColors.sidebar,
-            child: SafeArea(
-              child: AmsSidebar(
-                currentScreen: widget.currentScreen,
-                selectedProg: widget.selectedProg,
-                onNavigate: (screen, prog) {
-                  final isDashboard = screen == 'submenu_dashboard';
-                  final stayInDrawer = isDashboard &&
-                      ['MASTERS', 'GL', 'GL-SUB', 'TRANSACTIONS', 'CONFIG', 'AUTH', 'REPORTS'].contains(prog);
+            child: MediaQuery(
+              data: MediaQuery.of(context),
+              child: SafeArea(
+                child: AmsSidebar(
+                  currentScreen: widget.currentScreen,
+                  selectedProg: widget.selectedProg,
+                  onNavigate: (screen, prog) {
+                    final isDashboard = screen == 'submenu_dashboard';
+                    final stayInDrawer = isDashboard &&
+                        ['MASTERS', 'GL', 'GL-SUB', 'TRANSACTIONS', 'CONFIG', 'AUTH', 'REPORTS'].contains(prog);
 
-                  if (!stayInDrawer) {
-                    Navigator.pop(context);
-                  }
-                  widget.onNavigate(screen, prog);
-                },
-                isCollapsed: false,
-                onToggle: () {},
+                    if (!stayInDrawer) {
+                      Navigator.pop(context);
+                    }
+                    widget.onNavigate(screen, prog);
+                  },
+                  isCollapsed: false,
+                  onToggle: () {},
+                ),
               ),
             ),
           ),
         ),
-        body: Column(
-          children: [
-            _HoverTopBar(
-              userName: widget.userName,
-              onNavigate: widget.onNavigate,
-              isMobile: true,
-              onMenuTap: () => _scaffoldKey.currentState?.openDrawer(),
-            ),
-            Expanded(child: widget.child),
-          ],
+        body: SafeArea(
+          child: Column(
+            children: [
+              _HoverTopBar(
+                userName: widget.userName,
+                onNavigate: widget.onNavigate,
+                isMobile: true,
+                onMenuTap: () => _scaffoldKey.currentState?.openDrawer(),
+              ),
+              Expanded(child: widget.child),
+            ],
+          ),
         ),
       );
     }
@@ -2600,31 +2604,18 @@ class _WebAppIconState extends State<_WebAppIcon> {
       _initView();
     }
   }
-
   void _initView() {
     if (kIsWeb) {
       _viewId = 'app-icon-${widget.url.hashCode}-${DateTime.now().millisecondsSinceEpoch}';
-      ui_web.platformViewRegistry.registerViewFactory(
+      registerWebAppIcon(
         _viewId,
-        (int viewId) {
-          final img = html.ImageElement()
-            ..src = widget.url
-            ..style.width = '100%'
-            ..style.height = '100%'
-            ..style.objectFit = 'contain'
-            ..style.borderRadius = '12px'
-            ..style.border = 'none'
-            ..style.outline = 'none'
-            ..style.background = 'transparent';
-            
-          img.onError.listen((_) {
-            if (mounted) {
-              setState(() {
-                _hasError = true;
-              });
-            }
-          });
-          return img;
+        widget.url,
+        () {
+          if (mounted) {
+            setState(() {
+              _hasError = true;
+            });
+          }
         },
       );
     }

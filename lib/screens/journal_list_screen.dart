@@ -5,7 +5,7 @@ import '../widgets/widgets.dart';
 import '../services/journal_api_service.dart';
 import '../utils/responsive.dart';
 import 'package:flutter/foundation.dart';
-import 'dart:html' as html;
+import 'package:universal_html/html.dart' as html;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';

@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 // ignore: avoid_web_libraries_in_flutter
-import 'dart:html' as html;
+import 'package:universal_html/html.dart' as html;
 
 import '../services/api_service.dart';
 import '../theme.dart';
@@ -100,19 +100,19 @@ class _SplashScreenState extends State<SplashScreen>
     // This handles both:
     //   a) User refreshes /finance  → restore session → stay on /finance
     //   b) User opens /            → no token saved   → go to login
-    if (kIsWeb) {
-      final saved = html.window.sessionStorage['child_token'];
-      if (saved != null && saved.isNotEmpty) {
-        final userName =
-            _extractUserName(html.window.sessionStorage['user_data']);
-        _setStatus('Restoring session…');
-        await Future.delayed(const Duration(milliseconds: 400));
-        apiService.updateToken(saved);
-        // Ensure URL shows /accounting when restoring a session
+    final saved = html.window.sessionStorage['child_token'];
+    if (saved != null && saved.isNotEmpty) {
+      final userName =
+          _extractUserName(html.window.sessionStorage['user_data']);
+      _setStatus('Restoring session…');
+      await Future.delayed(const Duration(milliseconds: 400));
+      apiService.updateToken(saved);
+      // Ensure URL shows /accounting when restoring a session
+      if (kIsWeb) {
         html.window.history.replaceState(null, '', '/accounting');
-        _goToList(saved, userName);
-        return;
       }
+      _goToList(saved, userName);
+      return;
     }
 
     // ── Step 3: no token found ─────────────────────────────────────────────
@@ -201,23 +201,23 @@ class _SplashScreenState extends State<SplashScreen>
       };
 
       // ── Persist to sessionStorage ─────────────────────────────────────────
-      if (kIsWeb) {
-        for (final k in [
-          'child_token', 'mother_token', 'user_data', 'role_type',
-          'flutter.child_token', 'flutter.mother_token', 'flutter.user_data',
-        ]) {
-          html.window.sessionStorage.remove(k);
-        }
-
-        html.window.sessionStorage['child_token'] = childToken;
-        html.window.sessionStorage['mother_token'] = motherToken;
-        html.window.sessionStorage['role_type']    = roleType;
-        html.window.sessionStorage['user_data']    = jsonEncode(userJson);
-
-        // Clean ?token= from address bar, show /accounting
-        html.window.history.replaceState(null, '', '/accounting');
-        print('✅ SSO complete. user=$userName  roleType=$roleType');
+      for (final k in [
+        'child_token', 'mother_token', 'user_data', 'role_type',
+        'flutter.child_token', 'flutter.mother_token', 'flutter.user_data',
+      ]) {
+        html.window.sessionStorage.remove(k);
       }
+
+      html.window.sessionStorage['child_token'] = childToken;
+      html.window.sessionStorage['mother_token'] = motherToken;
+      html.window.sessionStorage['role_type']    = roleType;
+      html.window.sessionStorage['user_data']    = jsonEncode(userJson);
+
+      // Clean ?token= from address bar, show /accounting
+      if (kIsWeb) {
+        html.window.history.replaceState(null, '', '/accounting');
+      }
+      print('✅ SSO complete. user=$userName  roleType=$roleType');
 
       _goToList(childToken, userName.toString());
     } catch (e) {

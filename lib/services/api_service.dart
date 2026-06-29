@@ -146,34 +146,32 @@ class ApiService {
       }
 
       // Store combined session data for SSO nine-dots navigation
-      if (kIsWeb) {
-        html.window.sessionStorage['mother_token'] = motherToken;
-        html.window.sessionStorage['child_token']  = childToken;
+      html.window.sessionStorage['mother_token'] = motherToken;
+      html.window.sessionStorage['child_token']  = childToken;
 
-        final finalUser = <String, dynamic>{};
-        if (userData != null) {
-          finalUser.addAll(Map<String, dynamic>.from(userData));
-        }
-        if (userDetails != null) {
-          finalUser.addAll(userDetails);
-        }
-
-        // Ensure products are mapped to session user_data so nine dots works
-        if (userDetails != null && userDetails['products'] != null) {
-          finalUser['products'] = userDetails['products'];
-        } else if (exchangeData['products'] != null) {
-          finalUser['products'] = exchangeData['products'];
-        } else if (loginData['products'] != null) {
-          finalUser['products'] = loginData['products'];
-        }
-
-        if (exchangeData['roleType'] != null) {
-          finalUser['roleType'] = exchangeData['roleType'];
-        }
-
-        html.window.sessionStorage['user_data'] = jsonEncode(finalUser);
-        print('💾 Session user_data saved: ${jsonEncode(finalUser)}');
+      final finalUser = <String, dynamic>{};
+      if (userData != null) {
+        finalUser.addAll(Map<String, dynamic>.from(userData));
       }
+      if (userDetails != null) {
+        finalUser.addAll(userDetails);
+      }
+
+      // Ensure products are mapped to session user_data so nine dots works
+      if (userDetails != null && userDetails['products'] != null) {
+        finalUser['products'] = userDetails['products'];
+      } else if (exchangeData['products'] != null) {
+        finalUser['products'] = exchangeData['products'];
+      } else if (loginData['products'] != null) {
+        finalUser['products'] = loginData['products'];
+      }
+
+      if (exchangeData['roleType'] != null) {
+        finalUser['roleType'] = exchangeData['roleType'];
+      }
+
+      html.window.sessionStorage['user_data'] = jsonEncode(finalUser);
+      print('💾 Session user_data saved: ${jsonEncode(finalUser)}');
 
       print('✅ login complete. child_token: ${childToken.substring(0, 20)}...');
       return childToken;

@@ -168,7 +168,7 @@ class _LoginScreenState extends State<LoginScreen>
                             ),
                             const SizedBox(height: 16),
                             Text(
-                              'BBOTS Accounting',
+                              'B-Bots Accounting',
                               style: GoogleFonts.spaceGrotesk(
                                 fontSize: titleFontSize,
                                 fontWeight: FontWeight.w800,

@@ -2,9 +2,8 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart' show kIsWeb;
-// ignore: avoid_web_libraries_in_flutter
-import 'dart:html' as html;
-import 'dart:ui_web' as ui_web;
+import 'package:universal_html/html.dart' as html;
+import '../utils/platform_view_registry.dart';
 import '../services/user_service.dart';
 import '../services/api_service.dart';
 import '../models/user_profile.dart';
@@ -49,24 +48,15 @@ class _WebAvatarState extends State<_WebAvatar> {
   void _initView() {
     if (kIsWeb) {
       _viewId = 'img-${widget.url.hashCode}-${DateTime.now().millisecondsSinceEpoch}';
-      ui_web.platformViewRegistry.registerViewFactory(
+      registerWebImage(
         _viewId,
-        (int viewId) {
-          final img = html.ImageElement()
-            ..src = widget.url
-            ..style.width = '100%'
-            ..style.height = '100%'
-            ..style.objectFit = 'cover'
-            ..style.borderRadius = '50%';
-            
-          img.onError.listen((_) {
-            if (mounted) {
-              setState(() {
-                _hasError = true;
-              });
-            }
-          });
-          return img;
+        widget.url,
+        () {
+          if (mounted) {
+            setState(() {
+              _hasError = true;
+            });
+          }
         },
       );
     }
@@ -139,11 +129,9 @@ class _ProfilePopupState extends State<ProfilePopup> {
   }
 
   Future<void> _loadUser() async {
-    if (kIsWeb) {
-      apiService.updateToken(
-        html.window.sessionStorage['child_token'],
-      );
-    }
+    apiService.updateToken(
+      html.window.sessionStorage['child_token'],
+    );
     final fetchedUser = await UserService.getUserProfile();
     
     if (fetchedUser != null) {
@@ -155,18 +143,16 @@ class _ProfilePopupState extends State<ProfilePopup> {
         final userDetails = await apiService.getUserDetails(uCode, oCode);
         if (userDetails != null) {
           fetchedUser.addAll(userDetails);
-          if (kIsWeb) {
-            try {
-              final str = html.window.sessionStorage['user_data'];
-              if (str != null && str.isNotEmpty) {
-                final oldData = jsonDecode(str);
-                if (oldData['roleType'] != null) {
-                  fetchedUser['roleType'] = oldData['roleType'];
-                }
+          try {
+            final str = html.window.sessionStorage['user_data'];
+            if (str != null && str.isNotEmpty) {
+              final oldData = jsonDecode(str);
+              if (oldData['roleType'] != null) {
+                fetchedUser['roleType'] = oldData['roleType'];
               }
-            } catch (_) {}
-            html.window.sessionStorage['user_data'] = jsonEncode(fetchedUser);
-          }
+            }
+          } catch (_) {}
+          html.window.sessionStorage['user_data'] = jsonEncode(fetchedUser);
         }
       }
     }
@@ -291,13 +277,11 @@ class _EditProfileContentState extends State<_EditProfileContent> {
     super.initState();
     
     Map<String, dynamic> sessionUser = {};
-    if (kIsWeb) {
-      final str = html.window.sessionStorage['user_data'];
-      if (str != null && str.isNotEmpty) {
-        try {
-          sessionUser = jsonDecode(str);
-        } catch (_) {}
-      }
+    final str = html.window.sessionStorage['user_data'];
+    if (str != null && str.isNotEmpty) {
+      try {
+        sessionUser = jsonDecode(str);
+      } catch (_) {}
     }
 
     String uName = widget.user?.username ??

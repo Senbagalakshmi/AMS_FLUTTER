@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
 import 'dart:convert';
-import 'dart:html' as html;
+import 'package:universal_html/html.dart' as html;
 import 'package:flutter/foundation.dart';
 import '../theme.dart';
 import '../models/models.dart';
@@ -46,7 +46,6 @@ class _ProgramListScreenState extends State<ProgramListScreen> {
   int _glMasters = 0;
 
   bool get _isSysAdmin {
-    if (!kIsWeb) return false;
     final userDataStr = html.window.sessionStorage['user_data'];
     if (userDataStr != null && userDataStr.isNotEmpty) {
       try {

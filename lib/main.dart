@@ -3,7 +3,7 @@ import 'package:ams_flutter/screens/gl_segments_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 // ignore: avoid_web_libraries_in_flutter
-import 'dart:html' as html;
+import 'package:universal_html/html.dart' as html;
 import 'config/app_config.dart';
 import 'screens/gl_allowed_branch_screen.dart';
 import 'screens/gl_allowed_currency_screen.dart';
@@ -56,7 +56,7 @@ class AmsApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Accounting',
+      title: 'B-Bots Accounting',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.theme,
       home: const AmsRoot(),
