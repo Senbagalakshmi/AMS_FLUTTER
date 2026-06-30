@@ -233,7 +233,7 @@ class _LoginScreenState extends State<LoginScreen>
                                   const SizedBox(height: 5),
                                   _DarkInput(
                                     controller: _pwdCtrl,
-                                    placeholder: '••••••••',
+                                    placeholder: 'Enter your Password',
                                     obscure: true,
                                     hasError: _errors['pwd'] != null,
                                     textInputAction: TextInputAction.done,
@@ -372,7 +372,7 @@ class _DarkLabel extends StatelessWidget {
       );
 }
 
-class _DarkInput extends StatelessWidget {
+class _DarkInput extends StatefulWidget {
   final TextEditingController controller;
   final String placeholder;
   final bool obscure;
@@ -392,20 +392,49 @@ class _DarkInput extends StatelessWidget {
   });
 
   @override
+  State<_DarkInput> createState() => _DarkInputState();
+}
+
+class _DarkInputState extends State<_DarkInput> {
+  late bool _obscureText;
+
+  @override
+  void initState() {
+    super.initState();
+    _obscureText = widget.obscure;
+  }
+
+  @override
   Widget build(BuildContext context) {
     return TextFormField(
-      controller: controller,
-      obscureText: obscure,
-      keyboardType: keyboardType,
-      textInputAction: textInputAction,
+      controller: widget.controller,
+      obscureText: _obscureText,
+      keyboardType: widget.keyboardType,
+      textInputAction: widget.textInputAction,
       style: GoogleFonts.spaceGrotesk(fontSize: 13, color: Colors.white),
-      onFieldSubmitted: (_) => onSubmit?.call(),
+      onFieldSubmitted: (_) => widget.onSubmit?.call(),
       decoration: InputDecoration(
-        hintText: placeholder,
+        hintText: widget.placeholder,
         hintStyle: GoogleFonts.spaceGrotesk(
           fontSize: 13,
           color: const Color.fromARGB(255, 199, 219, 236),
         ),
+        suffixIcon: widget.obscure
+            ? IconButton(
+                icon: Icon(
+                  _obscureText
+                      ? Icons.visibility_off_outlined
+                      : Icons.visibility_outlined,
+                  color: const Color(0xFF7FA0C0),
+                  size: 18,
+                ),
+                onPressed: () {
+                  setState(() {
+                    _obscureText = !_obscureText;
+                  });
+                },
+              )
+            : null,
         filled: true,
         fillColor: Colors.white.withValues(alpha: 0.07),
         contentPadding:
@@ -413,7 +442,7 @@ class _DarkInput extends StatelessWidget {
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(9),
           borderSide: BorderSide(
-            color: hasError
+            color: widget.hasError
                 ? const Color(0xFFF87171)
                 : Colors.white.withValues(alpha: 0.12),
             width: 1.5,
