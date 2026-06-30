@@ -219,17 +219,17 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
                   ),
                 ),
                 const SizedBox(height: 8),
-                if (_passwordPolicy!['minLength'] != null)
-                  _PolicyRow('Minimum Length', '${_passwordPolicy!['minLength']}'),
-                if (_passwordPolicy!['maxLength'] != null)
-                  _PolicyRow('Maximum Length', '${_passwordPolicy!['maxLength']}'),
-                if (_passwordPolicy!['requireUppercase'] == true)
+                if (_passwordPolicy!['min_length'] != null)
+                  _PolicyRow('Minimum Length', '${_passwordPolicy!['min_length']}'),
+                if (_passwordPolicy!['max_length'] != null)
+                  _PolicyRow('Maximum Length', '${_passwordPolicy!['max_length']}'),
+                if (_passwordPolicy!['require_uppercase'] == true)
                   _PolicyRow('Require Uppercase', 'Yes'),
-                if (_passwordPolicy!['requireLowercase'] == true)
+                if (_passwordPolicy!['require_lowercase'] == true)
                   _PolicyRow('Require Lowercase', 'Yes'),
-                if (_passwordPolicy!['requireNumber'] == true)
+                if (_passwordPolicy!['require_number'] == true)
                   _PolicyRow('Require Number', 'Yes'),
-                if (_passwordPolicy!['requireSpecialChar'] == true)
+                if (_passwordPolicy!['require_special_char'] == true)
                   _PolicyRow('Require Special Character', 'Yes'),
               ],
             ),
