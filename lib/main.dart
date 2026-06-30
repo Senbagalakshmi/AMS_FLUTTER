@@ -231,7 +231,7 @@ class _AmsRootState extends State<AmsRoot> {
   }
 
   void _handleProceed(String type) {
-    if (['MASTERS', 'GL', 'CONFIG', 'AUTH', 'REPORTS', 'TRANSACTIONS'].contains(type)) {
+    if (['MASTERS', 'GL', 'GL-SUB', 'CONFIG', 'AUTH', 'REPORTS', 'TRANSACTIONS'].contains(type)) {
       setState(() {
         _state = _state.copyWith(
           screen: 'submenu_dashboard',
@@ -537,7 +537,7 @@ class _AmsRootState extends State<AmsRoot> {
         } else if (_state.selectedProg == 'GL-ATT') {
           body = GLAttributeScreen(
             onBack: () => _navigate('list'),
-            onBackToModule: () => _handleProceed('GL'),
+            onBackToModule: () => _handleProceed('GL-SUB'),
             userName: _state.userName,
           );
         } else if (_state.selectedProg == 'GL-JRN') {
@@ -562,19 +562,19 @@ class _AmsRootState extends State<AmsRoot> {
         } else if (_state.selectedProg == 'GL-CUR') {
           body = AllowedCurrencyScreen(
             onBack: () => _navigate('list'),
-            onBackToModule: () => _handleProceed('GL'),
+            onBackToModule: () => _handleProceed('GL-SUB'),
             onChanged: (k, v) {},
           );
         } else if (_state.selectedProg == 'GL-BRN') {
           body = AllowedBranchScreen(
             onBack: () => _navigate('list'),
-            onBackToModule: () => _handleProceed('GL'),
+            onBackToModule: () => _handleProceed('GL-SUB'),
             onChanged: (k, v) {},
           );
         } else if (_state.selectedProg == 'GL-SEG') {
           body = GlSegmentsScreen(
             onBack: () => _navigate('list'),
-            onBackToModule: () => _handleProceed('GL'),
+            onBackToModule: () => _handleProceed('GL-SUB'),
             userName: _state.userName,
           );
           //trial balance - add
@@ -815,6 +815,13 @@ class _AmsRootState extends State<AmsRoot> {
             items: items,
             userName: _state.userName,
             onBack: () => _navigate('list'),
+            onNavigate: _handleScreenNavigation,
+          );
+        } else if (cat == 'GL-SUB') {
+          body = SubmenuDashboardScreen(
+            title: title,
+            items: items,
+            onBack: () => _handleProceed('GL'),
             onNavigate: _handleScreenNavigation,
           );
         } else {

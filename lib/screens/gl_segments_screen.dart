@@ -402,7 +402,8 @@ class _GLSegmentPageState extends State<GLSegmentPage> {
           accentMd: AppColors.tBlueMd,
           breadcrumbs: [
             HeaderBreadcrumb(label: 'Home', onTap: widget.onBack),
-            HeaderBreadcrumb(label: 'GL Module', onTap: widget.onBackToModule),
+            HeaderBreadcrumb(label: 'GL',onTap: widget.onBack),
+            HeaderBreadcrumb(label: 'Sub Category', onTap: widget.onBackToModule),
             HeaderBreadcrumb(label: 'GL Attribute', onTap: _goList),
           ],
           onBack: _goList,
@@ -580,7 +581,8 @@ class _GLSegmentPageState extends State<GLSegmentPage> {
           accentMd: AppColors.tBlueMd,
           breadcrumbs: [
             HeaderBreadcrumb(label: 'Home', onTap: widget.onBack),
-            HeaderBreadcrumb(label: 'GL Module', onTap: widget.onBackToModule),
+            HeaderBreadcrumb(label: 'GL',onTap: widget.onBack),
+            HeaderBreadcrumb(label: 'Sub Category', onTap: widget.onBackToModule),
             HeaderBreadcrumb(label: 'GL Segments', onTap: _goList),
             HeaderBreadcrumb(
                 label: _activeSegment != null
@@ -623,7 +625,7 @@ class _GLSegmentPageState extends State<GLSegmentPage> {
           accentMd: AppColors.tBlueMd,
           breadcrumbs: [
             HeaderBreadcrumb(label: 'Home', onTap: widget.onBack),
-            HeaderBreadcrumb(label: 'GL Module', onTap: widget.onBackToModule),
+            HeaderBreadcrumb(label: 'Sub Category', onTap: widget.onBackToModule),
             HeaderBreadcrumb(label: 'GL Segments'),
           ],
           onBack: widget.onBackToModule,

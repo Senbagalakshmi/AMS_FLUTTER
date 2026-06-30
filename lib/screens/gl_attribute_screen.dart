@@ -603,7 +603,11 @@ class _GLAttributeScreenState extends State<GLAttributeScreen> {
           breadcrumbs: [
             HeaderBreadcrumb(label: 'Home', onTap: widget.onBack),
             HeaderBreadcrumb(
-                label: 'GL Module', onTap: widget.onBackToModule),
+                label: 'GL',
+                onTap: widget.onBack,
+              ),
+            HeaderBreadcrumb(
+                label: 'Sub Category', onTap: widget.onBackToModule),
             HeaderBreadcrumb(label: 'GL Attribute'),
           ],
           onBack: widget.onBackToModule,
@@ -1169,7 +1173,11 @@ class _GLAttributeScreenState extends State<GLAttributeScreen> {
           breadcrumbs: [
             HeaderBreadcrumb(label: 'Home', onTap: widget.onBack),
             HeaderBreadcrumb(
-                label: 'GL Module', onTap: widget.onBackToModule),
+                label: 'GL',
+                onTap: widget.onBack,
+              ),
+            HeaderBreadcrumb(
+                label: 'Sub Category', onTap: widget.onBackToModule),
             HeaderBreadcrumb(label: 'GL Attribute'),
           ],
           onBack: widget.onBackToModule,

@@ -470,7 +470,11 @@ class _AllowedBranchScreenState extends State<AllowedBranchScreen> {
                 onTap: widget.onBack,
               ),
               HeaderBreadcrumb(
-                label: 'GL Module',
+                label: 'GL',
+                onTap: widget.onBack,
+              ),
+              HeaderBreadcrumb(
+                label: 'Sub Category',
                 onTap: widget.onBackToModule,
               ),
               HeaderBreadcrumb(
